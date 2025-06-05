@@ -1,0 +1,34 @@
+{
+  "slug": "MADZINE",
+  "name": "MADZINE",
+  "version": "2.0.0",
+  "license": "MIT",
+  "brand": "MADZINE",
+  "author": "你的名字",
+  "authorEmail": "你的郵箱",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "modules": [
+    {
+      "slug": "SwingLFO",
+      "name": "SwingLFO",
+      "description": "A dual-waveform LFO with swing and shape control",
+      "tags": ["LFO", "Modulator"]
+    },
+    {
+      "slug": "SwingLiFO",
+      "name": "SwingLiFO",
+      "description": "A simplified version of SwingLFO with fixed 50/50 mix",
+      "tags": ["LFO", "Modulator"]
+    },
+    {
+      "slug": "EuclideanRhythm",
+      "name": "Euclidean Rhythm",
+      "description": "A three-track Euclidean Rhythm Generator with CV control and Slew",
+      "tags": ["Sequencer", "Clock", "Trigger"]
+    }
+  ]
+}
