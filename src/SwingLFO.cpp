@@ -65,15 +65,17 @@ struct SwingLFO : Module {
         switch (waveType) {
             case SAW: {
                 if (shape < 0.5f) {
-                    float sawWave = phase;
-                    float triWave = (phase < 0.5f) ? (2.0f * phase) : (2.0f - 2.0f * phase);
+                    // Shape 0-0.5: 往下斜坡 -> 三角波
+                    float rampWave = 1.0f - phase;  // 下降斜坡 (1 -> 0)
+                    float triWave = (phase < 0.5f) ? (2.0f * phase) : (2.0f - 2.0f * phase);  // 三角波
                     float mix = shape * 2.0f;
-                    return (sawWave * (1.0f - mix) + triWave * mix) * 10.0f;
+                    return (rampWave * (1.0f - mix) + triWave * mix) * 10.0f;
                 } else {
-                    float triWave = (phase < 0.5f) ? (2.0f * phase) : (2.0f - 2.0f * phase);
-                    float rampWave = 1.0f - phase;
+                    // Shape 0.5-1: 三角波 -> 往上鋸齒
+                    float triWave = (phase < 0.5f) ? (2.0f * phase) : (2.0f - 2.0f * phase);  // 三角波
+                    float sawWave = phase;  // 上升鋸齒 (0 -> 1)
                     float mix = (shape - 0.5f) * 2.0f;
-                    return (triWave * (1.0f - mix) + rampWave * mix) * 10.0f;
+                    return (triWave * (1.0f - mix) + sawWave * mix) * 10.0f;
                 }
             }
             case PULSE: {
@@ -161,6 +163,94 @@ struct SwingLFO : Module {
     }
 };
 
+struct StandardBlackKnob : ParamWidget {
+    bool isDragging = false;
+    
+    StandardBlackKnob() {
+        box.size = Vec(30, 30);
+    }
+    
+    float getDisplayAngle() {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return 0.0f;
+        
+        float normalizedValue = pq->getScaledValue();
+        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
+        return angle;
+    }
+    
+    void draw(const DrawArgs& args) override {
+        float radius = box.size.x / 2.0f;
+        float angle = getDisplayAngle();
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
+        nvgFill(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
+        nvgStroke(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 4);
+        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
+        nvgFill(args.vg);
+        
+        float indicatorLength = radius - 8;
+        float lineX = radius + indicatorLength * std::sin(angle);
+        float lineY = radius - indicatorLength * std::cos(angle);
+        
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, 2.0f);
+        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+        nvgStroke(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 2.0f);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+    }
+    
+    void onButton(const event::Button& e) override {
+        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = true;
+            e.consume(this);
+        }
+        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = false;
+        }
+        ParamWidget::onButton(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!isDragging || !pq) return;
+        
+        float sensitivity = 0.002f;
+        float deltaY = -e.mouseDelta.y;
+        
+        float range = pq->getMaxValue() - pq->getMinValue();
+        float currentValue = pq->getValue();
+        float newValue = currentValue + deltaY * sensitivity * range;
+        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
+        
+        pq->setValue(newValue);
+    }
+    
+    void onDoubleClick(const event::DoubleClick& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return;
+        
+        pq->reset();
+        e.consume(this);
+    }
+};
+
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
     float fontSize;
@@ -184,8 +274,7 @@ struct EnhancedTextLabel : TransparentWidget {
         nvgFillColor(args.vg, color);
         
         if (bold) {
-            // Reduced to 60% of original boldness - using smaller offset and fewer passes
-            float offset = 0.3f;  // 60% of original 0.5f offset
+            float offset = 0.3f;
             nvgText(args.vg, box.size.x / 2.f - offset, box.size.y / 2.f, text.c_str(), NULL);
             nvgText(args.vg, box.size.x / 2.f + offset, box.size.y / 2.f, text.c_str(), NULL);
             nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f - offset, text.c_str(), NULL);
@@ -228,7 +317,7 @@ struct SwingLFOWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         addChild(new EnhancedTextLabel(Vec(0, 26), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<RoundBlackKnob>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM));
         
         addChild(new EnhancedTextLabel(Vec(5, 40), Vec(20, 20), "RST", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX - 15, 65), module, SwingLFO::RESET_INPUT));
@@ -237,19 +326,19 @@ struct SwingLFOWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 89), module, SwingLFO::FREQ_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 105), Vec(box.size.x, 20), "SWING", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<RoundBlackKnob>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM));
         
         addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 166), module, SwingLFO::SWING_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 166), module, SwingLFO::SWING_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 182), Vec(box.size.x, 20), "SHAPE", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<RoundBlackKnob>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM));
         
         addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 244), module, SwingLFO::SHAPE_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 244), module, SwingLFO::SHAPE_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 257), Vec(box.size.x, 20), "MIX", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<RoundBlackKnob>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM));
         
         addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 317), module, SwingLFO::MIX_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 317), module, SwingLFO::MIX_CV_INPUT));

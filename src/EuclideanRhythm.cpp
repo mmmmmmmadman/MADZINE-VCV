@@ -56,6 +56,188 @@ struct WhiteBackgroundBox : Widget {
     }
 };
 
+struct StandardBlackKnob : ParamWidget {
+    bool isDragging = false;
+    
+    StandardBlackKnob() {
+        box.size = Vec(26, 26);
+    }
+    
+    float getDisplayAngle() {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return 0.0f;
+        
+        float normalizedValue = pq->getScaledValue();
+        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
+        return angle;
+    }
+    
+    void draw(const DrawArgs& args) override {
+        float radius = box.size.x / 2.0f;
+        float angle = getDisplayAngle();
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
+        nvgFill(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
+        nvgStroke(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 4);
+        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
+        nvgFill(args.vg);
+        
+        float indicatorLength = radius - 8;
+        float lineX = radius + indicatorLength * std::sin(angle);
+        float lineY = radius - indicatorLength * std::cos(angle);
+        
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, 2.0f);
+        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+        nvgStroke(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 2.0f);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+    }
+    
+    void onButton(const event::Button& e) override {
+        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = true;
+            e.consume(this);
+        }
+        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = false;
+        }
+        ParamWidget::onButton(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!isDragging || !pq) return;
+        
+        float sensitivity = 0.002f;
+        float deltaY = -e.mouseDelta.y;
+        
+        float range = pq->getMaxValue() - pq->getMinValue();
+        float currentValue = pq->getValue();
+        float newValue = currentValue + deltaY * sensitivity * range;
+        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
+        
+        pq->setValue(newValue);
+    }
+    
+    void onDoubleClick(const event::DoubleClick& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return;
+        
+        pq->reset();
+        e.consume(this);
+    }
+};
+
+struct SnapKnob : ParamWidget {
+    float accumDelta = 0.0f;
+    
+    SnapKnob() {
+        box.size = Vec(26, 26);
+    }
+    
+    float getDisplayAngle() {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return 0.0f;
+        
+        float normalizedValue = pq->getScaledValue();
+        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
+        return angle;
+    }
+    
+    void draw(const DrawArgs& args) override {
+        float radius = box.size.x / 2.0f;
+        float angle = getDisplayAngle();
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
+        nvgFill(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
+        nvgStroke(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 4);
+        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
+        nvgFill(args.vg);
+        
+        float indicatorLength = radius - 8;
+        float lineX = radius + indicatorLength * std::sin(angle);
+        float lineY = radius - indicatorLength * std::cos(angle);
+        
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, 2.0f);
+        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+        nvgStroke(args.vg);
+        
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 2.0f);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+    }
+    
+    void onButton(const event::Button& e) override {
+        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            accumDelta = 0.0f;
+            e.consume(this);
+        }
+        ParamWidget::onButton(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return;
+        
+        accumDelta += (e.mouseDelta.x - e.mouseDelta.y);
+        
+        float threshold = 10.0f;
+        
+        if (accumDelta >= threshold) {
+            float currentValue = pq->getValue();
+            float newValue = currentValue + 1.0f;
+            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
+            pq->setValue(newValue);
+            accumDelta = 0.0f;
+        }
+        else if (accumDelta <= -threshold) {
+            float currentValue = pq->getValue();
+            float newValue = currentValue - 1.0f;
+            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
+            pq->setValue(newValue);
+            accumDelta = 0.0f;
+        }
+    }
+    
+    void onDoubleClick(const event::DoubleClick& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return;
+        
+        pq->reset();
+        e.consume(this);
+    }
+};
+
 struct DivMultParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         int value = (int)std::round(getValue());
@@ -86,57 +268,6 @@ std::vector<bool> generateEuclideanRhythm(int length, int fill, int shift) {
     return pattern;
 }
 
-struct SlewLimiter {
-    float riseRate = 0.f;
-    float fallRate = 0.f;
-    float out = 0.f;
-
-    void setRiseTime(float time) {
-        if (time > 0.f) {
-            riseRate = 1.f / time;
-        } else {
-            riseRate = INFINITY;
-        }
-    }
-
-    void setFallTime(float time) {
-        if (time > 0.f) {
-            fallRate = 1.f / time;
-        } else {
-            fallRate = INFINITY;
-        }
-    }
-
-    float process(float deltaTime, float in) {
-        if (in > out) {
-            if (std::isinf(riseRate)) {
-                out = in;
-            } else {
-                float diff = in - out;
-                out += diff * riseRate * deltaTime;
-                if (out > in) {
-                    out = in;
-                }
-            }
-        } else if (in < out) {
-            if (std::isinf(fallRate)) {
-                out = in;
-            } else {
-                float diff = out - in;
-                out -= diff * fallRate * deltaTime;
-                if (out < in) {
-                    out = in;
-                }
-            }
-        }
-        return out;
-    }
-
-    void reset() {
-        out = 0.f;
-    }
-};
-
 struct EuclideanRhythm : Module {
     enum ParamId {
         MANUAL_RESET_PARAM,
@@ -147,8 +278,6 @@ struct EuclideanRhythm : Module {
         TRACK1_LENGTH_CV_ATTEN_PARAM,
         TRACK1_FILL_CV_ATTEN_PARAM,
         TRACK1_SHIFT_CV_ATTEN_PARAM,
-        TRACK1_RISE_PARAM,
-        TRACK1_FALL_PARAM,
         TRACK2_DIVMULT_PARAM,
         TRACK2_LENGTH_PARAM,
         TRACK2_FILL_PARAM,
@@ -156,8 +285,6 @@ struct EuclideanRhythm : Module {
         TRACK2_LENGTH_CV_ATTEN_PARAM,
         TRACK2_FILL_CV_ATTEN_PARAM,
         TRACK2_SHIFT_CV_ATTEN_PARAM,
-        TRACK2_RISE_PARAM,
-        TRACK2_FALL_PARAM,
         TRACK3_DIVMULT_PARAM,
         TRACK3_LENGTH_PARAM,
         TRACK3_FILL_PARAM,
@@ -165,8 +292,6 @@ struct EuclideanRhythm : Module {
         TRACK3_LENGTH_CV_ATTEN_PARAM,
         TRACK3_FILL_CV_ATTEN_PARAM,
         TRACK3_SHIFT_CV_ATTEN_PARAM,
-        TRACK3_RISE_PARAM,
-        TRACK3_FALL_PARAM,
         PARAMS_LEN
     };
     enum InputId {
@@ -184,53 +309,194 @@ struct EuclideanRhythm : Module {
         INPUTS_LEN
     };
     enum OutputId {
-        TRACK1_OUTPUT,
-        TRACK2_OUTPUT,
-        TRACK3_OUTPUT,
-        MASTER_OUTPUT,
         TRACK1_TRIG_OUTPUT,
         TRACK2_TRIG_OUTPUT,
         TRACK3_TRIG_OUTPUT,
         MASTER_TRIG_OUTPUT,
+        CHAIN_12_OUTPUT,
+        CHAIN_23_OUTPUT,
+        CHAIN_123_OUTPUT,
         OUTPUTS_LEN
     };
     enum LightId {
         TRACK1_LIGHT,
         TRACK2_LIGHT,
         TRACK3_LIGHT,
+        CHAIN_12_T1_LIGHT,
+        CHAIN_12_T2_LIGHT,
+        CHAIN_23_T2_LIGHT,
+        CHAIN_23_T3_LIGHT,
+        CHAIN_123_T1_LIGHT,
+        CHAIN_123_T2_LIGHT,
+        CHAIN_123_T3_LIGHT, 
+        OR_RED_LIGHT,
+        OR_GREEN_LIGHT,
+        OR_BLUE_LIGHT,
         LIGHTS_LEN
     };
 
     dsp::SchmittTrigger clockTrigger;
     dsp::SchmittTrigger resetTrigger;
     dsp::SchmittTrigger manualResetTrigger;
-    float lastClockTime = 0.f;
-    float clockInterval = 0.5f;
+    
+    float globalClockSeconds = 0.5f;
+    float secondsSinceLastClock = -1.0f;
+    
+    dsp::PulseGenerator orRedPulse;
+    dsp::PulseGenerator orGreenPulse;
+    dsp::PulseGenerator orBluePulse;
 
     struct TrackState {
-        int divMultValue = 1;
-        float internalClock = 0.f;
-        float trackInterval = 0.5f;
+        int divMultValue = 0;
+        int division = 1;
+        int multiplication = 1;
+        float dividedClockSeconds = 0.5f;
+        float multipliedClockSeconds = 0.5f;
+        float dividedProgressSeconds = 0.0f;
+        float gateSeconds = 0.0f;
+        int dividerCount = 0;
+        bool shouldStep = false;
+        bool prevMultipliedGate = false;
+        
         int currentStep = 0;
         int length = 16;
         int fill = 4;
         int shift = 0;
         std::vector<bool> pattern;
-        SlewLimiter slewLimiter;
         bool gateState = false;
-        bool lastGateState = false;
+        bool cycleCompleted = false;
         dsp::PulseGenerator trigPulse;
 
         void reset() {
-            internalClock = 0.f;
+            dividedProgressSeconds = 0.0f;
+            dividerCount = 0;
+            shouldStep = false;
+            prevMultipliedGate = false;
             currentStep = 0;
             pattern.clear();
-            slewLimiter.reset();
             gateState = false;
-            lastGateState = false;
+            cycleCompleted = false;
+        }
+        
+        void updateDivMult(int divMultParam) {
+            divMultValue = divMultParam;
+            if (divMultValue > 0) {
+                division = 1;
+                multiplication = divMultValue + 1;
+            } else if (divMultValue < 0) {
+                division = -divMultValue + 1;
+                multiplication = 1;
+            } else {
+                division = 1;
+                multiplication = 1;
+            }
+        }
+        
+        bool processClockDivMult(bool globalClock, float globalClockSeconds, float sampleTime) {
+            dividedClockSeconds = globalClockSeconds * (float)division;
+            multipliedClockSeconds = dividedClockSeconds / (float)multiplication;
+            gateSeconds = std::max(0.001f, multipliedClockSeconds * 0.5f);
+            
+            if (globalClock) {
+                if (dividerCount < 1) {
+                    dividedProgressSeconds = 0.0f;
+                } else {
+                    dividedProgressSeconds += sampleTime;
+                }
+                ++dividerCount;
+                if (dividerCount >= division) {
+                    dividerCount = 0;
+                }
+            } else {
+                dividedProgressSeconds += sampleTime;
+            }
+            
+            shouldStep = false;
+            if (dividedProgressSeconds < dividedClockSeconds) {
+                float multipliedProgressSeconds = dividedProgressSeconds / multipliedClockSeconds;
+                multipliedProgressSeconds -= (float)(int)multipliedProgressSeconds;
+                multipliedProgressSeconds *= multipliedClockSeconds;
+                
+                bool currentMultipliedGate = multipliedProgressSeconds <= gateSeconds;
+                
+                if (currentMultipliedGate && !prevMultipliedGate) {
+                    shouldStep = true;
+                }
+                prevMultipliedGate = currentMultipliedGate;
+            }
+            
+            return shouldStep;
+        }
+        
+        void stepTrack() {
+            cycleCompleted = false;
+            currentStep = (currentStep + 1) % length;
+            if (currentStep == 0) {
+                cycleCompleted = true;
+            }
+            gateState = !pattern.empty() && pattern[currentStep];
+            if (gateState) {
+                trigPulse.trigger(0.01f);
+            }
         }
     };
     TrackState tracks[3];
+
+    struct ChainedSequence {
+        int currentTrackIndex = 0;
+        std::vector<int> trackIndices;
+        int globalClockCount = 0;
+        int trackStartClock[3] = {0, 0, 0};
+        
+        ChainedSequence() {}
+        
+        void reset() {
+            currentTrackIndex = 0;
+            globalClockCount = 0;
+            for (int i = 0; i < 3; ++i) {
+                trackStartClock[i] = 0;
+            }
+        }
+        
+        int calculateTrackCycleClock(const TrackState& track) {
+            return track.length * track.division / track.multiplication;
+        }
+        
+        float processStep(TrackState tracks[], float sampleTime, bool globalClockTriggered) {
+            if (trackIndices.empty()) {
+                return 0.0f;
+            }
+            
+            if (globalClockTriggered) {
+                globalClockCount++;
+            }
+            
+            if (currentTrackIndex >= (int)trackIndices.size()) {
+                currentTrackIndex = 0;
+            }
+            
+            int activeTrackIdx = trackIndices[currentTrackIndex];
+            if (activeTrackIdx < 0 || activeTrackIdx >= 3) {
+                return 0.0f;
+            }
+            
+            TrackState& activeTrack = tracks[activeTrackIdx];
+            int trackCycleClock = calculateTrackCycleClock(activeTrack);
+            int elapsedClock = globalClockCount - trackStartClock[activeTrackIdx];
+            
+            if (elapsedClock >= trackCycleClock) {
+                currentTrackIndex++;
+                if (currentTrackIndex >= (int)trackIndices.size()) {
+                    currentTrackIndex = 0;
+                }
+                activeTrackIdx = trackIndices[currentTrackIndex];
+                trackStartClock[activeTrackIdx] = globalClockCount;
+            }
+            
+            return tracks[activeTrackIdx].trigPulse.process(sampleTime) ? 10.0f : 0.0f;
+        }
+    };
+    ChainedSequence chain12, chain23, chain123;
 
     EuclideanRhythm() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -239,98 +505,61 @@ struct EuclideanRhythm : Module {
         configInput(GLOBAL_RESET_INPUT, "Global Reset");
         configParam(MANUAL_RESET_PARAM, 0.0f, 1.0f, 0.0f, "Manual Reset");
 
-        configParam(TRACK1_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T1 Div/Mult");
-        getParamQuantity(TRACK1_DIVMULT_PARAM)->snapEnabled = true;
-        delete paramQuantities[TRACK1_DIVMULT_PARAM];
-        paramQuantities[TRACK1_DIVMULT_PARAM] = new DivMultParamQuantity;
-        paramQuantities[TRACK1_DIVMULT_PARAM]->module = this;
-        paramQuantities[TRACK1_DIVMULT_PARAM]->paramId = TRACK1_DIVMULT_PARAM;
-        paramQuantities[TRACK1_DIVMULT_PARAM]->minValue = -3.0f;
-        paramQuantities[TRACK1_DIVMULT_PARAM]->maxValue = 3.0f;
-        paramQuantities[TRACK1_DIVMULT_PARAM]->defaultValue = 0.0f;
-        paramQuantities[TRACK1_DIVMULT_PARAM]->name = "T1 Div/Mult";
-        paramQuantities[TRACK1_DIVMULT_PARAM]->snapEnabled = true;
-        configParam(TRACK1_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "T1 Length");
-        getParamQuantity(TRACK1_LENGTH_PARAM)->snapEnabled = true;
-        configParam(TRACK1_FILL_PARAM, 0.0f, 100.0f, 25.0f, "T1 Fill", "%");
-        configParam(TRACK1_SHIFT_PARAM, 0.0f, 31.0f, 0.0f, "T1 Shift");
-        getParamQuantity(TRACK1_SHIFT_PARAM)->snapEnabled = true;
-        configParam(TRACK1_LENGTH_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T1 Length CV");
-        configParam(TRACK1_FILL_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T1 Fill CV");
-        configParam(TRACK1_SHIFT_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T1 Shift CV");
-        configParam(TRACK1_RISE_PARAM, 0.0f, 0.1f, 0.0f, "T1 Rise", "s");
-        configParam(TRACK1_FALL_PARAM, 0.0f, 0.1f, 0.0f, "T1 Fall", "s");
-        configInput(TRACK1_LENGTH_CV_INPUT, "T1 Length CV");
-        configInput(TRACK1_FILL_CV_INPUT, "T1 Fill CV");
-        configInput(TRACK1_SHIFT_CV_INPUT, "T1 Shift CV");
-        configOutput(TRACK1_OUTPUT, "T1 Output");
-        configOutput(TRACK1_TRIG_OUTPUT, "T1 Trigger");
-        configLight(TRACK1_LIGHT, "T1 Light");
+        chain12.trackIndices = {0, 1};
+        chain23.trackIndices = {1, 2};
+        chain123.trackIndices = {0, 1, 0, 2};
 
-        configParam(TRACK2_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T2 Div/Mult");
-        getParamQuantity(TRACK2_DIVMULT_PARAM)->snapEnabled = true;
-        delete paramQuantities[TRACK2_DIVMULT_PARAM];
-        paramQuantities[TRACK2_DIVMULT_PARAM] = new DivMultParamQuantity;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->module = this;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->paramId = TRACK2_DIVMULT_PARAM;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->minValue = -3.0f;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->maxValue = 3.0f;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->defaultValue = 0.0f;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->name = "T2 Div/Mult";
-        paramQuantities[TRACK2_DIVMULT_PARAM]->snapEnabled = true;
-        configParam(TRACK2_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "T2 Length");
-        getParamQuantity(TRACK2_LENGTH_PARAM)->snapEnabled = true;
-        configParam(TRACK2_FILL_PARAM, 0.0f, 100.0f, 25.0f, "T2 Fill", "%");
-        configParam(TRACK2_SHIFT_PARAM, 0.0f, 31.0f, 0.0f, "T2 Shift");
-        getParamQuantity(TRACK2_SHIFT_PARAM)->snapEnabled = true;
-        configParam(TRACK2_LENGTH_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T2 Length CV");
-        configParam(TRACK2_FILL_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T2 Fill CV");
-        configParam(TRACK2_SHIFT_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T2 Shift CV");
-        configParam(TRACK2_RISE_PARAM, 0.0f, 0.1f, 0.0f, "T2 Rise", "s");
-        configParam(TRACK2_FALL_PARAM, 0.0f, 0.1f, 0.0f, "T2 Fall", "s");
-        configInput(TRACK2_LENGTH_CV_INPUT, "T2 Length CV");
-        configInput(TRACK2_FILL_CV_INPUT, "T2 Fill CV");
-        configInput(TRACK2_SHIFT_CV_INPUT, "T2 Shift CV");
-        configOutput(TRACK2_OUTPUT, "T2 Output");
-        configOutput(TRACK2_TRIG_OUTPUT, "T2 Trigger");
-        configLight(TRACK2_LIGHT, "T2 Light");
-
-        configParam(TRACK3_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T3 Div/Mult");
-        getParamQuantity(TRACK3_DIVMULT_PARAM)->snapEnabled = true;
-        delete paramQuantities[TRACK3_DIVMULT_PARAM];
-        paramQuantities[TRACK3_DIVMULT_PARAM] = new DivMultParamQuantity;
-        paramQuantities[TRACK3_DIVMULT_PARAM]->module = this;
-        paramQuantities[TRACK3_DIVMULT_PARAM]->paramId = TRACK3_DIVMULT_PARAM;
-        paramQuantities[TRACK3_DIVMULT_PARAM]->minValue = -3.0f;
-        paramQuantities[TRACK3_DIVMULT_PARAM]->maxValue = 3.0f;
-        paramQuantities[TRACK3_DIVMULT_PARAM]->defaultValue = 0.0f;
-        paramQuantities[TRACK3_DIVMULT_PARAM]->name = "T3 Div/Mult";
-        paramQuantities[TRACK3_DIVMULT_PARAM]->snapEnabled = true;
-        configParam(TRACK3_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "T3 Length");
-        getParamQuantity(TRACK3_LENGTH_PARAM)->snapEnabled = true;
-        configParam(TRACK3_FILL_PARAM, 0.0f, 100.0f, 25.0f, "T3 Fill", "%");
-        configParam(TRACK3_SHIFT_PARAM, 0.0f, 31.0f, 0.0f, "T3 Shift");
-        getParamQuantity(TRACK3_SHIFT_PARAM)->snapEnabled = true;
-        configParam(TRACK3_LENGTH_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T3 Length CV");
-        configParam(TRACK3_FILL_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T3 Fill CV");
-        configParam(TRACK3_SHIFT_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T3 Shift CV");
-        configParam(TRACK3_RISE_PARAM, 0.0f, 0.1f, 0.0f, "T3 Rise", "s");
-        configParam(TRACK3_FALL_PARAM, 0.0f, 0.1f, 0.0f, "T3 Fall", "s");
-        configInput(TRACK3_LENGTH_CV_INPUT, "T3 Length CV");
-        configInput(TRACK3_FILL_CV_INPUT, "T3 Fill CV");
-        configInput(TRACK3_SHIFT_CV_INPUT, "T3 Shift CV");
-        configOutput(TRACK3_OUTPUT, "T3 Output");
-        configOutput(TRACK3_TRIG_OUTPUT, "T3 Trigger");
-        configLight(TRACK3_LIGHT, "T3 Light");
+        for (int i = 0; i < 3; ++i) {
+            int paramBase = TRACK1_DIVMULT_PARAM + i * 7;
+            int inputBase = TRACK1_LENGTH_CV_INPUT + i * 3;
+            
+            configParam(paramBase, -3.0f, 3.0f, 0.0f, string::f("T%d Div/Mult", i+1));
+            getParamQuantity(paramBase)->snapEnabled = true;
+            delete paramQuantities[paramBase];
+            paramQuantities[paramBase] = new DivMultParamQuantity;
+            paramQuantities[paramBase]->module = this;
+            paramQuantities[paramBase]->paramId = paramBase;
+            paramQuantities[paramBase]->minValue = -3.0f;
+            paramQuantities[paramBase]->maxValue = 3.0f;
+            paramQuantities[paramBase]->defaultValue = 0.0f;
+            paramQuantities[paramBase]->name = string::f("T%d Div/Mult", i+1);
+            paramQuantities[paramBase]->snapEnabled = true;
+            
+            configParam(paramBase + 1, 1.0f, 32.0f, 16.0f, string::f("T%d Length", i+1));
+            getParamQuantity(paramBase + 1)->snapEnabled = true;
+            configParam(paramBase + 2, 0.0f, 100.0f, 25.0f, string::f("T%d Fill", i+1), "%");
+            configParam(paramBase + 3, 0.0f, 31.0f, 0.0f, string::f("T%d Shift", i+1));
+            getParamQuantity(paramBase + 3)->snapEnabled = true;
+            configParam(paramBase + 4, -1.0f, 1.0f, 0.0f, string::f("T%d Length CV", i+1));
+            configParam(paramBase + 5, -1.0f, 1.0f, 0.0f, string::f("T%d Fill CV", i+1));
+            configParam(paramBase + 6, -1.0f, 1.0f, 0.0f, string::f("T%d Shift CV", i+1));
+            
+            configInput(inputBase, string::f("T%d Length CV", i+1));
+            configInput(inputBase + 1, string::f("T%d Fill CV", i+1));
+            configInput(inputBase + 2, string::f("T%d Shift CV", i+1));
+            configOutput(TRACK1_TRIG_OUTPUT + i, string::f("T%d Trigger", i+1));
+            configLight(TRACK1_LIGHT + i, string::f("T%d Light", i+1));
+        }
         
-        configOutput(MASTER_OUTPUT, "Master Mix Output");
         configOutput(MASTER_TRIG_OUTPUT, "Master Trigger Sum");
+        configOutput(CHAIN_12_OUTPUT, "Chain 1+2");
+        configOutput(CHAIN_23_OUTPUT, "Chain 2+3");
+        configOutput(CHAIN_123_OUTPUT, "Chain 1+2+3");
+        
+        configLight(OR_RED_LIGHT, "OR Red Light");
+        configLight(OR_GREEN_LIGHT, "OR Green Light");
+        configLight(OR_BLUE_LIGHT, "OR Blue Light");
     }
 
     void onReset() override {
+        secondsSinceLastClock = -1.0f;
+        globalClockSeconds = 0.5f;
         for (int i = 0; i < 3; ++i) {
             tracks[i].reset();
         }
+        chain12.reset();
+        chain23.reset();
+        chain123.reset();
     }
 
     void process(const ProcessArgs& args) override {
@@ -338,10 +567,9 @@ struct EuclideanRhythm : Module {
         bool globalClockTriggered = false;
         bool globalResetTriggered = false;
         bool manualResetTriggered = false;
-        float clockVoltage = 0.0f;
         
         if (globalClockActive) {
-            clockVoltage = inputs[GLOBAL_CLOCK_INPUT].getVoltage();
+            float clockVoltage = inputs[GLOBAL_CLOCK_INPUT].getVoltage();
             globalClockTriggered = clockTrigger.process(clockVoltage);
         }
         
@@ -351,104 +579,67 @@ struct EuclideanRhythm : Module {
         
         manualResetTriggered = manualResetTrigger.process(params[MANUAL_RESET_PARAM].getValue());
         
+        if (globalResetTriggered || manualResetTriggered) {
+            onReset();
+            return;
+        }
+        
         if (globalClockTriggered) {
-            float currentTime = args.sampleTime * args.frame;
-            if (lastClockTime > 0.f) {
-                clockInterval = currentTime - lastClockTime;
-                clockInterval = clamp(clockInterval, 0.01f, 10.0f);
+            if (secondsSinceLastClock > 0.0f) {
+                globalClockSeconds = secondsSinceLastClock;
+                globalClockSeconds = clamp(globalClockSeconds, 0.01f, 10.0f);
             }
-            lastClockTime = currentTime;
+            secondsSinceLastClock = 0.0f;
+        }
+        
+        if (secondsSinceLastClock >= 0.0f) {
+            secondsSinceLastClock += args.sampleTime;
         }
 
         for (int i = 0; i < 3; ++i) {
             TrackState& track = tracks[i];
             
-            if (globalResetTriggered || manualResetTriggered) {
-                track.reset();
-            }
-            
-            track.divMultValue = (int)std::round(params[TRACK1_DIVMULT_PARAM + i * 9].getValue());
-            
-            if (track.divMultValue > 0) {
-                track.trackInterval = clockInterval / (track.divMultValue + 1);
-            } else if (track.divMultValue < 0) {
-                track.trackInterval = clockInterval * (-track.divMultValue + 1);
-            } else {
-                track.trackInterval = clockInterval;
-            }
+            int divMultParam = (int)std::round(params[TRACK1_DIVMULT_PARAM + i * 7].getValue());
+            track.updateDivMult(divMultParam);
 
-            float lengthParam = params[TRACK1_LENGTH_PARAM + i * 9].getValue();
+            float lengthParam = params[TRACK1_LENGTH_PARAM + i * 7].getValue();
             float lengthCV = 0.0f;
             if (inputs[TRACK1_LENGTH_CV_INPUT + i * 3].isConnected()) {
-                float lengthCVAtten = params[TRACK1_LENGTH_CV_ATTEN_PARAM + i * 9].getValue();
+                float lengthCVAtten = params[TRACK1_LENGTH_CV_ATTEN_PARAM + i * 7].getValue();
                 lengthCV = inputs[TRACK1_LENGTH_CV_INPUT + i * 3].getVoltage() * lengthCVAtten;
             }
             track.length = (int)std::round(clamp(lengthParam + lengthCV, 1.0f, 32.0f));
 
-            float fillParam = params[TRACK1_FILL_PARAM + i * 9].getValue();
+            float fillParam = params[TRACK1_FILL_PARAM + i * 7].getValue();
             float fillCV = 0.0f;
             if (inputs[TRACK1_FILL_CV_INPUT + i * 3].isConnected()) {
-                float fillCVAtten = params[TRACK1_FILL_CV_ATTEN_PARAM + i * 9].getValue();
+                float fillCVAtten = params[TRACK1_FILL_CV_ATTEN_PARAM + i * 7].getValue();
                 fillCV = inputs[TRACK1_FILL_CV_INPUT + i * 3].getVoltage() * fillCVAtten * 10.0f;
             }
             float fillPercentage = clamp(fillParam + fillCV, 0.0f, 100.0f);
             track.fill = (int)std::round((fillPercentage / 100.0f) * track.length);
 
-            float shiftParam = params[TRACK1_SHIFT_PARAM + i * 9].getValue();
+            float shiftParam = params[TRACK1_SHIFT_PARAM + i * 7].getValue();
             float shiftCV = 0.0f;
             if (inputs[TRACK1_SHIFT_CV_INPUT + i * 3].isConnected()) {
-                float shiftCVAtten = params[TRACK1_SHIFT_CV_ATTEN_PARAM + i * 9].getValue();
+                float shiftCVAtten = params[TRACK1_SHIFT_CV_ATTEN_PARAM + i * 7].getValue();
                 shiftCV = inputs[TRACK1_SHIFT_CV_INPUT + i * 3].getVoltage() * shiftCVAtten;
             }
             track.shift = (int)std::round(clamp(shiftParam + shiftCV, 0.0f, (float)track.length - 1.0f));
 
-            float riseTime = params[TRACK1_RISE_PARAM + i * 9].getValue();
-            float fallTime = params[TRACK1_FALL_PARAM + i * 9].getValue();
-            track.slewLimiter.setRiseTime(riseTime);
-            track.slewLimiter.setFallTime(fallTime);
-
-            track.internalClock += args.sampleTime;
-            bool trackClockTrigger = false;
-            if (track.internalClock >= track.trackInterval) {
-                track.internalClock -= track.trackInterval;
-                trackClockTrigger = true;
-            }
-            
             track.pattern = generateEuclideanRhythm(track.length, track.fill, track.shift);
 
-            if (trackClockTrigger && !track.pattern.empty()) {
-                track.currentStep = (track.currentStep + 1) % track.length;
-                track.gateState = track.pattern[track.currentStep];
-                if (track.gateState && globalClockActive) {
-                    track.trigPulse.trigger(0.001f);
-                }
+            bool trackClockTrigger = track.processClockDivMult(globalClockTriggered, globalClockSeconds, args.sampleTime);
+
+            if (trackClockTrigger && !track.pattern.empty() && globalClockActive) {
+                track.stepTrack();
             }
-            
-            float rawOutput = 0.0f;
-            if (track.gateState && globalClockActive) {
-                float pulseWidth = track.trackInterval * 0.5f;
-                float timeInCycle = track.internalClock;
-                if (timeInCycle < pulseWidth) {
-                    rawOutput = 10.0f;
-                }
-            }
-            
-            float outputVoltage = track.slewLimiter.process(args.sampleTime, rawOutput);
-            
-            outputs[TRACK1_OUTPUT + i].setVoltage(outputVoltage);
             
             float trigOutput = track.trigPulse.process(args.sampleTime) ? 10.0f : 0.0f;
             outputs[TRACK1_TRIG_OUTPUT + i].setVoltage(trigOutput);
             
             lights[TRACK1_LIGHT + i].setBrightness(track.gateState ? 1.0f : 0.0f);
         }
-        
-        float masterMix = 0.0f;
-        for (int i = 0; i < 3; ++i) {
-            float trackVoltage = outputs[TRACK1_OUTPUT + i].getVoltage();
-            masterMix += trackVoltage * 0.4f;
-        }
-        outputs[MASTER_OUTPUT].setVoltage(masterMix);
         
         float masterTrigSum = 0.0f;
         for (int i = 0; i < 3; ++i) {
@@ -458,6 +649,46 @@ struct EuclideanRhythm : Module {
             }
         }
         outputs[MASTER_TRIG_OUTPUT].setVoltage(masterTrigSum);
+        
+        bool track1Active = outputs[TRACK1_TRIG_OUTPUT].getVoltage() > 0.0f;
+        bool track2Active = outputs[TRACK2_TRIG_OUTPUT].getVoltage() > 0.0f;
+        bool track3Active = outputs[TRACK3_TRIG_OUTPUT].getVoltage() > 0.0f;
+        
+        if (track1Active) {
+            orRedPulse.trigger(0.03f);
+        }
+        if (track2Active) {
+            orGreenPulse.trigger(0.03f);
+        }
+        if (track3Active) {
+            orBluePulse.trigger(0.03f);
+        }
+        
+        lights[OR_RED_LIGHT].setBrightness(orRedPulse.process(args.sampleTime) ? 1.0f : 0.0f);
+        lights[OR_GREEN_LIGHT].setBrightness(orGreenPulse.process(args.sampleTime) ? 1.0f : 0.0f);
+        lights[OR_BLUE_LIGHT].setBrightness(orBluePulse.process(args.sampleTime) ? 1.0f : 0.0f);
+        
+        if (globalClockActive) {
+            float chain12Output = chain12.processStep(tracks, args.sampleTime, globalClockTriggered);
+            outputs[CHAIN_12_OUTPUT].setVoltage(chain12Output);
+            
+            float chain23Output = chain23.processStep(tracks, args.sampleTime, globalClockTriggered);
+            outputs[CHAIN_23_OUTPUT].setVoltage(chain23Output);
+            
+            float chain123Output = chain123.processStep(tracks, args.sampleTime, globalClockTriggered);
+            outputs[CHAIN_123_OUTPUT].setVoltage(chain123Output);
+            
+            lights[CHAIN_12_T1_LIGHT].setBrightness(chain12.currentTrackIndex == 0 ? 1.0f : 0.0f);
+            lights[CHAIN_12_T2_LIGHT].setBrightness(chain12.currentTrackIndex == 1 ? 1.0f : 0.0f);
+            
+            lights[CHAIN_23_T2_LIGHT].setBrightness(chain23.currentTrackIndex == 0 ? 1.0f : 0.0f);
+            lights[CHAIN_23_T3_LIGHT].setBrightness(chain23.currentTrackIndex == 1 ? 1.0f : 0.0f);
+            
+            int activeTrack123 = chain123.trackIndices[chain123.currentTrackIndex];
+            lights[CHAIN_123_T1_LIGHT].setBrightness(activeTrack123 == 0 ? 1.0f : 0.0f);
+            lights[CHAIN_123_T2_LIGHT].setBrightness(activeTrack123 == 1 ? 1.0f : 0.0f);
+            lights[CHAIN_123_T3_LIGHT].setBrightness(activeTrack123 == 2 ? 1.0f : 0.0f);
+        }
     }
 };
 
@@ -486,55 +717,65 @@ struct EuclideanRhythmWidget : ModuleWidget {
             float x = 1;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "LEN", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<RoundSmallBlackKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 9));
+            addParam(createParamCentered<SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 7));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_LENGTH_CV_INPUT + i * 3));
-            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_LENGTH_CV_ATTEN_PARAM + i * 9));
+            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_LENGTH_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "FILL", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<RoundSmallBlackKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 9));
+            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 7));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_FILL_CV_INPUT + i * 3));
-            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_FILL_CV_ATTEN_PARAM + i * 9));
+            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_FILL_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "SHFT", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<RoundSmallBlackKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 9));
+            addParam(createParamCentered<SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 7));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_SHIFT_CV_INPUT + i * 3));
-            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_SHIFT_CV_ATTEN_PARAM + i * 9));
+            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_SHIFT_CV_ATTEN_PARAM + i * 7));
             x += 30;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "D/M", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<RoundSmallBlackKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_DIVMULT_PARAM + i * 9));
+            addParam(createParamCentered<SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_DIVMULT_PARAM + i * 7));
+        }
+        
+        for (int i = 0; i < 3; ++i) {
+            float y = trackY[i];
+            float outputX = 106;
+            float outputY = y + 69;
             
-            addChild(new EnhancedTextLabel(Vec(x, y + 35), Vec(25, 10), "SLEW", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 52), module, EuclideanRhythm::TRACK1_RISE_PARAM + i * 9));
-            addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 70), module, EuclideanRhythm::TRACK1_FALL_PARAM + i * 9));
+            addChild(new EnhancedTextLabel(Vec(outputX - 12, outputY - 21), Vec(25, 10), "OUT " + std::to_string(i + 1), 7.f, nvgRGB(255, 255, 255), true));
+            addOutput(createOutputCentered<PJ301MPort>(Vec(outputX, outputY), module, EuclideanRhythm::TRACK1_TRIG_OUTPUT + i));
         }
         
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, box.size.y - 325)));
         
-        float outputY = 343;
+        float chainOutputY = 358;
+        float chainPositions[3] = {13, 44, 75};
+        
+        addChild(new EnhancedTextLabel(Vec(chainPositions[0] - 12, chainOutputY - 21), Vec(25, 10), "1+2", 7.f, nvgRGB(255, 133, 133), true));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(chainPositions[0], chainOutputY), module, EuclideanRhythm::CHAIN_12_OUTPUT));
+        addChild(createLightCentered<SmallLight<RedLight>>(Vec(chainPositions[0] - 8, chainOutputY + 17), module, EuclideanRhythm::CHAIN_12_T1_LIGHT));
+        addChild(createLightCentered<SmallLight<GreenLight>>(Vec(chainPositions[0] + 8, chainOutputY + 17), module, EuclideanRhythm::CHAIN_12_T2_LIGHT));
+        
+        addChild(new EnhancedTextLabel(Vec(chainPositions[1] - 12, chainOutputY - 21), Vec(25, 10), "2+3", 7.f, nvgRGB(255, 133, 133), true));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(chainPositions[1], chainOutputY), module, EuclideanRhythm::CHAIN_23_OUTPUT));
+        addChild(createLightCentered<SmallLight<GreenLight>>(Vec(chainPositions[1] - 8, chainOutputY + 17), module, EuclideanRhythm::CHAIN_23_T2_LIGHT));
+        addChild(createLightCentered<SmallLight<BlueLight>>(Vec(chainPositions[1] + 8, chainOutputY + 17), module, EuclideanRhythm::CHAIN_23_T3_LIGHT));
+        
+        addChild(new EnhancedTextLabel(Vec(chainPositions[2] - 12, chainOutputY - 21), Vec(25, 10), "1213", 7.f, nvgRGB(255, 133, 133), true));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(chainPositions[2], chainOutputY), module, EuclideanRhythm::CHAIN_123_OUTPUT));
+        addChild(createLightCentered<SmallLight<RedLight>>(Vec(chainPositions[2] - 10, chainOutputY + 17), module, EuclideanRhythm::CHAIN_123_T1_LIGHT));
+        addChild(createLightCentered<SmallLight<GreenLight>>(Vec(chainPositions[2], chainOutputY + 17), module, EuclideanRhythm::CHAIN_123_T2_LIGHT));
+        addChild(createLightCentered<SmallLight<BlueLight>>(Vec(chainPositions[2] + 10, chainOutputY + 17), module, EuclideanRhythm::CHAIN_123_T3_LIGHT));
+        
+        float outputY = 358;
         float outputSpacing = 31;
         float startX = 13;
         
-        for (int i = 0; i < 3; ++i) {
-            float outputX = startX + i * outputSpacing;
-            addChild(new EnhancedTextLabel(Vec(outputX - 12, 322), Vec(25, 10), "OUT " + std::to_string(i + 1), 7.f, nvgRGB(255, 255, 255), true));
-            addOutput(createOutputCentered<PJ301MPort>(Vec(outputX, outputY), module, EuclideanRhythm::TRACK1_OUTPUT + i));
-        }
-        
         float mixX = startX + 3 * outputSpacing - 2;
-        addChild(new EnhancedTextLabel(Vec(mixX - 12, 322), Vec(25, 10), "SUM", 7.f, nvgRGB(255, 255, 255), true));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(mixX, outputY), module, EuclideanRhythm::MASTER_OUTPUT));
-        
-        float trigY = 368;
-        
-        for (int i = 0; i < 3; ++i) {
-            float outputX = startX + i * outputSpacing;
-            addOutput(createOutputCentered<PJ301MPort>(Vec(outputX, trigY), module, EuclideanRhythm::TRACK1_TRIG_OUTPUT + i));
-        }
-        
-        addOutput(createOutputCentered<PJ301MPort>(Vec(mixX, trigY), module, EuclideanRhythm::MASTER_TRIG_OUTPUT));
+        addChild(new EnhancedTextLabel(Vec(mixX - 12, 337), Vec(25, 10), "OR", 7.f, nvgRGB(255, 133, 133), true));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(mixX, outputY), module, EuclideanRhythm::MASTER_TRIG_OUTPUT));
+        addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(Vec(mixX + 8, outputY + 17), module, EuclideanRhythm::OR_RED_LIGHT));
     }
 };
 

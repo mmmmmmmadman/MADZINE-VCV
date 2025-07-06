@@ -7,6 +7,12 @@ void init(Plugin* p) {
 
     // Add all Models defined in the module files
     p->addModel(modelSwingLFO);
-    p->addModel(modelSwingLiFO);
     p->addModel(modelEuclideanRhythm);
+    p->addModel(modelADGenerator);
+    p->addModel(modelPinpple);
+    p->addModel(modelPPaTTTerning);
+    p->addModel(modelMADDY);
+    p->addModel(modelTWNC);
+    p->addModel(modelQQ);
+    p->addModel(modelObserver);
 }
