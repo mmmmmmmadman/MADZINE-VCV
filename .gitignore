@@ -10,3 +10,6 @@
 /build
 /dep
 /dist
+build/
+plugin.dylib
+.DS_Store
