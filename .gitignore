@@ -13,3 +13,5 @@
 build/
 plugin.dylib
 .DS_Store
+build/
+plugin.dylib
