@@ -1,0 +1,21 @@
+# 編譯產物
+*.dylib
+*.so
+*.dll
+*.o
+*.a
+build/
+dist/
+dist_*/
+dep/
+
+# macOS
+.DS_Store
+*.dSYM/
+
+# IDE
+.vscode/
+.idea/
+
+# 其他
+*.log
