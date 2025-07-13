@@ -11,6 +11,7 @@ A collection of modules for VCV Rack, including LFOs, sequencers, drum synthesiz
 - **PPaTTTerning**: Pattern-based CV sequencer with style and density control
 - **MADDY**: Integrated sequencer with swing clock and 3-track Euclidean rhythm generator
 - **TWNC**: Dual-track Euclidean rhythm generator for techno sequences
+- **TWNC Light**: Simplified version of TWNC with accent system
 - **QQ**: 3-track S-Curve Decay Trigger envelope generator with CV control
 - **Observer**: 8-track color scope module for waveform visualization
 
