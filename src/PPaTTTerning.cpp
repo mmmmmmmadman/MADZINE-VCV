@@ -55,6 +55,11 @@ struct PPaTTTerning : Module {
     float previousVoltage = -999.0f;
     int styleMode = 1;
     
+    // CPU 最佳化：參數變化檢測（模仿 MADDY 策略）
+    float lastDensity = -1.0f;
+    float lastChaos = -1.0f;
+    bool mappingNeedsUpdate = true;
+    
     static const int MAX_DELAY = 8;
     float cvHistory[MAX_DELAY];
     int historyIndex = 0, track2Delay = 1;
@@ -141,6 +146,8 @@ struct PPaTTTerning : Module {
         }
         
         updateOutputDescriptions();
+        // 重新載入後需要重新生成映射
+        mappingNeedsUpdate = true;
     }
 
     void generateMapping() {
@@ -217,9 +224,20 @@ struct PPaTTTerning : Module {
     }
 
     void process(const ProcessArgs& args) override {
+        // CPU 最佳化關鍵：只在參數真正改變時重新計算映射
+        float currentDensity = params[DENSITY_PARAM].getValue();
+        float currentChaos = params[CHAOS_PARAM].getValue();
+        
+        if (currentDensity != lastDensity || currentChaos != lastChaos || mappingNeedsUpdate) {
+            generateMapping();
+            lastDensity = currentDensity;
+            lastChaos = currentChaos;
+            mappingNeedsUpdate = false;
+        }
+        
         if (resetTrigger.process(inputs[RESET_INPUT].getVoltage())) {
             currentStep = 0;
-            generateMapping();
+            mappingNeedsUpdate = true; // 重置時標記需要更新
             previousVoltage = -999.0f;
             for (int i = 0; i < MAX_DELAY; i++) cvHistory[i] = 0.0f;
             for (int i = 0; i < CVD_BUFFER_SIZE; i++) cvdBuffer[i] = 0.0f;
@@ -230,7 +248,7 @@ struct PPaTTTerning : Module {
         if (styleTrigger.process(params[STYLE_PARAM].getValue())) {
             styleMode = (styleMode + 1) % 3;
             params[STYLE_PARAM].setValue((float)styleMode);
-            generateMapping();
+            mappingNeedsUpdate = true; // 模式改變時標記需要更新
         }
         
         if (delayTrigger.process(params[DELAY_PARAM].getValue())) {
@@ -254,8 +272,9 @@ struct PPaTTTerning : Module {
             float voltage = params[K1_PARAM + activeKnob].getValue();
             cvHistory[historyIndex] = voltage;
             
+            // CPU 最佳化關鍵：移除這裡的 generateMapping() 調用！
             currentStep = (currentStep + 1) % sequenceLength;
-            generateMapping();
+            // generateMapping(); // 這行被移除了！
             
             int newActiveKnob = stepToKnobMapping[currentStep];
             float newVoltage = params[K1_PARAM + newActiveKnob].getValue();

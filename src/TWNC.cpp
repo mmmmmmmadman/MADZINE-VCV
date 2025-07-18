@@ -107,14 +107,6 @@ public:
     }
 
 protected:
-    struct CascadedSOS
-    {
-        float sample_rate;
-        int oversampling_factor;
-        int num_sections;
-        const SOSCoefficients* coeffs;
-    };
-
     static constexpr int kMaxNumSections = 7;
 
     SOSFilter<T, kMaxNumSections> up_filter_;
@@ -140,40 +132,6 @@ protected:
 };
 
 }
-
-static const float kFreqKnobMin = 20.f;
-static const float kFreqKnobMax = 20000.f;
-static const float kFreqKnobVoltage = std::log2f(kFreqKnobMax / kFreqKnobMin);
-
-static const float kResInputR = 22e3f;
-static const float kResKnobV = 12.f;
-static const float kResKnobR = 62e3f;
-static const float kResAmpR = 47e3f;
-static const float kResAmpC = 560e-12f;
-
-static const float kFilterMaxCutoff = kFreqKnobMax;
-static const float kFilterCellR = 33e3f;
-static const float kFilterCellRC = 1.f / (2.f * M_PI * kFilterMaxCutoff);
-static const float kFilterCellC = kFilterCellRC / kFilterCellR;
-static const float kFilterInputR = 100e3f;
-static const float kFilterInputGain = kFilterCellR / kFilterInputR;
-static const float kFilterCellSelfModulation = 0.01f;
-
-static const float kFeedbackRt = 22e3f;
-static const float kFeedbackRb = 1e3f;
-static const float kFeedbackR = kFeedbackRt + kFeedbackRb;
-static const float kFeedbackGain = kFeedbackRb / kFeedbackR;
-
-static const float kFeedforwardRt = 300e3f;
-static const float kFeedforwardRb = 1e3f;
-static const float kFeedforwardR = kFeedforwardRt + kFeedforwardRb;
-static const float kFeedforwardGain = kFeedforwardRb / kFeedforwardR;
-static const float kFeedforwardC = 220e-9f;
-
-static const float kBP2Gain = -100e3f / 39e3f;
-
-static const float kVtoICollectorVSat = -10.f;
-static const float kOpampSatV = 10.6f;
 
 struct TechnoEnhancedTextLabel : TransparentWidget {
     std::string text;
@@ -448,7 +406,7 @@ std::vector<bool> generateTechnoEuclideanRhythm(int length, int fill, int shift)
     return pattern;
 }
 
-template <int QUALITY = 8>
+template <int QUALITY = 6>
 struct PinkNoiseGenerator {
     int frame = -1;
     float values[QUALITY] = {};
@@ -539,36 +497,6 @@ struct UnifiedEnvelope {
     
     float getTrigger(float sampleTime) {
         return trigPulse.process(sampleTime) ? 10.0f : 0.0f;
-    }
-};
-
-struct SimpleLPG {
-    dsp::SchmittTrigger trigger;
-    dsp::BiquadFilter lpf;
-    UnifiedEnvelope envelope;
-    float sampleRate = 44100.0f;
-    
-    void setSampleRate(float sr) {
-        sampleRate = sr;
-    }
-    
-    void reset() {
-        trigger.reset();
-        envelope.reset();
-    }
-    
-    float process(float triggerInput, float decayParam, float input, float vcaAmount, float sampleTime) {
-        float decayTime = 0.001f + decayParam * 0.399f;
-        float shapeParam = 0.5f;
-        
-        float env = envelope.process(sampleTime, triggerInput, decayTime, shapeParam);
-        
-        float cutoffFreq = 200.0f + env * 18000.0f;
-        lpf.setParameters(dsp::BiquadFilter::LOWPASS, cutoffFreq / sampleRate, 0.707f, 1.0f);
-        
-        float filtered = lpf.process(input);
-        float level = vcaAmount * env;
-        return filtered * level;
     }
 };
 
@@ -667,11 +595,10 @@ struct TWNC : Module {
     
     OversampledSineVCO sineVCO;
     OversampledSineVCO sineVCO2;
-    PinkNoiseGenerator<8> pinkNoiseGenerator;
-    PinkNoiseGenerator<8> pinkNoiseGenerator2;
+    PinkNoiseGenerator<6> pinkNoiseGenerator;
+    PinkNoiseGenerator<6> pinkNoiseGenerator2;
     float lastPink = 0.0f;
     float lastPink2 = 0.0f;
-    SimpleLPG lpg;
 
     struct QuarterNoteClock {
         int currentStep = 0;
@@ -830,9 +757,9 @@ struct TWNC : Module {
         configParam(MANUAL_RESET_PARAM, 0.0f, 1.0f, 0.0f, "Manual Reset");
         
         configParam(TRACK1_FILL_PARAM, 0.0f, 100.0f, 25.0f, "Track 1 Fill", "%");
-        configParam(TRACK1_FREQ_PARAM, std::log2(kFreqKnobMin), std::log2(kFreqKnobMax), std::log2(1000.0f), "Track 1 Frequency", " Hz", 2.f);
+        configParam(TRACK1_FREQ_PARAM, std::log2(20.0f), std::log2(20000.0f), std::log2(1000.0f), "Track 1 Frequency", " Hz", 2.f);
         configParam(TRACK1_FM_AMT_PARAM, 0.0f, 1.0f, 0.5f, "Track 1 FM Amount");
-        configParam(TRACK1_NOISE_MIX_PARAM, 0.0f, 1.0f, 0.5f, "Track 1 Noise Mix");
+        configParam(TRACK1_NOISE_MIX_PARAM, 0.0f, 1.0f, 0.0f, "Track 1 Noise Mix");
         
         configParam(VCA_SHIFT_PARAM, 1.0f, 7.0f, 1.0f, "VCA Shift");
         getParamQuantity(VCA_SHIFT_PARAM)->snapEnabled = true;
@@ -866,7 +793,7 @@ struct TWNC : Module {
         paramQuantities[TRACK2_DIVMULT_PARAM]->name = "Track 2 Div/Mult";
         paramQuantities[TRACK2_DIVMULT_PARAM]->snapEnabled = true;
         
-        configParam(TRACK2_FREQ_PARAM, std::log2(kFreqKnobMin), std::log2(kFreqKnobMax), std::log2(800.0f), "Track 2 Frequency", " Hz", 2.f);
+        configParam(TRACK2_FREQ_PARAM, std::log2(20.0f), std::log2(20000.0f), std::log2(800.0f), "Track 2 Frequency", " Hz", 2.f);
         configParam(TRACK2_DECAY_PARAM, 0.01f, 2.0f, 0.3f, "Track 2 Decay", " s");
         configParam(TRACK2_SHAPE_PARAM, 0.0f, 0.99f, 0.5f, "Track 2 Shape");
         configParam(TRACK2_NOISE_FM_PARAM, 0.0f, 1.0f, 0.0f, "Track 2 Noise FM");
@@ -882,14 +809,12 @@ struct TWNC : Module {
         
         sineVCO.setSampleRate(44100.0f);
         sineVCO2.setSampleRate(44100.0f);
-        lpg.setSampleRate(44100.0f);
     }
 
     void onSampleRateChange() override {
         float sr = APP->engine->getSampleRate();
         sineVCO.setSampleRate(sr);
         sineVCO2.setSampleRate(sr);
-        lpg.setSampleRate(sr);
     }
 
     void onReset() override {
@@ -900,7 +825,6 @@ struct TWNC : Module {
         }
         quarterClock.reset();
         mainVCA.reset();
-        lpg.reset();
     }
 
     void process(const ProcessArgs& args) override {
@@ -978,6 +902,10 @@ struct TWNC : Module {
             
             if (i == 0) {
                 float decayParam = params[TRACK1_DECAY_PARAM].getValue();
+                if (inputs[DRUM_DECAY_CV_INPUT].isConnected()) {
+                    decayParam += inputs[DRUM_DECAY_CV_INPUT].getVoltage() / 10.0f;
+                    decayParam = clamp(decayParam, 0.01f, 2.0f);
+                }
                 float shapeParam = params[TRACK1_SHAPE_PARAM].getValue();
                 
                 float triggerOutput = track.trigPulse.process(args.sampleTime) ? 10.0f : 0.0f;
@@ -993,16 +921,19 @@ struct TWNC : Module {
                 pinkNoise *= noiseGain * 0.8f;
                 blueNoise *= noiseGain * 1.5f;
                 
-                float selectedNoise = (noiseMixParam < 0.5f) ? pinkNoise : blueNoise;
-                float noiseFMAmount = noiseMixParam;
-                float scaledNoiseInput = selectedNoise * noiseFMAmount;
+                float mixedNoise = pinkNoise * (1.0f - noiseMixParam) + blueNoise * noiseMixParam;
                 
                 float fmAmount = params[TRACK1_FM_AMT_PARAM].getValue();
-                float processedFM = lpg.process(triggerOutput, 0.001f + decayParam * 0.399f, scaledNoiseInput, fmAmount, args.sampleTime);
                 
-                float freqParam = std::pow(2.0f, params[TRACK1_FREQ_PARAM].getValue());
+                float freqParam = params[TRACK1_FREQ_PARAM].getValue();
+                if (inputs[DRUM_FREQ_CV_INPUT].isConnected()) {
+                    freqParam += inputs[DRUM_FREQ_CV_INPUT].getVoltage();
+                }
+                freqParam = std::pow(2.0f, freqParam);
+                
                 float envelopeFM = envelopeOutput * fmAmount * 4.0f;
-                float totalFM = envelopeFM + processedFM;
+                float noiseFM = mixedNoise * noiseMixParam * 0.5f;
+                float totalFM = envelopeFM + noiseFM;
                 
                 float audioOutput = sineVCO.process(freqParam, totalFM);
                 
@@ -1011,7 +942,7 @@ struct TWNC : Module {
                 float vcaDecayParam = params[VCA_DECAY_PARAM].getValue();
                 float mainVCAOutput = mainVCA.process(args.sampleTime, vcaTrigger, vcaDecayParam, 0.5f);
                 
-                float finalAudioOutput = audioOutput * vcaEnvelopeOutput * mainVCAOutput;
+                float finalAudioOutput = audioOutput * vcaEnvelopeOutput * mainVCAOutput * 1.4f;
                 outputs[TRACK1_OUTPUT].setVoltage(finalAudioOutput);
                 
                 outputs[MAIN_VCA_ENV_OUTPUT].setVoltage(mainVCAOutput * 10.0f);
@@ -1022,6 +953,10 @@ struct TWNC : Module {
                 }
             } else {
                 float decayParam = params[TRACK2_DECAY_PARAM].getValue();
+                if (inputs[HATS_DECAY_CV_INPUT].isConnected()) {
+                    decayParam += inputs[HATS_DECAY_CV_INPUT].getVoltage() / 10.0f;
+                    decayParam = clamp(decayParam, 0.01f, 2.0f);
+                }
                 float shapeParam = params[TRACK2_SHAPE_PARAM].getValue();
                 
                 float triggerOutput = track.trigPulse.process(args.sampleTime) ? 10.0f : 0.0f;
@@ -1042,12 +977,16 @@ struct TWNC : Module {
                     noiseBlend = selectedNoise2 * noiseFMParam * 0.5f;
                 }
                 
-                float freqParam = std::pow(2.0f, params[TRACK2_FREQ_PARAM].getValue());
+                float freqParam = params[TRACK2_FREQ_PARAM].getValue();
+                if (inputs[HATS_FREQ_CV_INPUT].isConnected()) {
+                    freqParam += inputs[HATS_FREQ_CV_INPUT].getVoltage();
+                }
+                freqParam = std::pow(2.0f, freqParam);
                 float audioOutput = sineVCO2.process(freqParam, noiseBlend);
                 
                 float vcaEnvelopeOutput = track.vcaEnvelope.process(args.sampleTime, triggerOutput, decayParam * 0.5f, shapeParam);
                 
-                float finalAudioOutput = audioOutput * vcaEnvelopeOutput;
+                float finalAudioOutput = audioOutput * vcaEnvelopeOutput * 0.7f;
                 outputs[TRACK2_OUTPUT].setVoltage(finalAudioOutput);
                 
                 outputs[TRACK2_VCA_ENV_OUTPUT].setVoltage(vcaEnvelopeOutput * 10.0f);
