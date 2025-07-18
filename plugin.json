@@ -16,13 +16,13 @@
       "slug": "SwingLFO",
       "name": "SwingLFO",
       "description": "A dual-waveform LFO with swing and shape control",
-      "tags": ["LFO"]
+      "tags": ["Low-frequency oscillator"]
     },
     {
       "slug": "EuclideanRhythm",
       "name": "Euclidean Rhythm",
       "description": "A three-track Euclidean Rhythm Generator with CV control and Slew",
-      "tags": ["Sequencer", "Clock"]
+      "tags": ["Sequencer", "Clock generator"]
     },
     {
       "slug": "ADGenerator",
@@ -46,25 +46,25 @@
       "slug": "MADDY",
       "name": "MADDY",
       "description": "Integrated sequencer with swing clock and 3-track Euclidean rhythm generator",
-      "tags": ["Sequencer", "Clock", "LFO"]
+      "tags": ["Sequencer", "Clock generator", "Low-frequency oscillator"]
     },
     {
       "slug": "TWNC",
       "name": "TWNC",
       "description": "Dual-track Euclidean rhythm generator for techno sequences",
-      "tags": ["Sequencer", "Clock", "Drum"]
+      "tags": ["Sequencer", "Clock generator", "Drum"]
     },
     {
       "slug": "TWNCLight",
       "name": "TWNC Light",
       "description": "Simplified dual-track Euclidean rhythm generator with envelope control",
-      "tags": ["Sequencer", "Clock", "Envelope generator"]
+      "tags": ["Sequencer", "Clock generator", "Envelope generator"]
     },
     {
       "slug": "TWNC2",
       "name": "TWNC 2",
       "description": "Three-track Euclidean drum machine with Peaks-style drum synthesis",
-      "tags": ["Sequencer", "Clock", "Drum"]
+      "tags": ["Sequencer", "Clock generator", "Drum"]
     },
     {
       "slug": "QQ",
