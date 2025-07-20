@@ -10,7 +10,7 @@ A collection of creative sequencers, drum synthesizers, and utility modules for 
 - **PPaTTTerning** - Pattern-based CV sequencer with style and density control
 - **TWNC** - Dual-track Euclidean rhythm generator for techno sequences
 - **TWNC Light** - Simplified dual-track Euclidean rhythm generator with envelope control
-- **TWNC 2** - Three-track Euclidean drum machine with Peaks-style drum synthesis
+- **TWNC 2** - - A three-track Euclidean drum machine with dedicated drum synthesis capabilities.
 
 ### Oscillators & LFOs
 - **SwingLFO** - Dual-waveform LFO with swing and shape control
