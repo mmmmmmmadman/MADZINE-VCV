@@ -68,6 +68,7 @@ struct PPaTTTerning : Module {
     float cvdBuffer[CVD_BUFFER_SIZE];
     int cvdWriteIndex = 0;
     float sampleRate = 44100.0f;
+    float previousCVDOutput = -999.0f;
     
     PPaTTTerning() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -239,6 +240,7 @@ struct PPaTTTerning : Module {
             currentStep = 0;
             mappingNeedsUpdate = true; // 重置時標記需要更新
             previousVoltage = -999.0f;
+            previousCVDOutput = -999.0f;
             for (int i = 0; i < MAX_DELAY; i++) cvHistory[i] = 0.0f;
             for (int i = 0; i < CVD_BUFFER_SIZE; i++) cvdBuffer[i] = 0.0f;
             historyIndex = 0;
@@ -284,7 +286,6 @@ struct PPaTTTerning : Module {
             
             int delay1Index = (historyIndex - track2Delay + 1 + MAX_DELAY) % MAX_DELAY;
             int delay2Index = (historyIndex - track2Delay + MAX_DELAY) % MAX_DELAY;
-            if (track2Delay > 0 && cvHistory[delay1Index] != cvHistory[delay2Index]) gate2OutPulse.trigger(0.01f);
             
             historyIndex = (historyIndex + 1) % MAX_DELAY;
         }
@@ -319,6 +320,13 @@ struct PPaTTTerning : Module {
             float delayedCV = cvdBuffer[readIndex];
             
             outputs[CV2_OUTPUT].setVoltage(delayedCV);
+        }
+        
+        // CVD trigger logic: trigger when delayed CV changes
+        float currentDelayedCV = outputs[CV2_OUTPUT].getVoltage();
+        if (currentDelayedCV != previousCVDOutput) {
+            gate2OutPulse.trigger(0.01f);
+            previousCVDOutput = currentDelayedCV;
         }
         
         outputs[TRIG2_OUTPUT].setVoltage(gate2OutPulse.process(args.sampleTime) ? 10.0f : 0.0f);
