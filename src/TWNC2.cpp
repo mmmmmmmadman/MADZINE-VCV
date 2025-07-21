@@ -477,7 +477,7 @@ struct TWNC2 : Module {
         float kickEnvCV = clamp(inputs[KICK_ENV_INPUT].getVoltage() / 10.0f, 0.0f, 1.0f);
         float kickAccentCV = clamp(inputs[KICK_ACCENT_INPUT].getVoltage() / 10.0f, 0.0f, 1.0f);
         float duckAmount = params[DUCK_PARAM].getValue();
-        float sidechainCV = 1.0f - (kickAccentCV * duckAmount);
+        float sidechainCV = 1.0f - (kickAccentCV * duckAmount * 3.0f);
         
         float kickVolumeParam = params[KICK_VOLUME_PARAM].getValue();
         float kickPunchAmount = params[KICK_PUNCH_PARAM].getValue();
@@ -578,7 +578,8 @@ struct TWNC2 : Module {
         float hatsVcaDecay = 2.0f - (hatsDecay * 1.5f);
         float hatsVcaCV = std::pow(hatsEnvCV, hatsVcaDecay);
         
-        float hatsFinalOutput = hatsMixed * hatsVcaCV * hatsVolumeParam * sidechain * 0.7f;
+        float hatsReducedSidechain = 0.8f + (sidechainCV * 0.2f);
+        float hatsFinalOutput = hatsMixed * hatsVcaCV * hatsVolumeParam * hatsReducedSidechain * 0.7f;
         
         float hatsQuantized = std::round(hatsFinalOutput * bitRange) / bitRange;
         float hatsDelayed = hatsDelay.process(hatsQuantized, hatsSpread);
