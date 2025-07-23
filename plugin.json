@@ -1,7 +1,7 @@
 {
   "slug": "MADZINE",
   "name": "MADZINE",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "license": "GPL-3.0-or-later",
   "brand": "MADZINE",
   "author": "MAD",
@@ -51,7 +51,7 @@
     {
       "slug": "TWNC",
       "name": "TWNC",
-      "description": "Dual-track Euclidean rhythm generator for techno sequences",
+      "description": "Dual-track Euclidean rhythm generator with drum and hi-hats synthesis",
       "tags": ["Sequencer", "Clock generator", "Drum"]
     },
     {
@@ -63,7 +63,7 @@
     {
       "slug": "TWNC2",
       "name": "TWNC 2",
-      "description": "Three-track Euclidean drum machine with Peaks-style drum synthesis",
+      "description": "Three-track Euclidean drum machine with drum synthesis",
       "tags": ["Sequencer", "Clock generator", "Drum"]
     },
     {
@@ -76,6 +76,30 @@
       "slug": "Observer",
       "name": "Observer",
       "description": "8-track color scope module for waveform visualization",
+      "tags": ["Visual", "Utility"]
+    },
+    {
+      "slug": "U8",
+      "name": "U8",
+      "description": "4HP channel processor with gain/saturation, duck control and mute",
+      "tags": ["Mixer", "Utility", "Compressor"]
+    },
+    {
+      "slug": "YAMANOTE",
+      "name": "YAMANOTE",
+      "description": "8HP channel processor with chain, send/return function",
+      "tags": ["Mixer", "Utility"]
+    },
+    {
+      "slug": "KIMO",
+      "name": "KIMO",
+      "description": "Single-track Euclidean drum machine with bass drum synthesis",
+      "tags": ["Sequencer", "Envelope generator", "Drum"]
+    },
+    {
+      "slug": "Obserfour",
+      "name": "Obserfour",
+      "description": "4-track color scope module for waveform visualization",
       "tags": ["Visual", "Utility"]
     }
   ]

@@ -15,6 +15,10 @@ extern Model* modelTWNCLight;
 extern Model* modelTWNC2;
 extern Model* modelQQ;
 extern Model* modelObserver;
+extern Model* modelU8;
+extern Model* modelYAMANOTE;
+extern Model* modelKIMO;
+extern Model* modelObserfour;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;
