@@ -19,6 +19,9 @@ extern Model* modelU8;
 extern Model* modelYAMANOTE;
 extern Model* modelKIMO;
 extern Model* modelObserfour;
+extern Model* modelPyramid;
+extern Model* modelDECAPyramid;
+extern Model* modelKEN;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

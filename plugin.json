@@ -9,7 +9,7 @@
   "authorUrl": "",
   "pluginUrl": "",
   "manualUrl": "",
-  "sourceUrl": "https://github.com/mmmmmmmadman/MADZINE/tree/main/VCVmodule",
+  "sourceUrl": "https://github.com/mmmmmmmadman/MADZINE-VCV",
   "donateUrl": "https://www.patreon.com/c/madzinetw",
   "modules": [
     {
@@ -101,6 +101,24 @@
       "name": "Obserfour",
       "description": "4-track color scope module for waveform visualization",
       "tags": ["Visual", "Utility"]
+    },
+    {
+      "slug": "Pyramid",
+      "name": "Pyramid",
+      "description": "3D panning router",
+      "tags": ["mixer", "Utility"]
+    },
+    {
+      "slug": "DECAPyramid",
+      "name": "DECAPyramid",
+      "description": "8-track 3D panning router with send/return",
+      "tags": ["mixer", "Utility"]
+    },
+    {
+      "slug": "KEN",
+      "name": "KEN",
+      "description": "8-to-2 binaural processor for 3D spatial audio rendering",
+      "tags": ["mixer", "Utility"]
     }
   ]
 }
