@@ -21,4 +21,7 @@ void init(Plugin* p) {
     p->addModel(modelYAMANOTE);
     p->addModel(modelKIMO);
     p->addModel(modelObserfour);
+    p->addModel(modelPyramid);
+    p->addModel(modelDECAPyramid);
+    p->addModel(modelKEN);
 }

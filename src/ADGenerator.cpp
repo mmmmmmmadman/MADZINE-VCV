@@ -387,25 +387,39 @@ struct ADGenerator : Module {
     float bpfGains[3] = {3.0f, 3.0f, 3.0f};
     
     struct BandPassFilter {
-        float lowpass = 0.0f;
-        float highpass = 0.0f;
-        float bandpass = 0.0f;
+        float lowpass1 = 0.0f, highpass1 = 0.0f, bandpass1 = 0.0f;
+        float lowpass2 = 0.0f, highpass2 = 0.0f, bandpass2 = 0.0f;
+        float lowpass3 = 0.0f, highpass3 = 0.0f, bandpass3 = 0.0f;
+        float lowpass4 = 0.0f, highpass4 = 0.0f, bandpass4 = 0.0f;
         
         void reset() {
-            lowpass = 0.0f;
-            highpass = 0.0f;
-            bandpass = 0.0f;
+            lowpass1 = highpass1 = bandpass1 = 0.0f;
+            lowpass2 = highpass2 = bandpass2 = 0.0f;
+            lowpass3 = highpass3 = bandpass3 = 0.0f;
+            lowpass4 = highpass4 = bandpass4 = 0.0f;
         }
         
         float process(float input, float cutoff, float sampleRate) {
             float f = 2.0f * std::sin(M_PI * cutoff / sampleRate);
             f = clamp(f, 0.0f, 1.0f);
             
-            lowpass += f * (input - lowpass);
-            highpass = input - lowpass;
-            bandpass += f * (highpass - bandpass);
+            lowpass1 += f * (input - lowpass1);
+            highpass1 = input - lowpass1;
+            bandpass1 += f * (highpass1 - bandpass1);
             
-            return bandpass;
+            lowpass2 += f * (bandpass1 - lowpass2);
+            highpass2 = bandpass1 - lowpass2;
+            bandpass2 += f * (highpass2 - bandpass2);
+            
+            lowpass3 += f * (bandpass2 - lowpass3);
+            highpass3 = bandpass2 - lowpass3;
+            bandpass3 += f * (highpass3 - bandpass3);
+            
+            lowpass4 += f * (bandpass3 - lowpass4);
+            highpass4 = bandpass3 - lowpass4;
+            bandpass4 += f * (highpass4 - bandpass4);
+            
+            return bandpass4;
         }
     };
     
@@ -627,7 +641,7 @@ struct ADGenerator : Module {
             configParam(TRACK1_CURVE_PARAM + i * 6, -0.99f, 0.99f, 0.0f, string::f("Track %d Curve", i + 1));
             configParam(TRACK1_BPF_ENABLE_PARAM + i * 6, 0.0f, 1.0f, 0.0f, string::f("Track %d BPF Enable", i + 1));
             configParam(TRACK1_BPF_FREQ_PARAM + i * 6, 20.0f, 8000.0f, i == 0 ? 200.0f : (i == 1 ? 1000.0f : 5000.0f), string::f("Track %d BPF Frequency", i + 1), " Hz");
-            configParam(TRACK1_BPF_GAIN_PARAM + i * 6, 0.1f, 10.0f, 3.0f, string::f("Track %d BPF Gain", i + 1), "x");
+            configParam(TRACK1_BPF_GAIN_PARAM + i * 6, 0.1f, 100.0f, 3.0f, string::f("Track %d BPF Gain", i + 1), "x");
             
             configInput(TRACK1_TRIG_INPUT + i, string::f("Track %d Trigger", i + 1));
             configOutput(TRACK1_OUTPUT + i, string::f("Track %d Envelope", i + 1));
