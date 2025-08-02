@@ -106,19 +106,19 @@
       "slug": "Pyramid",
       "name": "Pyramid",
       "description": "3D panning router",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     },
     {
       "slug": "DECAPyramid",
       "name": "DECAPyramid",
       "description": "8-track 3D panning router with send/return",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     },
     {
       "slug": "KEN",
       "name": "KEN",
       "description": "8-to-2 binaural processor for 3D spatial audio rendering",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     }
   ]
 }
