@@ -1,44 +1,77 @@
-MADZINE VCV Rack Plugin
-MADZINE is a comprehensive VCV Rack plugin collection featuring 18 modules for electronic music production, specializing in rhythm generation, envelope processing, and creative sound design.
+# MADZINE VCV Rack Plugin
 
-Modules Overview
+**Version 2.1.91**
 
-Rhythm & Sequencing
-* **TWNC** - Dual-track Euclidean rhythm generator with drum and hi-hats synthesis
-* **TWNC Light** - Simplified dual-track Euclidean rhythm generator with envelope control
-* **TWNC2** - Three-track Euclidean drum machine with drum synthesis
-* **KIMO** - Single-track Euclidean drum machine with bass drum synthesis
-* **Euclidean Rhythm** - Three-track Euclidean Rhythm Generator with CV control and Slew
-* **PPaTTTerning** - Pattern-based CV sequencer with style and density control
-* **MADDY** - Integrated sequencer with swing clock and 3-track Euclidean rhythm generator
-* **SwingLFO** - Dual-waveform LFO with swing and shape control
+A collection of modules for VCV Rack, including LFOs, sequencers, drum synthesizers, and utility modules.
 
-Sound Generation
-* **Pinpple** - Ping filter hihat synthesizer with dynamic FM modulation
+## Modules
 
-Envelope & Processing
-* **ADGenerator** - Attack Decay envelope generator with curve shaping
-* **QQ** - 3-track S-Curve Decay Trigger envelope generator with CV control and waveform scope
+**SwingLFO**
+Dual-waveform LFO with swing and shape control
 
-Utility & Mixing
-* **U8** - 4HP channel processor with gain/saturation, duck control and mute
-* **YAMANOTE** - 8HP channel processor with chain, send/return function
-* **Observer** - 8-track color scope module for waveform visualization
-* **Obserfour** - 4-track color scope module for waveform visualization
-* **Pyramid** - 3D panning router
-* **DECA Pyramid** - 8-track 3D panning router with send/return
-* **KEN** - 8-to-2 binaural processor for 3D spatial audio rendering
+**Euclidean Rhythm**
+Three-track Euclidean Rhythm Generator with CV control
 
-Version History
-Version 2.1.9 (Current)
-* Latest stable release
-* All 18 modules included
-* Cross-platform compatibility
+**ADGenerator**
+Attack Decay envelope generator
 
-Support
-* **Issues**: GitHub Issues
-* **Email**: madzinetw@gmail.com
-* **Patreon**: Support MADZINE
+**Pinpple**
+Ping filter hihat synthesizer with dynamic FM modulation
 
-License
-This project is licensed under the GPL-3.0-or-later License. See the LICENSE file for details.
+**PPaTTTerning**
+Pattern-based CV sequencer with style and density control
+
+**MADDY**
+Integrated sequencer with swing clock and 3-track Euclidean rhythm generator
+
+**TWNC**
+Dual-track Euclidean rhythm generator for techno sequences
+
+**TWNC Light**
+Simplified version of TWNC with accent system
+
+**TWNC 2**
+Three-track Euclidean drum machine with drum synthesis
+
+**QQ**
+3-track S-Curve Decay Trigger envelope generator with CV control and waveform scope
+
+**Observer**
+8-track color scope module for waveform visualization
+
+**U8**
+4HP channel processor with gain/saturation, duck control and mute
+
+**YAMANOTE**
+8HP channel processor with chain, send/return function
+
+**KIMO**
+Single-track Euclidean drum machine with bass drum synthesis
+
+**Obserfour**
+4-track color scope module for waveform visualization
+
+**Pyramid**
+3D panning router
+
+**DECAPyramid**
+8-track 3D panning router with send/return
+
+**KEN**
+8-to-2 binaural processor for 3D spatial audio rendering
+
+**Quantizer**
+8HP chromatic quantizer with 12-note microtuning and cultural scale presets
+
+## License
+
+GPL-3.0-or-later
+
+## Support
+
+- **Patreon**: https://www.patreon.com/c/madzinetw
+- **Email**: madzinetw@gmail.com
+
+---
+
+**Version 2.1.91 | MADZINE © 2025**
