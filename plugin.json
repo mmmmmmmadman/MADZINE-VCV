@@ -1,7 +1,7 @@
 {
   "slug": "MADZINE",
   "name": "MADZINE",
-  "version": "2.1.9",
+  "version": "2.1.91",
   "license": "GPL-3.0-or-later",
   "brand": "MADZINE",
   "author": "MAD",
@@ -106,19 +106,25 @@
       "slug": "Pyramid",
       "name": "Pyramid",
       "description": "3D panning router",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     },
     {
       "slug": "DECAPyramid",
       "name": "DECAPyramid",
       "description": "8-track 3D panning router with send/return",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     },
     {
       "slug": "KEN",
       "name": "KEN",
       "description": "8-to-2 binaural processor for 3D spatial audio rendering",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
+    },
+    {
+      "slug": "Quantizer",
+      "name": "Quantizer",
+      "description": "8HP chromatic quantizer with 12-note microtuning and cultural scale presets",
+      "tags": ["Quantizer", "Tuner"]
     }
   ]
 }

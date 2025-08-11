@@ -24,4 +24,5 @@ void init(Plugin* p) {
     p->addModel(modelPyramid);
     p->addModel(modelDECAPyramid);
     p->addModel(modelKEN);
+    p->addModel(modelQuantizer);
 }
