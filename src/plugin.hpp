@@ -22,6 +22,7 @@ extern Model* modelObserfour;
 extern Model* modelPyramid;
 extern Model* modelDECAPyramid;
 extern Model* modelKEN;
+extern Model* modelQuantizer;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;
