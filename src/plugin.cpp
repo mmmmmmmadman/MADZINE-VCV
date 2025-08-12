@@ -25,4 +25,5 @@ void init(Plugin* p) {
     p->addModel(modelDECAPyramid);
     p->addModel(modelKEN);
     p->addModel(modelQuantizer);
+    p->addModel(modelEllenRipley);
 }

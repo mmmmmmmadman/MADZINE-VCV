@@ -125,6 +125,12 @@
       "name": "Quantizer",
       "description": "8HP chromatic quantizer with 12-note microtuning and cultural scale presets",
       "tags": ["Quantizer", "Tuner"]
+    },
+    {
+      "slug": "EllenRipley",
+      "name": "Ellen Ripley", 
+      "description": "Multi-effect processor with delay, granular synthesis, reverb, and chaos modulation",
+      "tags": ["Delay", "Reverb", "Granular", "Effect", "Random"]
     }
   ]
 }
