@@ -1,7 +1,7 @@
 {
   "slug": "MADZINE",
   "name": "MADZINE",
-  "version": "2.1.91",
+  "version": "2.2.0",
   "license": "GPL-3.0-or-later",
   "brand": "MADZINE",
   "author": "MAD",
@@ -131,6 +131,12 @@
       "name": "Ellen Ripley", 
       "description": "Multi-effect processor with delay, granular synthesis, reverb, and chaos modulation",
       "tags": ["Delay", "Reverb", "Granular", "Effect", "Random"]
+    },
+    {
+      "slug": "MADDYPlus",
+      "name": "MADDYPlus",
+      "description": "3-track pattern based sequencer with swing clock and 3-track Euclidean rhythm generator",
+      "tags": ["Sequencer", "Clock generator", "Envelope generator"]
     }
   ]
 }

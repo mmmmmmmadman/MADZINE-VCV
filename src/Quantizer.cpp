@@ -212,6 +212,7 @@ struct MicrotuneKnob : ParamWidget {
 
 struct Quantizer : Module {
     enum ParamIds {
+        SCALE_PARAM,
         OFFSET_PARAM,
         // Microtune parameters for 12 notes
         C_MICROTUNE_PARAM,
@@ -230,11 +231,15 @@ struct Quantizer : Module {
     };
     enum InputIds {
         PITCH_INPUT,
+        PITCH_INPUT_2,
+        PITCH_INPUT_3,
         OFFSET_CV_INPUT,
         NUM_INPUTS
     };
     enum OutputIds {
         PITCH_OUTPUT,
+        PITCH_OUTPUT_2,
+        PITCH_OUTPUT_3,
         NUM_OUTPUTS
     };
     enum LightIds {
@@ -262,6 +267,7 @@ struct Quantizer : Module {
 
     Quantizer() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+        configParam(SCALE_PARAM, 0.0f, 2.0f, 1.0f, "Scale", "%", 0.f, 100.f);
         configParam(OFFSET_PARAM, -1.f, 1.f, 0.f, "Pre-offset", " semitones", 0.f, 12.f);
         
         // Configure microtune parameters for each note
@@ -270,9 +276,13 @@ struct Quantizer : Module {
             configParam(C_MICROTUNE_PARAM + i, -50.f, 50.f, 0.f, noteNames[i] + " Microtune", " cents");
         }
         
-        configInput(PITCH_INPUT, "1V/octave pitch");
+        configInput(PITCH_INPUT, "CV1");
+        configInput(PITCH_INPUT_2, "CV2");
+        configInput(PITCH_INPUT_3, "CV3");
         configInput(OFFSET_CV_INPUT, "Offset CV");
         configOutput(PITCH_OUTPUT, "Pitch");
+        configOutput(PITCH_OUTPUT_2, "Pitch 2");
+        configOutput(PITCH_OUTPUT_3, "Pitch 3");
         configBypass(PITCH_INPUT, PITCH_OUTPUT);
 
         onReset();
@@ -294,7 +304,7 @@ struct Quantizer : Module {
 
     void process(const ProcessArgs& args) override {
         bool playingNotes[12] = {};
-        int channels = std::max(inputs[PITCH_INPUT].getChannels(), 1);
+        float scaleParam = params[SCALE_PARAM].getValue();
         float offsetParam = params[OFFSET_PARAM].getValue();
         
         // Add CV offset
@@ -302,41 +312,39 @@ struct Quantizer : Module {
             offsetParam += inputs[OFFSET_CV_INPUT].getVoltage();
         }
 
-        for (int c = 0; c < channels; c++) {
-            float pitch = inputs[PITCH_INPUT].getVoltage(c);
-            pitch += offsetParam;
+        // Process all three tracks
+        for (int track = 0; track < 3; track++) {
+            int inputId = PITCH_INPUT + track;
+            int outputId = PITCH_OUTPUT + track;
             
-            // Apply microtune
-            pitch = applyMicrotune(pitch);
+            int channels = std::max(inputs[inputId].getChannels(), 1);
             
-            int range = std::floor(pitch * 24);
-            int octave = eucDiv(range, 24);
-            range -= octave * 24;
-            int note = ranges[range] + octave * 12;
-            playingNotes[eucMod(note, 12)] = true;
-            pitch = float(note) / 12;
-            outputs[PITCH_OUTPUT].setVoltage(pitch, c);
+            for (int c = 0; c < channels; c++) {
+                float pitch = inputs[inputId].getVoltage(c);
+                
+                // Apply scale first, then offset
+                pitch *= scaleParam;
+                pitch += offsetParam;
+                
+                // First quantize to enabled notes
+                int range = std::floor(pitch * 24);
+                int octave = eucDiv(range, 24);
+                range -= octave * 24;
+                int quantizedNote = ranges[range] + octave * 12;
+                int noteInOctave = eucMod(quantizedNote, 12);
+                playingNotes[noteInOctave] = true;
+                
+                // Then apply microtune to the quantized note
+                float microtuneOffset = params[C_MICROTUNE_PARAM + noteInOctave].getValue() / 1200.f; // Convert cents to volts (1200 cents = 1V)
+                pitch = float(quantizedNote) / 12.f + microtuneOffset;
+                
+                outputs[outputId].setVoltage(pitch, c);
+            }
+            outputs[outputId].setChannels(channels);
         }
-        outputs[PITCH_OUTPUT].setChannels(channels);
         std::memcpy(this->playingNotes, playingNotes, sizeof(playingNotes));
     }
     
-    float applyMicrotune(float pitch) {
-        // Convert CV to semitones
-        float semitones = pitch * 12.f;
-        
-        // Get the note within an octave (0-11)
-        int note = ((int)std::round(semitones) % 12 + 12) % 12;
-        int octave = (int)std::floor(semitones / 12.f);
-        
-        // Apply microtune offset
-        float microtuneOffset = params[C_MICROTUNE_PARAM + note].getValue() / 100.f; // Convert cents to semitones
-        
-        // Calculate final CV
-        float finalSemitones = octave * 12.f + note + microtuneOffset;
-        return finalSemitones / 12.f;
-    }
-
     void updateRanges() {
         // Check if no notes are enabled
         bool anyEnabled = false;
@@ -369,12 +377,6 @@ struct Quantizer : Module {
         }
     }
 
-    void rotateNotes(int delta) {
-        delta = eucMod(-delta, 12);
-        std::rotate(&enabledNotes[0], &enabledNotes[delta], &enabledNotes[12]);
-        updateRanges();
-    }
-    
     void applyMicrotunePreset(int presetIndex) {
         const float* preset = nullptr;
         
@@ -395,6 +397,36 @@ struct Quantizer : Module {
             for (int i = 0; i < 12; i++) {
                 params[C_MICROTUNE_PARAM + i].setValue(preset[i]);
             }
+        }
+    }
+    
+    void applyScalePreset(int scaleIndex) {
+        // Scale presets: true = note enabled, false = note disabled
+        // Note order: C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+        static const bool SCALE_PRESETS[16][12] = {
+            {true, true, true, true, true, true, true, true, true, true, true, true}, // Chromatic
+            {true, false, true, false, true, true, false, true, false, true, false, true}, // Major (Ionian)
+            {true, false, true, true, false, true, false, true, true, false, true, false}, // Minor (Aeolian)
+            {true, false, true, false, true, false, false, true, false, true, false, true}, // Pentatonic Major
+            {true, false, false, true, false, true, false, true, false, false, true, false}, // Pentatonic Minor
+            {true, false, true, true, false, true, false, true, false, true, true, false}, // Dorian
+            {true, true, false, true, false, true, false, true, true, false, true, false}, // Phrygian
+            {true, false, true, false, true, false, true, true, false, true, false, true}, // Lydian
+            {true, false, true, false, true, true, false, true, false, true, true, false}, // Mixolydian
+            {true, true, false, true, false, true, true, false, true, false, true, false}, // Locrian
+            {true, false, false, false, true, false, false, true, false, false, false, false}, // Major Triad
+            {true, false, false, true, false, false, false, true, false, false, false, false}, // Minor Triad
+            {true, false, true, true, false, true, false, true, true, false, true, true}, // Blues
+            {true, true, false, true, true, false, true, true, true, false, true, true}, // Arabic
+            {true, false, true, true, true, false, true, true, false, true, true, false}, // Japanese
+            {true, false, true, false, true, true, true, true, false, true, false, true}  // Whole Tone
+        };
+        
+        if (scaleIndex >= 0 && scaleIndex < 16) {
+            for (int i = 0; i < 12; i++) {
+                enabledNotes[i] = SCALE_PRESETS[scaleIndex][i];
+            }
+            updateRanges();
         }
     }
 
@@ -559,44 +591,47 @@ struct QuantizerWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Quantizer", 12.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
-        // Offset knob - moved to right by 10px
-        addChild(new EnhancedTextLabel(Vec(31, 60), Vec(30, 15), "OFFSET", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(46, 85), module, Quantizer::OFFSET_PARAM));
-        
-        // CV IN label and input - 25 pixels below the knob
-        addChild(new EnhancedTextLabel(Vec(31, 100), Vec(30, 15), "CV IN", 6.f, nvgRGB(255, 255, 255), true));
-        addInput(createInputCentered<PJ301MPort>(Vec(46, 125), module, Quantizer::OFFSET_CV_INPUT));
+        // Scale knob - added above offset
+        addChild(new EnhancedTextLabel(Vec(31, 30), Vec(30, 15), "SCALE", 6.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(46, 55), module, Quantizer::SCALE_PARAM));
 
-        // Quantizer piano display - moved right and scaled to match internal content
-        QuantizerDisplay* quantizerDisplay = createWidget<QuantizerDisplay>(mm2px(Vec(1.0, 13.039)));
-        quantizerDisplay->box.size = mm2px(Vec(15.24 * 0.66, 55.88 * 0.72));
+        // Offset knob - moved down to make room for scale
+        addChild(new EnhancedTextLabel(Vec(31, 75), Vec(30, 15), "OFFSET", 6.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(46, 100), module, Quantizer::OFFSET_PARAM));
+        
+        // CV IN label and input - moved down accordingly
+        addChild(new EnhancedTextLabel(Vec(31, 115), Vec(30, 15), "CV IN", 6.f, nvgRGB(255, 255, 255), true));
+        addInput(createInputCentered<PJ301MPort>(Vec(46, 140), module, Quantizer::OFFSET_CV_INPUT));
+
+        // Quantizer piano display - moved up by 1mm
+        QuantizerDisplay* quantizerDisplay = createWidget<QuantizerDisplay>(mm2px(Vec(1.0, 12.0)));
+        quantizerDisplay->box.size = mm2px(Vec(15.24 * 0.66, 55.88 * 0.75));
         quantizerDisplay->setModule(module);
         addChild(quantizerDisplay);
 
         // 12 microtune knobs with correct black/white key mapping
         std::string noteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-        bool isBlackKey[12] = {false, true, false, true, false, false, true, false, true, false, true, false};
         
         // Map positions to correct notes with C at bottom
         int leftPositions[5] = {1, 3, 6, 8, 10}; // C#, D#, F#, G#, A# (black keys)
         int rightPositions[7] = {0, 2, 4, 5, 7, 9, 11}; // C, D, E, F, G, A, B (white keys)
         
         Vec leftCoords[5] = {
-            Vec(15, 310),  // C# (top left) - moved down 20px
-            Vec(15, 285),  // D# - moved down 20px
-            Vec(15, 235),  // F# - moved down 20px
-            Vec(15, 210),  // G# - moved down 20px
-            Vec(15, 185)   // A# (bottom left) - moved down 20px
+            Vec(15, 310),  // C# (top left) - moved up 10px
+            Vec(15, 285),  // D# - moved up 10px
+            Vec(15, 235),  // F# - moved up 10px
+            Vec(15, 210),  // G# - moved up 10px
+            Vec(15, 185)   // A# (bottom left) - moved up 10px
         };
         
         Vec rightCoords[7] = {
-            Vec(45, 320),  // C (bottom right) - moved down 20px
-            Vec(45, 295),  // D - moved down 20px
-            Vec(45, 270),  // E - moved down 20px
-            Vec(45, 245),  // F - moved down 20px
-            Vec(45, 220),  // G - moved down 20px
-            Vec(45, 195),  // A - moved down 20px
-            Vec(45, 170)   // B (top right) - moved down 20px
+            Vec(45, 320),  // C (bottom right) - moved up 10px
+            Vec(45, 295),  // D - moved up 10px
+            Vec(45, 270),  // E - moved up 10px
+            Vec(45, 245),  // F - moved up 10px
+            Vec(45, 220),  // G - moved up 10px
+            Vec(45, 195),  // A - moved up 10px
+            Vec(45, 170)   // B (top right) - moved up 10px
         };
 
         // Place black keys (left side) - removed labels
@@ -614,12 +649,17 @@ struct QuantizerWidget : ModuleWidget {
         // White background for inputs/outputs
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));
 
-        // Input and output - moved down additional 10px
-        addChild(new EnhancedTextLabel(Vec(5, 340), Vec(20, 15), "IN", 6.f, nvgRGB(255, 133, 133), true));
-        addInput(createInputCentered<PJ301MPort>(Vec(15, 365), module, Quantizer::PITCH_INPUT));
-
-        addChild(new EnhancedTextLabel(Vec(35, 340), Vec(20, 15), "OUT", 6.f, nvgRGB(255, 133, 133), true));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 365), module, Quantizer::PITCH_OUTPUT));
+        // Track 1 - positioned at Y=340
+        addInput(createInputCentered<PJ301MPort>(Vec(15, 340), module, Quantizer::PITCH_INPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 340), module, Quantizer::PITCH_OUTPUT));
+        
+        // Track 2 - positioned at Y=358
+        addInput(createInputCentered<PJ301MPort>(Vec(15, 358), module, Quantizer::PITCH_INPUT_2));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 358), module, Quantizer::PITCH_OUTPUT_2));
+        
+        // Track 3 - positioned at Y=374
+        addInput(createInputCentered<PJ301MPort>(Vec(15, 374), module, Quantizer::PITCH_INPUT_3));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 374), module, Quantizer::PITCH_OUTPUT_3));
     }
 
     void appendContextMenu(Menu* menu) override {
@@ -627,36 +667,57 @@ struct QuantizerWidget : ModuleWidget {
         if (!module) return;
 
         menu->addChild(new MenuSeparator);
-
-        menu->addChild(createMenuItem("Shift notes up", "", [=]() {
-            module->rotateNotes(1);
+        
+        // Scale Presets submenu
+        menu->addChild(createSubmenuItem("Scale Presets", "", [=](Menu* menu) {
+            std::string scaleNames[16] = {
+                "Chromatic",
+                "Major (Ionian)",
+                "Minor (Aeolian)", 
+                "Pentatonic Major",
+                "Pentatonic Minor",
+                "Dorian",
+                "Phrygian",
+                "Lydian",
+                "Mixolydian",
+                "Locrian",
+                "Major Triad",
+                "Minor Triad",
+                "Blues",
+                "Arabic",
+                "Japanese",
+                "Whole Tone"
+            };
+            
+            for (int i = 0; i < 16; i++) {
+                menu->addChild(createMenuItem(scaleNames[i], "", [=]() {
+                    module->applyScalePreset(i);
+                }));
+            }
         }));
-        menu->addChild(createMenuItem("Shift notes down", "", [=]() {
-            module->rotateNotes(-1);
+        
+        // Microtune Presets submenu
+        menu->addChild(createSubmenuItem("Microtune Presets", "", [=](Menu* menu) {
+            std::string presetNames[10] = {
+                "Equal Temperament",
+                "Just Intonation", 
+                "Pythagorean",
+                "Arabic Maqam",
+                "Indian Raga",
+                "Gamelan Pelog",
+                "Japanese Gagaku",
+                "Turkish Makam",
+                "Persian Dastgah",
+                "Quarter-tone"
+            };
+            
+            for (int i = 0; i < 10; i++) {
+                menu->addChild(createMenuItem(presetNames[i], "", [=]() {
+                    module->applyMicrotunePreset(i);
+                    module->currentPreset = i;
+                }));
+            }
         }));
-        
-        menu->addChild(new MenuSeparator);
-        menu->addChild(createMenuLabel("Microtune Presets"));
-        
-        std::string presetNames[10] = {
-            "Equal Temperament",
-            "Just Intonation", 
-            "Pythagorean",
-            "Arabic Maqam",
-            "Indian Raga",
-            "Gamelan Pelog",
-            "Japanese Gagaku",
-            "Turkish Makam",
-            "Persian Dastgah",
-            "Quarter-tone"
-        };
-        
-        for (int i = 0; i < 10; i++) {
-            menu->addChild(createMenuItem(presetNames[i], "", [=]() {
-                module->applyMicrotunePreset(i);
-                module->currentPreset = i;
-            }));
-        }
     }
 };
 

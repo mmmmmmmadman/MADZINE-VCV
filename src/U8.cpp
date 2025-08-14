@@ -284,8 +284,8 @@ struct U8 : Module {
         
         float levelParam = params[LEVEL_PARAM].getValue();
         if (inputs[LEVEL_CV_INPUT].isConnected()) {
-            levelParam += inputs[LEVEL_CV_INPUT].getVoltage() / 5.0f;
-            levelParam = clamp(levelParam, 0.0f, 2.0f);
+            float cvInput = clamp(inputs[LEVEL_CV_INPUT].getVoltage() / 5.0f, 0.0f, 2.0f);
+            levelParam *= cvInput;
         }
         
         leftInput *= levelParam * sidechainCV;

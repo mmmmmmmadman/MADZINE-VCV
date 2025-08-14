@@ -26,4 +26,5 @@ void init(Plugin* p) {
     p->addModel(modelKEN);
     p->addModel(modelQuantizer);
     p->addModel(modelEllenRipley);
+    p->addModel(modelMADDYPlus);
 }

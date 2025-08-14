@@ -161,9 +161,9 @@ struct ChaosGenerator {
     float process(float rate) {
         float dt = rate * 0.001f;
         
-        float dx = 10.0f * (y - x);
-        float dy = x * (28.0f - z) - y;
-        float dz = x * y - (8.0f / 3.0f) * z;
+        float dx = 7.5f * (y - x);
+        float dy = x * (30.9f - z) - y;
+        float dz = x * y - 1.02f * z;
         
         x += dx * dt;
         y += dy * dt;
@@ -275,7 +275,7 @@ struct ReverbProcessor {
         // Calculate feedback based on decay - much wider range for 10+ second tails
         float feedback = 0.5f + decay * 0.485f; // 0.5 to 0.985 (near infinite at max)
         if (chaosEnabled) {
-            feedback += chaosOutput * 0.01f; // Reduced chaos to avoid instability
+            feedback += chaosOutput * 0.5f; // Enhanced chaos effect 10x from 0.05f
             feedback = clamp(feedback, 0.0f, 0.995f);
         }
         
@@ -407,7 +407,7 @@ struct GrainProcessor {
                     
                     float pos = position;
                     if (chaosEnabled) {
-                        pos += chaosOutput * 0.4f;
+                        pos += chaosOutput * 20.0f; // Enhanced shift 10x from 2.0f
                         if (random::uniform() < 0.3f) {
                             grains[i].direction = -1.0f;
                         } else {
@@ -537,20 +537,20 @@ struct EllenRipley : rack::engine::Module {
         configParam(DELAY_TIME_R_PARAM, 0.001f, 2.0f, 0.25f, "Delay Time R", " s");
         configParam(DELAY_FEEDBACK_PARAM, 0.0f, 0.95f, 0.3f, "Feedback", "%", 0.f, 100.f);
         configParam(DELAY_CHAOS_PARAM, 0.0f, 1.0f, 0.0f, "Delay Chaos");
-        configParam(WET_DRY_PARAM, 0.0f, 1.0f, 0.5f, "Delay Wet/Dry", "%", 0.f, 100.f);
+        configParam(WET_DRY_PARAM, 0.0f, 1.0f, 0.0f, "Delay Wet/Dry", "%", 0.f, 100.f);
         configParam(CHAOS_RATE_PARAM, 0.0f, 1.0f, 0.01f, "Chaos Rate");
         
         configParam(GRAIN_SIZE_PARAM, 0.0f, 1.0f, 0.3f, "Grain Size");
         configParam(GRAIN_DENSITY_PARAM, 0.0f, 1.0f, 0.4f, "Grain Density/Glitch");
         configParam(GRAIN_POSITION_PARAM, 0.0f, 1.0f, 0.5f, "Grain Position/Chaos");
         configParam(GRAIN_CHAOS_PARAM, 0.0f, 1.0f, 0.0f, "Grain Chaos");
-        configParam(GRAIN_WET_DRY_PARAM, 0.0f, 1.0f, 0.3f, "Grain Wet/Dry", "%", 0.f, 100.f);
+        configParam(GRAIN_WET_DRY_PARAM, 0.0f, 1.0f, 0.0f, "Gratch Wet/Dry", "%", 0.f, 100.f);
         
         configParam(REVERB_ROOM_SIZE_PARAM, 0.0f, 1.0f, 0.5f, "Room Size");
         configParam(REVERB_DAMPING_PARAM, 0.0f, 1.0f, 0.4f, "Damping");
         configParam(REVERB_DECAY_PARAM, 0.0f, 1.0f, 0.6f, "Decay");
         configParam(REVERB_CHAOS_PARAM, 0.0f, 1.0f, 0.0f, "Reverb Chaos");
-        configParam(REVERB_WET_DRY_PARAM, 0.0f, 1.0f, 0.2f, "Reverb Wet/Dry", "%", 0.f, 100.f);
+        configParam(REVERB_WET_DRY_PARAM, 0.0f, 1.0f, 0.0f, "Reverb Wet/Dry", "%", 0.f, 100.f);
         configParam(CHAOS_AMOUNT_PARAM, 0.0f, 1.0f, 1.0f, "Chaos Amount");
         configParam(CHAOS_SHAPE_PARAM, 0.0f, 1.0f, 0.0f, "Chaos Shape");
         
@@ -733,7 +733,7 @@ struct EllenRipley : rack::engine::Module {
         
         // Stage 2: Grain processing on stage 1 output
         float leftGrainOutput = leftGrainProcessor.process(leftStage1, grainSize, grainDensity, grainPosition, grainChaosMod, chaosOutput, args.sampleRate);
-        float rightGrainOutput = rightGrainProcessor.process(rightStage1, grainSize, grainDensity, grainPosition, grainChaosMod, chaosOutput, args.sampleRate);
+        float rightGrainOutput = rightGrainProcessor.process(rightStage1, grainSize, grainDensity, grainPosition, grainChaosMod, chaosOutput * -1.0f, args.sampleRate);
         
         float grainWetDryMix = params[GRAIN_WET_DRY_PARAM].getValue();
         float leftStage2 = leftStage1 * (1.0f - grainWetDryMix) + leftGrainOutput * grainWetDryMix;
@@ -853,7 +853,7 @@ struct EllenRipleyWidget : ModuleWidget {
         addParam(createParamCentered<StandardBlackKnob>(Vec(x + 12, chaosY + 22), module, EllenRipley::WET_DRY_PARAM));
         x += 31;
         
-        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "GRAIN", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "GRATCH", 7.f, nvgRGB(200, 200, 200), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(x + 12, chaosY + 22), module, EllenRipley::GRAIN_WET_DRY_PARAM));
         x += 31;
         
