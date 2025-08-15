@@ -390,6 +390,10 @@ struct BasicSineVCO {
         sampleRate = sr;
     }
     
+    void reset() {
+        phase = 0.0f;
+    }
+    
     float process(float freq_hz, float fm_cv, float saturation = 1.0f) {
         float modulated_freq = freq_hz * std::pow(2.0f, fm_cv);
         modulated_freq = clamp(modulated_freq, 1.0f, sampleRate * 0.45f);
@@ -510,6 +514,7 @@ struct KIMO : Module {
     TrackState track;
     QuarterNoteClock quarterClock;
     UnifiedEnvelope accentVCA;
+    bool resetOscOnAccent = true;
 
     KIMO() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -560,6 +565,18 @@ struct KIMO : Module {
         quarterClock.reset();
         accentVCA.reset();
     }
+    
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "resetOscOnAccent", json_boolean(resetOscOnAccent));
+        return rootJ;
+    }
+    
+    void dataFromJson(json_t* rootJ) override {
+        json_t* resetOscOnAccentJ = json_object_get(rootJ, "resetOscOnAccent");
+        if (resetOscOnAccentJ)
+            resetOscOnAccent = json_boolean_value(resetOscOnAccentJ);
+    }
 
     void process(const ProcessArgs& args) override {
         bool globalClockActive = inputs[CLK_INPUT].isConnected();
@@ -585,6 +602,10 @@ struct KIMO : Module {
         int accentShift = (int)std::round(params[ACCENT_PARAM].getValue());
         bool accentTriggered = quarterClock.processStep(globalClockTriggered, accentShift);
         float accentTrigger = quarterClock.getTrigger(args.sampleTime);
+        
+        if (accentTriggered && resetOscOnAccent) {
+            kickVCO.reset();
+        }
 
         track.length = GLOBAL_LENGTH;
 
@@ -723,6 +744,19 @@ struct KIMOWidget : ModuleWidget {
 
         // AUDIO 輸出 (保持原座標)
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 368), module, KIMO::AUDIO_OUTPUT));
+    }
+    
+    void appendContextMenu(Menu* menu) override {
+        KIMO* module = getModule<KIMO>();
+        if (!module) return;
+
+        menu->addChild(new MenuSeparator);
+
+        MenuItem* resetOscItem = createCheckMenuItem("Reset Oscillator on Accent", "",
+            [=]() { return module->resetOscOnAccent; },
+            [=]() { module->resetOscOnAccent = !module->resetOscOnAccent; }
+        );
+        menu->addChild(resetOscItem);
     }
 };
 

@@ -514,6 +514,10 @@ struct OversampledSineVCO {
         aa_filter_.Init(sr);
     }
     
+    void reset() {
+        phase = 0.0f;
+    }
+    
     float process(float freq_hz, float fm_cv) {
         int oversampling_factor = aa_filter_.GetOversamplingFactor();
         float output = 0.0f;
@@ -740,6 +744,7 @@ struct TWNC : Module {
     TrackState tracks[2];
     QuarterNoteClock quarterClock;
     UnifiedEnvelope mainVCA;
+    bool resetOscOnAccent = true;
 
     TWNC() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -826,6 +831,18 @@ struct TWNC : Module {
         quarterClock.reset();
         mainVCA.reset();
     }
+    
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "resetOscOnAccent", json_boolean(resetOscOnAccent));
+        return rootJ;
+    }
+    
+    void dataFromJson(json_t* rootJ) override {
+        json_t* resetOscOnAccentJ = json_object_get(rootJ, "resetOscOnAccent");
+        if (resetOscOnAccentJ)
+            resetOscOnAccent = json_boolean_value(resetOscOnAccentJ);
+    }
 
     void process(const ProcessArgs& args) override {
         bool globalClockActive = inputs[GLOBAL_CLOCK_INPUT].isConnected();
@@ -868,6 +885,11 @@ struct TWNC : Module {
         int vcaShift = (int)std::round(params[VCA_SHIFT_PARAM].getValue());
         bool vcaTriggered = quarterClock.processStep(globalClockTriggered, globalLength, vcaShift);
         float vcaTrigger = quarterClock.getTrigger(args.sampleTime);
+        
+        if (vcaTriggered && resetOscOnAccent) {
+            sineVCO.reset();
+            sineVCO2.reset();
+        }
         
         for (int i = 0; i < 2; ++i) {
             TrackState& track = tracks[i];
@@ -1107,6 +1129,19 @@ struct TWNCWidget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(74, 366), Vec(20, 6), "VCA", 6.f, nvgRGB(255, 133, 133), true));
         addChild(new TechnoEnhancedTextLabel(Vec(74, 372), Vec(20, 6), "ENV", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(102, 368), module, TWNC::TRACK2_VCA_ENV_OUTPUT));
+    }
+    
+    void appendContextMenu(Menu* menu) override {
+        TWNC* module = getModule<TWNC>();
+        if (!module) return;
+
+        menu->addChild(new MenuSeparator);
+
+        MenuItem* resetOscItem = createCheckMenuItem("Reset Oscillator on Accent", "",
+            [=]() { return module->resetOscOnAccent; },
+            [=]() { module->resetOscOnAccent = !module->resetOscOnAccent; }
+        );
+        menu->addChild(resetOscItem);
     }
 };
 

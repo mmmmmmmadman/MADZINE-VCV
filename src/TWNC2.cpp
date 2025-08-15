@@ -299,6 +299,10 @@ struct BasicSineVCO {
         sampleRate = sr;
     }
     
+    void reset() {
+        phase = 0.0f;
+    }
+    
     float process(float freq_hz, float fm_cv, float saturation = 1.0f) {
         float modulated_freq = freq_hz * std::pow(2.0f, fm_cv);
         modulated_freq = clamp(modulated_freq, 1.0f, sampleRate * 0.45f);
@@ -375,6 +379,12 @@ struct TWNC2 : Module {
             sampleRate = sr;
         }
         
+        void reset() {
+            for (int i = 0; i < 6; i++) {
+                phases[i] = 0.0f;
+            }
+        }
+        
         float process(float baseFreq) {
             float output = 0.0f;
             for (int i = 0; i < 6; i++) {
@@ -417,6 +427,9 @@ struct TWNC2 : Module {
             return output;
         }
     } hatsDelay;
+    
+    bool resetOscOnAccent = true;
+    float lastAccentCV = 0.0f;
 
     TWNC2() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -472,10 +485,29 @@ struct TWNC2 : Module {
 
     void onReset() override {
     }
+    
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "resetOscOnAccent", json_boolean(resetOscOnAccent));
+        return rootJ;
+    }
+    
+    void dataFromJson(json_t* rootJ) override {
+        json_t* resetOscOnAccentJ = json_object_get(rootJ, "resetOscOnAccent");
+        if (resetOscOnAccentJ)
+            resetOscOnAccent = json_boolean_value(resetOscOnAccentJ);
+    }
 
     void process(const ProcessArgs& args) override {
         float kickEnvCV = clamp(inputs[KICK_ENV_INPUT].getVoltage() / 10.0f, 0.0f, 1.0f);
         float kickAccentCV = clamp(inputs[KICK_ACCENT_INPUT].getVoltage() / 10.0f, 0.0f, 1.0f);
+        
+        if (resetOscOnAccent && kickAccentCV > 0.5f && lastAccentCV <= 0.5f) {
+            kickVCO.reset();
+            snareVCO.reset();
+            hatsOsc.reset();
+        }
+        lastAccentCV = kickAccentCV;
         float duckAmount = params[DUCK_PARAM].getValue();
         float sidechainCV = 1.0f - (kickAccentCV * duckAmount * 3.0f);
         
@@ -702,6 +734,19 @@ struct TWNC2Widget : ModuleWidget {
         
         addChild(new TechnoEnhancedTextLabel(Vec(73, 362), Vec(20, 15), "R", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(100, 368), module, TWNC2::MIX_OUTPUT_R));
+    }
+    
+    void appendContextMenu(Menu* menu) override {
+        TWNC2* module = getModule<TWNC2>();
+        if (!module) return;
+
+        menu->addChild(new MenuSeparator);
+
+        MenuItem* resetOscItem = createCheckMenuItem("Reset Oscillator on Accent", "",
+            [=]() { return module->resetOscOnAccent; },
+            [=]() { module->resetOscOnAccent = !module->resetOscOnAccent; }
+        );
+        menu->addChild(resetOscItem);
     }
 };
 
