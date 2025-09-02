@@ -149,8 +149,9 @@ static const float kFreqKnobMin = 20.f;
 static const float kFreqKnobMax = 20000.f;
 static const float kFreqKnobVoltage = std::log2f(kFreqKnobMax / kFreqKnobMin);
 
-static const float kFreqKnobDisplayBase = kFreqKnobMax / kFreqKnobMin;
-static const float kFreqKnobDisplayMultiplier = kFreqKnobMin;
+// Unused display constants - kept for potential future use
+// static const float kFreqKnobDisplayBase = kFreqKnobMax / kFreqKnobMin;
+// static const float kFreqKnobDisplayMultiplier = kFreqKnobMin;
 
 static const float kVCAGainConstant = -33e-3f;
 static const float kPlus6dB = 20.f * std::log10(2.f);
@@ -168,7 +169,8 @@ static const float kResAmpC = 560e-12f;
 static const float kFilterMaxCutoff = kFreqKnobMax;
 static const float kFilterCellR = 33e3f;
 static const float kFilterCellRC = 1.f / (2.f * M_PI * kFilterMaxCutoff);
-static const float kFilterCellC = kFilterCellRC / kFilterCellR;
+// Unused filter cell capacitance constant
+// static const float kFilterCellC = kFilterCellRC / kFilterCellR;
 static const float kFilterInputR = 100e3f;
 static const float kFilterInputGain = kFilterCellR / kFilterInputR;
 static const float kFilterCellSelfModulation = 0.01f;

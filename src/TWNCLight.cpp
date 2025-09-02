@@ -879,7 +879,8 @@ struct TWNCLight : Module {
                 float triggerOutput = track.trigPulse.process(args.sampleTime) ? 10.0f : 0.0f;
                 float envelopeOutput = track.envelope.process(args.sampleTime, triggerOutput, decayParam * 0.5f, shapeParam);
                 
-                float vcaEnvelopeOutput = track.vcaEnvelope.process(args.sampleTime, triggerOutput, decayParam, shapeParam);
+                // Process VCA envelope (side effect: updates internal state)
+                track.vcaEnvelope.process(args.sampleTime, triggerOutput, decayParam, shapeParam);
                 
                 float vcaDecayParam = params[VCA_DECAY_PARAM].getValue();
                 float mainVCAOutput = mainVCA.process(args.sampleTime, vcaTrigger, vcaDecayParam, 0.5f);

@@ -284,8 +284,9 @@ struct PPaTTTerning : Module {
             if (newVoltage != previousVoltage) gateOutPulse.trigger(0.01f);
             previousVoltage = newVoltage;
             
-            int delay1Index = (historyIndex - track2Delay + 1 + MAX_DELAY) % MAX_DELAY;
-            int delay2Index = (historyIndex - track2Delay + MAX_DELAY) % MAX_DELAY;
+            // Removed unused delay index calculations
+            // int delay1Index = (historyIndex - track2Delay + 1 + MAX_DELAY) % MAX_DELAY;
+            // int delay2Index = (historyIndex - track2Delay + MAX_DELAY) % MAX_DELAY;
             
             historyIndex = (historyIndex + 1) % MAX_DELAY;
         }

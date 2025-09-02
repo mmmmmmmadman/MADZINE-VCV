@@ -921,6 +921,10 @@ struct MADDYPlus : Module {
                 currentTrackIndex = 0;
             }
             activeTrackIdx = trackIndices[currentTrackIndex];
+            // Add bounds check to prevent array out of bounds access
+            if (activeTrackIdx < 0 || activeTrackIdx >= 3) {
+                return 0.0f;
+            }
             trackStartClock[activeTrackIdx] = globalClockCount;
             chainTrigger = true;
             chainTrigPulse.trigger(0.001f);

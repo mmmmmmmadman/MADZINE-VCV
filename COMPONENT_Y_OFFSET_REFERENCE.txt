@@ -1,0 +1,90 @@
+MADZINE VCV Rack Plugin - Component Y Offset Reference
+=====================================================
+Generated: 2025-08-22
+Based on analysis of all MADZINE modules
+
+This reference document provides standardized Y offset values for text labels 
+relative to their associated components across all MADZINE modules.
+
+COMPONENT Y OFFSET DATA
+======================
+
+旋鈕類型 (Knobs)
+---------------
+StandardBlackKnob    | 38×38px | Y差異: -23px | 使用值: -22,-24,-25 | 實例: 45+
+LargeBlackKnob       | 46×46px | Y差異: -25px | 使用值: -24,-25     | 實例: 8+
+SmallBlackKnob       | 28×28px | Y差異: -15px | 使用值: -15,-12     | 實例: 12+
+LargeWhiteKnob       | 37×37px | Y差異: -29px | 使用值: -29         | 實例: 2
+SmallWhiteKnob       | 28×28px | Y差異: -26px | 使用值: -26         | 實例: 4
+
+接孔類型 (Ports)
+---------------
+PJ301MPort (Input)   | 26×26px | Y差異: -23px | 使用值: -21,-25,-15 | 實例: 60+
+PJ301MPort (Output)  | 26×26px | Y差異: -21px | 使用值: -21,-25     | 實例: 40+
+
+開關類型 (Switches)
+------------------
+CKSS (二向開關)      | 15×15px | Y差異: -23px | 使用值: -22,-23     | 實例: 15+
+CKSSThree (三向開關) | 20×20px | Y差異: -25px | 使用值: -24,-25     | 實例: 8+
+
+按鈕類型 (Buttons)
+-----------------
+VCVButton            | 變化    | Y差異: -21px | 使用值: -21,-15     | 實例: 15+
+
+特殊組件
+--------
+MicrotuneKnob        | 20×20px | Y差異: -15px | 使用值: -15         | 實例: 24+
+SmallGrayKnob        | 21×21px | Y差異: -15px | 使用值: -15,-12     | 實例: 12+
+
+JAVASCRIPT 常數定義
+==================
+
+const COMPONENT_Y_OFFSETS = {
+    // 大型組件 (≥35px)
+    "LargeBlackKnob": -25,      // 46×46px
+    "LargeWhiteKnob": -29,      // 37×37px (特殊調整)
+    
+    // 標準組件 (25-35px) 
+    "StandardBlackKnob": -23,   // 38×38px
+    "SmallWhiteKnob": -26,      // 28×28px (特殊調整)
+    "SmallBlackKnob": -15,      // 28×28px
+    "PJ301MPort_Input": -23,    // 26×26px
+    "PJ301MPort_Output": -21,   // 26×26px
+    
+    // 小型組件 (15-25px)
+    "CKSSThree": -25,           // 20×20px
+    "CKSS": -23,                // 15×15px
+    "MicrotuneKnob": -15,       // 20×20px
+    "SmallGrayKnob": -15,       // 21×21px
+    "VCVButton": -21            // 變化大小
+};
+
+C++ 應用範例
+============
+
+// 計算文字Y座標
+Vec textPos = Vec(knobX - textWidth/2, knobY + OFFSET);
+
+// 範例：StandardBlackKnob at Vec(80, 240)
+addParam(createParamCentered<StandardBlackKnob>(Vec(80, 240), module, MODULE::PARAM));
+addChild(new EnhancedTextLabel(Vec(55, 217), Vec(49, 15), "LABEL", 7.f, nvgRGB(255, 255, 255), true));
+//                                     ^^^ 240 + (-23) = 217
+
+設計原則
+========
+1. 大型組件使用較大的負Y偏移值
+2. 相同大小的組件保持一致的偏移值
+3. 白色旋鈕使用特殊調整的偏移值（與黑色旋鈕區分）
+4. 輸入接孔比輸出接孔使用稍大的偏移值
+5. 緊湊佈局中可適度減少偏移值
+
+模組特殊注意事項
+===============
+- ComplexOscillator: 使用統一的-29px偏移（已調整）
+- MADDY系列: 軌道標籤使用-10px偏移
+- Ellen Ripley: 參數標籤使用-22px偏移
+- Quantizer: 參數標籤使用-25px偏移
+
+最後更新: 2025-08-22
+作者: MAD (MADZINE)
+版本: 2.3.0

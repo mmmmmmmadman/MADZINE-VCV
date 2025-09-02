@@ -289,16 +289,19 @@ struct ReverbProcessor {
         
         if (isLeftChannel) {
             // Room size creates variable delay taps for room simulation
-            int roomOffset1 = (int)(roomSize * 400 + chaosOutput * 50); // 0-450 samples
-            int roomOffset2 = (int)(roomSize * 350 + chaosOutput * 40);
-            int roomOffset3 = (int)(roomSize * 300 + chaosOutput * 60);
-            int roomOffset4 = (int)(roomSize * 500 + chaosOutput * 70);
+            // Ensure room offsets are always positive
+            int roomOffset1 = std::max(0, (int)(roomSize * 400 + chaosOutput * 50)); // 0-450 samples
+            int roomOffset2 = std::max(0, (int)(roomSize * 350 + chaosOutput * 40));
+            // Unused room offsets (corresponding read indices are not used)
+            // int roomOffset3 = std::max(0, (int)(roomSize * 300 + chaosOutput * 60));
+            // int roomOffset4 = std::max(0, (int)(roomSize * 500 + chaosOutput * 70));
             
-            // Use room-modulated delay reads
-            int readIdx1 = (combIndex1 - roomOffset1 + COMB_1_SIZE) % COMB_1_SIZE;
-            int readIdx2 = (combIndex2 - roomOffset2 + COMB_2_SIZE) % COMB_2_SIZE;
-            int readIdx3 = (combIndex3 - roomOffset3 + COMB_3_SIZE) % COMB_3_SIZE;
-            int readIdx4 = (combIndex4 - roomOffset4 + COMB_4_SIZE) % COMB_4_SIZE;
+            // Use room-modulated delay reads with safe modulo operation
+            int readIdx1 = ((combIndex1 - roomOffset1) % COMB_1_SIZE + COMB_1_SIZE) % COMB_1_SIZE;
+            int readIdx2 = ((combIndex2 - roomOffset2) % COMB_2_SIZE + COMB_2_SIZE) % COMB_2_SIZE;
+            // Unused read indices
+            // int readIdx3 = ((combIndex3 - roomOffset3) % COMB_3_SIZE + COMB_3_SIZE) % COMB_3_SIZE;
+            // int readIdx4 = ((combIndex4 - roomOffset4) % COMB_4_SIZE + COMB_4_SIZE) % COMB_4_SIZE;
             
             float roomInput = input * roomScale;
             combOut += processComb(roomInput, combBuffer1, COMB_1_SIZE, combIndex1, feedback, combLp1, dampingCoeff);
@@ -311,15 +314,19 @@ struct ReverbProcessor {
             combOut += combBuffer2[readIdx2] * roomSize * 0.12f;
         } else {
             // Right channel: different room characteristics
-            int roomOffset5 = (int)(roomSize * 380 + chaosOutput * 45);
-            int roomOffset6 = (int)(roomSize * 420 + chaosOutput * 55);
-            int roomOffset7 = (int)(roomSize * 280 + chaosOutput * 35);
-            int roomOffset8 = (int)(roomSize * 460 + chaosOutput * 65);
+            // Ensure room offsets are always positive
+            int roomOffset5 = std::max(0, (int)(roomSize * 380 + chaosOutput * 45));
+            int roomOffset6 = std::max(0, (int)(roomSize * 420 + chaosOutput * 55));
+            // Unused room offsets (corresponding read indices are not used)
+            // int roomOffset7 = std::max(0, (int)(roomSize * 280 + chaosOutput * 35));
+            // int roomOffset8 = std::max(0, (int)(roomSize * 460 + chaosOutput * 65));
             
-            int readIdx5 = (combIndex5 - roomOffset5 + COMB_5_SIZE) % COMB_5_SIZE;
-            int readIdx6 = (combIndex6 - roomOffset6 + COMB_6_SIZE) % COMB_6_SIZE;
-            int readIdx7 = (combIndex7 - roomOffset7 + COMB_7_SIZE) % COMB_7_SIZE;
-            int readIdx8 = (combIndex8 - roomOffset8 + COMB_8_SIZE) % COMB_8_SIZE;
+            // Use safe modulo operation
+            int readIdx5 = ((combIndex5 - roomOffset5) % COMB_5_SIZE + COMB_5_SIZE) % COMB_5_SIZE;
+            int readIdx6 = ((combIndex6 - roomOffset6) % COMB_6_SIZE + COMB_6_SIZE) % COMB_6_SIZE;
+            // Unused read indices
+            // int readIdx7 = ((combIndex7 - roomOffset7) % COMB_7_SIZE + COMB_7_SIZE) % COMB_7_SIZE;
+            // int readIdx8 = ((combIndex8 - roomOffset8) % COMB_8_SIZE + COMB_8_SIZE) % COMB_8_SIZE;
             
             float roomInput = input * roomScale;
             combOut += processComb(roomInput, combBuffer5, COMB_5_SIZE, combIndex5, feedback, combLp5, dampingCoeff);
@@ -446,12 +453,23 @@ struct GrainProcessor {
                 float env = 0.5f * (1.0f - cos(envPhase * 2.0f * M_PI));
                 
                 int readPos = (int)grains[i].position;
-                readPos = (readPos + GRAIN_BUFFER_SIZE) % GRAIN_BUFFER_SIZE;
+                // Ensure readPos is always valid
+                readPos = ((readPos % GRAIN_BUFFER_SIZE) + GRAIN_BUFFER_SIZE) % GRAIN_BUFFER_SIZE;
                 
                 float sample = grainBuffer[readPos];
                 output += sample * env;
                 
+                // Update position with proper boundary handling
                 grains[i].position += grains[i].direction * grains[i].pitch;
+                
+                // Handle position wrapping to prevent accumulated floating point errors
+                while (grains[i].position >= GRAIN_BUFFER_SIZE) {
+                    grains[i].position -= GRAIN_BUFFER_SIZE;
+                }
+                while (grains[i].position < 0) {
+                    grains[i].position += GRAIN_BUFFER_SIZE;
+                }
+                
                 grains[i].envelope += 1.0f;
                 activeGrains++;
             }
@@ -595,6 +613,10 @@ struct EllenRipley : rack::engine::Module {
     }
     
     void process(const ProcessArgs& args) override {
+        // Defensive checks
+        if (args.sampleRate <= 0) return;
+        if (!std::isfinite(args.sampleTime)) return;
+        
         delayChaosMod = params[DELAY_CHAOS_PARAM].getValue() > 0.5f;
         grainChaosMod = params[GRAIN_CHAOS_PARAM].getValue() > 0.5f;
         reverbChaosMod = params[REVERB_CHAOS_PARAM].getValue() > 0.5f;
@@ -638,6 +660,10 @@ struct EllenRipley : rack::engine::Module {
         
         float leftInput = inputs[LEFT_AUDIO_INPUT].getVoltage();
         float rightInput = inputs[RIGHT_AUDIO_INPUT].isConnected() ? inputs[RIGHT_AUDIO_INPUT].getVoltage() : leftInput;
+        
+        // Validate input signals
+        if (!std::isfinite(leftInput)) leftInput = 0.0f;
+        if (!std::isfinite(rightInput)) rightInput = 0.0f;
         
         float delayTimeL = params[DELAY_TIME_L_PARAM].getValue();
         if (inputs[DELAY_TIME_L_CV_INPUT].isConnected()) {
@@ -751,6 +777,10 @@ struct EllenRipley : rack::engine::Module {
         float reverbFeedbackAmount = reverbDecay * 0.3f;
         leftDelayBuffer[delayWriteIndex] += leftReverbOutput * reverbFeedbackAmount;
         rightDelayBuffer[delayWriteIndex] += rightReverbOutput * reverbFeedbackAmount;
+        
+        // Final output validation
+        if (!std::isfinite(leftFinal)) leftFinal = 0.0f;
+        if (!std::isfinite(rightFinal)) rightFinal = 0.0f;
         
         outputs[LEFT_AUDIO_OUTPUT].setVoltage(leftFinal);
         outputs[RIGHT_AUDIO_OUTPUT].setVoltage(rightFinal);
