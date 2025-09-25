@@ -1,7 +1,7 @@
 {
   "slug": "MADZINE",
   "name": "MADZINE",
-  "version": "2.1.9",
+  "version": "2.3.0",
   "license": "GPL-3.0-or-later",
   "brand": "MADZINE",
   "author": "MAD",
@@ -106,19 +106,61 @@
       "slug": "Pyramid",
       "name": "Pyramid",
       "description": "3D panning router",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     },
     {
       "slug": "DECAPyramid",
       "name": "DECAPyramid",
       "description": "8-track 3D panning router with send/return",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
     },
     {
       "slug": "KEN",
       "name": "KEN",
       "description": "8-to-2 binaural processor for 3D spatial audio rendering",
-      "tags": ["mixer", "Utility"]
+      "tags": ["Mixer", "Utility"]
+    },
+    {
+      "slug": "Quantizer",
+      "name": "Quantizer",
+      "description": "Quantizer module",
+      "tags": ["Utility"]
+    },
+    {
+      "slug": "EllenRipley",
+      "name": "Ellen Ripley",
+      "description": "Ellen Ripley module",
+      "tags": ["Utility"]
+    },
+    {
+      "slug": "MADDYPlus",
+      "name": "MADDY Plus",
+      "description": "Extended MADDY sequencer",
+      "tags": ["Sequencer"]
+    },
+    {
+      "slug": "NIGOQ",
+      "name": "NIGOQ",
+      "description": "Complex oscillator module",
+      "tags": ["Oscillator"]
+    },
+    {
+      "slug": "Multiverse",
+      "name": "Multiverse",
+      "description": "Multiverse module",
+      "tags": ["Visual"]
+    },
+    {
+      "slug": "Runshow",
+      "name": "Runshow",
+      "description": "Timer with bar counting and visual feedback",
+      "tags": ["Visual", "Clock generator", "Utility"]
+    },
+    {
+      "slug": "EnvVCA6",
+      "name": "Env VCA 6",
+      "description": "6-channel envelope VCA processor with AD generators",
+      "tags": ["Envelope generator", "VCA", "Mixer"]
     }
   ]
 }

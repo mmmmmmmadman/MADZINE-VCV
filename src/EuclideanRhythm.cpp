@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 #include <vector>
 #include <numeric>
 #include <algorithm>
@@ -56,187 +57,9 @@ struct WhiteBackgroundBox : Widget {
     }
 };
 
-struct StandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    StandardBlackKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// StandardBlackKnob26 現在從 widgets/Knobs.hpp 引入
 
-struct SnapKnob : ParamWidget {
-    float accumDelta = 0.0f;
-    
-    SnapKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            accumDelta = 0.0f;
-            e.consume(this);
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        accumDelta += (e.mouseDelta.x - e.mouseDelta.y);
-        
-        float threshold = 10.0f;
-        
-        if (accumDelta >= threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue + 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-        else if (accumDelta <= -threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue - 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// SnapKnob 現在從 widgets/Knobs.hpp 引入
 
 struct DivMultParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
@@ -509,30 +332,74 @@ struct EuclideanRhythm : Module {
         chain23.trackIndices = {1, 2};
         chain123.trackIndices = {0, 1, 0, 2};
 
+        // Track 1 預設值
+        configParam(TRACK1_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T1 Div/Mult");
+        getParamQuantity(TRACK1_DIVMULT_PARAM)->snapEnabled = true;
+        delete paramQuantities[TRACK1_DIVMULT_PARAM];
+        paramQuantities[TRACK1_DIVMULT_PARAM] = new DivMultParamQuantity;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->module = this;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->paramId = TRACK1_DIVMULT_PARAM;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->minValue = -3.0f;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->maxValue = 3.0f;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->defaultValue = 0.0f;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->name = "T1 Div/Mult";
+        paramQuantities[TRACK1_DIVMULT_PARAM]->snapEnabled = true;
+
+        configParam(TRACK1_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "T1 Length");
+        getParamQuantity(TRACK1_LENGTH_PARAM)->snapEnabled = true;
+        configParam(TRACK1_FILL_PARAM, 0.0f, 100.0f, 100.0f, "T1 Fill", "%");
+        configParam(TRACK1_SHIFT_PARAM, 0.0f, 31.0f, 0.0f, "T1 Shift");
+        getParamQuantity(TRACK1_SHIFT_PARAM)->snapEnabled = true;
+        configParam(TRACK1_LENGTH_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T1 Length CV");
+        configParam(TRACK1_FILL_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T1 Fill CV");
+        configParam(TRACK1_SHIFT_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T1 Shift CV");
+
+        // Track 2 預設值
+        configParam(TRACK2_DIVMULT_PARAM, -3.0f, 3.0f, 1.0f, "T2 Div/Mult");
+        getParamQuantity(TRACK2_DIVMULT_PARAM)->snapEnabled = true;
+        delete paramQuantities[TRACK2_DIVMULT_PARAM];
+        paramQuantities[TRACK2_DIVMULT_PARAM] = new DivMultParamQuantity;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->module = this;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->paramId = TRACK2_DIVMULT_PARAM;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->minValue = -3.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->maxValue = 3.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->defaultValue = 1.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->name = "T2 Div/Mult";
+        paramQuantities[TRACK2_DIVMULT_PARAM]->snapEnabled = true;
+
+        configParam(TRACK2_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "T2 Length");
+        getParamQuantity(TRACK2_LENGTH_PARAM)->snapEnabled = true;
+        configParam(TRACK2_FILL_PARAM, 0.0f, 100.0f, 50.0f, "T2 Fill", "%");
+        configParam(TRACK2_SHIFT_PARAM, 0.0f, 31.0f, 0.0f, "T2 Shift");
+        getParamQuantity(TRACK2_SHIFT_PARAM)->snapEnabled = true;
+        configParam(TRACK2_LENGTH_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T2 Length CV");
+        configParam(TRACK2_FILL_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T2 Fill CV");
+        configParam(TRACK2_SHIFT_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T2 Shift CV");
+
+        // Track 3 預設值
+        configParam(TRACK3_DIVMULT_PARAM, -3.0f, 3.0f, 2.0f, "T3 Div/Mult");
+        getParamQuantity(TRACK3_DIVMULT_PARAM)->snapEnabled = true;
+        delete paramQuantities[TRACK3_DIVMULT_PARAM];
+        paramQuantities[TRACK3_DIVMULT_PARAM] = new DivMultParamQuantity;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->module = this;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->paramId = TRACK3_DIVMULT_PARAM;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->minValue = -3.0f;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->maxValue = 3.0f;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->defaultValue = 2.0f;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->name = "T3 Div/Mult";
+        paramQuantities[TRACK3_DIVMULT_PARAM]->snapEnabled = true;
+
+        configParam(TRACK3_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "T3 Length");
+        getParamQuantity(TRACK3_LENGTH_PARAM)->snapEnabled = true;
+        configParam(TRACK3_FILL_PARAM, 0.0f, 100.0f, 25.0f, "T3 Fill", "%");
+        configParam(TRACK3_SHIFT_PARAM, 0.0f, 31.0f, 0.0f, "T3 Shift");
+        getParamQuantity(TRACK3_SHIFT_PARAM)->snapEnabled = true;
+        configParam(TRACK3_LENGTH_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T3 Length CV");
+        configParam(TRACK3_FILL_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T3 Fill CV");
+        configParam(TRACK3_SHIFT_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "T3 Shift CV");
+
         for (int i = 0; i < 3; ++i) {
-            int paramBase = TRACK1_DIVMULT_PARAM + i * 7;
             int inputBase = TRACK1_LENGTH_CV_INPUT + i * 3;
-            
-            configParam(paramBase, -3.0f, 3.0f, 0.0f, string::f("T%d Div/Mult", i+1));
-            getParamQuantity(paramBase)->snapEnabled = true;
-            delete paramQuantities[paramBase];
-            paramQuantities[paramBase] = new DivMultParamQuantity;
-            paramQuantities[paramBase]->module = this;
-            paramQuantities[paramBase]->paramId = paramBase;
-            paramQuantities[paramBase]->minValue = -3.0f;
-            paramQuantities[paramBase]->maxValue = 3.0f;
-            paramQuantities[paramBase]->defaultValue = 0.0f;
-            paramQuantities[paramBase]->name = string::f("T%d Div/Mult", i+1);
-            paramQuantities[paramBase]->snapEnabled = true;
-            
-            configParam(paramBase + 1, 1.0f, 32.0f, 16.0f, string::f("T%d Length", i+1));
-            getParamQuantity(paramBase + 1)->snapEnabled = true;
-            configParam(paramBase + 2, 0.0f, 100.0f, 25.0f, string::f("T%d Fill", i+1), "%");
-            configParam(paramBase + 3, 0.0f, 31.0f, 0.0f, string::f("T%d Shift", i+1));
-            getParamQuantity(paramBase + 3)->snapEnabled = true;
-            configParam(paramBase + 4, -1.0f, 1.0f, 0.0f, string::f("T%d Length CV", i+1));
-            configParam(paramBase + 5, -1.0f, 1.0f, 0.0f, string::f("T%d Fill CV", i+1));
-            configParam(paramBase + 6, -1.0f, 1.0f, 0.0f, string::f("T%d Shift CV", i+1));
             
             configInput(inputBase, string::f("T%d Length CV", i+1));
             configInput(inputBase + 1, string::f("T%d Fill CV", i+1));
@@ -717,25 +584,25 @@ struct EuclideanRhythmWidget : ModuleWidget {
             float x = 1;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "LEN", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 7));
+            addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 7));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_LENGTH_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_LENGTH_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "FILL", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 7));
+            addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 7));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_FILL_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_FILL_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "SHFT", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 7));
+            addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 7));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_SHIFT_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_SHIFT_CV_ATTEN_PARAM + i * 7));
             x += 30;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "D/M", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_DIVMULT_PARAM + i * 7));
+            addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_DIVMULT_PARAM + i * 7));
         }
         
         for (int i = 0; i < 3; ++i) {

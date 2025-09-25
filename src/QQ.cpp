@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 
 struct QQ : Module {
     enum ParamIds {
@@ -194,93 +195,8 @@ struct QQ : Module {
     }
 };
 
-struct StandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    StandardBlackKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(200, 200, 200));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, 3);
-        nvgFillColor(args.vg, nvgRGB(80, 80, 80));
-        nvgFill(args.vg);
-    }
-    
-    void onDragStart(const event::DragStart& e) override {
-        if (e.button != GLFW_MOUSE_BUTTON_LEFT)
-            return;
-        isDragging = true;
-        e.consume(this);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        if (!isDragging)
-            return;
-        
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq)
-            return;
-        
-        float sensitivity = 0.002f;
-        if (APP->window->getMods() & RACK_MOD_MASK)
-            sensitivity *= 0.1f;
-        
-        float deltaValue = -e.mouseDelta.y * sensitivity;
-        pq->setValue(pq->getValue() + deltaValue);
-    }
-    
-    void onDragEnd(const event::DragEnd& e) override {
-        isDragging = false;
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (pq)
-            pq->reset();
-        e.consume(this);
-    }
-};
+// StandardBlackKnob 現在從 widgets/Knobs.hpp 引入
+// 使用 30x30 版本
 
 struct EnhancedTextLabel : Widget {
     std::string text;
@@ -369,65 +285,9 @@ struct CVConnectionLine : Widget {
     }
 };
 
-struct HiddenTimeKnob : ParamWidget {
-    HiddenTimeKnob() {
-        box.size = Vec(60, 51); // Same size as scope display
-    }
-    
-    void draw(const DrawArgs& args) override {
-        // Draw nothing - completely invisible
-    }
-    
-    void onEnter(const event::Enter& e) override {
-        glfwSetCursor(APP->window->win, glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR));
-        ParamWidget::onEnter(e);
-    }
-    
-    void onLeave(const event::Leave& e) override {
-        glfwSetCursor(APP->window->win, NULL);
-        ParamWidget::onLeave(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        float sensitivity = 0.01f; // Vertical drag sensitivity
-        float deltaValue = -e.mouseDelta.y * sensitivity;
-        pq->setValue(pq->getValue() + deltaValue);
-        e.consume(this);
-    }
-};
+// HiddenTimeKnobQQ 現在從 widgets/Knobs.hpp 引入
 
-struct HiddenAttenuatorKnob : ParamWidget {
-    HiddenAttenuatorKnob() {
-        box.size = Vec(24, 24); // Size of PJ301MPort
-    }
-    
-    void draw(const DrawArgs& args) override {
-        // Draw nothing - completely invisible
-    }
-    
-    void onEnter(const event::Enter& e) override {
-        glfwSetCursor(APP->window->win, glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR));
-        ParamWidget::onEnter(e);
-    }
-    
-    void onLeave(const event::Leave& e) override {
-        glfwSetCursor(APP->window->win, NULL);
-        ParamWidget::onLeave(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        float sensitivity = 0.005f; // Vertical drag sensitivity
-        float deltaValue = -e.mouseDelta.y * sensitivity;
-        pq->setValue(pq->getValue() + deltaValue);
-        e.consume(this);
-    }
-};
+// HiddenAttenuatorKnob 現在從 widgets/Knobs.hpp 引入
 
 struct QQScopeDisplay : LedDisplay {
     QQ* module;
@@ -614,7 +474,7 @@ struct QQWidget : ModuleWidget {
         addChild(scopeDisplay);
         
         // Hidden time control knob (overlapping scope display)
-        addParam(createParam<HiddenTimeKnob>(Vec(0, 279), module, QQ::SCOPE_TIME_PARAM));
+        addParam(createParam<HiddenTimeKnobQQ>(Vec(0, 279), module, QQ::SCOPE_TIME_PARAM));
         
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(60, 50)));
         

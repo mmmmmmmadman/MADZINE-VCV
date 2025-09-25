@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -37,369 +38,9 @@ struct TWNCLightEnhancedTextLabel : TransparentWidget {
     }
 };
 
-struct TWNCLightLargeBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    TWNCLightLargeBlackKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
 
-struct TWNCLightLargeSnapKnob : ParamWidget {
-    float accumDelta = 0.0f;
-    
-    TWNCLightLargeSnapKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            accumDelta = 0.0f;
-            e.consume(this);
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        accumDelta += (e.mouseDelta.x - e.mouseDelta.y);
-        
-        float threshold = 15.0f;
-        
-        if (accumDelta >= threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue + 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-        else if (accumDelta <= -threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue - 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
 
-struct TWNCLightStandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    TWNCLightStandardBlackKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 3);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
 
-struct TWNCLightSnapKnob : ParamWidget {
-    float accumDelta = 0.0f;
-    
-    TWNCLightSnapKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            accumDelta = 0.0f;
-            e.consume(this);
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        accumDelta += (e.mouseDelta.x - e.mouseDelta.y);
-        
-        float threshold = 15.0f;
-        
-        if (accumDelta >= threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue + 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-        else if (accumDelta <= -threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue - 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
 
 struct TWNCLightDivMultParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
@@ -702,8 +343,8 @@ struct TWNCLight : Module {
         
         configParam(GLOBAL_LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "Global Length");
         getParamQuantity(GLOBAL_LENGTH_PARAM)->snapEnabled = true;
-        
-        configParam(TRACK1_FILL_PARAM, 0.0f, 100.0f, 25.0f, "Track 1 Fill", "%");
+
+        configParam(TRACK1_FILL_PARAM, 0.0f, 100.0f, 66.599990844726562f, "Track 1 Fill", "%");
         
         configParam(VCA_SHIFT_PARAM, 1.0f, 7.0f, 1.0f, "VCA Shift");
         getParamQuantity(VCA_SHIFT_PARAM)->snapEnabled = true;
@@ -717,13 +358,13 @@ struct TWNCLight : Module {
         paramQuantities[VCA_SHIFT_PARAM]->name = "VCA Shift";
         paramQuantities[VCA_SHIFT_PARAM]->snapEnabled = true;
         
-        configParam(VCA_DECAY_PARAM, 0.01f, 2.0f, 0.3f, "VCA Decay", " s");
-        
-        configParam(TRACK1_DECAY_PARAM, 0.01f, 2.0f, 0.3f, "Track 1 Decay", " s");
+        configParam(VCA_DECAY_PARAM, 0.01f, 2.0f, 0.54929012060165405f, "VCA Decay", " s");
+
+        configParam(TRACK1_DECAY_PARAM, 0.01f, 2.0f, 0.30000001192092896f, "Track 1 Decay", " s");
         configParam(TRACK1_SHAPE_PARAM, 0.0f, 0.99f, 0.5f, "Track 1 Shape");
         
         configParam(TRACK2_FILL_PARAM, 0.0f, 100.0f, 100.0f, "Track 2 Fill", "%");
-        configParam(TRACK2_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "Track 2 Div/Mult");
+        configParam(TRACK2_DIVMULT_PARAM, -3.0f, 3.0f, -3.0f, "Track 2 Div/Mult");
         getParamQuantity(TRACK2_DIVMULT_PARAM)->snapEnabled = true;
         delete paramQuantities[TRACK2_DIVMULT_PARAM];
         paramQuantities[TRACK2_DIVMULT_PARAM] = new TWNCLightDivMultParamQuantity;
@@ -731,14 +372,14 @@ struct TWNCLight : Module {
         paramQuantities[TRACK2_DIVMULT_PARAM]->paramId = TRACK2_DIVMULT_PARAM;
         paramQuantities[TRACK2_DIVMULT_PARAM]->minValue = -3.0f;
         paramQuantities[TRACK2_DIVMULT_PARAM]->maxValue = 3.0f;
-        paramQuantities[TRACK2_DIVMULT_PARAM]->defaultValue = 0.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->defaultValue = -3.0f;
         paramQuantities[TRACK2_DIVMULT_PARAM]->name = "Track 2 Div/Mult";
         paramQuantities[TRACK2_DIVMULT_PARAM]->snapEnabled = true;
         
-        configParam(TRACK2_DECAY_PARAM, 0.01f, 2.0f, 0.3f, "Track 2 Decay", " s");
+        configParam(TRACK2_DECAY_PARAM, 0.01f, 2.0f, 0.093579992651939392f, "Track 2 Decay", " s");
         configParam(TRACK2_SHAPE_PARAM, 0.0f, 0.99f, 0.5f, "Track 2 Shape");
-        
-        configParam(TRACK2_SHIFT_PARAM, 1.0f, 4.0f, 1.0f, "Track 2 Shift");
+
+        configParam(TRACK2_SHIFT_PARAM, 1.0f, 4.0f, 3.0f, "Track 2 Shift");
         getParamQuantity(TRACK2_SHIFT_PARAM)->snapEnabled = true;
         
         configOutput(MAIN_VCA_ENV_OUTPUT, "Accent VCA Envelope");
@@ -918,25 +559,25 @@ struct TWNCLightWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(15, 51), module, TWNCLight::GLOBAL_CLOCK_INPUT));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, 30), Vec(20, 15), "LEN", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightSnapKnob>(Vec(45, 53), module, TWNCLight::GLOBAL_LENGTH_PARAM));
+        addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(45, 53), module, TWNCLight::GLOBAL_LENGTH_PARAM));
 
         float drumY = 71;
         addChild(new TWNCLightEnhancedTextLabel(Vec(20, drumY), Vec(20, 10), "Drum", 6.f, nvgRGB(255, 200, 100), true));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 12), Vec(20, 10), "ACCNT", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightSnapKnob>(Vec(15, drumY + 33), module, TWNCLight::VCA_SHIFT_PARAM));
+        addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(15, drumY + 33), module, TWNCLight::VCA_SHIFT_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 12), Vec(20, 10), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(45, drumY + 33), module, TWNCLight::TRACK1_SHAPE_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, drumY + 33), module, TWNCLight::TRACK1_SHAPE_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 48), Vec(20, 10), "FILL", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(15, drumY + 69), module, TWNCLight::TRACK1_FILL_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, drumY + 69), module, TWNCLight::TRACK1_FILL_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 48), Vec(20, 10), "A.DEC", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(45, drumY + 69), module, TWNCLight::VCA_DECAY_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, drumY + 69), module, TWNCLight::VCA_DECAY_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 84), Vec(20, 10), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(15, drumY + 105), module, TWNCLight::TRACK1_DECAY_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, drumY + 105), module, TWNCLight::TRACK1_DECAY_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 84), Vec(20, 10), "D.D", 5.f, nvgRGB(255, 133, 133), true));
         addInput(createInputCentered<PJ301MPort>(Vec(45, drumY + 105), module, TWNCLight::DRUM_DECAY_CV_INPUT));
@@ -945,19 +586,19 @@ struct TWNCLightWidget : ModuleWidget {
         addChild(new TWNCLightEnhancedTextLabel(Vec(20, hatsY), Vec(20, 10), "HATs", 6.f, nvgRGB(255, 200, 100), true));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 12), Vec(20, 10), "FILL", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(15, hatsY + 33), module, TWNCLight::TRACK2_FILL_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, hatsY + 33), module, TWNCLight::TRACK2_FILL_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 12), Vec(20, 10), "SHIFT", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightSnapKnob>(Vec(45, hatsY + 33), module, TWNCLight::TRACK2_SHIFT_PARAM));
+        addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(45, hatsY + 33), module, TWNCLight::TRACK2_SHIFT_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 48), Vec(20, 10), "D/M", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightSnapKnob>(Vec(15, hatsY + 69), module, TWNCLight::TRACK2_DIVMULT_PARAM));
+        addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(15, hatsY + 69), module, TWNCLight::TRACK2_DIVMULT_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 48), Vec(20, 10), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(45, hatsY + 69), module, TWNCLight::TRACK2_DECAY_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, hatsY + 69), module, TWNCLight::TRACK2_DECAY_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 84), Vec(20, 10), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TWNCLightStandardBlackKnob>(Vec(15, hatsY + 105), module, TWNCLight::TRACK2_SHAPE_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, hatsY + 105), module, TWNCLight::TRACK2_SHAPE_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 84), Vec(20, 10), "H.D", 5.f, nvgRGB(255, 133, 133), true));
         addInput(createInputCentered<PJ301MPort>(Vec(45, hatsY + 105), module, TWNCLight::HATS_DECAY_CV_INPUT));

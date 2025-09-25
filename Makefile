@@ -13,6 +13,11 @@ else
 endif
 
 SOURCES += $(wildcard src/*.cpp)
+
+# Add Objective-C++ sources for macOS
+ifeq ($(shell uname),Darwin)
+    SOURCES += $(wildcard src/*.mm)
+endif
 DISTRIBUTABLES += res $(wildcard LICENSE*) $(wildcard presets)
 
 include $(RACK_DIR)/plugin.mk

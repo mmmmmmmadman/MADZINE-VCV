@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -37,187 +38,9 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     }
 };
 
-struct TechnoStandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    TechnoStandardBlackKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// TechnoStandardBlackKnob 現在從 widgets/Knobs.hpp 引入
 
-struct TechnoSnapKnob : ParamWidget {
-    float accumDelta = 0.0f;
-    
-    TechnoSnapKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            accumDelta = 0.0f;
-            e.consume(this);
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        accumDelta += (e.mouseDelta.x - e.mouseDelta.y);
-        
-        float threshold = 15.0f;
-        
-        if (accumDelta >= threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue + 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-        else if (accumDelta <= -threshold) {
-            float currentValue = pq->getValue();
-            float newValue = currentValue - 1.0f;
-            newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-            pq->setValue(newValue);
-            accumDelta = 0.0f;
-        }
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// TechnoSnapKnob 現在從 widgets/Knobs.hpp 引入
 
 struct KimoAccentParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
@@ -429,6 +252,7 @@ struct KIMO : Module {
         FM_CV_INPUT,
         PUNCH_CV_INPUT,
         DECAY_CV_INPUT,
+        FILL_CV_INPUT,
         INPUTS_LEN
     };
     enum OutputId {
@@ -519,9 +343,10 @@ struct KIMO : Module {
         configInput(FM_CV_INPUT, "FM CV");
         configInput(PUNCH_CV_INPUT, "Punch CV");
         configInput(DECAY_CV_INPUT, "Decay CV");
+        configInput(FILL_CV_INPUT, "Fill CV");
         
-        configParam(FILL_PARAM, 0.0f, 100.0f, 25.0f, "Fill", "%");
-        configParam(ACCENT_PARAM, 1.0f, 7.0f, 1.0f, "Accent");
+        configParam(FILL_PARAM, 0.0f, 100.0f, 71.20001220703125f, "Fill", "%");
+        configParam(ACCENT_PARAM, 1.0f, 7.0f, 3.0f, "Accent");
         getParamQuantity(ACCENT_PARAM)->snapEnabled = true;
         delete paramQuantities[ACCENT_PARAM];
         paramQuantities[ACCENT_PARAM] = new KimoAccentParamQuantity;
@@ -529,16 +354,16 @@ struct KIMO : Module {
         paramQuantities[ACCENT_PARAM]->paramId = ACCENT_PARAM;
         paramQuantities[ACCENT_PARAM]->minValue = 1.0f;
         paramQuantities[ACCENT_PARAM]->maxValue = 7.0f;
-        paramQuantities[ACCENT_PARAM]->defaultValue = 1.0f;
+        paramQuantities[ACCENT_PARAM]->defaultValue = 3.0f;
         paramQuantities[ACCENT_PARAM]->name = "Accent";
         paramQuantities[ACCENT_PARAM]->snapEnabled = true;
         
-        configParam(ACCENT_DELAY_PARAM, 0.01f, 2.0f, 0.3f, "Accent Delay", " s");
-        configParam(TUNE_PARAM, std::log2(24.0f), std::log2(500.0f), std::log2(60.0f), "Tune", " Hz", 2.f);
-        configParam(FM_PARAM, 0.0f, 1.0f, 0.5f, "FM Amount");
-        configParam(PUNCH_PARAM, 0.0f, 1.0f, 0.5f, "Punch Amount");
-        configParam(DECAY_PARAM, std::log(0.01f), std::log(2.0f), std::log(0.3f), "Decay", " s", 2.718281828f);
-        configParam(SHAPE_PARAM, 0.0f, 0.99f, 0.5f, "Shape");
+        configParam(ACCENT_DELAY_PARAM, 0.01f, 2.0f, 0.54331988096237183f, "Accent Delay", " s");
+        configParam(TUNE_PARAM, std::log2(24.0f), std::log2(500.0f), 4.5849623680114746f, "Tune", " Hz", 2.f);
+        configParam(FM_PARAM, 0.0f, 1.0f, 0.12400007992982864f, "FM Amount");
+        configParam(PUNCH_PARAM, 0.0f, 1.0f, 0.67500001192092896f, "Punch Amount");
+        configParam(DECAY_PARAM, std::log(0.01f), std::log(2.0f), -3.180246114730835f, "Decay", " s", 2.718281828f);
+        configParam(SHAPE_PARAM, 0.0f, 0.99f, 0.11884991824626923f, "Shape");
         
         configOutput(VCA_ENV_OUTPUT, "VCA Envelope");
         configOutput(FM_ENV_OUTPUT, "FM Envelope");
@@ -589,6 +414,9 @@ struct KIMO : Module {
         track.length = GLOBAL_LENGTH;
 
         float fillParam = params[FILL_PARAM].getValue();
+        if (inputs[FILL_CV_INPUT].isConnected()) {
+            fillParam += inputs[FILL_CV_INPUT].getVoltage() * 10.0f;
+        }
         float fillPercentage = clamp(fillParam, 0.0f, 100.0f);
         track.fill = (int)std::round((fillPercentage / 100.0f) * track.length);
 
@@ -663,35 +491,39 @@ struct KIMOWidget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(5, 38), Vec(20, 15), "CLK", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 63), module, KIMO::CLK_INPUT));
         addChild(new TechnoEnhancedTextLabel(Vec(35, 38), Vec(20, 15), "FILL", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(45, 63), module, KIMO::FILL_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 63), module, KIMO::FILL_PARAM));
 
         // ACCENT (78 -> 80)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 80), Vec(20, 15), "ACCENT", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoSnapKnob>(Vec(15, 105), module, KIMO::ACCENT_PARAM));
+        addParam(createParamCentered<TechnoSnapKnob30>(Vec(15, 105), module, KIMO::ACCENT_PARAM));
 
         // ACCENT DELAY (78 -> 80, 88 -> 90)
         addChild(new TechnoEnhancedTextLabel(Vec(35, 80), Vec(20, 15), "DELAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(45, 105), module, KIMO::ACCENT_DELAY_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 105), module, KIMO::ACCENT_DELAY_PARAM));
 
         // TUNE (118 -> 122)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 122), Vec(20, 15), "TUNE", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(15, 147), module, KIMO::TUNE_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 147), module, KIMO::TUNE_PARAM));
 
         // FM (118 -> 122)
         addChild(new TechnoEnhancedTextLabel(Vec(35, 122), Vec(20, 15), "FM", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(45, 147), module, KIMO::FM_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 147), module, KIMO::FM_PARAM));
 
         // PUNCH (158 -> 164)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 164), Vec(20, 15), "PUNCH", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(15, 189), module, KIMO::PUNCH_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 189), module, KIMO::PUNCH_PARAM));
 
         // DECAY (158 -> 164)
         addChild(new TechnoEnhancedTextLabel(Vec(35, 164), Vec(20, 15), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(45, 189), module, KIMO::DECAY_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 189), module, KIMO::DECAY_PARAM));
 
         // SHAPE (198 -> 206)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 206), Vec(20, 15), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(15, 231), module, KIMO::SHAPE_PARAM));
+        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 231), module, KIMO::SHAPE_PARAM));
+
+        // FILL CV
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 206), Vec(20, 15), "FILL", 5.f, nvgRGB(255, 255, 255), true));
+        addInput(createInputCentered<PJ301MPort>(Vec(45, 231), module, KIMO::FILL_CV_INPUT));
 
         // TUNE CV (178 -> 250)
         addChild(new TechnoEnhancedTextLabel(Vec(35, 250), Vec(20, 15), "TUNE", 5.f, nvgRGB(255, 255, 255), true));

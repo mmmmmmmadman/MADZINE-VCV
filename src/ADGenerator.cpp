@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
@@ -53,94 +54,7 @@ struct WhiteBackgroundBox : Widget {
     }
 };
 
-struct StandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    StandardBlackKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
-
+// StandardBlackKnob 現在從 widgets/Knobs.hpp 引入
 struct UFOWidget : Widget {
     UFOWidget(Vec pos, Vec size) {
         box.pos = pos;
@@ -630,19 +544,36 @@ struct ADGenerator : Module {
 
     ADGenerator() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-        
+
         configParam(ATK_ALL_PARAM, -1.0f, 1.0f, 0.0f, "Attack All");
         configParam(DEC_ALL_PARAM, -1.0f, 1.0f, 0.0f, "Decay All");
-        configParam(AUTO_ROUTE_PARAM, 0.0f, 1.0f, 0.0f, "Auto Route");
-        
+        configParam(AUTO_ROUTE_PARAM, 0.0f, 1.0f, 1.0f, "Auto Route");
+
+        // Track 1 預設值來自 .vcvm
+        configParam(TRACK1_ATTACK_PARAM, 0.0f, 1.0f, 0.0020000000949949026f, "Track 1 Attack", " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
+        configParam(TRACK1_DECAY_PARAM, 0.0f, 1.0f, 0.30000001192092896f, "Track 1 Decay", " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
+        configParam(TRACK1_CURVE_PARAM, -0.99f, 0.99f, -0.74844002723693848f, "Track 1 Curve");
+        configParam(TRACK1_BPF_ENABLE_PARAM, 0.0f, 1.0f, 0.0f, "Track 1 BPF Enable");
+        configParam(TRACK1_BPF_FREQ_PARAM, 20.0f, 8000.0f, 200.0f, "Track 1 BPF Frequency", " Hz");
+        configParam(TRACK1_BPF_GAIN_PARAM, 0.1f, 100.0f, 3.0f, "Track 1 BPF Gain", "x");
+
+        // Track 2 預設值來自 .vcvm
+        configParam(TRACK2_ATTACK_PARAM, 0.0f, 1.0f, 0.0f, "Track 2 Attack", " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
+        configParam(TRACK2_DECAY_PARAM, 0.0f, 1.0f, 0.30000001192092896f, "Track 2 Decay", " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
+        configParam(TRACK2_CURVE_PARAM, -0.99f, 0.99f, -0.8316001296043396f, "Track 2 Curve");
+        configParam(TRACK2_BPF_ENABLE_PARAM, 0.0f, 1.0f, 0.0f, "Track 2 BPF Enable");
+        configParam(TRACK2_BPF_FREQ_PARAM, 20.0f, 8000.0f, 1000.0f, "Track 2 BPF Frequency", " Hz");
+        configParam(TRACK2_BPF_GAIN_PARAM, 0.1f, 100.0f, 3.0f, "Track 2 BPF Gain", "x");
+
+        // Track 3 預設值來自 .vcvm
+        configParam(TRACK3_ATTACK_PARAM, 0.0f, 1.0f, 0.0f, "Track 3 Attack", " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
+        configParam(TRACK3_DECAY_PARAM, 0.0f, 1.0f, 0.30000001192092896f, "Track 3 Decay", " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
+        configParam(TRACK3_CURVE_PARAM, -0.99f, 0.99f, -0.73062008619308472f, "Track 3 Curve");
+        configParam(TRACK3_BPF_ENABLE_PARAM, 0.0f, 1.0f, 0.0f, "Track 3 BPF Enable");
+        configParam(TRACK3_BPF_FREQ_PARAM, 20.0f, 8000.0f, 5000.0f, "Track 3 BPF Frequency", " Hz");
+        configParam(TRACK3_BPF_GAIN_PARAM, 0.1f, 100.0f, 3.0f, "Track 3 BPF Gain", "x");
+
         for (int i = 0; i < 3; ++i) {
-            configParam(TRACK1_ATTACK_PARAM + i * 6, 0.0f, 1.0f, 0.1f, string::f("Track %d Attack", i + 1), " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
-            configParam(TRACK1_DECAY_PARAM + i * 6, 0.0f, 1.0f, 0.3f, string::f("Track %d Decay", i + 1), " s", 0.0f, 1.0f, std::pow(10.0f, -2.0f));
-            configParam(TRACK1_CURVE_PARAM + i * 6, -0.99f, 0.99f, 0.0f, string::f("Track %d Curve", i + 1));
-            configParam(TRACK1_BPF_ENABLE_PARAM + i * 6, 0.0f, 1.0f, 0.0f, string::f("Track %d BPF Enable", i + 1));
-            configParam(TRACK1_BPF_FREQ_PARAM + i * 6, 20.0f, 8000.0f, i == 0 ? 200.0f : (i == 1 ? 1000.0f : 5000.0f), string::f("Track %d BPF Frequency", i + 1), " Hz");
-            configParam(TRACK1_BPF_GAIN_PARAM + i * 6, 0.1f, 100.0f, 3.0f, string::f("Track %d BPF Gain", i + 1), "x");
-            
             configInput(TRACK1_TRIG_INPUT + i, string::f("Track %d Trigger", i + 1));
             configOutput(TRACK1_OUTPUT + i, string::f("Track %d Envelope", i + 1));
         }
@@ -815,15 +746,15 @@ struct ADGeneratorWidget : ModuleWidget {
             x += 27;
 
             addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "ATK", 7.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_ATTACK_PARAM + i * 6));
+            addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_ATTACK_PARAM + i * 6));
             x += 27;
 
             addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "DEC", 7.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_DECAY_PARAM + i * 6));
+            addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_DECAY_PARAM + i * 6));
             x += 27;
 
             addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "CURV", 7.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_CURVE_PARAM + i * 6));
+            addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_CURVE_PARAM + i * 6));
             x += 27;
 
             x = 10;
@@ -835,11 +766,11 @@ struct ADGeneratorWidget : ModuleWidget {
             x += 27;
 
             addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_FREQ_PARAM + i * 6));
+            addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_FREQ_PARAM + i * 6));
             x += 27;
 
             addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "GAIN", 7.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<StandardBlackKnob>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_GAIN_PARAM + i * 6));
+            addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_GAIN_PARAM + i * 6));
         }
         
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, box.size.y - 325)));

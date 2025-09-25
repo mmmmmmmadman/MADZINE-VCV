@@ -24,4 +24,11 @@ void init(Plugin* p) {
     p->addModel(modelPyramid);
     p->addModel(modelDECAPyramid);
     p->addModel(modelKEN);
+    p->addModel(modelQuantizer);
+    p->addModel(modelEllenRipley);
+    p->addModel(modelMADDYPlus);
+    p->addModel(modelNIGOQ);
+    p->addModel(modelMultiverse);
+    p->addModel(modelRunshow);
+    p->addModel(modelEnvVCA6);
 }

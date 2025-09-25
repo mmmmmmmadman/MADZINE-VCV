@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 
 struct Observer : Module {
     enum ParamIds {
@@ -164,35 +165,7 @@ struct EnhancedTextLabel : Widget {
     }
 };
 
-struct HiddenTimeKnob : ParamWidget {
-    HiddenTimeKnob() {
-        box.size = Vec(120, 300); // Same size as scope display
-    }
-    
-    void draw(const DrawArgs& args) override {
-        // Draw nothing - completely invisible
-    }
-    
-    void onEnter(const event::Enter& e) override {
-        glfwSetCursor(APP->window->win, glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR));
-        ParamWidget::onEnter(e);
-    }
-    
-    void onLeave(const event::Leave& e) override {
-        glfwSetCursor(APP->window->win, NULL);
-        ParamWidget::onLeave(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        float sensitivity = 0.01f; // Vertical drag sensitivity
-        float deltaValue = -e.mouseDelta.y * sensitivity;
-        pq->setValue(pq->getValue() + deltaValue);
-        e.consume(this);
-    }
-};
+// HiddenTimeKnob now using from widgets/Knobs.hpp
 
 struct WhiteBackgroundBox : Widget {
     WhiteBackgroundBox(Vec pos, Vec size) {
@@ -384,7 +357,7 @@ struct ObserverWidget : ModuleWidget {
         addChild(scopeDisplay);
         
         // Hidden time control knob (overlapping entire scope display)
-        addParam(createParam<HiddenTimeKnob>(Vec(0, 30), module, Observer::TIME_PARAM));
+        addParam(createParam<madzine::widgets::HiddenTimeKnobObserver>(Vec(0, 30), module, Observer::TIME_PARAM));
         
         // White background box for inputs (at bottom) - consistent with other modules
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));

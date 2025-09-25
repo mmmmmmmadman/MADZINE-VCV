@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 
 struct SwingLFO : Module {
     enum ParamId {
@@ -41,10 +42,10 @@ struct SwingLFO : Module {
     SwingLFO() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         
-        configParam(FREQ_PARAM, -3.0f, 7.0f, 1.0f, "Frequency", " Hz", 2.0f, 1.0f);
-        configParam(SWING_PARAM, 0.0f, 1.0f, 0.0f, "Swing", "°", 0.0f, -90.0f, 180.0f);
-        configParam(SHAPE_PARAM, 0.0f, 1.0f, 0.5f, "Shape", "%", 0.f, 100.f);
-        configParam(MIX_PARAM, 0.0f, 1.0f, 0.5f, "Mix");
+        configParam(FREQ_PARAM, -3.0f, 7.0f, 1.5849624872207642f, "Frequency", " Hz", 2.0f, 1.0f);
+        configParam(SWING_PARAM, 0.0f, 1.0f, 0.29900002479553223f, "Swing", "°", 0.0f, -90.0f, 180.0f);
+        configParam(SHAPE_PARAM, 0.0f, 1.0f, 0.12099999934434891f, "Shape", "%", 0.f, 100.f);
+        configParam(MIX_PARAM, 0.0f, 1.0f, 0.38400006294250488f, "Mix");
         
         configParam(FREQ_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Freq CV Attenuverter");
         configParam(SWING_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Swing CV Attenuverter");
@@ -163,93 +164,7 @@ struct SwingLFO : Module {
     }
 };
 
-struct StandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    StandardBlackKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// StandardBlackKnob now using StandardBlackKnob from widgets/Knobs.hpp
 
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
@@ -317,30 +232,30 @@ struct SwingLFOWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         addChild(new EnhancedTextLabel(Vec(0, 26), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM));
         
         addChild(new EnhancedTextLabel(Vec(5, 40), Vec(20, 20), "RST", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX - 15, 65), module, SwingLFO::RESET_INPUT));
         
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 89), module, SwingLFO::FREQ_CV_ATTEN_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 89), module, SwingLFO::FREQ_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 89), module, SwingLFO::FREQ_CV_INPUT));
-        
+
         addChild(new EnhancedTextLabel(Vec(0, 105), Vec(box.size.x, 20), "SWING", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM));
-        
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 166), module, SwingLFO::SWING_CV_ATTEN_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM));
+
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 166), module, SwingLFO::SWING_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 166), module, SwingLFO::SWING_CV_INPUT));
-        
+
         addChild(new EnhancedTextLabel(Vec(0, 182), Vec(box.size.x, 20), "SHAPE", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM));
-        
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 244), module, SwingLFO::SHAPE_CV_ATTEN_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM));
+
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 244), module, SwingLFO::SHAPE_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 244), module, SwingLFO::SHAPE_CV_INPUT));
-        
+
         addChild(new EnhancedTextLabel(Vec(0, 257), Vec(box.size.x, 20), "MIX", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM));
-        
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 317), module, SwingLFO::MIX_CV_ATTEN_PARAM));
+        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM));
+
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 317), module, SwingLFO::MIX_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 317), module, SwingLFO::MIX_CV_INPUT));
         
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(60, 50)));

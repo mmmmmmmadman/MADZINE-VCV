@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -35,10 +36,12 @@ struct MADDYEnhancedTextLabel : TransparentWidget {
     }
 };
 
-struct MADDYStandardBlackKnob : ParamWidget {
+// MADDYStandardBlackKnob now using implementation from widgets/Knobs.hpp
+
+struct OldMADDYStandardBlackKnob_UNUSED : app::Knob {
     bool isDragging = false;
     
-    MADDYStandardBlackKnob() {
+    OldMADDYStandardBlackKnob_UNUSED() {
         box.size = Vec(26, 26);
     }
     
@@ -117,11 +120,14 @@ struct MADDYStandardBlackKnob : ParamWidget {
     }
 };
 
-struct MADDYSnapKnob : ParamWidget {
+// MADDYSnapKnob now using implementation from widgets/Knobs.hpp
+
+struct OldMADDYSnapKnob_UNUSED : app::Knob {
     float accumDelta = 0.0f;
     
-    MADDYSnapKnob() {
+    OldMADDYSnapKnob_UNUSED() {
         box.size = Vec(26, 26);
+        snap = true;
     }
     
     float getDisplayAngle() {
@@ -205,10 +211,12 @@ struct MADDYSnapKnob : ParamWidget {
     }
 };
 
-struct WhiteKnob : ParamWidget {
+// WhiteKnob now using implementation from widgets/Knobs.hpp
+
+struct OldWhiteKnob_UNUSED : app::Knob {
     bool isDragging = false;
     
-    WhiteKnob() {
+    OldWhiteKnob_UNUSED() {
         box.size = Vec(30, 30);
     }
     
@@ -287,10 +295,12 @@ struct WhiteKnob : ParamWidget {
     }
 };
 
-struct SmallGrayKnob : ParamWidget {
+// SmallGrayKnob now using implementation from widgets/Knobs.hpp
+
+struct OldSmallGrayKnob_UNUSED : app::Knob {
     bool isDragging = false;
     
-    SmallGrayKnob() {
+    OldSmallGrayKnob_UNUSED() {
         box.size = Vec(21, 21);
     }
     
@@ -369,10 +379,12 @@ struct SmallGrayKnob : ParamWidget {
     }
 };
 
-struct MediumGrayKnob : ParamWidget {
+// MediumGrayKnob now using implementation from widgets/Knobs.hpp
+
+struct OldMediumGrayKnob_UNUSED : app::Knob {
     bool isDragging = false;
     
-    MediumGrayKnob() {
+    OldMediumGrayKnob_UNUSED() {
         box.size = Vec(26, 26);
     }
     
@@ -877,11 +889,11 @@ struct MADDY : Module {
     MADDY() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         
-        configParam(FREQ_PARAM, -3.0f, 7.0f, 1.0f, "Frequency", " Hz", 2.0f, 1.0f);
+        configParam(FREQ_PARAM, -3.0f, 7.0f, 2.8073549270629883f, "Frequency", " Hz", 2.0f, 1.0f);
         configParam(SWING_PARAM, 0.0f, 1.0f, 0.0f, "Swing", "°", 0.0f, -90.0f, 180.0f);
         configParam(LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "Length");
         getParamQuantity(LENGTH_PARAM)->snapEnabled = true;
-        configParam(DECAY_PARAM, 0.0f, 1.0f, 0.3f, "Decay");
+        configParam(DECAY_PARAM, 0.0f, 1.0f, 0.30000001192092896f, "Decay");
         
         configParam(K1_PARAM, -10.0f, 10.0f, 0.0f, "K1", "V");
         configParam(K2_PARAM, -10.0f, 10.0f, 2.0f, "K2", "V");
@@ -905,19 +917,49 @@ struct MADDY : Module {
         configParam(CLOCK_SOURCE_PARAM, 0.0f, 6.0f, 0.0f, "Clock Source");
         getParamQuantity(CLOCK_SOURCE_PARAM)->snapEnabled = true;
         
+        // Track 1 預設值
+        configParam(TRACK1_FILL_PARAM, 0.0f, 100.0f, 100.0f, "T1 Fill", "%");
+        configParam(TRACK1_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T1 Div/Mult");
+        getParamQuantity(TRACK1_DIVMULT_PARAM)->snapEnabled = true;
+        delete paramQuantities[TRACK1_DIVMULT_PARAM];
+        paramQuantities[TRACK1_DIVMULT_PARAM] = new DivMultParamQuantity;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->module = this;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->paramId = TRACK1_DIVMULT_PARAM;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->minValue = -3.0f;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->maxValue = 3.0f;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->defaultValue = 0.0f;
+        paramQuantities[TRACK1_DIVMULT_PARAM]->name = "T1 Div/Mult";
+        paramQuantities[TRACK1_DIVMULT_PARAM]->snapEnabled = true;
+
+        // Track 2 預設值
+        configParam(TRACK2_FILL_PARAM, 0.0f, 100.0f, 100.0f, "T2 Fill", "%");
+        configParam(TRACK2_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T2 Div/Mult");
+        getParamQuantity(TRACK2_DIVMULT_PARAM)->snapEnabled = true;
+        delete paramQuantities[TRACK2_DIVMULT_PARAM];
+        paramQuantities[TRACK2_DIVMULT_PARAM] = new DivMultParamQuantity;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->module = this;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->paramId = TRACK2_DIVMULT_PARAM;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->minValue = -3.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->maxValue = 3.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->defaultValue = 0.0f;
+        paramQuantities[TRACK2_DIVMULT_PARAM]->name = "T2 Div/Mult";
+        paramQuantities[TRACK2_DIVMULT_PARAM]->snapEnabled = true;
+
+        // Track 3 預設值
+        configParam(TRACK3_FILL_PARAM, 0.0f, 100.0f, 100.0f, "T3 Fill", "%");
+        configParam(TRACK3_DIVMULT_PARAM, -3.0f, 3.0f, 0.0f, "T3 Div/Mult");
+        getParamQuantity(TRACK3_DIVMULT_PARAM)->snapEnabled = true;
+        delete paramQuantities[TRACK3_DIVMULT_PARAM];
+        paramQuantities[TRACK3_DIVMULT_PARAM] = new DivMultParamQuantity;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->module = this;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->paramId = TRACK3_DIVMULT_PARAM;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->maxValue = 3.0f;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->minValue = -3.0f;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->defaultValue = 0.0f;
+        paramQuantities[TRACK3_DIVMULT_PARAM]->name = "T3 Div/Mult";
+        paramQuantities[TRACK3_DIVMULT_PARAM]->snapEnabled = true;
+
         for (int i = 0; i < 3; ++i) {
-            configParam(TRACK1_FILL_PARAM + i * 2, 0.0f, 100.0f, 25.0f, string::f("T%d Fill", i+1), "%");
-            configParam(TRACK1_DIVMULT_PARAM + i * 2, -3.0f, 3.0f, 0.0f, string::f("T%d Div/Mult", i+1));
-            getParamQuantity(TRACK1_DIVMULT_PARAM + i * 2)->snapEnabled = true;
-            delete paramQuantities[TRACK1_DIVMULT_PARAM + i * 2];
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2] = new DivMultParamQuantity;
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->module = this;
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->paramId = TRACK1_DIVMULT_PARAM + i * 2;
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->minValue = -3.0f;
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->maxValue = 3.0f;
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->defaultValue = 0.0f;
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->name = string::f("T%d Div/Mult", i+1);
-            paramQuantities[TRACK1_DIVMULT_PARAM + i * 2]->snapEnabled = true;
             
             configOutput(TRACK1_OUTPUT + i, string::f("T%d Trigger", i+1));
         }
@@ -1338,19 +1380,19 @@ struct MADDYWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(60, 52), module, MADDY::RESET_INPUT));
         
         addChild(new MADDYEnhancedTextLabel(Vec(86, 28), Vec(25, 15), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<SmallGrayKnob>(Vec(98, 52), module, MADDY::FREQ_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(98, 52), module, MADDY::FREQ_PARAM));
         
         addChild(new MADDYEnhancedTextLabel(Vec(48, 61), Vec(25, 15), "SWING", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<SmallGrayKnob>(Vec(60, 85), module, MADDY::SWING_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(60, 85), module, MADDY::SWING_PARAM));
         
         addChild(new MADDYEnhancedTextLabel(Vec(86, 61), Vec(25, 15), "CLK", 7.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(98, 85), module, MADDY::CLK_OUTPUT));
         
         addChild(new MADDYEnhancedTextLabel(Vec(8, 28), Vec(25, 15), "LEN", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(20, 52), module, MADDY::LENGTH_PARAM));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 52), module, MADDY::LENGTH_PARAM));
         
         addChild(new MADDYEnhancedTextLabel(Vec(8, 61), Vec(25, 15), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(20, 85), module, MADDY::DECAY_PARAM));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 85), module, MADDY::DECAY_PARAM));
         
         addChild(new VerticalLine(Vec(39, 55), Vec(1, 242)));
         addChild(new HorizontalLine(Vec(40, 96), Vec(40, 1)));
@@ -1363,17 +1405,17 @@ struct MADDYWidget : ModuleWidget {
             addChild(new MADDYEnhancedTextLabel(Vec(8, y - 10), Vec(25, 10), string::f("T%d", i+1), 7.f, nvgRGB(255, 200, 100), true));
             
             addChild(new MADDYEnhancedTextLabel(Vec(8, y), Vec(25, 10), "FILL", 6.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<MediumGrayKnob>(Vec(20, y + 20), module, MADDY::TRACK1_FILL_PARAM + i * 2));
+            addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, y + 20), module, MADDY::TRACK1_FILL_PARAM + i * 2));
             
             addChild(new MADDYEnhancedTextLabel(Vec(8, y + 33), Vec(25, 10), "D/M", 6.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<MADDYSnapKnob>(Vec(20, y + 53), module, MADDY::TRACK1_DIVMULT_PARAM + i * 2));
+            addParam(createParamCentered<madzine::widgets::MADDYSnapKnob>(Vec(20, y + 53), module, MADDY::TRACK1_DIVMULT_PARAM + i * 2));
         }
         
         float cvY[5] = {127, 172, 217, 262, 307};
         for (int i = 0; i < 5; ++i) {
             addChild(new MADDYEnhancedTextLabel(Vec(40, cvY[i] - 30), Vec(40, 10), string::f("Step %d", i + 1), 7.f, nvgRGB(255, 255, 255), true));
             addChild(new MADDYEnhancedTextLabel(Vec(48, cvY[i] - 15), Vec(25, 10), std::to_string(i + 1), 7.f, nvgRGB(255, 255, 255), true));
-            addParam(createParamCentered<WhiteKnob>(Vec(60, cvY[i] - 5), module, MADDY::K1_PARAM + i));
+            addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(60, cvY[i] - 5), module, MADDY::K1_PARAM + i));
         }
         
         addChild(new MADDYEnhancedTextLabel(Vec(86, 97), Vec(25, 10), "MODE", 7.f, nvgRGB(255, 255, 255), true));
@@ -1381,10 +1423,10 @@ struct MADDYWidget : ModuleWidget {
         addParam(createParamCentered<VCVButton>(Vec(98, 116), module, MADDY::MODE_PARAM));
         
         addChild(new MADDYEnhancedTextLabel(Vec(86, 130), Vec(25, 10), "DENSITY", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<WhiteKnob>(Vec(98, 154), module, MADDY::DENSITY_PARAM));
+        addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(98, 154), module, MADDY::DENSITY_PARAM));
         
         addChild(new MADDYEnhancedTextLabel(Vec(86, 170), Vec(25, 10), "CHAOS", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<WhiteKnob>(Vec(98, 194), module, MADDY::CHAOS_PARAM));
+        addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(98, 194), module, MADDY::CHAOS_PARAM));
         
         addChild(new MADDYEnhancedTextLabel(Vec(86, 210), Vec(25, 10), "CV OUT", 7.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(98, 234), module, MADDY::CV_OUTPUT));

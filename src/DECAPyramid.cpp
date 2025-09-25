@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-
+#include "widgets/Knobs.hpp"
 struct DECAPyramid : Module {
     enum ParamId {
         X_PARAM_1, Y_PARAM_1, Z_PARAM_1, LEVEL_PARAM_1, FILTER_PARAM_1, SENDA_PARAM_1, SENDB_PARAM_1,
@@ -417,89 +417,7 @@ struct WhiteBackgroundBox : Widget {
     }
 };
 
-struct StandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    StandardBlackKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.01f;
-        float deltaValue = -e.mouseDelta.y * sensitivity;
-        pq->setValue(pq->getValue() + deltaValue);
-        e.consume(this);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
-
+// StandardBlackKnob 現在從 widgets/Knobs.hpp 引入
 struct VolumeMeterWidget : Widget {
     DECAPyramid* module;
     int trackIndex;
@@ -868,7 +786,7 @@ struct DECAPyramidWidget : ModuleWidget {
                 if (j == 0) {
                     addInput(createInputCentered<PJ301MPort>(Vec(baseX, trackY[j] + inputOffsets[j]), module, trackInputs[j] + i * 4));
                 } else {
-                    addParam(createParamCentered<StandardBlackKnob>(Vec(baseX, trackY[j] + 10), module, trackParams[j] + i * 7));
+                    addParam(createParamCentered<StandardBlackKnob26>(Vec(baseX, trackY[j] + 10), module, trackParams[j] + i * 7));
                     addInput(createInputCentered<PJ301MPort>(Vec(baseX, trackY[j] + inputOffsets[j]), module, trackInputs[j] + i * 4));
                 }
             }
@@ -895,7 +813,7 @@ struct DECAPyramidWidget : ModuleWidget {
             
             for (auto& knob : knobLayouts) {
                 addChild(new TechnoEnhancedTextLabel(Vec(knob.x - 15, knob.y - 10), Vec(30, 10), knob.label, 8.f, nvgRGB(255, 255, 255), true));
-                addParam(createParamCentered<StandardBlackKnob>(Vec(knob.x, knob.y), module, knob.paramId));
+                addParam(createParamCentered<StandardBlackKnob26>(Vec(knob.x, knob.y), module, knob.paramId));
             }
             
             DECAPyramid3DDisplay* display3D = new DECAPyramid3DDisplay();
@@ -975,31 +893,31 @@ struct DECAPyramidWidget : ModuleWidget {
         // Top row: RTN A/B controls
         addChild(new TechnoEnhancedTextLabel(Vec(478, 40), Vec(30, 10), "RTN A", 7.f, nvgRGB(255, 255, 255), true));
         addChild(new TechnoEnhancedTextLabel(Vec(478, 50), Vec(30, 10), "LVL", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(493, 75), module, DECAPyramid::RTN_A_LEVEL_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(493, 75), module, DECAPyramid::RTN_A_LEVEL_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(509, 40), Vec(30, 10), "RTN A", 7.f, nvgRGB(255, 255, 255), true));
         addChild(new TechnoEnhancedTextLabel(Vec(509, 50), Vec(30, 10), "FLT", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(524, 75), module, DECAPyramid::RTN_A_FILTER_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(524, 75), module, DECAPyramid::RTN_A_FILTER_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(540, 40), Vec(30, 10), "RTN B", 7.f, nvgRGB(255, 255, 255), true));
         addChild(new TechnoEnhancedTextLabel(Vec(540, 50), Vec(30, 10), "LVL", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(555, 75), module, DECAPyramid::RTN_B_LEVEL_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(555, 75), module, DECAPyramid::RTN_B_LEVEL_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(571, 40), Vec(30, 10), "RTN B", 7.f, nvgRGB(255, 255, 255), true));
         addChild(new TechnoEnhancedTextLabel(Vec(571, 50), Vec(30, 10), "FLT", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(586, 75), module, DECAPyramid::RTN_B_FILTER_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(586, 75), module, DECAPyramid::RTN_B_FILTER_PARAM));
         
         // Bottom row: Output controls, aligned with output jacks below
         addChild(new TechnoEnhancedTextLabel(Vec(478, 125), Vec(30, 10), "OUTPUT", 7.f, nvgRGB(255, 255, 255), true));
         
         addChild(new TechnoEnhancedTextLabel(Vec(509, 100), Vec(30, 10), "1-4", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(524, 125), module, DECAPyramid::OUTPUT_1_4_LEVEL_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(524, 125), module, DECAPyramid::OUTPUT_1_4_LEVEL_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(540, 100), Vec(30, 10), "5-8", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(555, 125), module, DECAPyramid::OUTPUT_5_8_LEVEL_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(555, 125), module, DECAPyramid::OUTPUT_5_8_LEVEL_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(571, 100), Vec(30, 10), "MASTER", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(586, 125), module, DECAPyramid::MASTER_OUTPUT_LEVEL_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(586, 125), module, DECAPyramid::MASTER_OUTPUT_LEVEL_PARAM));
         
         for (int i = 0; i < 8; i++) {
             float outputX = 13 + (i % 4) * 31 + 480;

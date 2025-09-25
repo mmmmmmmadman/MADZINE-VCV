@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCV Rack Panel Coordinate Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #2a2a2a;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #444;
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: #333;
+            padding: 10px 20px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        #canvas {
+            border: 2px solid #555;
+            cursor: crosshair;
+            background: #fff;
+            transition: transform 0.1s ease;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            margin-bottom: 10px;
+            color: #ff6b35;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .control-row label {
+            min-width: 60px;
+            font-size: 12px;
+        }
+
+        input, select, button {
+            background: #444;
+            border: 1px solid #666;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        button {
+            cursor: pointer;
+            background: #ff6b35;
+            border: none;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #e55a2b;
+        }
+
+        button:active {
+            background: #d14920;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .component-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+
+        .component-item {
+            padding: 8px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .component-item:hover {
+            background: #444;
+        }
+
+        .component-item.active {
+            background: #ff6b35;
+        }
+
+        .coordinates-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .coord-item {
+            padding: 6px 8px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coord-item:hover {
+            background: #444;
+        }
+
+        .delete-btn {
+            background: #d32f2f;
+            border: none;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .component-preview {
+            position: absolute;
+            pointer-events: none;
+            border: 2px dashed #ff6b35;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.7;
+        }
+
+        .hp-indicator {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .snap-indicator {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: #ff6b35;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .toolbar-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-right: 20px;
+            border-right: 1px solid #555;
+        }
+
+        .toolbar-section:last-child {
+            border-right: none;
+        }
+
+        #exportArea {
+            width: 100%;
+            height: 120px;
+            background: #222;
+            border: 1px solid #555;
+            color: #fff;
+            font-family: monospace;
+            font-size: 11px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <!-- Panel Settings -->
+        <div class="control-group">
+            <h3>Panel Settings</h3>
+            <div class="control-row">
+                <label>HP:</label>
+                <input type="number" id="hpWidth" min="2" max="80" value="8">
+            </div>
+            <div class="control-row">
+                <label>Color:</label>
+                <input type="color" id="panelColor" value="#ff8585" class="color-picker">
+            </div>
+            <div class="control-row">
+                <button onclick="generatePanel()">Generate Panel</button>
+            </div>
+        </div>
+
+        <!-- Keyboard Controls -->
+        <div class="control-group">
+            <h3>Keyboard Controls</h3>
+            <div style="font-size: 11px; line-height: 1.4;">
+                <div>A - Zoom In</div>
+                <div>S - Reset View</div>
+                <div>D - Zoom Out</div>
+                <div>Q/W - Grid Size</div>
+            </div>
+        </div>
+
+        <!-- Grid Settings -->
+        <div class="control-group">
+            <h3>Grid Size</h3>
+            <div class="control-row">
+                <label>Grid:</label>
+                <select id="gridSize">
+                    <option value="1">1px</option>
+                    <option value="5">5px</option>
+                    <option value="10">10px</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Component Selection -->
+        <div class="control-group">
+            <h3>Components</h3>
+            <div class="component-list" id="componentList">
+                <div class="component-item" data-type="knob-standard" data-size="24">
+                    <span>Standard Knob</span>
+                    <span>24px</span>
+                </div>
+                <div class="component-item" data-type="knob-small" data-size="16">
+                    <span>Small Knob (Trimpot)</span>
+                    <span>16px</span>
+                </div>
+                <div class="component-item" data-type="knob-large" data-size="32">
+                    <span>Large Knob</span>
+                    <span>32px</span>
+                </div>
+                <div class="component-item" data-type="jack" data-size="24">
+                    <span>Jack (PJ301M)</span>
+                    <span>24px</span>
+                </div>
+                <div class="component-item" data-type="button" data-size="20">
+                    <span>Button</span>
+                    <span>20px</span>
+                </div>
+                <div class="component-item" data-type="led-medium" data-size="10">
+                    <span>Medium LED</span>
+                    <span>10px</span>
+                </div>
+                <div class="component-item" data-type="led-small" data-size="6">
+                    <span>Small LED</span>
+                    <span>6px</span>
+                </div>
+                <div class="component-item" data-type="slider" data-size="20">
+                    <span>Slider</span>
+                    <span>20px wide</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordinates History -->
+        <div class="control-group">
+            <h3>Coordinates</h3>
+            <div class="coordinates-list" id="coordinatesList">
+                <!-- Coordinates will appear here -->
+            </div>
+            <div class="control-row" style="margin-top: 10px;">
+                <button onclick="clearCoordinates()">Clear All</button>
+                <button onclick="exportCoordinates()">Export</button>
+            </div>
+        </div>
+
+        <!-- Export Area -->
+        <div class="control-group">
+            <h3>Export</h3>
+            <textarea id="exportArea" placeholder="Coordinates will appear here..."></textarea>
+        </div>
+
+        <!-- About -->
+        <div class="control-group">
+            <h3>About</h3>
+            <div style="font-size: 11px; line-height: 1.6;">
+                <div><strong>Issues</strong>: <a href="https://github.com/mmmmmmmadman" target="_blank" style="color: #ff6b35;">GitHub Issues</a></div>
+                <div><strong>Email</strong>: <a href="mailto:madzinetw@gmail.com" style="color: #ff6b35;">madzinetw@gmail.com</a></div>
+                <div><strong>Patreon</strong>: <a href="https://www.patreon.com/c/madzinetw" target="_blank" style="color: #ff6b35;">Support MADZINE</a></div>
+                <div style="margin-top: 8px; font-size: 10px; color: #999;">
+                    <div>VCV Rack Panel Coordinate Designer</div>
+                    <div>Created with Claude AI</div>
+                    <div style="margin-top: 4px;"><strong>License</strong><br>
+                    This project is licensed under the GPL-3.0-or-later License.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-area">
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <span>Panel: <span id="panelInfo">8HP × 380px</span></span>
+            </div>
+            <div class="toolbar-section">
+                <span>Mouse: <span id="mouseCoords">0, 0</span></span>
+                <span>Zoom: <span id="zoomLevel">100%</span></span>
+            </div>
+            <div class="toolbar-section">
+                <button onclick="undoLastPoint()">Undo Last</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas" width="121.92" height="380"></canvas>
+            <div class="hp-indicator" id="hpIndicator">8HP</div>
+            <div class="component-preview" id="componentPreview" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let coordinates = [];
+        let selectedComponent = null;
+        let currentHP = 8;
+        let gridSize = 15.24;
+        let showGrid = true;
+        let snapToGrid = true;
+        let isDragging = false;
+        let dragIndex = -1;
+        let dragOffset = { x: 0, y: 0 };
+        let scale = 1;
+        let panOffset = { x: 0, y: 0 };
+        let isPanning = false;
+        let lastPanPoint = { x: 0, y: 0 };
+        let animationId = null;
+
+        // Component definitions
+        const components = {
+            'knob-standard': { name: 'Standard Knob', size: 24 },
+            'knob-small': { name: 'Small Knob', size: 16 },
+            'knob-large': { name: 'Large Knob', size: 32 },
+            'jack': { name: 'Jack', size: 24 },
+            'button': { name: 'Button', size: 20 },
+            'led-small': { name: 'Small LED', size: 6 },
+            'led-medium': { name: 'Medium LED', size: 10 },
+            'led-large': { name: 'Large LED', size: 16 },
+            'slider': { name: 'Slider', size: 20 }
+        };
+
+        // Load saved settings
+        function loadSettings() {
+            const saved = JSON.parse(localStorage.getItem('vcvPanelDesigner') || '{}');
+            if (saved.hp) document.getElementById('hpWidth').value = saved.hp;
+            if (saved.color) document.getElementById('panelColor').value = saved.color;
+            if (saved.gridSize) document.getElementById('gridSize').value = saved.gridSize;
+            if (saved.coordinates) coordinates = saved.coordinates;
+        }
+
+        // Save settings
+        function saveSettings() {
+            const settings = {
+                hp: currentHP,
+                color: document.getElementById('panelColor').value,
+                gridSize: document.getElementById('gridSize').value,
+                coordinates: coordinates
+            };
+            localStorage.setItem('vcvPanelDesigner', JSON.stringify(settings));
+        }
+
+        // Draw component icon
+        function drawComponentIcon(canvas, type) {
+            const ctx = canvas.getContext('2d');
+            const size = 16; // Icon size
+            const centerX = 10;
+            const centerY = 10;
+            
+            ctx.clearRect(0, 0, 20, 20);
+            ctx.save();
+            
+            switch(type) {
+                case 'knob-standard':
+                case 'knob-large':
+                case 'knob-small':
+                    // Knob icon
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.strokeStyle = '#888';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, size/3, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Indicator line
+                    ctx.strokeStyle = '#ddd';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - size/3 + 2);
+                    ctx.lineTo(centerX, centerY - size/6);
+                    ctx.stroke();
+                    break;
+                    
+                case 'jack':
+                    // Jack icon
+                    ctx.fillStyle = '#2a2a2a';
+                    ctx.strokeStyle = '#999';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, size/3, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Inner hole
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, size/6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                    
+                case 'button':
+                    // Button icon
+                    ctx.fillStyle = '#444';
+                    ctx.strokeStyle = '#888';
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(centerX - size/3, centerY - size/3, size*2/3, size*2/3);
+                    ctx.strokeRect(centerX - size/3, centerY - size/3, size*2/3, size*2/3);
+                    break;
+                    
+                case 'led-small':
+                case 'led-medium':
+                    // LED icon
+                    ctx.fillStyle = '#ff4444';
+                    ctx.strokeStyle = '#aa2222';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, size/4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Inner glow
+                    ctx.fillStyle = '#ff8888';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, size/8, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                    
+                case 'slider':
+                    // Slider icon
+                    ctx.strokeStyle = '#666';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - size/2);
+                    ctx.lineTo(centerX, centerY + size/2);
+                    ctx.stroke();
+                    
+                    // Slider handle
+                    ctx.fillStyle = '#888';
+                    ctx.strokeStyle = '#aaa';
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(centerX - size/4, centerY - 2, size/2, 4);
+                    ctx.strokeRect(centerX - size/4, centerY - 2, size/2, 4);
+                    break;
+            }
+            
+            ctx.restore();
+        }
+
+        // Initialize component icons
+        function initComponentIcons() {
+            // Wait for DOM to be ready
+            setTimeout(() => {
+                document.querySelectorAll('.component-item').forEach(item => {
+                    const canvas = item.querySelector('.component-icon');
+                    const type = item.dataset.type;
+                    if (canvas && type) {
+                        drawComponentIcon(canvas, type);
+                    }
+                });
+            }, 100);
+        }
+        function getComponentAt(x, y) {
+            for (let i = coordinates.length - 1; i >= 0; i--) {
+                const coord = coordinates[i];
+                const comp = components[coord.type];
+                const dist = Math.sqrt((x - coord.x) ** 2 + (y - coord.y) ** 2);
+                if (dist <= comp.size / 2) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // Transform canvas coordinates
+        function transformCanvas() {
+            canvas.style.transform = `scale(${scale}) translate(${panOffset.x}px, ${panOffset.y}px)`;
+        }
+
+        // Get mouse position relative to canvas
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left - rect.width/2 - panOffset.x) / scale + canvas.width/2,
+                y: (e.clientY - rect.top - rect.height/2 - panOffset.y) / scale + canvas.height/2
+            };
+        }
+
+        // Get screen position for preview
+        function getScreenPos(canvasX, canvasY) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: rect.left + rect.width/2 + (canvasX - canvas.width/2) * scale + panOffset.x,
+                y: rect.top + rect.height/2 + (canvasY - canvas.height/2) * scale + panOffset.y
+            };
+        }
+        function generatePanel() {
+            currentHP = parseInt(document.getElementById('hpWidth').value);
+            const width = currentHP * 15.24; // 1HP = 15.24px
+            const height = 380; // 3U = 380px
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Update panel info
+            document.getElementById('panelInfo').textContent = `${currentHP}HP × ${height}px`;
+            document.getElementById('hpIndicator').textContent = `${currentHP}HP`;
+            
+            drawPanel();
+            updateGrid();
+            saveSettings();
+        }
+
+        // Draw panel background with grid
+        function drawPanel() {
+            const color = document.getElementById('panelColor').value;
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid directly on canvas
+            if (showGrid) {
+                const grid = parseFloat(document.getElementById('gridSize').value);
+                ctx.strokeStyle = 'rgba(102, 102, 102, 0.3)';
+                ctx.lineWidth = 0.5;
+                
+                // Vertical lines
+                for (let x = 0; x <= canvas.width; x += grid) {
+                    ctx.strokeStyle = x % (grid * 5) === 0 ? 'rgba(102, 102, 102, 0.6)' : 'rgba(102, 102, 102, 0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // Horizontal lines
+                for (let y = 0; y <= canvas.height; y += grid) {
+                    ctx.strokeStyle = y % (grid * 5) === 0 ? 'rgba(102, 102, 102, 0.6)' : 'rgba(102, 102, 102, 0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw placed components
+            coordinates.forEach((coord, index) => {
+                drawComponent(coord.x, coord.y, coord.type, index);
+            });
+        }
+
+        // Draw component on canvas with VCV-style graphics
+        function drawComponent(x, y, type, index) {
+            const comp = components[type];
+            if (!comp) return;
+            
+            const size = comp.size;
+            ctx.save();
+            
+            // Draw component based on type
+            switch(type) {
+                case 'knob-standard':
+                case 'knob-large':
+                case 'knob-small':
+                    // Knob - dark circle with indicator line
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.strokeStyle = '#888';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size/2 - 1, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Indicator line
+                    ctx.strokeStyle = '#ddd';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - size/2 + 3);
+                    ctx.lineTo(x, y - size/4);
+                    ctx.stroke();
+                    break;
+                    
+                case 'jack':
+                    // Jack - metallic ring with center hole
+                    ctx.fillStyle = '#2a2a2a';
+                    ctx.strokeStyle = '#999';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size/2 - 1, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Inner hole
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size/4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                    
+                case 'button':
+                    // Button - raised square
+                    ctx.fillStyle = '#444';
+                    ctx.strokeStyle = '#888';
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(x - size/2, y - size/2, size, size);
+                    ctx.strokeRect(x - size/2, y - size/2, size, size);
+                    break;
+                    
+                case 'led-small':
+                case 'led-medium':
+                case 'led-large':
+                    // LED - bright colored circle
+                    ctx.fillStyle = '#ff4444';
+                    ctx.strokeStyle = '#aa2222';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size/2, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Inner glow
+                    ctx.fillStyle = '#ff8888';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size/4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                    
+                case 'slider':
+                    // Slider track
+                    ctx.strokeStyle = '#666';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x, y + size);
+                    ctx.stroke();
+                    
+                    // Slider handle
+                    ctx.fillStyle = '#888';
+                    ctx.strokeStyle = '#aaa';
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(x - size/2, y - 4, size, 8);
+                    ctx.strokeRect(x - size/2, y - 4, size, 8);
+                    break;
+            }
+            
+            // Component number
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(index + 1, x, y + 3);
+            
+            ctx.restore();
+        }
+
+        // Update grid overlay - only on canvas
+        function updateGrid() {
+            const gridOverlay = document.getElementById('gridOverlay');
+            gridOverlay.innerHTML = '';
+            
+            if (!showGrid) return;
+            
+            // Position grid overlay to match canvas
+            const rect = canvas.getBoundingClientRect();
+            gridOverlay.style.left = rect.left - document.querySelector('.canvas-container').getBoundingClientRect().left + 'px';
+            gridOverlay.style.top = rect.top - document.querySelector('.canvas-container').getBoundingClientRect().top + 'px';
+            gridOverlay.style.width = rect.width + 'px';
+            gridOverlay.style.height = rect.height + 'px';
+            
+            const grid = parseFloat(document.getElementById('gridSize').value) * scale;
+            
+            // Vertical lines
+            for (let x = 0; x <= rect.width; x += grid) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', rect.height);
+                line.setAttribute('stroke', '#666');
+                line.setAttribute('stroke-width', x % (grid * 5) < 0.1 ? '1' : '0.5');
+                gridOverlay.appendChild(line);
+            }
+            
+            // Horizontal lines
+            for (let y = 0; y <= rect.height; y += grid) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', rect.width);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#666');
+                line.setAttribute('stroke-width', y % (grid * 5) < 0.1 ? '1' : '0.5');
+                gridOverlay.appendChild(line);
+            }
+        }
+
+        // Snap coordinate to grid
+        function snapToGridCoord(coord) {
+            if (!snapToGrid) return coord;
+            const grid = parseFloat(document.getElementById('gridSize').value);
+            return Math.round(coord / grid) * grid;
+        }
+
+        // Update coordinates list display
+        function updateCoordinatesList() {
+            const list = document.getElementById('coordinatesList');
+            list.innerHTML = '';
+            
+            coordinates.forEach((coord, index) => {
+                const item = document.createElement('div');
+                item.className = 'coord-item';
+                item.innerHTML = `
+                    <span>${index + 1}. ${components[coord.type].name} (${coord.x}, ${coord.y})</span>
+                    <button class="delete-btn" onclick="deleteCoordinate(${index})">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Delete coordinate (with undo support)
+        function deleteCoordinate(index) {
+            saveState();
+            coordinates.splice(index, 1);
+            drawPanel();
+            updateCoordinatesList();
+            updateExport();
+            saveSettings();
+        }
+
+        // Save state for undo (with safety check)
+        function saveState() {
+            if (typeof undoStack === 'undefined') {
+                window.undoStack = [];
+            }
+            undoStack.push(JSON.parse(JSON.stringify(coordinates)));
+            if (undoStack.length > 20) undoStack.shift();
+        }
+
+        // Clear all coordinates (with undo support)
+        function clearCoordinates() {
+            if (coordinates.length === 0) return;
+            
+            saveState(); // Save current state before clearing
+            coordinates = [];
+            drawPanel();
+            updateCoordinatesList();
+            updateExport();
+            saveSettings();
+        }
+
+        // Undo last action
+        function undoLastPoint() {
+            if (undoStack.length > 0) {
+                coordinates = undoStack.pop();
+                drawPanel();
+                updateCoordinatesList();
+                updateExport();
+                saveSettings();
+            }
+        }
+
+        // Export coordinates
+        function exportCoordinates() {
+            updateExport();
+            document.getElementById('exportArea').select();
+            document.execCommand('copy');
+        }
+
+        // Keyboard controls - smooth zoom and grid change
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            
+            if (key === 'a') {
+                e.preventDefault();
+                scale = Math.min(5, scale * 1.15);
+                transformCanvas();
+                if (document.getElementById('zoomLevel')) {
+                    document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+                }
+            } else if (key === 'd') {
+                e.preventDefault();
+                scale = Math.max(0.2, scale / 1.15);
+                transformCanvas();
+                if (document.getElementById('zoomLevel')) {
+                    document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+                }
+            } else if (key === 's') {
+                e.preventDefault();
+                resetView();
+            } else if (key === 'q') {
+                e.preventDefault();
+                changeGridSize(-1);
+            } else if (key === 'w') {
+                e.preventDefault();
+                changeGridSize(1);
+            }
+        });
+        
+        function changeGridSize(direction) {
+            const gridSelect = document.getElementById('gridSize');
+            const options = Array.from(gridSelect.options);
+            let currentIndex = options.findIndex(opt => opt.selected);
+            
+            if (direction > 0 && currentIndex < options.length - 1) {
+                currentIndex++;
+            } else if (direction < 0 && currentIndex > 0) {
+                currentIndex--;
+            }
+            
+            gridSelect.selectedIndex = currentIndex;
+            gridSize = parseFloat(gridSelect.value);
+            drawPanel();
+        }
+
+        // Zoom controls
+        function zoomIn() {
+            scale = Math.min(5, scale * 1.2);
+            transformCanvas();
+            updateZoomLevel();
+        }
+
+        function zoomOut() {
+            scale = Math.max(0.2, scale / 1.2);
+            transformCanvas();
+            updateZoomLevel();
+        }
+
+        // Pan controls
+        function panUp() {
+            panOffset.y += 50;
+            transformCanvas();
+        }
+
+        function panDown() {
+            panOffset.y -= 50;
+            transformCanvas();
+        }
+
+        function panLeft() {
+            panOffset.x += 50;
+            transformCanvas();
+        }
+
+        function panRight() {
+            panOffset.x -= 50;
+            transformCanvas();
+        }
+
+        function centerPanel() {
+            const container = document.querySelector('.canvas-container');
+            const containerRect = container.getBoundingClientRect();
+            panOffset.x = (containerRect.width - canvas.width * scale) / 2;
+            panOffset.y = (containerRect.height - canvas.height * scale) / 2;
+            transformCanvas();
+        }
+
+        function fitToView() {
+            const container = document.querySelector('.canvas-container');
+            const containerRect = container.getBoundingClientRect();
+            const padding = 40;
+            
+            const scaleX = (containerRect.width - padding * 2) / canvas.width;
+            const scaleY = (containerRect.height - padding * 2) / canvas.height;
+            
+            scale = Math.min(scaleX, scaleY, 5);
+            scale = Math.max(scale, 0.2);
+            
+            centerPanel();
+            updateZoomLevel();
+        }
+
+        // Reset view (fixed to truly reset)
+        function resetView() {
+            scale = 1;
+            panOffset = { x: 0, y: 0 };
+            transformCanvas();
+            updateZoomLevel();
+        }
+
+        // Update zoom level display
+        function updateZoomLevel() {
+            document.getElementById('zoomDisplay').textContent = Math.round(scale * 100) + '%';
+        }
+        function updateExport() {
+            const exportText = coordinates.map((coord, index) => 
+                `${index + 1}. ${components[coord.type].name}: Vec(${coord.x}, ${coord.y})`
+            ).join('\n');
+            
+            document.getElementById('exportArea').value = exportText;
+        }
+
+        // Event handlers
+        document.getElementById('componentList').addEventListener('click', (e) => {
+            const item = e.target.closest('.component-item');
+            if (!item) return;
+            
+            // Remove active class from all items
+            document.querySelectorAll('.component-item').forEach(el => el.classList.remove('active'));
+            
+            // Add active class to clicked item
+            item.classList.add('active');
+            
+            selectedComponent = {
+                type: item.dataset.type,
+                size: parseInt(item.dataset.size)
+            };
+        });
+
+        // Check if point is within canvas bounds
+        function isWithinCanvas(x, y) {
+            return x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height;
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (isDragging) return;
+            
+            const pos = getMousePos(e);
+            const x = snapToGridCoord(pos.x);
+            const y = snapToGridCoord(pos.y);
+            
+            // Check if within canvas bounds
+            if (!isWithinCanvas(x, y)) return;
+            
+            // Check if clicking on existing component
+            const componentIndex = getComponentAt(x, y);
+            if (componentIndex !== -1) return;
+            
+            if (!selectedComponent) return;
+            
+            // Save state before adding new component
+            if (typeof undoStack !== 'undefined') {
+                undoStack.push(JSON.parse(JSON.stringify(coordinates)));
+                if (undoStack.length > 20) undoStack.shift();
+            }
+            
+            coordinates.push({
+                x: x,
+                y: y,
+                type: selectedComponent.type
+            });
+            
+            drawPanel();
+            updateCoordinatesList();
+            updateExport();
+            saveSettings();
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            
+            // Check for component drag only
+            const componentIndex = getComponentAt(pos.x, pos.y);
+            if (componentIndex !== -1) {
+                isDragging = true;
+                dragIndex = componentIndex;
+                dragOffset.x = pos.x - coordinates[componentIndex].x;
+                dragOffset.y = pos.y - coordinates[componentIndex].y;
+                canvas.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const pos = getMousePos(e);
+            const x = snapToGridCoord(pos.x);
+            const y = snapToGridCoord(pos.y);
+            
+            document.getElementById('mouseCoords').textContent = `${Math.round(x)}, ${Math.round(y)}`;
+            
+            if (isDragging && dragIndex !== -1) {
+                // Constrain dragging within canvas bounds
+                const newX = snapToGridCoord(pos.x - dragOffset.x);
+                const newY = snapToGridCoord(pos.y - dragOffset.y);
+                
+                if (isWithinCanvas(newX, newY)) {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    animationId = requestAnimationFrame(() => {
+                        coordinates[dragIndex].x = newX;
+                        coordinates[dragIndex].y = newY;
+                        drawPanel();
+                        updateCoordinatesList();
+                        updateExport();
+                    });
+                }
+            } else {
+                // Update component preview
+                const preview = document.getElementById('componentPreview');
+                const componentAtMouse = getComponentAt(pos.x, pos.y);
+                
+                if (componentAtMouse !== -1) {
+                    canvas.style.cursor = 'grab';
+                    preview.style.display = 'none';
+                } else if (selectedComponent && isWithinCanvas(x, y)) {
+                    canvas.style.cursor = 'crosshair';
+                    const screenPos = getScreenPos(x, y);
+                    preview.style.display = 'block';
+                    preview.style.left = screenPos.x + 'px';
+                    preview.style.top = screenPos.y + 'px';
+                    preview.style.width = (selectedComponent.size * scale) + 'px';
+                    preview.style.height = (selectedComponent.size * scale) + 'px';
+                } else {
+                    canvas.style.cursor = 'default';
+                    preview.style.display = 'none';
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                isDragging = false;
+                dragIndex = -1;
+                saveSettings();
+            }
+            
+            canvas.style.cursor = 'default';
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const pos = getMousePos(e);
+            const componentIndex = getComponentAt(pos.x, pos.y);
+            
+            if (componentIndex !== -1) {
+                saveState(); // Save before deleting
+                coordinates.splice(componentIndex, 1);
+                drawPanel();
+                updateCoordinatesList();
+                updateExport();
+                saveSettings();
+            }
+        });
+
+        // Remove wheel event completely - no mouse zoom
+
+        canvas.addEventListener('mouseleave', () => {
+            document.getElementById('componentPreview').style.display = 'none';
+        });
+
+        // Settings change handlers
+        document.getElementById('showGrid').addEventListener('change', (e) => {
+            showGrid = e.target.checked;
+            updateGrid();
+        });
+
+        document.getElementById('snapToGrid').addEventListener('change', (e) => {
+            snapToGrid = e.target.checked;
+        });
+
+        document.getElementById('gridSize').addEventListener('change', (e) => {
+            gridSize = parseFloat(e.target.value);
+            updateGrid();
+        });
+
+        // Initialize
+        loadSettings();
+        generatePanel();
+        updateZoomLevel();
+        centerPanel();
+        
+        // Select first component by default
+        document.querySelector('.component-item').click();
+    </script>
+</body>
+</html>

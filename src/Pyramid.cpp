@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 
 struct Pyramid : Module {
     enum ParamId {
@@ -282,88 +283,8 @@ struct WhiteBackgroundBox : Widget {
     }
 };
 
-struct StandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    StandardBlackKnob() {
-        box.size = Vec(26, 26);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.01f;
-        float deltaValue = -e.mouseDelta.y * sensitivity;
-        pq->setValue(pq->getValue() + deltaValue);
-        e.consume(this);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// StandardBlackKnob26 現在從 widgets/Knobs.hpp 引入
+// 使用 StandardBlackKnob26 來保持 26x26 尺寸
 
 struct PyramidGraphicWidget : Widget {
     PyramidGraphicWidget(Vec pos, Vec size) {
@@ -626,7 +547,7 @@ struct PyramidWidget : ModuleWidget {
         addChild(new PyramidGraphicWidget(Vec(75, 50), Vec(38, 38)));
 
         addChild(new TechnoEnhancedTextLabel(Vec(17-15, 47), Vec(30, 10), "LEVEL", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(17, 70), module, Pyramid::LEVEL_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 70), module, Pyramid::LEVEL_PARAM));
         addChild(new TechnoEnhancedTextLabel(Vec(44-15, 47), Vec(30, 10), "INPUT", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(44, 70), module, Pyramid::AUDIO_INPUT));
 
@@ -637,16 +558,16 @@ struct PyramidWidget : ModuleWidget {
         addChild(display3D);
 
         addChild(new TechnoEnhancedTextLabel(Vec(7, 220), Vec(50, 10), "X", 32.f, nvgRGB(160, 160, 160), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(17, 240), module, Pyramid::X_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 240), module, Pyramid::X_PARAM));
 
         addChild(new TechnoEnhancedTextLabel(Vec(7, 255), Vec(50, 10), "Y", 32.f, nvgRGB(160, 160, 160), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(17, 275), module, Pyramid::Y_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 275), module, Pyramid::Y_PARAM));
 
         addChild(new TechnoEnhancedTextLabel(Vec(7, 290), Vec(50, 10), "Z", 32.f, nvgRGB(160, 160, 160), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(17, 310), module, Pyramid::Z_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 310), module, Pyramid::Z_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(75-15, 220), Vec(30, 10), "SEND", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(75, 242), module, Pyramid::SEND_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(75, 242), module, Pyramid::SEND_PARAM));
         addOutput(createOutputCentered<PJ301MPort>(Vec(75, 270), module, Pyramid::SEND_OUTPUT));
 
         addChild(new TechnoEnhancedTextLabel(Vec(102-15, 220), Vec(30, 10), "RTN", 8.f, nvgRGB(255, 255, 255), true));
@@ -654,7 +575,7 @@ struct PyramidWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(102, 270), module, Pyramid::RETURN_R_INPUT));
 
         addChild(new TechnoEnhancedTextLabel(Vec(65, 290), Vec(50, 10), "FILTER", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(75, 312), module, Pyramid::FILTER_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(75, 312), module, Pyramid::FILTER_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(102, 312), module, Pyramid::FILTER_CV_INPUT));
 
         addInput(createInputCentered<PJ301MPort>(Vec(44, 240), module, Pyramid::X_CV_INPUT));

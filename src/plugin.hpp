@@ -22,6 +22,13 @@ extern Model* modelObserfour;
 extern Model* modelPyramid;
 extern Model* modelDECAPyramid;
 extern Model* modelKEN;
+extern Model* modelQuantizer;
+extern Model* modelEllenRipley;
+extern Model* modelMADDYPlus;
+extern Model* modelNIGOQ;
+extern Model* modelMultiverse;
+extern Model* modelRunshow;
+extern Model* modelEnvVCA6;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

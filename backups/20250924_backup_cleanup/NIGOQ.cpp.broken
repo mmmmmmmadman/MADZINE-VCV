@@ -1,0 +1,1897 @@
+#include "plugin.hpp"
+#include <dsp/resampler.hpp>
+
+static const float KNOB_SENSITIVITY = 0.00225f;
+
+struct EnhancedTextLabel : TransparentWidget {
+    std::string text;
+    float fontSize;
+    NVGcolor color;
+    bool bold;
+    
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+                      NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
+        box.pos = pos;
+        box.size = size;
+        this->text = text;
+        this->fontSize = fontSize;
+        this->color = color;
+        this->bold = bold;
+    }
+    
+    void draw(const DrawArgs &args) override {
+        nvgFontSize(args.vg, fontSize);
+        nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+        nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        nvgFillColor(args.vg, color);
+        
+        if (bold) {
+            float offset = 0.3f;
+            nvgText(args.vg, box.size.x / 2.f - offset, box.size.y / 2.f, text.c_str(), NULL);
+            nvgText(args.vg, box.size.x / 2.f + offset, box.size.y / 2.f, text.c_str(), NULL);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f - offset, text.c_str(), NULL);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f + offset, text.c_str(), NULL);
+        }
+        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+    }
+};
+
+struct NumberWithBorder : TransparentWidget {
+    std::string text;
+    float fontSize;
+    NVGcolor textColor;
+    NVGcolor borderColor;
+    
+    NumberWithBorder(Vec pos, Vec size, std::string text, float fontSize = 64.f, 
+                     NVGcolor textColor = nvgRGB(255, 255, 255), NVGcolor borderColor = nvgRGB(0, 0, 0)) {
+        box.pos = pos;
+        box.size = size;
+        this->text = text;
+        this->fontSize = fontSize;
+        this->textColor = textColor;
+        this->borderColor = borderColor;
+    }
+    
+    void draw(const DrawArgs &args) override {
+        nvgFontSize(args.vg, fontSize);
+        nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+        nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        
+        // Draw black border (outline)
+        nvgFillColor(args.vg, borderColor);
+        float borderOffset = 1.5f;
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                if (x == 0 && y == 0) continue;
+                nvgText(args.vg, box.size.x / 2.f + x * borderOffset, box.size.y / 2.f + y * borderOffset, text.c_str(), NULL);
+            }
+        }
+        
+        // Draw white text on top
+        nvgFillColor(args.vg, textColor);
+        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+    }
+};
+
+struct WhiteBackgroundBox : Widget {
+    WhiteBackgroundBox(Vec pos, Vec size) {
+        box.pos = pos;
+        box.size = size;
+    }
+    
+    void draw(const DrawArgs &args) override {
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+        
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGBA(200, 200, 200, 255));
+        nvgStroke(args.vg);
+    }
+};
+
+// Forward declarations for custom param quantities
+struct ModFreqParamQuantity;
+struct PrinFreqParamQuantity;
+
+struct StandardBlackKnob : RoundKnob {
+    StandardBlackKnob() {
+        setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/RoundBlackKnob.svg")));
+        box.size = Vec(38, 38);
+    }
+};
+
+struct SmallBlackKnob : RoundKnob {
+    SmallBlackKnob() {
+        setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/RoundSmallBlackKnob.svg")));
+        box.size = Vec(28, 28);
+    }
+};
+
+struct LargeBlackKnob : RoundKnob {
+    LargeBlackKnob() {
+        setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/RoundLargeBlackKnob.svg")));
+        box.size = Vec(46, 46);
+    }
+};
+
+struct LargeWhiteKnob : ParamWidget {
+    bool isDragging = false;
+    
+    LargeWhiteKnob() {
+        box.size = Vec(37, 37);
+    }
+    
+    float getDisplayAngle() {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return 0.0f;
+        float normalizedValue = pq->getScaledValue();
+        return rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
+    }
+    
+    void draw(const DrawArgs& args) override {
+        float radius = box.size.x / 2.0f;
+        float angle = getDisplayAngle();
+        
+        // 外圈深灰色
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
+        nvgFill(args.vg);
+        
+        // 外圈邊框
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
+        nvgStroke(args.vg);
+        
+        // 白色內圈
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 4);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+        
+        // 粉紅色指引線
+        float indicatorLength = radius - 8;
+        float lineX = radius + indicatorLength * std::sin(angle);
+        float lineY = radius - indicatorLength * std::cos(angle);
+        
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, 2.0f);
+        nvgStrokeColor(args.vg, nvgRGB(255, 133, 133));
+        nvgStroke(args.vg);
+        
+        // 粉紅色指引點
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 2.0f);
+        nvgFillColor(args.vg, nvgRGB(255, 133, 133));
+        nvgFill(args.vg);
+    }
+    
+    void onButton(const event::Button& e) override {
+        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = true;
+            e.consume(this);
+        }
+        ParamWidget::onButton(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        if (isDragging) {
+            ParamQuantity* pq = getParamQuantity();
+            if (pq) {
+                float range = pq->getMaxValue() - pq->getMinValue();
+                float delta = (e.mouseDelta.x - e.mouseDelta.y) * range / 200.0f;
+                pq->setValue(pq->getValue() + delta);
+            }
+        }
+    }
+    
+    void onDragEnd(const event::DragEnd& e) override {
+        isDragging = false;
+    }
+};
+
+struct SmallWhiteKnob : ParamWidget {
+    bool isDragging = false;
+    
+    SmallWhiteKnob() {
+        box.size = Vec(23, 23);  // Better size for visibility and usability
+    }
+    
+    float getDisplayAngle() {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return 0.0f;
+        float normalizedValue = pq->getScaledValue();
+        return rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
+    }
+    
+    void draw(const DrawArgs& args) override {
+        float radius = box.size.x / 2.0f;
+        float angle = getDisplayAngle();
+        
+        // 外圈白色
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+        
+        // 外圈邊框 (黑色)
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
+        nvgStroke(args.vg);
+        
+        // 內圈淺灰色
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 3);
+        nvgFillColor(args.vg, nvgRGB(240, 240, 240));
+        nvgFill(args.vg);
+        
+        // 粉紅色指引線
+        float indicatorLength = radius - 6;
+        float lineX = radius + indicatorLength * std::sin(angle);
+        float lineY = radius - indicatorLength * std::cos(angle);
+        
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, 1.5f);
+        nvgStrokeColor(args.vg, nvgRGB(255, 133, 133));
+        nvgStroke(args.vg);
+        
+        // 粉紅色指引點
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 1.5f);
+        nvgFillColor(args.vg, nvgRGB(255, 133, 133));
+        nvgFill(args.vg);
+    }
+    
+    void onButton(const event::Button& e) override {
+        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = true;
+            e.consume(this);
+        }
+        ParamWidget::onButton(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        if (isDragging) {
+            ParamQuantity* pq = getParamQuantity();
+            if (pq) {
+                float range = pq->maxValue - pq->minValue;
+                float delta = KNOB_SENSITIVITY * -e.mouseDelta.y * range;
+                pq->setValue(pq->getValue() + delta);
+            }
+        }
+    }
+    
+    void onDragEnd(const event::DragEnd& e) override {
+        isDragging = false;
+    }
+};
+
+struct SmallGrayKnob : ParamWidget {
+    bool isDragging = false;
+    
+    SmallGrayKnob() {
+        box.size = Vec(28, 28);
+    }
+    
+    float getDisplayAngle() {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return 0.0f;
+        float normalizedValue = pq->getScaledValue();
+        return rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
+    }
+    
+    void draw(const DrawArgs& args) override {
+        float radius = box.size.x / 2.0f;
+        float angle = getDisplayAngle();
+        
+        // 外圈深灰色
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
+        nvgFill(args.vg);
+        
+        // 外圈邊框
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 1);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
+        nvgStroke(args.vg);
+        
+        // 白色內圈
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, radius, radius, radius - 3);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+        nvgFill(args.vg);
+        
+        // 粉紅色指引線
+        float indicatorLength = radius - 6;
+        float lineX = radius + indicatorLength * std::sin(angle);
+        float lineY = radius - indicatorLength * std::cos(angle);
+        
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, 1.5f);
+        nvgStrokeColor(args.vg, nvgRGB(255, 133, 133));
+        nvgStroke(args.vg);
+        
+        // 粉紅色指引點
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 1.5f);
+        nvgFillColor(args.vg, nvgRGB(255, 133, 133));
+        nvgFill(args.vg);
+    }
+    
+    void onButton(const event::Button& e) override {
+        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+            isDragging = true;
+            e.consume(this);
+        }
+        ParamWidget::onButton(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        if (isDragging) {
+            ParamQuantity* pq = getParamQuantity();
+            if (pq) {
+                float range = pq->getMaxValue() - pq->getMinValue();
+                float delta = (e.mouseDelta.x - e.mouseDelta.y) * range / 200.0f;
+                pq->setValue(pq->getValue() + delta);
+            }
+        }
+    }
+    
+    void onDragEnd(const event::DragEnd& e) override {
+        isDragging = false;
+    }
+};
+
+// 前向聲明
+// IIR Resonant Filter for Ping (Liquid-style implementation)
+struct PingFilter {
+    float frequency = 440.f;
+    float resonance = 0.74f;  // 0.7-0.78 range
+    float decay = 0.5f;
+
+    // IIR filter state (2nd order)
+    float x1 = 0.f, x2 = 0.f;  // Input history
+    float y1 = 0.f, y2 = 0.f;  // Output history
+
+    // Filter coefficients
+    float b0 = 1.f, b1 = 0.f, b2 = 0.f;  // Feedforward
+    float a1 = 0.f, a2 = 0.f;            // Feedback
+
+    // State
+    bool selfOscillating = false;
+    float impulse = 0.f;
+
+    void setFrequency(float freq, float sampleRate) {
+        frequency = clamp(freq, 20.f, 20000.f);
+        updateCoefficients(sampleRate);
+    }
+
+    void setDecay(float decayParam, float sampleRate) {
+        decay = clamp(decayParam, 0.f, 1.f);
+
+        // Map decay to resonance (0.70 to 0.78)
+        // 0.78 is the edge of self-oscillation
+        resonance = 0.70f + 0.08f * decay;
+        selfOscillating = (resonance >= 0.78f);
+
+        updateCoefficients(sampleRate);
+    }
+
+    void updateCoefficients(float sampleRate) {
+        // Design a 2nd order resonant bandpass filter
+        // Using analog prototype with bilinear transform
+
+        float omega = 2.f * M_PI * frequency / sampleRate;
+        float K = tanf(omega / 2.f);
+        float K2 = K * K;
+
+        // Map resonance to Q factor
+        // 0.70 -> Q = 5
+        // 0.78 -> Q = 100 (near self-oscillation)
+        float Q = 5.f * expf(5.f * (resonance - 0.70f) / 0.08f);
+
+        // Bandpass coefficients (normalized)
+        float norm = 1.f / (K2 + K/Q + 1.f);
+
+        // Bandpass transfer function
+        b0 = (K/Q) * norm;
+        b1 = 0.f;
+        b2 = -(K/Q) * norm;
+        a1 = 2.f * (K2 - 1.f) * norm;
+        a2 = (K2 - K/Q + 1.f) * norm;
+
+        // Don't compensate gain - let it naturally decay
+    }
+
+    void trigger() {
+        // Apply impulse to excite the filter
+        impulse = 1.f;
+    }
+
+    float process(float input, float sampleRate) {
+        // Add impulse excitation
+        float in = input;
+        if (impulse > 0.f) {
+            in += impulse;
+            impulse = 0.f;  // One-shot impulse
+        }
+
+        // Add small noise for self-oscillation startup
+        if (selfOscillating && fabsf(y1) < 0.0001f && fabsf(y2) < 0.0001f) {
+            in += (random::uniform() - 0.5f) * 0.001f;
+        }
+
+        // IIR filter difference equation
+        // y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]
+        float output = b0 * in + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+
+        // Update delay lines
+        x2 = x1;
+        x1 = in;
+        y2 = y1;
+        y1 = output;
+
+        // Scale output to reasonable level
+        // Ping filter naturally outputs around -1 to 1 range
+        return output;
+    }
+
+    float getEnvelope() const {
+        // Use the output energy as envelope
+        return fabsf(y1);
+    }
+
+    bool isActive() const {
+        return selfOscillating || fabsf(y1) > 0.001f || fabsf(y2) > 0.001f;
+    }
+};
+
+struct NIGOQ;
+
+struct HiddenTimeKnob : ParamWidget {
+    HiddenTimeKnob() {
+        box.size = Vec(66, 38.5); // Same size as NIGOQ scope display
+    }
+    
+    void draw(const DrawArgs& args) override {
+        // Draw nothing - completely invisible
+    }
+    
+    void onEnter(const event::Enter& e) override {
+        glfwSetCursor(APP->window->win, glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR));
+        ParamWidget::onEnter(e);
+    }
+    
+    void onLeave(const event::Leave& e) override {
+        glfwSetCursor(APP->window->win, NULL);
+        ParamWidget::onLeave(e);
+    }
+    
+    void onDragMove(const event::DragMove& e) override {
+        ParamQuantity* pq = getParamQuantity();
+        if (!pq) return;
+        
+        float sensitivity = 0.015f; // Vertical drag sensitivity
+        float deltaValue = -e.mouseDelta.y * sensitivity;
+        pq->setValue(pq->getValue() + deltaValue);
+        e.consume(this);
+    }
+};
+
+struct VisualDisplay : Widget {
+    NIGOQ* module;
+    
+    // 使用更高的原生解析度
+    static const int TEXTURE_WIDTH = 1024;
+    static const int TEXTURE_HEIGHT = 768;
+    
+    // Instance-specific rendering data
+    float* pixels = nullptr;
+    float* feedbackBuffer = nullptr;
+    float time = 0.0f;
+    int frameCounter = 0;
+    
+    // NanoVG image for rendering (avoids OpenGL context issues)
+    int nvgImageId = -1;
+    
+    VisualDisplay(NIGOQ* module);
+    ~VisualDisplay();
+    void draw(const DrawArgs& args) override;
+    void updateVisuals();
+};
+
+
+struct NIGOQ : Module {
+    enum ParamId {
+        MOD_FREQ,
+        MOD_WAVE,
+        MOD_FM_ATTEN,
+        FM_AMT,
+        FM_AMT_ATTEN,
+        FOLD_AMT,
+        FOLD_AMT_ATTEN,
+        AM_AMT,
+        AM_AMT_ATTEN,
+        PRIN_FREQ,
+        PRIN_FM_ATTEN,
+        BASS,
+        ORDER,
+        LPF_CUTOFF,
+        HARMONICS,
+        SYNC_MODE,
+        DECAY,
+        
+        // Visual parameters
+        VIS_OSC1_PHASE,
+        VIS_OSC2_PHASE,
+        VIS_H_FREQ_RATIO,
+        VIS_V_FREQ_RATIO,
+        VIS_MIX_MODE,
+        VIS_XMOD_AMT,
+        VIS_H_ANGLE,
+        VIS_V_ANGLE,
+        
+        // Scope time parameter
+        SCOPE_TIME,
+        PARAMS_LEN
+    };
+    
+    enum InputId {
+        MOD_1VOCT,
+        MOD_FM_IN,
+        MOD_WAVE_CV,
+        PRIN_1VOCT,
+        PRIN_FM_IN,
+        ORDER_CV,
+        LPF_CUTOFF_CV,
+        HARMONICS_CV,
+        FM_AMT_CV,
+        FOLD_AMT_CV,
+        AM_AMT_CV,
+        TRIG_IN,
+        
+        // Visual CV inputs
+        VIS_OSC1_PHASE_CV,
+        VIS_OSC2_PHASE_CV,
+        VIS_H_FREQ_RATIO_CV,
+        VIS_V_FREQ_RATIO_CV,
+        VIS_XMOD_AMT_CV,
+        VIS_H_ANGLE_CV,
+        VIS_V_ANGLE_CV,
+        VIS_MIX_MODE_CV,
+        INPUTS_LEN
+    };
+    
+    enum OutputId {
+        MOD_SIGNAL_OUT,
+        PRIN_SINE_OUT,
+        PRIN_FINAL_OUT,
+        OUTPUTS_LEN
+    };
+    
+    enum LightId {
+        LIGHTS_LEN
+    };
+    
+    float modPhase = 0.f;
+    float prinPhase = 0.f;
+    float lastPrinSync = 0.f;
+    float complexWaveform = 0.f;
+    bool highRange = false;  // Removed - no longer used
+
+    // Ping Filter (Pinpple-style BPF)
+    PingFilter pingFilter;
+    dsp::SchmittTrigger triggerDetector;
+    float lastTriggerTime = 0.f;
+    
+    // Scope data
+    struct ScopePoint {
+        float value = 0.f;
+    };
+    static constexpr int SCOPE_BUFFER_SIZE = 128;
+    ScopePoint scopeBuffer[2][SCOPE_BUFFER_SIZE]; // 0: MOD OSC, 1: FINAL OSC
+    int scopeBufferIndex = 0;
+    int scopeFrameIndex = 0;
+    int oversampleIndex = 2;  // Default 4x oversampling
+
+    // No oversampling - removed to simplify
+    
+    // Smoothing filters for parameters
+    dsp::ExponentialFilter cutoffFilter;
+    dsp::RCFilter lpf;
+    dsp::ExponentialFilter orderFilter;
+    dsp::ExponentialFilter foldFilter;
+    
+    // Smooth randomization variables
+    float randomizeGlideTime = 1.0f;  // Default 1 second glide time
+    float randomAmount = 1.0f;  // Default full range randomization (1.0 = 100%)
+    bool smoothRandomizeActive = false;
+    float smoothRandomizeTimer = 0.0f;
+    float paramSourceValues[PARAMS_LEN];
+    float paramTargetValues[PARAMS_LEN];
+    
+    NIGOQ() {
+        config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
+        
+        // Configure MOD_FREQ for exponential range from 0.001Hz to 8000Hz
+        // Using logarithmic scaling: freq = 0.001 * 2^(param * 23)
+        // At param=0: 0.001Hz, at param=1: ~8192Hz
+        configParam(MOD_FREQ, 0.f, 1.f, 0.5f, "Modulator Frequency", " Hz");
+        configParam(MOD_WAVE, 0.f, 2.f, 0.f, "Modulator Waveform");
+        configParam(MOD_FM_ATTEN, 0.f, 1.f, 0.f, "Modulator FM Attenuator");
+        configParam(FM_AMT, 0.f, 1.f, 0.f, "FM Amount");
+        configParam(FM_AMT_ATTEN, 0.f, 1.f, 1.f, "FM Amount Attenuator");
+        configParam(FOLD_AMT, 0.f, 1.f, 0.f, "Fold Amount");
+        configParam(FOLD_AMT_ATTEN, 0.f, 1.f, 1.f, "Fold Amount Attenuator");
+        configParam(AM_AMT, 0.f, 1.f, 0.f, "AM Amount");
+        configParam(AM_AMT_ATTEN, 0.f, 1.f, 1.f, "AM Amount Attenuator");
+        
+        configParam(PRIN_FREQ, -6.f, 4.f, 0.f, "Principal Frequency", " Hz", 2.f, 261.626f);
+        getParamQuantity(PRIN_FREQ)->randomizeEnabled = false;  // Exclude from randomize (Cmd+R)
+        configParam(PRIN_FM_ATTEN, 0.f, 1.f, 0.f, "Principal FM Attenuator");
+        configParam(BASS, 0.f, 1.f, 0.f, "Bass Amount");
+        
+        configParam(ORDER, 0.f, 1.f, 0.5f, "Order");
+        configParam(LPF_CUTOFF, 0.f, 1.f, 1.0f, "LPF Cutoff");
+        configParam(HARMONICS, 0.f, 1.f, 0.f, "Wavefold Amount");
+        configSwitch(SYNC_MODE, 0.f, 2.f, 0.f, "Sync Mode", {"Off", "Hard", "Soft"});
+        configParam(DECAY, 0.f, 1.f, 0.5f, "Decay Amount");
+        
+        // Visual parameters
+        configParam(VIS_OSC1_PHASE, 0.f, 360.f, 0.f, "Visual OSC1 Phase", "°");
+        configParam(VIS_OSC2_PHASE, 0.f, 360.f, 90.f, "Visual OSC2 Phase", "°");
+        configParam(VIS_H_FREQ_RATIO, 0.001f, 20.f, 3.f, "Horizontal Frequency Ratio");
+        configParam(VIS_V_FREQ_RATIO, 0.001f, 20.f, 4.f, "Vertical Frequency Ratio");
+        configParam(VIS_MIX_MODE, 0.f, 3.f, 0.f, "Visual Mix Mode");
+        getParamQuantity(VIS_MIX_MODE)->displayPrecision = 2;
+        getParamQuantity(VIS_MIX_MODE)->description = "0.0: Add, 1.0: Multiply, 2.0: Difference, 3.0: XOR";
+        configParam(VIS_XMOD_AMT, 0.f, 1.f, 0.3f, "Cross Modulation Amount");
+        configParam(VIS_H_ANGLE, 0.f, 360.f, 0.f, "Horizontal Angle", "°");
+        configParam(VIS_V_ANGLE, 0.f, 360.f, 0.f, "Vertical Angle", "°");
+        
+        // Scope time parameter (same as QQ module)
+        const float maxTime = -std::log2(5e1f);
+        const float minTime = -std::log2(5e-3f);
+        const float defaultTime = -std::log2(5e-1f);
+        configParam(SCOPE_TIME, maxTime, minTime, defaultTime, "Scope Time", " ms/screen", 1 / 2.f, 1000);
+        
+        configInput(MOD_1VOCT, "Modulator V/Oct");
+        configInput(MOD_FM_IN, "Modulator FM");
+        configInput(MOD_WAVE_CV, "Modulator Waveform CV");
+        configInput(PRIN_1VOCT, "Principal V/Oct");
+        configInput(PRIN_FM_IN, "Principal FM");
+        configInput(ORDER_CV, "Order CV");
+        configInput(LPF_CUTOFF_CV, "LPF Cutoff CV");
+        configInput(HARMONICS_CV, "Wavefold CV");
+        configInput(FM_AMT_CV, "FM Amount CV");
+        configInput(FOLD_AMT_CV, "Fold Amount CV");
+        configInput(AM_AMT_CV, "AM Amount CV");
+        configInput(TRIG_IN, "Trigger Input");
+
+        // Visual CV inputs
+        configInput(VIS_OSC1_PHASE_CV, "Visual OSC1 Phase CV");
+        configInput(VIS_OSC2_PHASE_CV, "Visual OSC2 Phase CV");
+        configInput(VIS_H_FREQ_RATIO_CV, "Horizontal Frequency Ratio CV");
+        configInput(VIS_V_FREQ_RATIO_CV, "Vertical Frequency Ratio CV");
+        configInput(VIS_XMOD_AMT_CV, "Cross Modulation Amount CV");
+        configInput(VIS_H_ANGLE_CV, "Horizontal Angle CV");
+        configInput(VIS_V_ANGLE_CV, "Vertical Angle CV");
+        configInput(VIS_MIX_MODE_CV, "Visual Mix Mode CV");
+        
+        configOutput(MOD_SIGNAL_OUT, "Modulator");
+        configOutput(PRIN_SINE_OUT, "Principal Sine");
+        configOutput(PRIN_FINAL_OUT, "Final Complex");
+        
+        // Initialize smoothing filters for parameters
+        cutoffFilter.setTau(0.01f); // 10ms time constant for smooth parameter changes
+        orderFilter.setTau(0.01f);
+        foldFilter.setTau(0.01f);
+
+        // Initialize ping filter
+        pingFilter.setFrequency(261.626f, 48000.f);
+        pingFilter.setDecay(0.5f, 48000.f);
+        // Reset filter state
+        pingFilter.x1 = pingFilter.x2 = 0.f;
+        pingFilter.y1 = pingFilter.y2 = 0.f;
+        pingFilter.impulse = 0.f;
+    }
+
+    void setupCustomParamQuantities() {
+        // This method will be called from the Widget constructor
+        // after the module is fully constructed
+    }
+    
+    void onRandomize(const RandomizeEvent& e) override {
+        // Store current parameter values as source
+        for (int i = 0; i < PARAMS_LEN; i++) {
+            paramSourceValues[i] = params[i].getValue();
+        }
+        
+        // Generate random target values (excluding PRIN_FREQ which has randomizeEnabled = false)
+        for (int i = 0; i < PARAMS_LEN; i++) {
+            if (i != PRIN_FREQ) {  // Skip PRIN_FREQ
+                ParamQuantity* pq = paramQuantities[i];
+                if (pq && pq->isBounded()) {
+                    float currentValue = paramSourceValues[i];
+                    float minValue = pq->getMinValue();
+                    float maxValue = pq->getMaxValue();
+                    float fullRange = maxValue - minValue;
+                    float randomRange = fullRange * randomAmount;
+                    
+                    // Center the random range around current value, but clamp to parameter bounds
+                    float rangeMin = clamp(currentValue - randomRange * 0.5f, minValue, maxValue);
+                    float rangeMax = clamp(currentValue + randomRange * 0.5f, minValue, maxValue);
+                    
+                    // If the clamped range is smaller than desired, expand it within bounds
+                    if (rangeMax - rangeMin < randomRange) {
+                        float deficit = randomRange - (rangeMax - rangeMin);
+                        if (rangeMin > minValue) {
+                            rangeMin = clamp(rangeMin - deficit * 0.5f, minValue, rangeMin);
+                        }
+                        if (rangeMax < maxValue) {
+                            rangeMax = clamp(rangeMax + deficit * 0.5f, rangeMax, maxValue);
+                        }
+                    }
+                    
+                    paramTargetValues[i] = random::uniform() * (rangeMax - rangeMin) + rangeMin;
+                } else {
+                    paramTargetValues[i] = paramSourceValues[i];
+                }
+            } else {
+                paramTargetValues[i] = paramSourceValues[i];  // Keep PRIN_FREQ unchanged
+            }
+        }
+        
+        // Start smooth randomization
+        smoothRandomizeActive = true;
+        smoothRandomizeTimer = 0.0f;
+        
+        // Don't call Module::onRandomize(e) as we handle everything ourselves
+    }
+    
+public:
+    float getModulatorWave(float phase) {
+        // 獲取連續波形參數 (包含 CV 控制)
+        float waveform = params[MOD_WAVE].getValue();
+        if (inputs[MOD_WAVE_CV].isConnected()) {
+            waveform += inputs[MOD_WAVE_CV].getVoltage() * 0.2f; // 10V = 2.0 範圍
+        }
+        waveform = clamp(waveform, 0.f, 2.f);
+        
+        // 將 phase 正規化到 0-1 範圍
+        float normalizedPhase = phase / (2.f * M_PI);
+        normalizedPhase = normalizedPhase - floorf(normalizedPhase);
+        
+        // 連續波形變化
+        if (waveform <= 1.f) {
+            // 0-1: Sine 到 Sawtooth 的連續變化
+            float sine = sinf(phase);
+            float saw = 2.f * normalizedPhase - 1.f;
+            return sine * (1.f - waveform) + saw * waveform;
+        } else {
+            // 1-2: Sawtooth 到 Pulse Width 的連續變化
+            float saw = 2.f * normalizedPhase - 1.f;
+            
+            // Pulse Width 控制: 60% (1.2) = 99% pulse, 100% (2.0) = 1% pulse
+            float pulseProgress = (waveform - 1.f); // 0 到 1
+            float pulseWidth;
+            if (pulseProgress <= 0.2f) {
+                // 1.0-1.2: Sawtooth 到 50% pulse (square)
+                pulseWidth = 0.5f;
+            } else {
+                // 1.2-2.0: 50% pulse 到 99% pulse (60%旋鈕) 再到 1% pulse (100%旋鈕)
+                float widthProgress = (pulseProgress - 0.2f) / 0.8f; // 0 到 1
+                if (widthProgress <= 0.5f) {
+                    // 60%旋鈕位置對應99% pulse
+                    pulseWidth = 0.5f + (widthProgress * 2.0f) * 0.49f; // 0.5 到 0.99
+                } else {
+                    // 60% 到 100%: 99% pulse 到 1% pulse
+                    float reverseProgress = (widthProgress - 0.5f) * 2.0f;
+                    pulseWidth = 0.99f - reverseProgress * 0.98f; // 0.99 到 0.01
+                }
+            }
+            
+            float pulse = normalizedPhase < pulseWidth ? 1.f : -1.f;
+            float blend = clamp(pulseProgress * 5.0f, 0.0f, 1.0f); // 快速過渡到 pulse
+            return saw * (1.f - blend) + pulse * blend;
+        }
+    }
+    
+    float generateTriangleWithHarmonics(float phase) {
+        // Triangle wave with 3 harmonics approximation using Fourier series
+        // Triangle wave = (8/π²) * Σ[(-1)^n * sin((2n+1)x) / (2n+1)²] for n = 0,1,2,...
+        float fundamental = sinf(phase);
+        float third = sinf(3.0f * phase) / 9.0f;     // 3rd harmonic with 1/9 amplitude
+        float fifth = sinf(5.0f * phase) / 25.0f;    // 5th harmonic with 1/25 amplitude
+        
+        // Combine harmonics with proper triangle wave coefficients
+        float triangle = (8.0f / (M_PI * M_PI)) * (fundamental - third + fifth);
+        
+        return clamp(triangle, -1.0f, 1.0f);
+    }
+    
+    float generateComplexWaveform(float phase, float order, float foldAmount) {
+        // 基本正弦波
+        float wave = sinf(phase);
+        
+        // Order: 控制波形的基本特性 - 增強調製深度
+        if (order != 0.5f) {
+            float orderMod = (order - 0.5f) * 2.f;
+            // 增加調製強度從 0.3f 到 0.8f，並加入更多諧波
+            wave += orderMod * sinf(phase * 2.f) * 0.8f;
+            wave += orderMod * sinf(phase * 3.f) * 0.4f;
+        }
+        
+        // Removed symmetry processing - now handled by LPF
+        
+        // Buchla-style Wavefold: 波形折疊效果 with smooth transitions
+        if (foldAmount > 0.f) {
+            // Buchla-style wavefolding with gain
+            float gain = 1.f + foldAmount * 8.f;  // Gain determines number of folds
+            wave *= gain;
+
+            // Add slight asymmetry and DC offset for organic feel
+            float asymmetry = 0.024f * foldAmount;  // Increased asymmetry by 20%
+            float dcOffset = 0.05f * sinf(foldAmount * 2.1f);
+            wave += dcOffset;
+
+            // Buchla fold with soft transitions at fold points
+            int foldCount = 0;
+            while ((wave > 1.f || wave < -1.f) && foldCount < 10) {
+                if (wave > 1.f) {
+                    // Fold back with slight smoothing
+                    float excess = wave - 1.f;
+                    float softness = 0.15f * foldAmount;
+                    wave = (2.f - wave) * (1.f - softness) +
+                           (1.f - tanhf(excess * 2.f)) * softness;
+                    wave += asymmetry;
+                }
+                if (wave < -1.f) {
+                    // Fold back with different smoothing
+                    float excess = -1.f - wave;
+                    float softness = 0.12f * foldAmount;
+                    wave = (-2.f - wave) * (1.f - softness) +
+                           (-1.f + tanhf(excess * 2.f)) * softness;
+                    wave -= asymmetry * 0.8f;
+                }
+                foldCount++;
+            }
+
+            // Smoothing with 30% tanh to remove harsh edges
+            wave = wave * 0.7f + tanhf(wave * 1.2f) * 0.3f;
+        }
+        
+        return clamp(wave, -1.f, 1.f);
+    }
+
+    // JSON serialization for saving/loading module state
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+
+        // Save randomization settings
+        json_object_set_new(rootJ, "randomizeGlideTime", json_real(randomizeGlideTime));
+        json_object_set_new(rootJ, "randomAmount", json_real(randomAmount));
+
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        // Load randomization settings
+        json_t* randomizeGlideTimeJ = json_object_get(rootJ, "randomizeGlideTime");
+        if (randomizeGlideTimeJ)
+            randomizeGlideTime = json_real_value(randomizeGlideTimeJ);
+
+        json_t* randomAmountJ = json_object_get(rootJ, "randomAmount");
+        if (randomAmountJ)
+            randomAmount = json_real_value(randomAmountJ);
+    }
+
+    void process(const ProcessArgs& args) override {
+        // No DSP processing - UI only
+    }
+
+    /*
+    void process_old(const ProcessArgs& args) {
+        // Removed old processing code - too much code causing errors
+        if (smoothRandomizeActive) {
+            smoothRandomizeTimer += args.sampleTime;
+            float progress = smoothRandomizeTimer / randomizeGlideTime;
+            
+            if (progress >= 1.0f) {
+                // Randomization complete
+                progress = 1.0f;
+                smoothRandomizeActive = false;
+            }
+            
+            // Smooth interpolation using sine curve for more natural feel
+            float smoothProgress = (1.0f - cosf(progress * M_PI)) * 0.5f;
+            
+            // Apply interpolated values to parameters
+            for (int i = 0; i < PARAMS_LEN; i++) {
+                if (i != PRIN_FREQ) {  // Skip PRIN_FREQ
+                    float currentValue = paramSourceValues[i] + (paramTargetValues[i] - paramSourceValues[i]) * smoothProgress;
+                    params[i].setValue(currentValue);
+                }
+            }
+        }
+        
+        // No oversampling - direct processing
+        
+        // 輸入參數讀取（每個樣本讀取一次）
+        // Calculate frequency using exponential scaling
+        // freq = 0.001 * 2^(param * 23)
+        float modFreqParam = params[MOD_FREQ].getValue();
+        float modFreq = 0.001f * powf(2.f, modFreqParam * 23.f);
+
+        // Apply V/Oct if connected
+        if (inputs[MOD_1VOCT].isConnected()) {
+            float vOctOffset = inputs[MOD_1VOCT].getVoltage();
+            modFreq *= powf(2.f, vOctOffset);
+        }
+        if (inputs[MOD_FM_IN].isConnected()) {
+            float modFM = inputs[MOD_FM_IN].getVoltage() * params[MOD_FM_ATTEN].getValue();
+            // True exponential FM: ±5V = ±5 octaves
+            modFreq *= powf(2.f, modFM);
+        }
+        
+        // Principal oscillator frequency with exponential FM
+        float prinPitch = params[PRIN_FREQ].getValue();
+        if (inputs[PRIN_1VOCT].isConnected()) {
+            prinPitch += inputs[PRIN_1VOCT].getVoltage();
+        }
+        // Store external FM for later linear FM processing
+        float externalFM = 0.f;
+        if (inputs[PRIN_FM_IN].isConnected()) {
+            externalFM = inputs[PRIN_FM_IN].getVoltage() * params[PRIN_FM_ATTEN].getValue();
+            // Don't add to pitch here - will apply as linear FM later
+        }
+        float prinFreq = 261.626f * powf(2.f, prinPitch);
+        
+        // Calculate individual modulation amounts
+        float fmAmt = params[FM_AMT].getValue();
+        if (inputs[FM_AMT_CV].isConnected()) {
+            float fmAmtCV = inputs[FM_AMT_CV].getVoltage() / 10.f;
+            fmAmtCV *= params[FM_AMT_ATTEN].getValue();
+            fmAmt = clamp(fmAmt + fmAmtCV, 0.f, 1.f);
+        }
+        
+        float foldAmt = params[FOLD_AMT].getValue();
+        if (inputs[FOLD_AMT_CV].isConnected()) {
+            // Accept unipolar CV (0-10V) for controlling fold modulation amount
+            float foldAmtCV = inputs[FOLD_AMT_CV].getVoltage() / 10.f;  // 0-10V → 0-1
+            foldAmtCV *= params[FOLD_AMT_ATTEN].getValue();
+            foldAmt = clamp(foldAmt + foldAmtCV, 0.f, 1.f);
+        }
+        
+        float amAmt = params[AM_AMT].getValue();
+        if (inputs[AM_AMT_CV].isConnected()) {
+            float amAmtCV = inputs[AM_AMT_CV].getVoltage() / 10.f;
+            amAmtCV *= params[AM_AMT_ATTEN].getValue();
+            amAmt = clamp(amAmt + amAmtCV, 0.f, 1.f);
+        }
+        
+        
+        float order = params[ORDER].getValue();
+        order += inputs[ORDER_CV].getVoltage() * 0.1f;
+        order = clamp(order, 0.f, 1.f);
+        // Apply smoothing to reduce noise during knob movement
+        order = orderFilter.process(args.sampleTime, order);
+        // Map full 0-1 range to 0.5-1 range
+        order = 0.5f + order * 0.5f;
+        
+        float lpfCutoff = params[LPF_CUTOFF].getValue();
+        lpfCutoff += inputs[LPF_CUTOFF_CV].getVoltage() * 0.1f;
+        lpfCutoff = clamp(lpfCutoff, 0.f, 1.f);
+        // Apply smoothing to reduce noise during knob movement
+        lpfCutoff = cutoffFilter.process(args.sampleTime, lpfCutoff);
+        // Convert to frequency: 20Hz to 20kHz
+        float cutoffFreq = 20.f * powf(1000.f, lpfCutoff);
+        lpf.setCutoff(cutoffFreq / args.sampleRate);
+        
+        float foldAmount = params[HARMONICS].getValue();
+        if (inputs[HARMONICS_CV].isConnected()) {
+            foldAmount += inputs[HARMONICS_CV].getVoltage() * 0.1f;
+        }
+        foldAmount = clamp(foldAmount, 0.f, 1.f);
+        // Apply smoothing to reduce noise during knob movement
+        foldAmount = foldFilter.process(args.sampleTime, foldAmount);
+        
+        int syncMode = (int)params[SYNC_MODE].getValue();
+
+        // Trigger detection
+        bool shouldTrigger = false;
+
+        if (inputs[TRIG_IN].isConnected()) {
+            // External trigger
+            if (triggerDetector.process(inputs[TRIG_IN].getVoltage())) {
+                shouldTrigger = true;
+                lastTriggerTime = 0.f;
+            }
+        }
+
+        // Ping filter frequency is controlled by PRIN_FREQ with FM
+        float pingFreq = prinFreq;
+
+        // Process single sample
+        // Modulator processing
+        float modDeltaPhase = modFreq * args.sampleTime * 2.f * M_PI;
+            modPhase += modDeltaPhase;
+            if (modPhase >= 2.f * M_PI) modPhase -= 2.f * M_PI;
+            
+            float modSignal = getModulatorWave(modPhase);
+            // Store unipolar version for visual/other uses
+            modSamples[i] = (modSignal + 1.f) * 0.5f;
+            
+            // Ping filter processing
+            float currentPingFreq = pingFreq;
+
+            // Internal modulator: Through-zero linear FM
+            float internalFM = modSignal * fmAmt * currentPingFreq * 2.0f;  // TZFM: modulation proportional to carrier frequency
+
+            // External FM input: Standard linear FM (not through-zero)
+            float externalFMContribution = externalFM * currentPingFreq * 0.2f;  // Standard linear FM scaling
+
+            // Combine FM sources
+            currentPingFreq += internalFM;  // TZFM can go negative
+            currentPingFreq = fabsf(currentPingFreq);  // Through-zero: flip phase when negative
+            currentPingFreq += externalFMContribution;  // Add standard linear FM (always positive)
+            currentPingFreq = clamp(currentPingFreq, 20.f, 20000.f);
+
+            // Set ping filter frequency AND decay (decay depends on frequency)
+            pingFilter.setFrequency(currentPingFreq, args.sampleRate);
+
+            // Re-apply decay setting with the modulated frequency
+            float decayAmount = params[DECAY].getValue();
+            pingFilter.setDecay(decayAmount, args.sampleRate);
+
+            // Trigger ping filter if needed
+            if (shouldTrigger) {
+                pingFilter.trigger();
+                shouldTrigger = false;
+            }
+
+            // Process ping filter
+            float pingSine = pingFilter.process(0.f, args.sampleRate);
+
+            // Use ping filter output as principal sine
+            float prinSine = pingSine;
+
+            // Update phase for other uses (sync, etc)
+            prinPhase += currentPingFreq * args.sampleTime * 2.f * M_PI;
+            if (prinPhase >= 2.f * M_PI) prinPhase -= 2.f * M_PI;
+            
+            // Principal sync Modulator (Principal resets Modulator)
+            if (syncMode == 1 && prinSine > 0.f && lastPrinSync <= 0.f) {
+                modPhase = 0.f;
+            } else if (syncMode == 2) {
+                float modDeltaPhase = modFreq * args.sampleTime * 2.f * M_PI;
+                modDeltaPhase *= 1.f + prinSine * 0.2f;
+                modPhase += modDeltaPhase;
+            }
+            lastPrinSync = prinSine;
+            
+            // Calculate current fold amount with modulation
+            float currentFoldAmount = foldAmount;
+            // Apply fold modulation - convert to unipolar for fold control
+            float unipolarMod = (modSignal + 1.f) * 0.5f;  // Convert to 0-1 range
+            currentFoldAmount += unipolarMod * foldAmt;  // Full depth modulation
+            currentFoldAmount = clamp(currentFoldAmount, 0.f, 1.f);
+
+            // ALWAYS use ping filter as the core oscillator
+            // The ping filter IS our oscillator - it either pings or self-oscillates
+            complexWaveform = pingSine;
+
+            // Only apply processing if there's actual signal
+            if (fabsf(complexWaveform) > 0.0001f) {
+                    // Apply Buchla-style fold processing if needed
+                    if (currentFoldAmount > 0.f) {
+                        // Buchla-style wavefolding with smooth transitions
+                        float gain = 1.f + currentFoldAmount * 8.f;  // Gain determines number of folds
+                        float foldedWave = complexWaveform * gain;
+
+                        // Add slight asymmetry and DC offset for more organic feel
+                        float asymmetry = 0.024f * currentFoldAmount;  // Increased asymmetry by 20%
+                        float dcOffset = 0.05f * sinf(currentFoldAmount * 2.1f);  // Slight DC wandering
+                        foldedWave += dcOffset;
+
+                        // Buchla fold with soft transitions
+                        int foldCount = 0;
+                        while ((foldedWave > 1.f || foldedWave < -1.f) && foldCount < 10) {
+                            if (foldedWave > 1.f) {
+                                // Fold back from positive with slight curve
+                                float excess = foldedWave - 1.f;
+                                float softness = 0.15f * currentFoldAmount;  // Soften the fold point
+                                foldedWave = (2.f - foldedWave) * (1.f - softness) +
+                                           (1.f - tanhf(excess * 2.f)) * softness;
+                                foldedWave += asymmetry;  // Add asymmetry
+                            }
+                            if (foldedWave < -1.f) {
+                                // Fold back from negative with slightly different curve
+                                float excess = -1.f - foldedWave;
+                                float softness = 0.12f * currentFoldAmount;  // Different softness for asymmetry
+                                foldedWave = (-2.f - foldedWave) * (1.f - softness) +
+                                           (-1.f + tanhf(excess * 2.f)) * softness;
+                                foldedWave -= asymmetry * 0.8f;  // Less asymmetry on negative side
+                            }
+                            foldCount++;
+                        }
+
+                        // Final smoothing with 30% tanh
+                        complexWaveform = foldedWave * 0.7f + tanhf(foldedWave * 1.2f) * 0.3f;
+                        complexWaveform = clamp(complexWaveform, -1.f, 1.f);
+                    }
+
+                    // Apply order modulation if needed
+                    if (order != 0.5f) {
+                        float orderMod = (order - 0.5f) * 2.f;
+                        complexWaveform += orderMod * sinf(prinPhase * 2.f) * 0.8f;
+                        complexWaveform += orderMod * sinf(prinPhase * 3.f) * 0.4f;
+                        complexWaveform = clamp(complexWaveform, -1.f, 1.f);
+                    }
+            }
+            // If signal is too small, just pass through (already set to pingSine above)
+
+            // Apply amplitude modulation
+            // Standard AM: carrier * (1 + modulation_index * modulator)
+            float unipolarModForAM = (modSignal + 1.f) * 0.5f;  // Convert to 0-1 for AM
+            complexWaveform *= (1.f - amAmt) + (amAmt * unipolarModForAM * 2.f);  // Full range AM
+
+            // Direct output
+            float modOut = modSignal;
+            float prinSineOut = prinSine;
+            float prinFinalOut = complexWaveform;
+        
+        // Apply LPF to final output (all wave processing complete)
+        lpf.process(prinFinalOut);
+        prinFinalOut = lpf.lowpass();
+
+        // Apply BASS: mix original sine wave into final output AFTER Fold and LPF
+        float bassAmount = params[BASS].getValue();
+        if (bassAmount > 0.f) {
+            // Mix the original clean sine wave (prinSineOut) with the processed signal
+            // This adds fundamental frequency reinforcement
+            prinFinalOut = prinFinalOut * (1.f - bassAmount) + prinSineOut * bassAmount;
+            prinFinalOut = clamp(prinFinalOut, -1.f, 1.f);
+        }
+        
+        // Output signals (modOut is 0-1, convert to 0-10V)
+        outputs[MOD_SIGNAL_OUT].setVoltage(modOut * 10.f);
+        outputs[PRIN_SINE_OUT].setVoltage(prinSineOut * 5.f);
+        outputs[PRIN_FINAL_OUT].setVoltage(prinFinalOut * 5.f);
+        
+        // Update scope buffer with dynamic time scale
+        float deltaTime = dsp::exp2_taylor5(-params[SCOPE_TIME].getValue()) / SCOPE_BUFFER_SIZE;
+        int frameCount = (int)std::ceil(deltaTime * args.sampleRate);
+        if (++scopeFrameIndex >= frameCount) {
+            scopeFrameIndex = 0;
+            // Store normalized scope values (0-10V range)
+            scopeBuffer[0][scopeBufferIndex].value = modOut * 10.f; // MOD OSC
+            scopeBuffer[1][scopeBufferIndex].value = prinFinalOut * 5.f + 5.f; // FINAL OSC (shifted to 0-10V)
+            scopeBufferIndex = (scopeBufferIndex + 1) % SCOPE_BUFFER_SIZE;
+        }
+    }
+
+};
+
+// Custom param quantity for frequency display with range switch
+struct ModFreqParamQuantity : ParamQuantity {
+    std::string getDisplayValueString() override {
+        if (!module)
+            return ParamQuantity::getDisplayValueString();
+
+        // Calculate actual frequency using exponential scaling
+        // freq = 0.001 * 2^(value * 23)
+        float value = getValue();
+        float freq = 0.001f * powf(2.f, value * 23.f);
+
+        // Format frequency display - always show 3 decimal places
+        if (freq >= 1000.f) {
+            return string::f("%.3f kHz", freq / 1000.f);
+        } else {
+            return string::f("%.3f Hz", freq);
+        }
+    }
+
+    void setDisplayValueString(std::string s) override {
+        // Parse the input string to extract the frequency value
+        float freq = 0.f;
+        char unit[10] = "";
+        int matched = sscanf(s.c_str(), "%f %s", &freq, unit);
+
+        if (matched >= 1) {
+            // Check if kHz was specified
+            if (matched == 2 && (strcmp(unit, "kHz") == 0 || strcmp(unit, "khz") == 0 || strcmp(unit, "KHz") == 0)) {
+                freq *= 1000.f;
+            }
+
+            // Convert frequency to parameter value (inverse of exponential scaling)
+            // freq = 0.001 * 2^(value * 23)
+            // value = log2(freq / 0.001) / 23
+            float paramValue = log2f(freq / 0.001f) / 23.f;
+            setValue(clamp(paramValue, 0.f, 1.f));
+        }
+    }
+};
+
+// Custom param quantity for principal frequency display
+struct PrinFreqParamQuantity : ParamQuantity {
+    std::string getDisplayValueString() override {
+        if (!module)
+            return ParamQuantity::getDisplayValueString();
+
+        float value = getValue();
+        float freq = 261.626f * powf(2.f, value);
+
+        // Format frequency display - always show 3 decimal places
+        if (freq >= 1000.f) {
+            return string::f("%.3f kHz", freq / 1000.f);
+        } else {
+            return string::f("%.3f Hz", freq);
+        }
+    }
+
+    void setDisplayValueString(std::string s) override {
+        // Parse the input string to extract the frequency value
+        float freq = 0.f;
+        char unit[10] = "";
+        int matched = sscanf(s.c_str(), "%f %s", &freq, unit);
+
+        if (matched >= 1) {
+            // Check if kHz was specified
+            if (matched == 2 && (strcmp(unit, "kHz") == 0 || strcmp(unit, "khz") == 0 || strcmp(unit, "KHz") == 0)) {
+                freq *= 1000.f;
+            }
+
+            // Convert frequency to parameter value
+            // freq = 261.626 * 2^value
+            // value = log2(freq / 261.626)
+            float paramValue = log2f(freq / 261.626f);
+            setValue(clamp(paramValue, -6.f, 4.f));
+        }
+    }
+};
+    */
+
+// VisualDisplay 實現
+VisualDisplay::VisualDisplay(NIGOQ* module) {
+    this->module = module;
+    box.size = Vec(420, 315); // 實際顯示尺寸
+    
+    // 確保每個實例都有完全獨立的像素緩衝區
+    pixels = new float[TEXTURE_WIDTH * TEXTURE_HEIGHT * 4];
+    feedbackBuffer = new float[TEXTURE_WIDTH * TEXTURE_HEIGHT * 4];
+    
+    // 初始化緩衝區為黑色，確保每個實例都有獨立的初始狀態
+    for (int i = 0; i < TEXTURE_WIDTH * TEXTURE_HEIGHT * 4; i += 4) {
+        pixels[i] = 0.04f;     // R
+        pixels[i + 1] = 0.04f; // G
+        pixels[i + 2] = 0.04f; // B
+        pixels[i + 3] = 1.0f;  // A
+        feedbackBuffer[i] = 0.04f;
+        feedbackBuffer[i + 1] = 0.04f;
+        feedbackBuffer[i + 2] = 0.04f;
+        feedbackBuffer[i + 3] = 1.0f;
+    }
+    
+    // 初始化實例變數
+    nvgImageId = -1;
+    time = 0.0f;
+    frameCounter = 0;
+}
+
+VisualDisplay::~VisualDisplay() {
+    // 安全釋放記憶體
+    if (pixels) {
+        delete[] pixels;
+        pixels = nullptr;
+    }
+    if (feedbackBuffer) {
+        delete[] feedbackBuffer;
+        feedbackBuffer = nullptr;
+    }
+    // 清理 NanoVG 圖像
+    if (nvgImageId >= 0) {
+        // NanoVG 圖像會由 VCV Rack 自動清理
+        nvgImageId = -1;
+    }
+}
+
+void VisualDisplay::draw(const DrawArgs& args) {
+    if (!module || !pixels) return;
+    
+    updateVisuals();
+    
+    // 轉換像素數據為 NanoVG 可用的格式 (RGBA8)
+    std::vector<unsigned char> imageData;
+    imageData.resize(TEXTURE_WIDTH * TEXTURE_HEIGHT * 4);
+    
+    for (int i = 0; i < TEXTURE_WIDTH * TEXTURE_HEIGHT * 4; i++) {
+        imageData[i] = (unsigned char)(clamp(pixels[i], 0.0f, 1.0f) * 255.0f);
+    }
+    
+    // 創建或更新 NanoVG 圖像
+    if (nvgImageId < 0) {
+        nvgImageId = nvgCreateImageRGBA(args.vg, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, imageData.data());
+    } else {
+        nvgUpdateImage(args.vg, nvgImageId, imageData.data());
+    }
+    
+    if (nvgImageId >= 0) {
+        // 使用 NanoVG 渲染圖像
+        NVGpaint paint = nvgImagePattern(args.vg, 0, 0, box.size.x, box.size.y, 0, nvgImageId, 1.0f);
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+        nvgFillPaint(args.vg, paint);
+        nvgFill(args.vg);
+    } else {
+        // 備用方案：繪製黑色背景
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+        nvgFillColor(args.vg, nvgRGB(10, 10, 10));
+        nvgFill(args.vg);
+    }
+}
+
+void VisualDisplay::updateVisuals() {
+    if (!module) return;
+    
+    // 大幅減慢更新頻率，避免閃動
+    frameCounter++;
+    if (frameCounter % 8 == 0) { // 每8幀更新一次
+        time += 0.005f; // 更慢的時間步進
+    }
+    
+    // 讀取視覺參數（含 CV 輸入）
+    float osc1Phase = module->params[NIGOQ::VIS_OSC1_PHASE].getValue();
+    if (module->inputs[NIGOQ::VIS_OSC1_PHASE_CV].isConnected()) {
+        osc1Phase += module->inputs[NIGOQ::VIS_OSC1_PHASE_CV].getVoltage() * 36.0f; // 10V = 360度
+    }
+    osc1Phase = clamp(osc1Phase, 0.0f, 360.0f) * M_PI / 180.0f;
+    
+    float osc2Phase = module->params[NIGOQ::VIS_OSC2_PHASE].getValue();
+    if (module->inputs[NIGOQ::VIS_OSC2_PHASE_CV].isConnected()) {
+        osc2Phase += module->inputs[NIGOQ::VIS_OSC2_PHASE_CV].getVoltage() * 36.0f;
+    }
+    osc2Phase = clamp(osc2Phase, 0.0f, 360.0f) * M_PI / 180.0f;
+    
+    float hFreqRatio = module->params[NIGOQ::VIS_H_FREQ_RATIO].getValue();
+    if (module->inputs[NIGOQ::VIS_H_FREQ_RATIO_CV].isConnected()) {
+        hFreqRatio += module->inputs[NIGOQ::VIS_H_FREQ_RATIO_CV].getVoltage() * 2.0f;
+    }
+    hFreqRatio = clamp(hFreqRatio, 0.001f, 20.0f);
+    
+    float vFreqRatio = module->params[NIGOQ::VIS_V_FREQ_RATIO].getValue();
+    if (module->inputs[NIGOQ::VIS_V_FREQ_RATIO_CV].isConnected()) {
+        vFreqRatio += module->inputs[NIGOQ::VIS_V_FREQ_RATIO_CV].getVoltage() * 2.0f;
+    }
+    vFreqRatio = clamp(vFreqRatio, 0.001f, 20.0f);
+    
+    float mixMode = module->params[NIGOQ::VIS_MIX_MODE].getValue();
+    if (module->inputs[NIGOQ::VIS_MIX_MODE_CV].isConnected()) {
+        mixMode += module->inputs[NIGOQ::VIS_MIX_MODE_CV].getVoltage() * 0.3f;  // 10V = 3.0 範圍
+    }
+    mixMode = clamp(mixMode, 0.0f, 3.0f);
+    
+    float xModAmt = module->params[NIGOQ::VIS_XMOD_AMT].getValue();
+    if (module->inputs[NIGOQ::VIS_XMOD_AMT_CV].isConnected()) {
+        xModAmt += module->inputs[NIGOQ::VIS_XMOD_AMT_CV].getVoltage() * 0.1f;
+    }
+    xModAmt = clamp(xModAmt, 0.0f, 1.0f);
+    
+    float hAngle = module->params[NIGOQ::VIS_H_ANGLE].getValue();
+    if (module->inputs[NIGOQ::VIS_H_ANGLE_CV].isConnected()) {
+        hAngle += module->inputs[NIGOQ::VIS_H_ANGLE_CV].getVoltage() * 36.0f; // 10V = 360度
+    }
+    hAngle = fmodf(hAngle, 360.0f) * M_PI / 180.0f; // 轉換為弧度
+    
+    float vAngle = module->params[NIGOQ::VIS_V_ANGLE].getValue();
+    if (module->inputs[NIGOQ::VIS_V_ANGLE_CV].isConnected()) {
+        vAngle += module->inputs[NIGOQ::VIS_V_ANGLE_CV].getVoltage() * 36.0f;
+    }
+    vAngle = fmodf(vAngle, 360.0f) * M_PI / 180.0f; // 轉換為弧度
+    
+    // 音頻振盪器信號
+    float modSignal = module->getModulatorWave(module->modPhase);
+    float prinSignal = module->complexWaveform; // Use final complex waveform instead of basic triangle
+    
+    // 計算包含CV輸入的實際頻率值 (用於顏色控制)
+    float modFreqForColor = module->params[NIGOQ::MOD_FREQ].getValue();
+    if (module->inputs[NIGOQ::MOD_1VOCT].isConnected()) {
+        modFreqForColor += module->inputs[NIGOQ::MOD_1VOCT].getVoltage();
+    }
+    if (module->inputs[NIGOQ::MOD_FM_IN].isConnected()) {
+        float modFM = module->inputs[NIGOQ::MOD_FM_IN].getVoltage() * module->params[NIGOQ::MOD_FM_ATTEN].getValue();
+        modFreqForColor += modFM * 0.2f;  // FM 影響
+    }
+    
+    float prinFreqForColor = module->params[NIGOQ::PRIN_FREQ].getValue();
+    if (module->inputs[NIGOQ::PRIN_1VOCT].isConnected()) {
+        prinFreqForColor += module->inputs[NIGOQ::PRIN_1VOCT].getVoltage();
+    }
+    if (module->inputs[NIGOQ::PRIN_FM_IN].isConnected()) {
+        float prinFM = module->inputs[NIGOQ::PRIN_FM_IN].getVoltage() * module->params[NIGOQ::PRIN_FM_ATTEN].getValue();
+        prinFreqForColor += prinFM * 0.2f;  // FM 影響
+    }
+    
+    // 取得頻率比例 (保持 1/50 減速，但加入頻率參數影響)
+    float osc1Freq = (1.0f + modSignal * 0.5f) * 0.02f;  // M.OSC 減速至 1/50
+    float osc2Freq = (1.5f + prinSignal * 0.5f) * 0.02f;  // P.OSC 減速至 1/50
+    
+    // 將包含CV的實際頻率映射到顏色偏移
+    float modColorShift = (modFreqForColor + 10.0f) / 14.0f * 2.0f * M_PI;  // 0 到 2π 的色相偏移
+    float prinColorShift = (prinFreqForColor + 6.0f) / 10.0f * 2.0f * M_PI;  // 0 到 2π 的色相偏移
+    
+    // 預先計算 Principal Complex Waveform 參數 (避免在每個像素重複計算)
+    float currentOrder = module->params[NIGOQ::ORDER].getValue();
+    if (module->inputs[NIGOQ::ORDER_CV].isConnected()) {
+        currentOrder += module->inputs[NIGOQ::ORDER_CV].getVoltage() * 0.1f;
+    }
+    currentOrder = clamp(currentOrder, 0.f, 1.f);
+    currentOrder = 0.5f + currentOrder * 0.5f;
+    
+    float currentLpfCutoff = module->params[NIGOQ::LPF_CUTOFF].getValue();
+    if (module->inputs[NIGOQ::LPF_CUTOFF_CV].isConnected()) {
+        currentLpfCutoff += module->inputs[NIGOQ::LPF_CUTOFF_CV].getVoltage() * 0.1f;
+    }
+    currentLpfCutoff = clamp(currentLpfCutoff, 0.f, 1.f);
+    
+    float currentFold = module->params[NIGOQ::HARMONICS].getValue();
+    if (module->inputs[NIGOQ::HARMONICS_CV].isConnected()) {
+        currentFold += module->inputs[NIGOQ::HARMONICS_CV].getVoltage() * 0.1f;
+    }
+    currentFold = clamp(currentFold, 0.f, 1.f);
+    
+    for (int y = 0; y < TEXTURE_HEIGHT; y++) {
+        for (int x = 0; x < TEXTURE_WIDTH; x++) {
+            int idx = (y * TEXTURE_WIDTH + x) * 4;
+            
+            float nx = (float)x / TEXTURE_WIDTH;
+            float ny = (float)y / TEXTURE_HEIGHT;
+            
+            // 應用 H 和 V 角度偏移
+            float hOffset = cosf(hAngle) * nx + sinf(hAngle) * ny;
+            float vOffset = -sinf(vAngle) * nx + cosf(vAngle) * ny;
+            
+            // OSC1 → 基礎振盪計算
+            float r1 = module->getModulatorWave((hOffset * hFreqRatio + nx) * M_PI * 2.0f + time * osc1Freq + osc1Phase);
+            float r2 = module->getModulatorWave((vOffset * vFreqRatio + ny) * M_PI * 2.0f + time * osc1Freq * 0.7f);
+            float r3 = module->getModulatorWave((hOffset + vOffset) * osc1Freq * M_PI + time * osc1Freq * 1.3f);
+            float modBase = ((r1 + 1.0f) * 0.5f + (r2 + 1.0f) * 0.5f + (r3 + 1.0f) * 0.5f) / 3.0f;
+            
+            // OSC2 → 基礎振盪計算 (優化：只計算一個主要的 complex waveform，其他用簡化版本)
+            float mainPhase = (hOffset * hFreqRatio + nx) * M_PI * 2.0f + time * osc2Freq + osc2Phase;
+            float g1 = module->generateComplexWaveform(mainPhase, currentOrder, currentFold);
+            
+            // 簡化的次要振盪 (用簡單的 sin 加上一些複雜度)
+            float g2 = sinf((vOffset * vFreqRatio + ny) * M_PI * 2.0f + time * osc2Freq * 0.8f) * (1.0f + currentOrder * 0.3f);
+            float g3 = sinf((hOffset - vOffset) * osc2Freq * M_PI + time * osc2Freq * 1.1f) * (1.0f + currentLpfCutoff * 0.3f);
+            
+            float prinBase = ((g1 + 1.0f) * 0.5f + (g2 + 1.0f) * 0.5f + (g3 + 1.0f) * 0.5f) / 3.0f;
+            
+            // 用頻率參數調整基本顏色分佈 (保守的方法)
+            float modColorInfluence = sinf(modColorShift) * 0.3f + 0.7f;  // 0.4 - 1.0 範圍
+            float prinColorInfluence = sinf(prinColorShift) * 0.3f + 0.7f;  // 0.4 - 1.0 範圍
+            
+            // 計算基本 RGB 通道 (恢復原本邏輯但加入頻率影響)
+            float red = modBase * modColorInfluence;
+            float green = prinBase * prinColorInfluence;
+            
+            // 交叉調變 → 藍色通道 (保持原本邏輯)
+            float b1 = sinf((hOffset * vOffset) * 0.7f * M_PI * 4.0f + time * 0.7f + hAngle);
+            float b2 = sinf((red - green) * xModAmt * M_PI * 2.0f + vAngle);
+            float blue = (b1 * 0.5f + 0.5f) * (b2 * 0.5f + 0.5f);
+            
+            // 添加頻率參數對藍色的影響
+            blue *= (modColorInfluence + prinColorInfluence) * 0.5f;
+            
+            // 連續混合模式 (0.0-3.0 範圍)
+            // 計算各種混合模式的結果
+            float addResult[3] = {red, green, blue}; // 0: Add (原始)
+            
+            float multResult[3] = { // 1: Multiply
+                red * (1.0f + green * xModAmt),
+                green * (1.0f + blue * xModAmt),
+                blue * (1.0f + red * xModAmt)
+            };
+            
+            float diffResult[3] = { // 2: Difference
+                fabsf(red - green * xModAmt),
+                fabsf(green - blue * xModAmt),
+                fabsf(blue - red * xModAmt)
+            };
+            
+            float xorResult[3] = { // 3: XOR-like
+                red,
+                green,
+                blue * (float)((int)(red * 255) ^ (int)(green * 255)) / 255.0f
+            };
+            
+            // 連續插值混合
+            if (mixMode <= 1.0f) {
+                // Add -> Multiply
+                float t = mixMode;
+                red = addResult[0] * (1.0f - t) + multResult[0] * t;
+                green = addResult[1] * (1.0f - t) + multResult[1] * t;
+                blue = addResult[2] * (1.0f - t) + multResult[2] * t;
+            } else if (mixMode <= 2.0f) {
+                // Multiply -> Difference
+                float t = mixMode - 1.0f;
+                red = multResult[0] * (1.0f - t) + diffResult[0] * t;
+                green = multResult[1] * (1.0f - t) + diffResult[1] * t;
+                blue = multResult[2] * (1.0f - t) + diffResult[2] * t;
+            } else {
+                // Difference -> XOR
+                float t = clamp(mixMode - 2.0f, 0.0f, 1.0f);
+                red = diffResult[0] * (1.0f - t) + xorResult[0] * t;
+                green = diffResult[1] * (1.0f - t) + xorResult[1] * t;
+                blue = diffResult[2] * (1.0f - t) + xorResult[2] * t;
+            }
+            
+            // 移除原本的 feedback 系統，改用角度控制
+            
+            // 限制範圍
+            red = clamp(red, 0.0f, 1.0f);
+            green = clamp(green, 0.0f, 1.0f);
+            blue = clamp(blue, 0.0f, 1.0f);
+            
+            // 寫入像素
+            pixels[idx] = red;
+            pixels[idx + 1] = green;
+            pixels[idx + 2] = blue;
+            pixels[idx + 3] = 1.0f;
+            
+            // 不再需要 feedbackBuffer 更新
+        }
+    }
+}
+
+struct NIGOQScopeDisplay : LedDisplay {
+    NIGOQ* module;
+    
+    NIGOQScopeDisplay() {
+        box.size = Vec(80, 40);
+    }
+    
+    NVGcolor getFrequencyColor(float freqParam) {
+        // Similar to visual module's frequency color mapping
+        float hue = (freqParam + 10.0f) / 14.0f; // Map -10 to 4 range to 0-1
+        hue = clamp(hue, 0.0f, 1.0f) * 360.0f; // Convert to hue degrees
+        
+        // Convert HSV to RGB (simplified)
+        float r, g, b;
+        float c = 1.0f; // Full saturation
+        float x = c * (1 - fabsf(fmodf(hue / 60.0f, 2) - 1));
+        float m = 0.5f; // Medium brightness
+        
+        if (hue < 60) { r = c; g = x; b = 0; }
+        else if (hue < 120) { r = x; g = c; b = 0; }
+        else if (hue < 180) { r = 0; g = c; b = x; }
+        else if (hue < 240) { r = 0; g = x; b = c; }
+        else if (hue < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+        
+        return nvgRGBf(r + m, g + m, b + m);
+    }
+    
+    void drawWave(const DrawArgs& args, int track, NVGcolor color) {
+        if (!module) return;
+        
+        float trackHeight = box.size.y / 2.0f;
+        float trackY = track * trackHeight;
+        
+        // Clip to track area
+        Rect b = Rect(Vec(0, trackY), Vec(box.size.x, trackHeight));
+        nvgScissor(args.vg, RECT_ARGS(b));
+        nvgBeginPath(args.vg);
+        
+        for (int i = 0; i < NIGOQ::SCOPE_BUFFER_SIZE; i++) {
+            float value = module->scopeBuffer[track][(i + module->scopeBufferIndex) % NIGOQ::SCOPE_BUFFER_SIZE].value;
+            value = clamp(value, 0.f, 10.f);
+            
+            Vec p;
+            p.x = (float)i / (NIGOQ::SCOPE_BUFFER_SIZE - 1) * box.size.x;
+            p.y = trackY + trackHeight - (value / 10.f) * trackHeight; // Invert for proper display
+            
+            if (i == 0)
+                nvgMoveTo(args.vg, p.x, p.y);
+            else
+                nvgLineTo(args.vg, p.x, p.y);
+        }
+        
+        nvgStrokeColor(args.vg, color);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStroke(args.vg);
+        nvgResetScissor(args.vg);
+    }
+    
+    void drawLayer(const DrawArgs& args, int layer) override {
+        if (layer != 1) return;
+        
+        if (!module) return;
+        
+        // Clear background
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+        nvgFillColor(args.vg, nvgRGB(0, 0, 0));
+        nvgFill(args.vg);
+        
+        // Draw grid lines
+        nvgStrokeColor(args.vg, nvgRGB(40, 40, 40));
+        nvgStrokeWidth(args.vg, 0.5f);
+        
+        // Horizontal center lines for each track
+        for (int track = 0; track < 2; track++) {
+            float trackHeight = box.size.y / 2.0f;
+            float centerY = track * trackHeight + trackHeight / 2.0f;
+            nvgBeginPath(args.vg);
+            nvgMoveTo(args.vg, 0, centerY);
+            nvgLineTo(args.vg, box.size.x, centerY);
+            nvgStroke(args.vg);
+        }
+        
+        // Vertical grid lines
+        for (int i = 1; i < 4; i++) {
+            float x = (float)i / 4.0f * box.size.x;
+            nvgBeginPath(args.vg);
+            nvgMoveTo(args.vg, x, 0);
+            nvgLineTo(args.vg, x, box.size.y);
+            nvgStroke(args.vg);
+        }
+        
+        // Get frequency colors with CV inputs included
+        // Modulator frequency calculation (same as in process())
+        float modFreq = module->params[NIGOQ::MOD_FREQ].getValue();
+        if (module->inputs[NIGOQ::MOD_1VOCT].isConnected()) {
+            modFreq += module->inputs[NIGOQ::MOD_1VOCT].getVoltage();
+        }
+        if (module->inputs[NIGOQ::MOD_FM_IN].isConnected()) {
+            float modFM = module->inputs[NIGOQ::MOD_FM_IN].getVoltage() * module->params[NIGOQ::MOD_FM_ATTEN].getValue();
+            modFreq += modFM * 0.5f; // Scale FM influence for color display
+        }
+        NVGcolor modColor = getFrequencyColor(modFreq);
+        
+        // Principal frequency calculation (same as in process())
+        float prinFreq = module->params[NIGOQ::PRIN_FREQ].getValue();
+        if (module->inputs[NIGOQ::PRIN_1VOCT].isConnected()) {
+            prinFreq += module->inputs[NIGOQ::PRIN_1VOCT].getVoltage();
+        }
+        if (module->inputs[NIGOQ::PRIN_FM_IN].isConnected()) {
+            float prinFM = module->inputs[NIGOQ::PRIN_FM_IN].getVoltage() * module->params[NIGOQ::PRIN_FM_ATTEN].getValue();
+            prinFreq += prinFM * 0.5f; // Scale FM influence for color display
+        }
+        NVGcolor prinColor = getFrequencyColor(prinFreq);
+        
+        // Draw waveforms
+        drawWave(args, 0, modColor);  // MOD OSC (top)
+        drawWave(args, 1, prinColor); // FINAL OSC (bottom)
+        
+        // Draw track labels
+        nvgFontSize(args.vg, 8);
+        nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+        nvgTextAlign(args.vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+        
+        nvgFillColor(args.vg, modColor);
+        nvgText(args.vg, 2, 2, "MOD", NULL);
+        
+        nvgFillColor(args.vg, prinColor);
+        nvgText(args.vg, 2, box.size.y / 2.0f + 2, "FINAL", NULL);
+    }
+};
+
+struct NIGOQWidget : ModuleWidget {
+    NIGOQWidget(NIGOQ* module) {
+        setModule(module);
+
+        // Setup custom param quantities after module is set
+        if (module) {
+            // Replace the default ParamQuantities with custom ones for frequency display
+            delete module->paramQuantities[NIGOQ::MOD_FREQ];
+            module->paramQuantities[NIGOQ::MOD_FREQ] = new ModFreqParamQuantity();
+            module->paramQuantities[NIGOQ::MOD_FREQ]->module = module;
+            module->paramQuantities[NIGOQ::MOD_FREQ]->paramId = NIGOQ::MOD_FREQ;
+            module->paramQuantities[NIGOQ::MOD_FREQ]->minValue = 0.f;
+            module->paramQuantities[NIGOQ::MOD_FREQ]->maxValue = 1.f;
+            module->paramQuantities[NIGOQ::MOD_FREQ]->defaultValue = 0.5f;
+
+            delete module->paramQuantities[NIGOQ::PRIN_FREQ];
+            module->paramQuantities[NIGOQ::PRIN_FREQ] = new PrinFreqParamQuantity();
+            module->paramQuantities[NIGOQ::PRIN_FREQ]->module = module;
+            module->paramQuantities[NIGOQ::PRIN_FREQ]->paramId = NIGOQ::PRIN_FREQ;
+            module->paramQuantities[NIGOQ::PRIN_FREQ]->minValue = -6.f;
+            module->paramQuantities[NIGOQ::PRIN_FREQ]->maxValue = 4.f;
+            module->paramQuantities[NIGOQ::PRIN_FREQ]->defaultValue = 0.f;
+            module->paramQuantities[NIGOQ::PRIN_FREQ]->randomizeEnabled = false;
+        }
+
+        box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
+
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/12HP.svg")));
+        
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(180, 20), "N I G O Q", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 13), Vec(180, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
+
+        // Add white background box for bottom area
+        addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));
+
+        // NumberWithBorder elements for NIGOQ module
+        addChild(new NumberWithBorder(Vec(20, 248), Vec(30, 35), "2", 72.f, nvgRGB(255, 255, 255), nvgRGB(0, 0, 0)));
+        addChild(new NumberWithBorder(Vec(45, 248), Vec(30, 35), "5", 72.f, nvgRGB(255, 255, 255), nvgRGB(0, 0, 0)));
+        addChild(new NumberWithBorder(Vec(70, 248), Vec(30, 35), "9", 72.f, nvgRGB(255, 255, 255), nvgRGB(0, 0, 0)));
+
+        // === UPDATED COORDINATES ON 12HP ===
+        // Inputs (Jacks)
+        addInput(createInputCentered<PJ301MPort>(Vec(165, 55), module, NIGOQ::TRIG_IN));
+        addInput(createInputCentered<PJ301MPort>(Vec(20, 95), module, NIGOQ::MOD_WAVE_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(165, 130), module, NIGOQ::LPF_CUTOFF_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(165, 175), module, NIGOQ::ORDER_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(20, 130), module, NIGOQ::FM_AMT_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(165, 220), module, NIGOQ::HARMONICS_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(20, 220), module, NIGOQ::FOLD_AMT_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(20, 175), module, NIGOQ::AM_AMT_CV));
+        addInput(createInputCentered<PJ301MPort>(Vec(50, 310), module, NIGOQ::MOD_FM_IN));
+        addInput(createInputCentered<PJ301MPort>(Vec(20, 310), module, NIGOQ::MOD_1VOCT));
+        addInput(createInputCentered<PJ301MPort>(Vec(135, 310), module, NIGOQ::PRIN_FM_IN));
+        addInput(createInputCentered<PJ301MPort>(Vec(165, 310), module, NIGOQ::PRIN_1VOCT));
+
+        // Large White Knobs - top row
+        addParam(createParamCentered<LargeWhiteKnob>(Vec(55, 65), module, NIGOQ::MOD_FREQ));
+        addParam(createParamCentered<LargeWhiteKnob>(Vec(125, 65), module, NIGOQ::PRIN_FREQ));
+
+        // Standard Black Knobs
+        addParam(createParamCentered<StandardBlackKnob>(Vec(125, 130), module, NIGOQ::LPF_CUTOFF));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(125, 175), module, NIGOQ::ORDER));
+        addParam(createParamCentered<StandardBlackKnob>(Vec(125, 220), module, NIGOQ::HARMONICS));
+
+        // Small White Knobs
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(20, 55), module, NIGOQ::MOD_WAVE));
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(55, 130), module, NIGOQ::FM_AMT_ATTEN));
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(55, 220), module, NIGOQ::FOLD_AMT_ATTEN));
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(55, 175), module, NIGOQ::AM_AMT_ATTEN));
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(77, 310), module, NIGOQ::MOD_FM_ATTEN));
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(108, 310), module, NIGOQ::PRIN_FM_ATTEN));
+
+        // Small Gray Knobs
+        addParam(createParamCentered<SmallGrayKnob>(Vec(165, 90), module, NIGOQ::DECAY));
+        addParam(createParamCentered<SmallGrayKnob>(Vec(165, 265), module, NIGOQ::BASS));
+        addParam(createParamCentered<SmallGrayKnob>(Vec(90, 130), module, NIGOQ::FM_AMT));
+        addParam(createParamCentered<SmallGrayKnob>(Vec(90, 220), module, NIGOQ::FOLD_AMT));
+        addParam(createParamCentered<SmallGrayKnob>(Vec(90, 175), module, NIGOQ::AM_AMT));
+
+        // 3-Way Switch
+        addParam(createParamCentered<CKSSThree>(Vec(90, 85), module, NIGOQ::SYNC_MODE));
+
+        // Labels for 12HP layout
+        // Input Jacks: Y-21px offset (adjusted +2px)
+        addChild(new EnhancedTextLabel(Vec(145, 34), Vec(40, 10), "TRIG", 7.f, nvgRGB(255, 255, 255), true));  // 55-21=34
+        addChild(new EnhancedTextLabel(Vec(0, 74), Vec(40, 10), "WAVE", 7.f, nvgRGB(255, 255, 255), true));  // 95-21=74
+        addChild(new EnhancedTextLabel(Vec(145, 109), Vec(40, 10), "LPF", 7.f, nvgRGB(255, 255, 255), true));  // 130-21=109
+        addChild(new EnhancedTextLabel(Vec(145, 154), Vec(40, 10), "ORD", 7.f, nvgRGB(255, 255, 255), true));  // 175-21=154
+        addChild(new EnhancedTextLabel(Vec(0, 109), Vec(40, 10), "FM", 7.f, nvgRGB(255, 255, 255), true));  // 130-21=109
+        addChild(new EnhancedTextLabel(Vec(145, 199), Vec(40, 10), "HARM", 7.f, nvgRGB(255, 255, 255), true));  // 220-21=199
+        addChild(new EnhancedTextLabel(Vec(0, 199), Vec(40, 10), "FOLD", 7.f, nvgRGB(255, 255, 255), true));  // 220-21=199
+        addChild(new EnhancedTextLabel(Vec(0, 154), Vec(40, 10), "AM", 7.f, nvgRGB(255, 255, 255), true));  // 175-21=154
+        addChild(new EnhancedTextLabel(Vec(30, 289), Vec(40, 10), "M.FM", 7.f, nvgRGB(255, 255, 255), true));  // 310-21=289
+        addChild(new EnhancedTextLabel(Vec(0, 289), Vec(40, 10), "M.V/O", 7.f, nvgRGB(255, 255, 255), true));  // 310-21=289
+        addChild(new EnhancedTextLabel(Vec(115, 289), Vec(40, 10), "P.FM", 7.f, nvgRGB(255, 255, 255), true));  // 310-21=289
+        addChild(new EnhancedTextLabel(Vec(145, 289), Vec(40, 10), "P.V/O", 7.f, nvgRGB(255, 255, 255), true));  // 310-21=289
+
+        // Large White Knobs: Y-29px offset
+        addChild(new EnhancedTextLabel(Vec(23, 36), Vec(64, 15), "MOD FREQ", 7.f, nvgRGB(255, 255, 255), true));  // 65-29=36
+        addChild(new EnhancedTextLabel(Vec(93, 36), Vec(64, 15), "PRIN FREQ", 7.f, nvgRGB(255, 255, 255), true));  // 125-29=96, adjusted to 36
+
+        // Standard Black Knobs: Y-27px offset (adjusted -4px total)
+        addChild(new EnhancedTextLabel(Vec(93, 103), Vec(64, 12), "LPF", 7.f, nvgRGB(255, 255, 255), true));  // 130-27=103
+        addChild(new EnhancedTextLabel(Vec(102, 148), Vec(46, 12), "ORD", 7.f, nvgRGB(255, 255, 255), true));  // 175-27=148
+        addChild(new EnhancedTextLabel(Vec(90, 193), Vec(70, 12), "FOLD", 7.f, nvgRGB(255, 255, 255), true));  // 220-27=193
+
+        // Small White Knobs: Y-21px offset (adjusted +5px total), X-2
+        addChild(new EnhancedTextLabel(Vec(3, 34), Vec(30, 12), "WAVE", 7.f, nvgRGB(255, 255, 255), true));  // X-2
+        addChild(new EnhancedTextLabel(Vec(30, 109), Vec(50, 10), "CV ATT", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 199), Vec(50, 10), "CV ATT", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 154), Vec(50, 10), "CV ATT", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(62, 289), Vec(30, 10), "M.FM", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(93, 289), Vec(30, 10), "P.FM", 7.f, nvgRGB(255, 255, 255), true));
+
+        // Small Gray Knobs: Y-23px offset (adjusted -8px total)
+        addChild(new EnhancedTextLabel(Vec(150, 67), Vec(30, 10), "DEC", 7.f, nvgRGB(255, 255, 255), true));  // 90-23=67
+        addChild(new EnhancedTextLabel(Vec(150, 242), Vec(30, 10), "BASS", 7.f, nvgRGB(255, 255, 255), true));  // 265-23=242
+        addChild(new EnhancedTextLabel(Vec(78, 107), Vec(25, 12), "FM", 7.f, nvgRGB(255, 255, 255), true));  // 130-23=107
+        addChild(new EnhancedTextLabel(Vec(75, 197), Vec(30, 12), "FOLD", 7.f, nvgRGB(255, 255, 255), true));  // 220-23=197
+        addChild(new EnhancedTextLabel(Vec(78, 152), Vec(25, 12), "AM", 7.f, nvgRGB(255, 255, 255), true));  // 175-23=152
+
+        // CKSSThree Switch: Y-25px offset
+        addChild(new EnhancedTextLabel(Vec(75, 60), Vec(30, 12), "SYNC", 7.f, nvgRGB(255, 255, 255), true));  // 85-25=60
+
+        // Scope display
+        NIGOQScopeDisplay* scopeDisplay = new NIGOQScopeDisplay();
+        scopeDisplay->box.pos = Vec(40, 335);
+        scopeDisplay->box.size = Vec(80, 40);
+        scopeDisplay->module = module;
+        addChild(scopeDisplay);
+
+        // Hidden time control knob (overlapping scope display for cursor functionality)
+        addParam(createParam<HiddenTimeKnob>(Vec(40, 335), module, NIGOQ::SCOPE_TIME));
+
+        // Output Section - bottom row
+        addOutput(createOutputCentered<PJ301MPort>(Vec(20, 360), module, NIGOQ::MOD_SIGNAL_OUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(135, 360), module, NIGOQ::PRIN_SINE_OUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(165, 360), module, NIGOQ::PRIN_FINAL_OUT));
+
+        // Output labels: Y-21px offset
+        addChild(new EnhancedTextLabel(Vec(0, 339), Vec(40, 10), "MOD", 7.f, nvgRGB(255, 133, 133), true));  // 360-21=339
+        addChild(new EnhancedTextLabel(Vec(120, 339), Vec(30, 10), "SINE", 7.f, nvgRGB(255, 133, 133), true));  // 360-21=339
+        addChild(new EnhancedTextLabel(Vec(145, 339), Vec(40, 10), "FINAL", 7.f, nvgRGB(255, 133, 133), true));  // 360-21=339
+    }
+    
+    void appendContextMenu(Menu* menu) override {
+        NIGOQ* module = dynamic_cast<NIGOQ*>(this->module);
+        if (!module)
+            return;
+
+        menu->addChild(new MenuSeparator);
+
+        // Oversampling Rate Menu
+        menu->addChild(createMenuLabel("Oversampling Rate"));
+        static const char* rateLabels[] = {"1x", "2x", "4x", "8x", "16x", "32x"};
+
+        for (int i = 0; i < 6; i++) {
+            MenuItem* rateItem = createMenuItem(rateLabels[i], "",
+                [=]() {
+                    module->oversampleIndex = i;
+                }
+            );
+            rateItem->rightText = (module->oversampleIndex == i) ? "✓" : "";
+            menu->addChild(rateItem);
+        }
+
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Randomize Glide Time"));
+        
+        // Create submenu items for different glide times
+        static const float glideOptions[] = {0.0f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 15.0f, 20.0f, 30.0f};
+        static const char* glideLabels[] = {"Instant", "0.5s", "1s", "2s", "5s", "10s", "15s", "20s", "30s"};
+        
+        for (int i = 0; i < 9; i++) {
+            MenuItem* glideItem = createMenuItem(glideLabels[i], "", 
+                [=]() {
+                    module->randomizeGlideTime = glideOptions[i];
+                }
+            );
+            glideItem->rightText = (module->randomizeGlideTime == glideOptions[i]) ? "✓" : "";
+            menu->addChild(glideItem);
+        }
+        
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Random Amount"));
+        
+        // Create submenu items for different random amounts
+        static const float amountOptions[] = {0.1f, 0.3f, 0.5f, 0.8f, 1.0f};
+        static const char* amountLabels[] = {"微小 Tiny", "小 Small", "中 Medium", "大 Large", "極大 Huge"};
+        
+        for (int i = 0; i < 5; i++) {
+            MenuItem* amountItem = createMenuItem(amountLabels[i], "", 
+                [=]() {
+                    module->randomAmount = amountOptions[i];
+                }
+            );
+            amountItem->rightText = (module->randomAmount == amountOptions[i]) ? "✓" : "";
+            menu->addChild(amountItem);
+        }
+    }
+};
+
+Model* modelNIGOQ = createModel<NIGOQ, NIGOQWidget>("NIGOQ");

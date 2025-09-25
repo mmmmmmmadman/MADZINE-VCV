@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -37,181 +38,9 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     }
 };
 
-struct TechnoStandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    TechnoStandardBlackKnob() {
-        box.size = Vec(30, 30);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// TechnoStandardBlackKnob now using TechnoStandardBlackKnob30 from widgets/Knobs.hpp
 
-struct SmallTechnoStandardBlackKnob : ParamWidget {
-    bool isDragging = false;
-    
-    SmallTechnoStandardBlackKnob() {
-        box.size = Vec(15, 15);
-    }
-    
-    float getDisplayAngle() {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return 0.0f;
-        
-        float normalizedValue = pq->getScaledValue();
-        float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
-        return angle;
-    }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 2);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 4;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 1.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-};
+// SmallTechnoStandardBlackKnob now using SmallTechnoStandardBlackKnob from widgets/Knobs.hpp
 
 struct WhiteBackgroundBox : Widget {
     WhiteBackgroundBox(Vec pos, Vec size) {
@@ -432,18 +261,18 @@ struct TWNC2 : Module {
         configInput(EXTERNAL_INPUT, "External Input");
         
         configParam(KICK_VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Kick Volume");
-        configParam(KICK_FREQ_PARAM, std::log2(24.0f), std::log2(500.0f), std::log2(60.0f), "Kick Frequency", " Hz", 2.f);
-        configParam(KICK_FM_AMT_PARAM, 0.0f, 1.0f, 0.5f, "Kick FM Amount");
-        configParam(KICK_PUNCH_PARAM, 0.0f, 1.0f, 0.5f, "Kick Punch Amount");
+        configParam(KICK_FREQ_PARAM, std::log2(24.0f), std::log2(500.0f), 4.5849623680114746f, "Kick Frequency", " Hz", 2.f);
+        configParam(KICK_FM_AMT_PARAM, 0.0f, 1.0f, 0.15700007975101471f, "Kick FM Amount");
+        configParam(KICK_PUNCH_PARAM, 0.0f, 1.0f, 0.16800001263618469f, "Kick Punch Amount");
         
         configParam(SNARE_VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Snare Volume");
-        configParam(SNARE_FREQ_PARAM, std::log2(100.0f), std::log2(300.0f), std::log2(200.0f), "Snare Frequency", " Hz", 2.f);
-        configParam(SNARE_NOISE_TONE_PARAM, 0.0f, 1.0f, 0.5f, "Snare Noise Tone");
-        configParam(SNARE_NOISE_MIX_PARAM, 0.0f, 1.0f, 0.5f, "Snare Noise Mix");
+        configParam(SNARE_FREQ_PARAM, std::log2(100.0f), std::log2(300.0f), 6.9100170135498047f, "Snare Frequency", " Hz", 2.f);
+        configParam(SNARE_NOISE_TONE_PARAM, 0.0f, 1.0f, 0.71700006723403931f, "Snare Noise Tone");
+        configParam(SNARE_NOISE_MIX_PARAM, 0.0f, 1.0f, 0.28799989819526672f, "Snare Noise Mix");
         
         configParam(HATS_VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Hats Volume");
-        configParam(HATS_TONE_PARAM, 0.0f, 1.0f, 0.5f, "Hats Tone");
-        configParam(HATS_DECAY_PARAM, 0.0f, 1.0f, 0.5f, "Hats Decay");
+        configParam(HATS_TONE_PARAM, 0.0f, 1.0f, 0.9649999737739563f, "Hats Tone");
+        configParam(HATS_DECAY_PARAM, 0.0f, 1.0f, 0.0f, "Hats Decay");
         configParam(DUCK_PARAM, 0.0f, 1.0f, 0.0f, "Duck Amount");
         
         configOutput(KICK_OUTPUT, "Kick Audio");
@@ -615,7 +444,7 @@ struct TWNC2Widget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(30, track1Y + 5), Vec(15, 10), "BD", 8.f, nvgRGB(255, 200, 100), true));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 11), Vec(30, 10), "VOL", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(20, track1Y + 34), module, TWNC2::KICK_VOLUME_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track1Y + 34), module, TWNC2::KICK_VOLUME_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 11), Vec(30, 10), "ENV", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track1Y + 34), module, TWNC2::KICK_ENV_INPUT));
@@ -624,13 +453,13 @@ struct TWNC2Widget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(100, track1Y + 34), module, TWNC2::KICK_ACCENT_INPUT));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 48), Vec(30, 10), "TUNE", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(20, track1Y + 71), module, TWNC2::KICK_FREQ_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track1Y + 71), module, TWNC2::KICK_FREQ_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 48), Vec(30, 10), "FM", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(60, track1Y + 71), module, TWNC2::KICK_FM_AMT_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track1Y + 71), module, TWNC2::KICK_FM_AMT_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 48), Vec(30, 10), "PUNCH", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(100, track1Y + 71), module, TWNC2::KICK_PUNCH_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track1Y + 71), module, TWNC2::KICK_PUNCH_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 85), Vec(30, 10), "CV", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(20, track1Y + 108), module, TWNC2::KICK_FREQ_CV_INPUT));
@@ -645,19 +474,19 @@ struct TWNC2Widget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(27, track2Y + 5), Vec(25, 10), "SN", 8.f, nvgRGB(255, 200, 100), true));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track2Y + 11), Vec(30, 10), "VOL", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(20, track2Y + 34), module, TWNC2::SNARE_VOLUME_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track2Y + 34), module, TWNC2::SNARE_VOLUME_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 11), Vec(30, 10), "ENV", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track2Y + 34), module, TWNC2::SNARE_ENV_INPUT));
         
         addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 11), Vec(30, 10), "N.BPF", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(100, track2Y + 34), module, TWNC2::SNARE_NOISE_TONE_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track2Y + 34), module, TWNC2::SNARE_NOISE_TONE_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track2Y + 48), Vec(30, 10), "TUNE", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(20, track2Y + 71), module, TWNC2::SNARE_FREQ_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track2Y + 71), module, TWNC2::SNARE_FREQ_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 48), Vec(30, 10), "N.MIX", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(60, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 48), Vec(30, 10), "N.MIX", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(100, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_CV_INPUT));
@@ -666,16 +495,16 @@ struct TWNC2Widget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(30, track3Y + 5), Vec(15, 10), "HH", 8.f, nvgRGB(255, 200, 100), true));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 11), Vec(30, 10), "VOL", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(20, track3Y + 34), module, TWNC2::HATS_VOLUME_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track3Y + 34), module, TWNC2::HATS_VOLUME_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 11), Vec(30, 10), "ENV", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track3Y + 34), module, TWNC2::HATS_ENV_INPUT));
         
         addChild(new TechnoEnhancedTextLabel(Vec(85, track3Y + 11), Vec(30, 10), "TONE", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(100, track3Y + 34), module, TWNC2::HATS_TONE_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track3Y + 34), module, TWNC2::HATS_TONE_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 48), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(20, track3Y + 71), module, TWNC2::HATS_DECAY_PARAM));
+        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track3Y + 71), module, TWNC2::HATS_DECAY_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 48), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track3Y + 71), module, TWNC2::HATS_DECAY_CV_INPUT));
@@ -689,7 +518,7 @@ struct TWNC2Widget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(22, 343), module, TWNC2::KICK_OUTPUT));
         
         addChild(new TechnoEnhancedTextLabel(Vec(0, 362), Vec(20, 15), "[DUCK]", 5.f, nvgRGB(0, 0, 0), true));
-        addParam(createParamCentered<SmallTechnoStandardBlackKnob>(Vec(26, 368), module, TWNC2::DUCK_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(26, 368), module, TWNC2::DUCK_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(36, 337), Vec(20, 15), "SN", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(62, 343), module, TWNC2::SNARE_OUTPUT));

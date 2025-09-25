@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "widgets/Knobs.hpp"
 #include <cmath>
 #include <algorithm>
 #include <random>
@@ -468,15 +469,15 @@ public:
     Pinpple() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         
-        configParam(FREQ_PARAM, std::log2(kFreqKnobMin), std::log2(kFreqKnobMax), std::log2(kFreqKnobMax), "Frequency", " Hz", 2.f);
-        configParam(RESONANCE_PARAM, 0.0f, 1.0f, 0.5f, "Decay");
-        configParam(FM_AMOUNT_PARAM, 0.0f, 1.0f, 0.0f, "FM Amount");
+        configParam(FREQ_PARAM, std::log2(kFreqKnobMin), std::log2(kFreqKnobMax), 12.449027061462402f, "Frequency", " Hz", 2.f);
+        configParam(RESONANCE_PARAM, 0.0f, 1.0f, 0.76700007915496826f, "Decay");
+        configParam(FM_AMOUNT_PARAM, 0.0f, 1.0f, 0.66549950838088989f, "FM Amount");
         configParam(FREQ_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Freq CV Attenuverter");
         configParam(RESONANCE_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Decay CV Attenuverter");
         configParam(FM_MOD_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "FM AMT CV Attenuverter");
         configParam(MUTE_PARAM, 0.0f, 1.0f, 0.0f, "Mute");
-        configParam(VOLUME_PARAM, 0.0f, 1.0f, 0.7f, "Volume", "%", 0.f, 100.f);
-        configParam(NOISE_MIX_PARAM, 0.0f, 1.0f, 0.5f, "Noise Mix");
+        configParam(VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Volume", "%", 0.f, 100.f);
+        configParam(NOISE_MIX_PARAM, 0.0f, 1.0f, 1.0f, "Noise Mix");
         
         configInput(FM_INPUT, "FM");
         configInput(FREQ_CV_INPUT, "1V/Oct Frequency CV");
@@ -570,22 +571,26 @@ public:
     }
 };
 
-struct RandomizedKnob : ParamWidget {
+struct PinppleRandomizedKnob : madzine::widgets::BaseCustomKnob {
     Module* module = nullptr;
     int paramId = -1;
-    bool isDragging = false;
-    
-    RandomizedKnob() {
+
+    PinppleRandomizedKnob() : madzine::widgets::BaseCustomKnob() {
         box.size = Vec(30, 30);
+        speed = 0.5f;
+        baseColor = nvgRGB(30, 30, 30);
+        centerColor = nvgRGB(50, 50, 50);
+        borderColor = nvgRGB(100, 100, 100);
+        indicatorColor = nvgRGB(255, 255, 255);
     }
-    
+
     float getVisualValue() {
         ParamQuantity* pq = getParamQuantity();
         if (!pq) return 0.0f;
-        
+
         float baseValue = pq->getValue();
         float randomOffset = 0.0f;
-        
+
         if (module) {
             Pinpple* pinppleModule = dynamic_cast<Pinpple*>(module);
             if (pinppleModule) {
@@ -596,100 +601,29 @@ struct RandomizedKnob : ParamWidget {
                 }
             }
         }
-        
+
         float visualValue = baseValue + randomOffset;
         return clamp(visualValue, pq->getMinValue(), pq->getMaxValue());
     }
-    
+
     float getDisplayAngle() {
         ParamQuantity* pq = getParamQuantity();
         if (!pq) return 0.0f;
-        
+
         float visualValue = getVisualValue();
         float normalizedValue = pq->toScaled(visualValue);
-        
+
         float angle = rescale(normalizedValue, 0.0f, 1.0f, -0.75f * M_PI, 0.75f * M_PI);
         return angle;
     }
-    
-    void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgFillColor(args.vg, nvgRGB(30, 30, 30));
-        nvgFill(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 1);
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, radius, radius, radius - 4);
-        nvgFillColor(args.vg, nvgRGB(50, 50, 50));
-        nvgFill(args.vg);
-        
-        float indicatorLength = radius - 8;
-        float lineX = radius + indicatorLength * std::sin(angle);
-        float lineY = radius - indicatorLength * std::cos(angle);
-        
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, radius, radius);
-        nvgLineTo(args.vg, lineX, lineY);
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-        nvgStroke(args.vg);
-        
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, lineX, lineY, 2.0f);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-        nvgFill(args.vg);
-    }
-    
-    void onButton(const event::Button& e) override {
-        if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = true;
-            e.consume(this);
-        }
-        else if (e.action == GLFW_RELEASE && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            isDragging = false;
-        }
-        ParamWidget::onButton(e);
-    }
-    
-    void onDragMove(const event::DragMove& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!isDragging || !pq) return;
-        
-        float sensitivity = 0.002f;
-        float deltaY = -e.mouseDelta.y;
-        
-        float range = pq->getMaxValue() - pq->getMinValue();
-        float currentValue = pq->getValue();
-        float newValue = currentValue + deltaY * sensitivity * range;
-        newValue = clamp(newValue, pq->getMinValue(), pq->getMaxValue());
-        
-        pq->setValue(newValue);
-    }
-    
-    void onDoubleClick(const event::DoubleClick& e) override {
-        ParamQuantity* pq = getParamQuantity();
-        if (!pq) return;
-        
-        pq->reset();
-        e.consume(this);
-    }
-    
+
     void step() override {
         ParamQuantity* pq = getParamQuantity();
         if (pq) {
             module = pq->module;
             paramId = pq->paramId;
         }
-        ParamWidget::step();
+        madzine::widgets::BaseCustomKnob::step();
     }
 };
 
@@ -760,27 +694,27 @@ struct PinppleWidget : ModuleWidget {
         
         addParam(createParamCentered<VCVButton>(Vec(centerX - 15, 40), module, Pinpple::MUTE_PARAM));
         addChild(createLightCentered<MediumLight<RedLight>>(Vec(centerX - 15, 40), module, Pinpple::MUTE_LIGHT));
-        addParam(createParamCentered<Trimpot>(Vec(centerX + 15, 40), module, Pinpple::VOLUME_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX + 15, 40), module, Pinpple::VOLUME_PARAM));
         
         addChild(new EnhancedTextLabel(Vec(0, 50), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<RandomizedKnob>(Vec(centerX, 84), module, Pinpple::FREQ_PARAM));
+        addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 84), module, Pinpple::FREQ_PARAM));
         
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 108), module, Pinpple::FREQ_CV_ATTEN_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 108), module, Pinpple::FREQ_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 108), module, Pinpple::FREQ_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 123), Vec(box.size.x, 20), "DECAY", 12.f, nvgRGB(255, 255, 255), true));
-addParam(createParamCentered<RandomizedKnob>(Vec(centerX, 155), module, Pinpple::RESONANCE_PARAM));
+addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 155), module, Pinpple::RESONANCE_PARAM));
 
-addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 179), module, Pinpple::RESONANCE_CV_ATTEN_PARAM));
+addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 179), module, Pinpple::RESONANCE_CV_ATTEN_PARAM));
 addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 179), module, Pinpple::RESONANCE_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 194), Vec(box.size.x, 20), "FM AMT", 12.f, nvgRGB(255, 255, 255), true));
-addParam(createParamCentered<RandomizedKnob>(Vec(centerX, 226), module, Pinpple::FM_AMOUNT_PARAM));
+addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, Pinpple::FM_AMOUNT_PARAM));
         
       
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 265), module, Pinpple::FM_INPUT));
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 265), module, Pinpple::NOISE_MIX_PARAM));
-        addParam(createParamCentered<Trimpot>(Vec(centerX - 15, 292), module, Pinpple::FM_MOD_CV_ATTEN_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 265), module, Pinpple::NOISE_MIX_PARAM));
+        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 292), module, Pinpple::FM_MOD_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 292), module, Pinpple::FM_MOD_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(18, 238), Vec(25, 20), "LPG IN MIX", 8.f, nvgRGB(255, 255, 255), true));
