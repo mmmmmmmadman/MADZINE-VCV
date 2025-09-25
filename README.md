@@ -49,5 +49,10 @@ Support
 * **Email**: madzinetw@gmail.com
 * **Patreon**: Support MADZINE
 
+Acknowledgments
+* **Development Tools**: This entire plugin collection was developed using [Claude Code](https://claude.ai/code), Anthropic's AI-powered development environment
+* **Open Source Community**: Special thanks to the open source makers who shared code and techniques that inspired various implementations in this plugin
+* **Creative Contributors**: Grateful acknowledgment to friends who provided innovative ideas and concepts that shaped the unique features of these modules
+
 License
 This project is licensed under the GPL-3.0-or-later License. See the LICENSE file for details.
