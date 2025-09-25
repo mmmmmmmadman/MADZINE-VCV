@@ -50,9 +50,9 @@ Support
 * **Patreon**: Support MADZINE
 
 Acknowledgments
-* **Development Tools**: This entire plugin collection was developed using [Claude Code](https://claude.ai/code), Anthropic's AI-powered development environment
-* **Open Source Community**: Special thanks to the open source makers who shared code and techniques that inspired various implementations in this plugin
-* **Creative Contributors**: Grateful acknowledgment to friends who provided innovative ideas and concepts that shaped the unique features of these modules
+* **Development Powered by AI**: This entire plugin collection was developed using [Claude Code](https://claude.ai/code), demonstrating the potential of AI-assisted software development in creating professional-grade audio software
+* **Open Source Community**: Heartfelt thanks to the open source makers and developers who generously shared their code, algorithms, and techniques. Their contributions provided the foundation and inspiration for many implementations throughout this plugin collection
+* **Creative Collaborators**: Deep appreciation to two friends who provided brilliant ideas, creative concepts, and innovative suggestions that directly influenced the unique features and design philosophy of these modules
 
 License
 This project is licensed under the GPL-3.0-or-later License. See the LICENSE file for details.
