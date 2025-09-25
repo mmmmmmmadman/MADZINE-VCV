@@ -145,12 +145,6 @@
       "tags": ["Oscillator"]
     },
     {
-      "slug": "Multiverse",
-      "name": "Multiverse",
-      "description": "Multiverse module",
-      "tags": ["Visual"]
-    },
-    {
       "slug": "Runshow",
       "name": "Runshow",
       "description": "Timer with bar counting and visual feedback",

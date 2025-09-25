@@ -26,7 +26,7 @@ extern Model* modelQuantizer;
 extern Model* modelEllenRipley;
 extern Model* modelMADDYPlus;
 extern Model* modelNIGOQ;
-extern Model* modelMultiverse;
+// extern Model* modelMultiverse; // Removed - macOS only
 extern Model* modelRunshow;
 extern Model* modelEnvVCA6;
 
