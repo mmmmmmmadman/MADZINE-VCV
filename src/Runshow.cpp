@@ -85,8 +85,13 @@ struct Runshow : Module {
     std::chrono::steady_clock::time_point lastUpdateTime;
     float elapsedSeconds = 0.f;
 
-    dsp::PulseGenerator timer30MinPulse;    // 30分鐘計時器脈衝
-    dsp::PulseGenerator timer15MinPulse;    // 15分鐘計時器脈衝
+    // Waveform generators for timer outputs
+    float timer30MinPhase = 0.f;
+    float timer15MinPhase = 0.f;
+    bool timer30MinActive = false;
+    bool timer15MinActive = false;
+    float timer30MinDuration = 0.f;
+    float timer15MinDuration = 0.f;
 
     // Waveform generators for bar outputs
     float bar1Phase = 0.f;
@@ -145,7 +150,7 @@ struct Runshow : Module {
 
         // 配置 6 個新旋鈕參數
         configParam(TIMER_30MIN_PARAM, 1.f, 99.f, 10.f, "Pulse Width (Bar %)", " %");
-        configParam(TIMER_15MIN_PARAM, 0.f, 4.f, 0.f, "Waveform Shape");
+        configParam(TIMER_15MIN_PARAM, 0.f, 4.f, 4.f, "Waveform Shape");
         configParam(BAR_1_PARAM, 1.f, 16.f, 16.f, "Bar 1 Length", " clocks");
         configParam(BAR_2_PARAM, 1.f, 16.f, 16.f, "Bar 2 Length", " clocks");
         configParam(BAR_3_PARAM, 1.f, 16.f, 16.f, "Bar 3 Length", " clocks");
@@ -192,6 +197,31 @@ struct Runshow : Module {
             lastBarInCycle = -1;
 
             lights[BEAT_LIGHT].setBrightness(0.f);
+
+            // Trigger only timer outputs (5min and 1min) when reset
+            float pulseWidthPercent = params[TIMER_30MIN_PARAM].getValue();
+
+            // Trigger 5min timer
+            float timer30MinFullDuration = 5.f * 60.f;
+            timer30MinDuration = (pulseWidthPercent / 100.0f) * timer30MinFullDuration;
+            timer30MinActive = true;
+            timer30MinPhase = 0.f;
+
+            // Trigger 1min timer
+            float timer15MinFullDuration = 1.f * 60.f;
+            timer15MinDuration = (pulseWidthPercent / 100.0f) * timer15MinFullDuration;
+            timer15MinActive = true;
+            timer15MinPhase = 0.f;
+
+            // Reset bar states (bars are triggered by clock, not reset)
+            bar1Active = false;
+            bar2Active = false;
+            bar3Active = false;
+            bar4Active = false;
+            bar1Phase = 0.f;
+            bar2Phase = 0.f;
+            bar3Phase = 0.f;
+            bar4Phase = 0.f;
         }
 
         if (running) {
@@ -296,80 +326,89 @@ struct Runshow : Module {
             static float lastTimer30Min = 0.f;
             static float lastTimer15Min = 0.f;
 
-            // Calculate pulse width for timer pulses (use 16-clock bar as reference)
             float pulseWidthPercent = params[TIMER_30MIN_PARAM].getValue();
-            float referenceBarDuration = 16.0f * clockInterval; // 16-clock bar duration
-            float timerPulseWidth = (pulseWidthPercent / 100.0f) * referenceBarDuration;
 
-            // 30分鐘計時器：每5分鐘觸發
+            // 30分鐘計時器：每5分鐘觸發波形
             float timer30MinInterval = 5.f * 60.f; // 5分鐘
             if (elapsedSeconds >= lastTimer30Min + timer30MinInterval && elapsedSeconds < 30.f * 60.f) {
-                timer30MinPulse.trigger(timerPulseWidth);
+                float timer30MinFullDuration = 5.f * 60.f; // 5分鐘總時長
+                timer30MinDuration = (pulseWidthPercent / 100.0f) * timer30MinFullDuration;
+                timer30MinActive = true;
+                timer30MinPhase = 0.f;
                 lastTimer30Min += timer30MinInterval;
             }
 
-            // 15分鐘計時器：每1分鐘觸發
+            // 15分鐘計時器：每1分鐘觸發波形
             float timer15MinInterval = 1.f * 60.f; // 1分鐘
             if (elapsedSeconds >= lastTimer15Min + timer15MinInterval && elapsedSeconds < 15.f * 60.f) {
-                timer15MinPulse.trigger(timerPulseWidth);
+                float timer15MinFullDuration = 1.f * 60.f; // 1分鐘總時長
+                timer15MinDuration = (pulseWidthPercent / 100.0f) * timer15MinFullDuration;
+                timer15MinActive = true;
+                timer15MinPhase = 0.f;
                 lastTimer15Min += timer15MinInterval;
             }
 
-            // Reset timer counters when reset is triggered
+            // Reset timer counters when reset is triggered (inside running block)
             if (resetTriggered) {
                 lastTimer30Min = 0.f;
                 lastTimer15Min = 0.f;
                 lastClockTime = 0.f; // Reset clock timing
-                // Reset waveform states
+            }
+        }
+
+        // Update waveform phases (outside running block so reset triggers work)
+        // Update timer waveforms
+        if (timer30MinActive && timer30MinDuration > 0.f) {
+            timer30MinPhase += args.sampleTime / timer30MinDuration;
+            if (timer30MinPhase >= 1.f) {
+                timer30MinActive = false;
+                timer30MinPhase = 0.f;
+            }
+        }
+        if (timer15MinActive && timer15MinDuration > 0.f) {
+            timer15MinPhase += args.sampleTime / timer15MinDuration;
+            if (timer15MinPhase >= 1.f) {
+                timer15MinActive = false;
+                timer15MinPhase = 0.f;
+            }
+        }
+
+        // Update bar waveforms
+        if (bar1Active && bar1Duration > 0.f) {
+            bar1Phase += args.sampleTime / bar1Duration;
+            if (bar1Phase >= 1.f) {
                 bar1Active = false;
-                bar2Active = false;
-                bar3Active = false;
-                bar4Active = false;
                 bar1Phase = 0.f;
+            }
+        }
+        if (bar2Active && bar2Duration > 0.f) {
+            bar2Phase += args.sampleTime / bar2Duration;
+            if (bar2Phase >= 1.f) {
+                bar2Active = false;
                 bar2Phase = 0.f;
+            }
+        }
+        if (bar3Active && bar3Duration > 0.f) {
+            bar3Phase += args.sampleTime / bar3Duration;
+            if (bar3Phase >= 1.f) {
+                bar3Active = false;
                 bar3Phase = 0.f;
+            }
+        }
+        if (bar4Active && bar4Duration > 0.f) {
+            bar4Phase += args.sampleTime / bar4Duration;
+            if (bar4Phase >= 1.f) {
+                bar4Active = false;
                 bar4Phase = 0.f;
-            }
-
-            // Update waveform phases and generate outputs
-            int waveShape = (int)params[TIMER_15MIN_PARAM].getValue();
-
-            // Update bar waveforms
-            if (bar1Active && bar1Duration > 0.f) {
-                bar1Phase += args.sampleTime / bar1Duration;
-                if (bar1Phase >= 1.f) {
-                    bar1Active = false;
-                    bar1Phase = 0.f;
-                }
-            }
-            if (bar2Active && bar2Duration > 0.f) {
-                bar2Phase += args.sampleTime / bar2Duration;
-                if (bar2Phase >= 1.f) {
-                    bar2Active = false;
-                    bar2Phase = 0.f;
-                }
-            }
-            if (bar3Active && bar3Duration > 0.f) {
-                bar3Phase += args.sampleTime / bar3Duration;
-                if (bar3Phase >= 1.f) {
-                    bar3Active = false;
-                    bar3Phase = 0.f;
-                }
-            }
-            if (bar4Active && bar4Duration > 0.f) {
-                bar4Phase += args.sampleTime / bar4Duration;
-                if (bar4Phase >= 1.f) {
-                    bar4Active = false;
-                    bar4Phase = 0.f;
-                }
             }
         }
 
         // 設定所有輸出
         float waveShape = params[TIMER_15MIN_PARAM].getValue();
 
-        outputs[TIMER_30MIN_OUTPUT].setVoltage(timer30MinPulse.process(args.sampleTime) ? 10.f : 0.f);
-        outputs[TIMER_15MIN_OUTPUT].setVoltage(timer15MinPulse.process(args.sampleTime) ? 10.f : 0.f);
+        // Generate morphed waveforms for timer outputs
+        outputs[TIMER_30MIN_OUTPUT].setVoltage(timer30MinActive ? generateWaveform(timer30MinPhase, waveShape) : 0.f);
+        outputs[TIMER_15MIN_OUTPUT].setVoltage(timer15MinActive ? generateWaveform(timer15MinPhase, waveShape) : 0.f);
 
         // Generate morphed waveforms for bar outputs
         outputs[BAR_1_OUTPUT].setVoltage(bar1Active ? generateWaveform(bar1Phase, waveShape) : 0.f);

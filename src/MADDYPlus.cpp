@@ -1665,14 +1665,6 @@ json_t* dataToJson() override {
             ch2CurrentStep = (ch2CurrentStep + 1) % ch2SequenceLength;
             generateCh2Mapping();
 
-            int ch2NewActiveKnob = ch2StepToKnobMapping[ch2CurrentStep];
-            // Ensure knob index is within bounds (0-4)
-            ch2NewActiveKnob = clamp(ch2NewActiveKnob, 0, 4);
-            float ch2NewVoltage = params[K1_PARAM + ch2NewActiveKnob].getValue();
-
-            if (ch2NewVoltage != ch2PreviousVoltage) ch2GateOutPulse.trigger(0.01f);
-            ch2PreviousVoltage = ch2NewVoltage;
-
             ch2HistoryIndex = (ch2HistoryIndex + 1) % CH2_MAX_DELAY;
         }
 
@@ -1756,14 +1748,6 @@ json_t* dataToJson() override {
 
             ch3CurrentStep = (ch3CurrentStep + 1) % ch3SequenceLength;
             generateCh3Mapping();
-
-            int ch3NewActiveKnob = ch3StepToKnobMapping[ch3CurrentStep];
-            // Ensure knob index is within bounds (0-4)
-            ch3NewActiveKnob = clamp(ch3NewActiveKnob, 0, 4);
-            float ch3NewVoltage = params[K1_PARAM + ch3NewActiveKnob].getValue();
-
-            if (ch3NewVoltage != ch3PreviousVoltage) ch3GateOutPulse.trigger(0.01f);
-            ch3PreviousVoltage = ch3NewVoltage;
 
             ch3HistoryIndex = (ch3HistoryIndex + 1) % CH3_MAX_DELAY;
         }
