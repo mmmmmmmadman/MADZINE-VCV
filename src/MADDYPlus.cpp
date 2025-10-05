@@ -664,9 +664,12 @@ struct MADDYPlus : Module {
         CH3_CVD_ATTEN_PARAM,
         CH3_STEP_DELAY_PARAM,
 
+        CLOCK_CV_ATTEN_PARAM,
+
         PARAMS_LEN
     };
     enum InputId {
+        CLOCK_CV_INPUT,
         CH2_CV_INPUT,
         CH3_CV_INPUT,
         INPUTS_LEN
@@ -1132,7 +1135,9 @@ struct MADDYPlus : Module {
         configParam(CH3_STEP_DELAY_PARAM, 0.0f, 5.0f, 0.0f, "Ch3 Step Delay");
         getParamQuantity(CH3_STEP_DELAY_PARAM)->snapEnabled = true;
 
+        configParam(CLOCK_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Clock CV Attenuverter");
 
+        configInput(CLOCK_CV_INPUT, "Clock CV");
         configInput(CH2_CV_INPUT, "Ch2 CV");
         configInput(CH3_CV_INPUT, "Ch3 CV");
         configOutput(CH2_CV_OUTPUT, "Ch2 CV");
@@ -1496,7 +1501,16 @@ json_t* dataToJson() override {
 
     void process(const ProcessArgs& args) override {
         float freqParam = params[FREQ_PARAM].getValue();
-        float freq = std::pow(2.0f, freqParam) * 1.0f;
+
+        // Apply Clock CV modulation
+        float clockCVMod = 0.0f;
+        if (inputs[CLOCK_CV_INPUT].isConnected()) {
+            float cvVoltage = inputs[CLOCK_CV_INPUT].getVoltage();
+            float attenuation = params[CLOCK_CV_ATTEN_PARAM].getValue();
+            clockCVMod = cvVoltage * attenuation;
+        }
+
+        float freq = std::pow(2.0f, freqParam + clockCVMod) * 1.0f;
 
         float swingParam = params[SWING_PARAM].getValue();
         float swing = clamp(swingParam, 0.0f, 1.0f);
@@ -1978,6 +1992,14 @@ struct MADDYPlusWidget : ModuleWidget {
         addChild(new MADDYPlusEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "M A D D Y +", 12.f, nvgRGB(255, 200, 0), true));
         addChild(new MADDYPlusEnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
+        // Clock CV Input and Attenuverter (left side of yellow title)
+        addInput(createInputCentered<PJ301MPort>(Vec(16, 17), module, MADDYPlus::CLOCK_CV_INPUT));
+        addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(42, 17), module, MADDYPlus::CLOCK_CV_ATTEN_PARAM));
+
+        // Original LEN position
+        addChild(new MADDYPlusEnhancedTextLabel(Vec(8, 28), Vec(25, 15), "LEN", 7.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 52), module, MADDYPlus::LENGTH_PARAM));
+
         addChild(new MADDYPlusEnhancedTextLabel(Vec(48, 28), Vec(25, 15), "RST", 7.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(60, 52), module, MADDYPlus::RESET_OUTPUT));
 
@@ -1988,17 +2010,15 @@ resetButton->module = module;
         addChild(new MADDYPlusEnhancedTextLabel(Vec(86, 28), Vec(25, 15), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(98, 52), module, MADDYPlus::FREQ_PARAM));
 
+        // Original DECAY position
+        addChild(new MADDYPlusEnhancedTextLabel(Vec(8, 61), Vec(25, 15), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 85), module, MADDYPlus::DECAY_PARAM));
+
         addChild(new MADDYPlusEnhancedTextLabel(Vec(48, 61), Vec(25, 15), "SWING", 7.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(60, 85), module, MADDYPlus::SWING_PARAM));
 
         addChild(new MADDYPlusEnhancedTextLabel(Vec(86, 61), Vec(25, 15), "CLK", 7.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(98, 85), module, MADDYPlus::CLK_OUTPUT));
-
-        addChild(new MADDYPlusEnhancedTextLabel(Vec(8, 28), Vec(25, 15), "LEN", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 52), module, MADDYPlus::LENGTH_PARAM));
-
-        addChild(new MADDYPlusEnhancedTextLabel(Vec(8, 61), Vec(25, 15), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 85), module, MADDYPlus::DECAY_PARAM));
 
         addChild(new VerticalLine(Vec(39, 55), Vec(1, 242)));
         addChild(new VerticalLine(Vec(117, 55), Vec(1, 242)));
