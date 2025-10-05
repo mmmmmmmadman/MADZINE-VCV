@@ -167,23 +167,25 @@ struct Quantizer : Module {
             
             for (int c = 0; c < channels; c++) {
                 float pitch = inputs[inputId].getVoltage(c);
-                
-                // Apply scale first, then offset
-                pitch *= scaleParam;
+
+                // Apply offset first (before quantization)
                 pitch += offsetParam;
-                
-                // First quantize to enabled notes
+
+                // Apply scale
+                pitch *= scaleParam;
+
+                // Quantize to enabled notes
                 int range = std::floor(pitch * 24);
                 int octave = eucDiv(range, 24);
                 range -= octave * 24;
                 int quantizedNote = ranges[range] + octave * 12;
                 int noteInOctave = eucMod(quantizedNote, 12);
                 playingNotes[noteInOctave] = true;
-                
-                // Then apply microtune to the quantized note
+
+                // Apply microtune to the quantized note
                 float microtuneOffset = params[C_MICROTUNE_PARAM + noteInOctave].getValue() / 1200.f; // Convert cents to volts (1200 cents = 1V)
                 pitch = float(quantizedNote) / 12.f + microtuneOffset;
-                
+
                 outputs[outputId].setVoltage(pitch, c);
             }
             outputs[outputId].setChannels(channels);

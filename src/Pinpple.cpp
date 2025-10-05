@@ -399,7 +399,7 @@ struct Pinpple : Module {
         dsp::SchmittTrigger trigger;
         dsp::BiquadFilter lpf;
         float env = 0.0f;
-        float attackTime = 0.00001f;
+        float attackTime = 0.006f;  // Default 6ms, configurable via menu
         float decayTime = 0.05f;
         bool attacking = false;
         bool decaying = false;
@@ -451,25 +451,56 @@ struct Pinpple : Module {
         }
     };
 
+    struct VCAEnvelope {
+        dsp::SchmittTrigger trigger;
+        float env = 0.0f;
+        float attackTime = 0.006f;
+        bool attacking = false;
+
+        void reset() {
+            trigger.reset();
+            env = 0.0f;
+            attacking = false;
+        }
+
+        float process(float triggerInput, float sampleTime) {
+            if (trigger.process(triggerInput)) {
+                attacking = true;
+                env = 0.0f;
+            }
+
+            if (attacking) {
+                env += sampleTime / attackTime;
+                if (env >= 1.0f) {
+                    env = 1.0f;
+                    attacking = false;
+                }
+            }
+
+            return env;
+        }
+    };
+
     RipplesBPFEngine bpfEngine;
     TriggerGenerator trigGen;
     SimpleLPG lpg;
+    VCAEnvelope vcaEnv;
     PinkNoiseGenerator<8> pinkNoiseGenerator;
     float lastPink = 0.0f;
-    
+
 public:
     RandomModulation randomMod;
-    
+
     float originalFreqParam = 0.5f;
     float originalResonanceParam = 0.5f;
-    
+
     dsp::SchmittTrigger muteTrigger;
     bool muteState = false;
     
     Pinpple() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         
-        configParam(FREQ_PARAM, std::log2(kFreqKnobMin), std::log2(kFreqKnobMax), 12.449027061462402f, "Frequency", " Hz", 2.f);
+        configParam(FREQ_PARAM, std::log2(kFreqKnobMin), std::log2(kFreqKnobMax), 8.027905996569885f, "Frequency", " Hz", 2.f);
         configParam(RESONANCE_PARAM, 0.0f, 1.0f, 0.76700007915496826f, "Decay");
         configParam(FM_AMOUNT_PARAM, 0.0f, 1.0f, 0.66549950838088989f, "FM Amount");
         configParam(FREQ_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Freq CV Attenuverter");
@@ -485,8 +516,8 @@ public:
         configInput(TRIG_INPUT, "Trigger");
         configInput(FM_MOD_CV_INPUT, "FM AMT CV");
         configOutput(OUT_OUTPUT, "Audio");
-        
-        originalFreqParam = std::log2(kFreqKnobMax);
+
+        originalFreqParam = 8.027905996569885f;  // 261Hz (C4)
         originalResonanceParam = 0.5f;
     }
 
@@ -560,14 +591,30 @@ public:
         
         float pingInput = newTrigger ? 10.0f : 0.0f;
         float bpfOutput = bpfEngine.process(pingInput, finalFreq, finalResonance, processedFM);
-        
+
+        // Apply VCA envelope to final output
+        float vcaEnvelope = vcaEnv.process(trigger2ms, args.sampleTime);
+
         bool isMuted = muteState;
         float volume = params[VOLUME_PARAM].getValue();
-        float finalOutput = isMuted ? 0.0f : bpfOutput * volume;
-        
+        float finalOutput = isMuted ? 0.0f : bpfOutput * vcaEnvelope * volume;
+
         lights[MUTE_LIGHT].setBrightness(isMuted ? 1.0f : 0.0f);
-        
+
         outputs[OUT_OUTPUT].setVoltage(finalOutput);
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "vcaAttackTime", json_real(vcaEnv.attackTime));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* attackTimeJ = json_object_get(rootJ, "vcaAttackTime");
+        if (attackTimeJ) {
+            vcaEnv.attackTime = json_real_value(attackTimeJ);
+        }
     }
 };
 
@@ -759,6 +806,63 @@ addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, P
                 noiseMixQuantity->name = "LPG IN MIX";
                 module->paramQuantities[Pinpple::NOISE_MIX_PARAM] = noiseMixQuantity;
         }
+    }
+
+    void appendContextMenu(Menu* menu) override {
+        Pinpple* module = dynamic_cast<Pinpple*>(this->module);
+        if (!module)
+            return;
+
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("VCA Attack Time"));
+
+        float currentAttackTime = module->vcaEnv.attackTime;
+        std::string currentLabel = string::f("Current: %.3fms", currentAttackTime * 1000.0f);
+        menu->addChild(createMenuLabel(currentLabel));
+
+        struct AttackTimeSlider : ui::Slider {
+            struct AttackTimeQuantity : Quantity {
+                Pinpple* module;
+                AttackTimeQuantity(Pinpple* module) : module(module) {}
+
+                void setValue(float value) override {
+                    if (module) {
+                        value = clamp(value, 0.0f, 1.0f);
+                        module->vcaEnv.attackTime = rescale(value, 0.0f, 1.0f, 0.0005f, 0.020f);
+                    }
+                }
+
+                float getValue() override {
+                    if (module) {
+                        return rescale(module->vcaEnv.attackTime, 0.0005f, 0.020f, 0.0f, 1.0f);
+                    }
+                    return 0.275f;
+                }
+
+                float getMinValue() override { return 0.0f; }
+                float getMaxValue() override { return 1.0f; }
+                float getDefaultValue() override { return 0.275f; }
+                std::string getLabel() override { return "VCA Attack Time"; }
+                std::string getUnit() override { return " ms"; }
+                std::string getDisplayValueString() override {
+                    if (module) {
+                        return string::f("%.2f", module->vcaEnv.attackTime * 1000.0f);
+                    }
+                    return "6.00";
+                }
+            };
+
+            AttackTimeSlider(Pinpple* module) {
+                box.size.x = 200.0f;
+                quantity = new AttackTimeQuantity(module);
+            }
+
+            ~AttackTimeSlider() {
+                delete quantity;
+            }
+        };
+
+        menu->addChild(new AttackTimeSlider(module));
     }
 };
 
