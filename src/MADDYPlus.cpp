@@ -1989,8 +1989,8 @@ struct MADDYPlusWidget : ModuleWidget {
 
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new MADDYPlusEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "M A D D Y +", 12.f, nvgRGB(255, 200, 0), true));
-        addChild(new MADDYPlusEnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
+        addChild(new MADDYPlusEnhancedTextLabel(Vec(27, 1), Vec(box.size.x, 20), "M A D D Y +", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new MADDYPlusEnhancedTextLabel(Vec(27, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         // Clock CV Input and Attenuverter (left side of yellow title)
         addInput(createInputCentered<PJ301MPort>(Vec(16, 17), module, MADDYPlus::CLOCK_CV_INPUT));
