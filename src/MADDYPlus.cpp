@@ -998,6 +998,11 @@ struct MADDYPlus : Module {
     float ch2PreviousCVDOutput = -999.0f;
     float ch3PreviousCVDOutput = -999.0f;
 
+    // Custom pattern support
+    bool useCustomPattern[3] = {false, false, false};
+    std::vector<int> customPattern[3];
+    int customPatternIndex[3] = {0, 0, 0};
+
     MADDYPlus() {
         // Allocate buffers on heap to avoid stack overflow
         ch2CvdBuffer = new float[CH2_CVD_BUFFER_SIZE];
@@ -1166,6 +1171,24 @@ struct MADDYPlus : Module {
     }
 
     void generateMapping() {
+        // Use custom pattern if enabled
+        if (useCustomPattern[0] && !customPattern[0].empty()) {
+            float density = params[DENSITY_PARAM].getValue();
+
+            // Density controls how many knobs are available
+            int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
+
+            sequenceLength = customPattern[0].size();
+            sequenceLength = clamp(sequenceLength, 1, 64);
+
+            for (int i = 0; i < sequenceLength; i++) {
+                // Clamp knob index to available knobs
+                int knobIndex = customPattern[0][i] % primaryKnobs;
+                stepToKnobMapping[i] = knobIndex;
+            }
+            return;
+        }
+
         float density = params[DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
@@ -1244,6 +1267,24 @@ struct MADDYPlus : Module {
     }
 
     void generateCh2Mapping() {
+        // Use custom pattern if enabled
+        if (useCustomPattern[1] && !customPattern[1].empty()) {
+            float density = params[CH2_DENSITY_PARAM].getValue();
+
+            // Density controls how many knobs are available
+            int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
+
+            ch2SequenceLength = customPattern[1].size();
+            ch2SequenceLength = clamp(ch2SequenceLength, 1, 64);
+
+            for (int i = 0; i < ch2SequenceLength; i++) {
+                // Clamp knob index to available knobs
+                int knobIndex = customPattern[1][i] % primaryKnobs;
+                ch2StepToKnobMapping[i] = knobIndex;
+            }
+            return;
+        }
+
         float density = params[CH2_DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
@@ -1322,6 +1363,24 @@ struct MADDYPlus : Module {
     }
 
     void generateCh3Mapping() {
+        // Use custom pattern if enabled
+        if (useCustomPattern[2] && !customPattern[2].empty()) {
+            float density = params[CH3_DENSITY_PARAM].getValue();
+
+            // Density controls how many knobs are available
+            int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
+
+            ch3SequenceLength = customPattern[2].size();
+            ch3SequenceLength = clamp(ch3SequenceLength, 1, 64);
+
+            for (int i = 0; i < ch3SequenceLength; i++) {
+                // Clamp knob index to available knobs
+                int knobIndex = customPattern[2][i] % primaryKnobs;
+                ch3StepToKnobMapping[i] = knobIndex;
+            }
+            return;
+        }
+
         float density = params[CH3_DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
@@ -1462,6 +1521,21 @@ json_t* dataToJson() override {
     }
     json_object_set_new(rootJ, "shifts", shiftsJ);
 
+        // Save custom patterns
+        json_t* customPatternsJ = json_array();
+        for (int ch = 0; ch < 3; ch++) {
+            json_t* channelJ = json_object();
+            json_object_set_new(channelJ, "useCustomPattern", json_boolean(useCustomPattern[ch]));
+
+            json_t* patternJ = json_array();
+            for (int step : customPattern[ch]) {
+                json_array_append_new(patternJ, json_integer(step));
+            }
+            json_object_set_new(channelJ, "pattern", patternJ);
+            json_array_append_new(customPatternsJ, channelJ);
+        }
+        json_object_set_new(rootJ, "customPatterns", customPatternsJ);
+
         return rootJ;
     }
 
@@ -1497,6 +1571,32 @@ json_t* dataToJson() override {
                     }
             }
             }
+
+        // Load custom patterns
+        json_t* customPatternsJ = json_object_get(rootJ, "customPatterns");
+        if (customPatternsJ) {
+            for (int ch = 0; ch < 3; ch++) {
+                json_t* channelJ = json_array_get(customPatternsJ, ch);
+                if (channelJ) {
+                    json_t* useCustomJ = json_object_get(channelJ, "useCustomPattern");
+                    if (useCustomJ) {
+                        useCustomPattern[ch] = json_boolean_value(useCustomJ);
+                    }
+
+                    json_t* patternJ = json_object_get(channelJ, "pattern");
+                    if (patternJ) {
+                        customPattern[ch].clear();
+                        size_t arraySize = json_array_size(patternJ);
+                        for (size_t i = 0; i < arraySize; i++) {
+                            json_t* stepJ = json_array_get(patternJ, i);
+                            if (stepJ) {
+                                customPattern[ch].push_back(json_integer_value(stepJ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     void process(const ProcessArgs& args) override {
@@ -2219,9 +2319,92 @@ resetButton->module = module;
         }
     };
 
+    struct PatternTextField : ui::TextField {
+        MADDYPlus* module;
+        int channelId;
+
+        PatternTextField(MADDYPlus* module, int channelId) : module(module), channelId(channelId) {
+            box.size.x = 200;
+            placeholder = "e.g. 12312345";
+
+            if (module && !module->customPattern[channelId].empty()) {
+                text = "";
+                for (int step : module->customPattern[channelId]) {
+                    text += std::to_string(step + 1);
+                }
+            }
+        }
+
+        void onSelectKey(const event::SelectKey& e) override {
+            if (e.action == GLFW_PRESS && e.key == GLFW_KEY_ENTER) {
+                if (!module) return;
+
+                std::vector<int> steps;
+                for (char c : text) {
+                    if (c >= '1' && c <= '5') {
+                        steps.push_back(c - '1');
+                    }
+                }
+
+                if (!steps.empty()) {
+                    module->customPattern[channelId] = steps;
+                    module->customPatternIndex[channelId] = 0;
+
+                    // Immediately regenerate mappings
+                    if (channelId == 0) module->generateMapping();
+                    else if (channelId == 1) module->generateCh2Mapping();
+                    else if (channelId == 2) module->generateCh3Mapping();
+                }
+
+                ui::MenuOverlay* overlay = getAncestorOfType<ui::MenuOverlay>();
+                if (overlay) {
+                    overlay->requestDelete();
+                }
+            }
+            TextField::onSelectKey(e);
+        }
+    };
+
    void appendContextMenu(Menu* menu) override {
         MADDYPlus* module = getModule<MADDYPlus>();
         if (!module) return;
+
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Custom Pattern"));
+
+        const char* channelNames[3] = {"Channel 1", "Channel 2", "Channel 3"};
+        for (int ch = 0; ch < 3; ch++) {
+            menu->addChild(createMenuLabel(channelNames[ch]));
+
+            struct PatternEnableItem : ui::MenuItem {
+                MADDYPlus* module;
+                int channelId;
+
+                PatternEnableItem(MADDYPlus* module, int channelId) : module(module), channelId(channelId) {
+                    text = "Use Custom Pattern";
+                    rightText = CHECKMARK(module && module->useCustomPattern[channelId]);
+                }
+
+                void onAction(const event::Action& e) override {
+                    if (module) {
+                        module->useCustomPattern[channelId] = !module->useCustomPattern[channelId];
+                    }
+                }
+            };
+
+            menu->addChild(new PatternEnableItem(module, ch));
+
+            menu->addChild(createMenuLabel("Pattern (1-5):"));
+            menu->addChild(new PatternTextField(module, ch));
+
+            if (!module->customPattern[ch].empty()) {
+                std::string currentPattern = "Current: ";
+                for (int step : module->customPattern[ch]) {
+                    currentPattern += std::to_string(step + 1);
+                }
+                menu->addChild(createMenuLabel(currentPattern));
+            }
+        }
 
         menu->addChild(new MenuSeparator);
         menu->addChild(createMenuLabel("Attack Time"));
