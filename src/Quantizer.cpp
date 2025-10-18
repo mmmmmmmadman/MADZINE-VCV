@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
     float fontSize;
@@ -57,6 +58,8 @@ struct WhiteBackgroundBox : Widget {
 // Microtune knob for 20x20 size
 // MicrotuneKnob 現在從 widgets/Knobs.hpp 引入
 struct Quantizer : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamIds {
         SCALE_PARAM,
         OFFSET_PARAM,
@@ -280,6 +283,7 @@ struct Quantizer : Module {
 
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
         json_t* enabledNotesJ = json_array();
         for (int i = 0; i < 12; i++) {
@@ -292,6 +296,11 @@ struct Quantizer : Module {
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
         json_t* enabledNotesJ = json_object_get(rootJ, "enabledNotes");
         if (enabledNotesJ) {
             for (int i = 0; i < 12; i++) {
@@ -429,9 +438,11 @@ struct QuantizerDisplay : LedDisplay {
 };
 
 struct QuantizerWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     QuantizerWidget(Quantizer* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/SwingLFO.svg")));
+        panelThemeHelper.init(this, "SwingLFO");
 
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -510,18 +521,26 @@ struct QuantizerWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 374), module, Quantizer::PITCH_OUTPUT_3));
     }
 
-    void appendContextMenu(Menu* menu) override {
+    void step() override {
+        Quantizer* module = dynamic_cast<Quantizer*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
         Quantizer* module = getModule<Quantizer>();
         if (!module) return;
 
         menu->addChild(new MenuSeparator);
-        
+
         // Scale Presets submenu
         menu->addChild(createSubmenuItem("Scale Presets", "", [=](Menu* menu) {
             std::string scaleNames[16] = {
                 "Chromatic",
                 "Major (Ionian)",
-                "Minor (Aeolian)", 
+                "Minor (Aeolian)",
                 "Pentatonic Major",
                 "Pentatonic Minor",
                 "Dorian",
@@ -536,19 +555,19 @@ struct QuantizerWidget : ModuleWidget {
                 "Japanese",
                 "Whole Tone"
             };
-            
+
             for (int i = 0; i < 16; i++) {
                 menu->addChild(createMenuItem(scaleNames[i], "", [=]() {
                     module->applyScalePreset(i);
                 }));
             }
         }));
-        
+
         // Microtune Presets submenu
         menu->addChild(createSubmenuItem("Microtune Presets", "", [=](Menu* menu) {
             std::string presetNames[10] = {
                 "Equal Temperament",
-                "Just Intonation", 
+                "Just Intonation",
                 "Pythagorean",
                 "Arabic Maqam",
                 "Indian Raga",
@@ -558,7 +577,7 @@ struct QuantizerWidget : ModuleWidget {
                 "Persian Dastgah",
                 "Quarter-tone"
             };
-            
+
             for (int i = 0; i < 10; i++) {
                 menu->addChild(createMenuItem(presetNames[i], "", [=]() {
                     module->applyMicrotunePreset(i);
@@ -566,6 +585,8 @@ struct QuantizerWidget : ModuleWidget {
                 }));
             }
         }));
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

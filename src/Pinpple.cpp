@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <cmath>
 #include <algorithm>
 #include <random>
@@ -214,6 +215,8 @@ struct PinkNoiseGenerator {
 };
 
 struct Pinpple : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         FREQ_PARAM,
         RESONANCE_PARAM,
@@ -607,10 +610,16 @@ public:
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "vcaAttackTime", json_real(vcaEnv.attackTime));
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         return rootJ;
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
         json_t* attackTimeJ = json_object_get(rootJ, "vcaAttackTime");
         if (attackTimeJ) {
             vcaEnv.attackTime = json_real_value(attackTimeJ);
@@ -728,10 +737,12 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct PinppleWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     PinppleWidget(Pinpple* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SwingLFO.svg")));
-        
+        panelThemeHelper.init(this, "EuclideanRhythm");
+
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
         float centerX = box.size.x / 2;
@@ -808,10 +819,18 @@ addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, P
         }
     }
 
-    void appendContextMenu(Menu* menu) override {
+
+    void step() override {
         Pinpple* module = dynamic_cast<Pinpple*>(this->module);
-        if (!module)
-            return;
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        Pinpple* module = dynamic_cast<Pinpple*>(this->module);
+        if (!module) return;
 
         menu->addChild(new MenuSeparator);
         menu->addChild(createMenuLabel("VCA Attack Time"));
@@ -863,6 +882,8 @@ addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, P
         };
 
         menu->addChild(new AttackTimeSlider(module));
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

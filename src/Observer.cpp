@@ -1,7 +1,10 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct Observer : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamIds {
         TIME_PARAM,
         TRIG_PARAM,
@@ -62,6 +65,19 @@ struct Observer : Module {
         configInput(TRACK6_INPUT, "Track 6");
         configInput(TRACK7_INPUT, "Track 7");
         configInput(TRACK8_INPUT, "Track 8");
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
     }
 
     void process(const ProcessArgs& args) override {
@@ -334,9 +350,11 @@ struct ClickableLight : ParamWidget {
 };
 
 struct ObserverWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     ObserverWidget(Observer* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
@@ -374,6 +392,21 @@ struct ObserverWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(45, 368), module, Observer::TRACK6_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(75, 368), module, Observer::TRACK7_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(105, 368), module, Observer::TRACK8_INPUT));
+    }
+
+    void step() override {
+        Observer* module = dynamic_cast<Observer*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        Observer* module = dynamic_cast<Observer*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 using namespace rack;
 using namespace rack::engine;
@@ -409,6 +410,8 @@ struct GrainProcessor {
 };
 
 struct EllenRipley : rack::engine::Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamIds {
         DELAY_TIME_L_PARAM,
         DELAY_TIME_R_PARAM,
@@ -541,6 +544,19 @@ struct EllenRipley : rack::engine::Module {
                 rightDelayBuffer[c][i] = 0.0f;
             }
             delayWriteIndex[c] = 0;
+        }
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
         }
     }
     
@@ -770,9 +786,11 @@ struct EllenRipley : rack::engine::Module {
 };
 
 struct EllenRipleyWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     EllenRipleyWidget(EllenRipley* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "12HP");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -885,6 +903,21 @@ struct EllenRipleyWidget : ModuleWidget {
         
         addChild(new EnhancedTextLabel(Vec(35, 365), Vec(30, 10), "AMOUNT", 7.f, nvgRGB(255, 133, 133), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(80, 368), module, EllenRipley::CHAOS_AMOUNT_PARAM));
+    }
+
+    void step() override {
+        EllenRipley* module = dynamic_cast<EllenRipley*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        EllenRipley* module = dynamic_cast<EllenRipley*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

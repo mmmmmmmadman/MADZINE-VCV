@@ -2,6 +2,7 @@
 #include "widgets/Knobs.hpp"
 #include <cmath>
 #include "dsp/resampler.hpp"
+#include <sst/filters/HalfRateFilter.h>
 
 // ===== GUI Components =====
 
@@ -470,9 +471,27 @@ struct NIGOQ : Module {
     // Attack time setting (in seconds)
     float attackTime = 0.01f;  // Default 10ms for punchy bass
 
-    // Oversampling using simple averaging approach
-    int oversampleRate = 1;
-    int oversampleQuality = 1; // 0=low quality, 1=medium, 2=high quality
+    // Oversampling using Surge XT HalfRateFilter (block-based processing)
+    static constexpr int BLOCK_SIZE = 8;  // Process 8 samples at a time
+    int oversampleRate = 2;  // 1=no OS, 2=2x, 4=4x, 8=8x
+
+    // HalfRateFilters for up/downsampling (cascaded for 4x/8x)
+    sst::filters::HalfRate::HalfRateFilter upFilter1{6, true};    // First upsample stage (1x→2x)
+    sst::filters::HalfRate::HalfRateFilter upFilter2{6, true};    // Second upsample stage (2x→4x)
+    sst::filters::HalfRate::HalfRateFilter upFilter3{6, true};    // Third upsample stage (4x→8x)
+    sst::filters::HalfRate::HalfRateFilter downFilter1{6, true};  // First downsample stage (8x→4x or 4x→2x or 2x→1x)
+    sst::filters::HalfRate::HalfRateFilter downFilter2{6, true};  // Second downsample stage (4x→2x or 2x→1x)
+    sst::filters::HalfRate::HalfRateFilter downFilter3{6, true};  // Third downsample stage (2x→1x)
+
+    // Oversample buffers (sized for 8x maximum)
+    static constexpr int MAX_BLOCK_SIZE_OS = BLOCK_SIZE * 8;  // 64 samples max
+    float modOutputBuffer[MAX_BLOCK_SIZE_OS];      // MOD output buffer (oversampled)
+    float finalOutputBuffer[MAX_BLOCK_SIZE_OS];    // FINAL output buffer (oversampled)
+    float finalSineBuffer[MAX_BLOCK_SIZE_OS];      // Clean sine buffer (oversampled)
+    float modOutputDownsampled[BLOCK_SIZE];        // Downsampled MOD output
+    float finalOutputDownsampled[BLOCK_SIZE];      // Downsampled FINAL output
+    float finalSineDownsampled[BLOCK_SIZE];        // Downsampled sine output
+    int processPosition = BLOCK_SIZE + 1;          // Like Surge: trigger first process
 
     // Scope trigger detection (like Observer)
     dsp::SchmittTrigger scopeTriggers[16];
@@ -812,8 +831,26 @@ struct NIGOQ : Module {
     }
 
     void setupOversamplingFilters() {
-        // Don't need to setup filters here since we'll use simple averaging
-        // The IIR filters were causing issues, so we'll use a simpler approach
+        // Reset all HalfRateFilters
+        upFilter1.reset();
+        upFilter2.reset();
+        upFilter3.reset();
+        downFilter1.reset();
+        downFilter2.reset();
+        downFilter3.reset();
+
+        // Initialize oversample buffers
+        processPosition = BLOCK_SIZE + 1;  // Trigger first process
+        for (int i = 0; i < MAX_BLOCK_SIZE_OS; i++) {
+            modOutputBuffer[i] = 0.0f;
+            finalOutputBuffer[i] = 0.0f;
+            finalSineBuffer[i] = 0.0f;
+        }
+        for (int i = 0; i < BLOCK_SIZE; i++) {
+            modOutputDownsampled[i] = 0.0f;
+            finalOutputDownsampled[i] = 0.0f;
+            finalSineDownsampled[i] = 0.0f;
+        }
 
         // Setup lowpass filter with current sample rate
         lpFilter.setSampleRate(APP->engine->getSampleRate());
@@ -889,7 +926,6 @@ struct NIGOQ : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "oversampleRate", json_integer(oversampleRate));
-        json_object_set_new(rootJ, "oversampleQuality", json_integer(oversampleQuality));
         json_object_set_new(rootJ, "attackTime", json_real(attackTime));
         // Save randomization settings
         json_object_set_new(rootJ, "randomizeGlideTime", json_real(randomizeGlideTime));
@@ -904,13 +940,10 @@ struct NIGOQ : Module {
         json_t* oversampleRateJ = json_object_get(rootJ, "oversampleRate");
         if (oversampleRateJ) {
             oversampleRate = json_integer_value(oversampleRateJ);
-            oversampleRate = clamp(oversampleRate, 1, 32);
-        }
-
-        json_t* oversampleQualityJ = json_object_get(rootJ, "oversampleQuality");
-        if (oversampleQualityJ) {
-            oversampleQuality = json_integer_value(oversampleQualityJ);
-            oversampleQuality = clamp(oversampleQuality, 0, 2);
+            // Only allow 1x or 2x (4x/8x removed due to issues)
+            if (oversampleRate != 1 && oversampleRate != 2) {
+                oversampleRate = 2;  // Default to 2x if invalid
+            }
         }
 
         // Update oversampling filters with loaded settings
@@ -942,6 +975,179 @@ struct NIGOQ : Module {
     }
 
 
+
+    // Helper struct to hold all per-sample processing state
+    struct ProcessState {
+        float modFreq;
+        float waveMorph;
+        float finalFreq;
+        float fmModAmount;
+        float foldAmount;
+        float tmAmount;
+        float rectifyAmount;
+        float rectModAmount;
+        float lpfCutoff;
+        float bassAmount;
+        float triggerVoltage;
+        float decayTime;
+        bool isLongDecay;
+    };
+
+    // Process a single sample at potentially oversampled rate
+    // Returns: {modOutput, finalOutput, finalSineOutput}
+    std::tuple<float, float, float> processSingleSample(const ProcessState& state, float oversampledSampleTime) {
+        float modOutput = 0.f;
+        float modSignal = 0.f;
+
+        // Check if external modulation input is connected
+        if (inputs[MOD_EXT_IN].isConnected()) {
+            // Use external input (assuming ±5V audio range)
+            modSignal = inputs[MOD_EXT_IN].getVoltage() / 5.f; // Normalize to ±1
+            modSignal = clamp(modSignal, -1.f, 1.f);
+            modOutput = (modSignal + 1.f) * 5.f; // Convert -1..1 to 0..10V
+        } else {
+            // Use internal oscillator
+            float deltaPhase = state.modFreq * oversampledSampleTime;
+            modPhase += deltaPhase;
+            if (modPhase >= 1.f) {
+                modPhase -= 1.f;
+            }
+
+            // Generate morphing waveform with PolyBLEP (bipolar -1 to 1)
+            modSignal = generateMorphingWave(modPhase, state.waveMorph, deltaPhase);
+            modOutput = (modSignal + 1.f) * 5.f; // Convert -1..1 to 0..10V
+        }
+
+        // Calculate VCA gains
+        float modVcaGain, finalVcaGain;
+        if (state.isLongDecay) {
+            modVcaGain = 1.f;
+            finalVcaGain = 1.f;
+        } else {
+            const float fixedCurve = -0.95f;
+            modVcaGain = modEnvelope.process(oversampledSampleTime, state.triggerVoltage, attackTime, state.decayTime, fixedCurve);
+            finalVcaGain = finalEnvelope.process(oversampledSampleTime, state.triggerVoltage, attackTime, state.decayTime, fixedCurve);
+        }
+
+        // Calculate modulation signal (post-VCA) for FM/TM/AM
+        float modOutputWithVca = modOutput * modVcaGain;
+        float modSignalForModulation;
+        if (inputs[MOD_EXT_IN].isConnected()) {
+            modSignalForModulation = modSignal * modVcaGain;
+        } else {
+            modSignalForModulation = (modOutputWithVca - 5.f) / 5.f;
+        }
+
+        // Track previous FINAL phase for sync detection (FINAL syncs MOD)
+        prevFinalPhase = finalPhase;
+
+        // Calculate base phase increment
+        float basePhaseInc = state.finalFreq * oversampledSampleTime;
+
+        // Calculate FM phase increment
+        float fmPhaseInc = 0.0f;
+        if (state.fmModAmount > 0.0f) {
+            float fmIndex = state.fmModAmount * state.fmModAmount * 4.f;
+            fmPhaseInc = state.finalFreq * modSignalForModulation * fmIndex * oversampledSampleTime;
+        }
+
+        // Total phase increment can be negative for true TZ-FM
+        float finalDeltaPhase = basePhaseInc + fmPhaseInc;
+
+        // Update final phase with TZ-FM phase increment
+        finalPhase += finalDeltaPhase;
+
+        // Get sync mode
+        int syncMode = (int)params[SYNC_MODE].getValue();
+
+        // Detect sync trigger BEFORE wrapping
+        bool syncTrigger = false;
+        if (finalPhase >= 1.0f && prevFinalPhase < 1.0f) {
+            syncTrigger = true;
+        }
+        if (finalPhase < 0.0f && prevFinalPhase >= 0.0f) {
+            syncTrigger = true;
+        }
+
+        // Apply sync to MOD oscillator based on mode
+        if (syncTrigger && syncMode > 0) {
+            if (syncMode == 2) {
+                modPhase = 0.f;  // Hard sync
+            } else if (syncMode == 1) {
+                if (modPhase > 0.5f) {  // Soft sync
+                    modPhase = 0.f;
+                }
+            }
+        }
+
+        // Wrap phase to [0, 1]
+        finalPhase = finalPhase - std::floor(finalPhase);
+
+        float finalSignal;
+
+        // Check if external final input is connected
+        if (inputs[FINAL_EXT_IN].isConnected()) {
+            finalSignal = inputs[FINAL_EXT_IN].getVoltage() / 5.f;
+            finalSignal = clamp(finalSignal, -1.f, 1.f);
+        } else {
+            // Generate Buchla-style "sine" with harmonics
+            float fundamental = std::sin(2.f * M_PI * finalPhase);
+            float harmonic2 = 0.08f * std::sin(4.f * M_PI * finalPhase);
+            float harmonic3 = 0.05f * std::sin(6.f * M_PI * finalPhase);
+            finalSignal = (fundamental + harmonic2 + harmonic3) * 0.92f;
+        }
+
+        // Store clean sine for later
+        float cleanSine = finalSignal;
+
+        // Apply wavefolding with TM modulation
+        float foldAmountWithMod = state.foldAmount;
+        if (state.tmAmount > 0.0f) {
+            // Modulate fold amount with the post-VCA mod signal
+            // modSignalForModulation ranges from -1 to 1, convert to 0-1 for unipolar modulation
+            float timbreModulation = (modSignalForModulation * 0.5f + 0.5f) * state.tmAmount;
+            foldAmountWithMod += timbreModulation;
+            foldAmountWithMod = clamp(foldAmountWithMod, 0.f, 1.f);
+        }
+
+        if (foldAmountWithMod > 0.0f) {
+            finalSignal = wavefold(finalSignal, foldAmountWithMod);
+        }
+
+        // Apply rectification with RECT modulation
+        float rectifyAmountWithMod = state.rectifyAmount;
+        if (state.rectModAmount > 0.0f) {
+            // Modulate rectification with the post-VCA mod signal
+            float rectModulation = (modSignalForModulation * 0.5f + 0.5f) * state.rectModAmount;
+            rectifyAmountWithMod += rectModulation;
+            rectifyAmountWithMod = clamp(rectifyAmountWithMod, 0.f, 1.f);
+        }
+
+        finalSignal = asymmetricRectifier(finalSignal, rectifyAmountWithMod);
+
+        // Apply lowpass filter
+        lpFilter.setCutoff(state.lpfCutoff);
+        finalSignal = lpFilter.process(finalSignal);
+
+        // Apply VCA and scale to ±5V
+        float finalOutput = finalSignal * 5.f * finalVcaGain;
+        float finalSineOutput = cleanSine * 5.f * finalVcaGain;
+
+        // Apply BASS knob
+        if (state.bassAmount > 0.0f) {
+            float cleanSineScaled = finalSineOutput * state.bassAmount * 2.0f;
+            finalOutput = finalOutput + cleanSineScaled;
+
+            // Soft clipping
+            if (std::abs(finalOutput) > 5.0f) {
+                float sign = finalOutput > 0 ? 1.0f : -1.0f;
+                float excess = std::abs(finalOutput) - 5.0f;
+                finalOutput = sign * (5.0f + std::tanh(excess * 0.3f) * 2.0f);
+            }
+        }
+
+        return std::make_tuple(modOutputWithVca, finalOutput, finalSineOutput);
+    }
 
     void process(const ProcessArgs& args) override {
         // Handle smooth randomization
@@ -1019,65 +1225,10 @@ struct NIGOQ : Module {
             waveMorph = clamp(waveMorph + waveCV, 0.f, 1.f);
         }
 
-        float modOutput = 0.f;
+        //  ===== BLOCK-BASED OVERSAMPLE PROCESSING (Surge XT style) =====
 
-        // Track previous FINAL phase for sync detection (FINAL syncs MOD)
-        prevFinalPhase = finalPhase;
-
-        float modSignal;
-
-        // Check if external modulation input is connected
-        if (inputs[MOD_EXT_IN].isConnected()) {
-            // Use external input (assuming ±5V audio range)
-            modSignal = inputs[MOD_EXT_IN].getVoltage() / 5.f; // Normalize to ±1
-            modSignal = clamp(modSignal, -1.f, 1.f);
-
-            // Convert to unipolar 0-10V output
-            modOutput = (modSignal + 1.f) * 5.f; // Convert -1..1 to 0..10V
-        } else {
-            // Use internal oscillator
-            if (oversampleRate > 1) {
-                // Simple oversampling: generate at higher rate and average
-                float deltaPhase = modFreq / (args.sampleRate * oversampleRate);
-                modSignal = 0.f;
-
-                // Generate oversampled samples and accumulate
-                for (int i = 0; i < oversampleRate; i++) {
-                    // Update phase
-                    modPhase += deltaPhase;
-                    if (modPhase >= 1.f) {
-                        modPhase -= 1.f;
-                    }
-
-                    // Generate morphing waveform with PolyBLEP (bipolar -1 to 1)
-                    float sample = generateMorphingWave(modPhase, waveMorph, deltaPhase);
-
-                    // Simple box filter (averaging)
-                    modSignal += sample;
-                }
-
-                // Average the samples
-                modSignal /= oversampleRate;
-
-                // Convert to unipolar 0-10V output
-                modOutput = (modSignal + 1.f) * 5.f; // Convert -1..1 to 0..10V
-            } else {
-                // Normal processing without oversampling
-                float deltaPhase = modFreq * args.sampleTime;
-                modPhase += deltaPhase;
-                if (modPhase >= 1.f) {
-                    modPhase -= 1.f;
-                }
-
-                // Generate morphing waveform with PolyBLEP (bipolar -1 to 1)
-                modSignal = generateMorphingWave(modPhase, waveMorph, deltaPhase);
-
-                // Convert to unipolar 0-10V output
-                modOutput = (modSignal + 1.f) * 5.f; // Convert -1..1 to 0..10V
-            }
-        }
-
-        // Get decay parameter and process envelopes EARLY for modulation
+        // Prepare processing state from current parameters
+        // Get decay parameter
         float decayParam = params[DECAY].getValue();
         float decayTime;
         if (decayParam <= 0.5f) {
@@ -1087,32 +1238,14 @@ struct NIGOQ : Module {
         }
 
         float triggerVoltage = inputs[TRIG_IN].isConnected() ? inputs[TRIG_IN].getVoltage() : 0.0f;
-        float modVcaGain, finalVcaGain;
+        bool isLongDecay = (decayTime >= 3.f);
 
-        if (decayTime >= 3.f) {
-            modVcaGain = 1.f;
-            finalVcaGain = 1.f;
+        if (isLongDecay) {
             modEnvelope.reset();
             finalEnvelope.reset();
-        } else {
-            const float fixedCurve = -0.95f;
-            modVcaGain = modEnvelope.process(args.sampleTime, triggerVoltage, attackTime, decayTime, fixedCurve);
-            finalVcaGain = finalEnvelope.process(args.sampleTime, triggerVoltage, attackTime, decayTime, fixedCurve);
         }
 
-        // Calculate modulation signal (post-VCA) for FM/TM/AM
-        float modOutputWithVca = modOutput * modVcaGain;
-        // For external input, we need to apply VCA to the original bipolar signal, not the unipolar output
-        float modSignalForModulation;
-        if (inputs[MOD_EXT_IN].isConnected()) {
-            // Apply VCA directly to the external bipolar signal
-            modSignalForModulation = modSignal * modVcaGain;
-        } else {
-            // Convert unipolar output back to bipolar for internal oscillator
-            modSignalForModulation = (modOutputWithVca - 5.f) / 5.f;
-        }
-
-        // Get FINAL frequency from knob (exponential mapping done in ParamQuantity)
+        // Get FINAL frequency
         float finalFreqKnob = smoothedFinalFreq.process();
         const float kFinalFreqKnobMin = 20.0f;
         const float kFinalFreqKnobMax = 8000.0f;
@@ -1124,233 +1257,156 @@ struct NIGOQ : Module {
             finalFreq *= std::pow(2.f, voct);
         }
 
-        // Apply external Linear FM if connected (enhanced linear FM)
+        // Apply external Linear FM if connected
         if (inputs[FINAL_FM_IN].isConnected()) {
             float fmAmount = params[FINAL_FM_ATTEN].getValue();
-            float fmSignal = inputs[FINAL_FM_IN].getVoltage() / 5.f; // Normalize to ±1
-            // Enhanced FM: up to 10x frequency modulation for stronger effect
+            float fmSignal = inputs[FINAL_FM_IN].getVoltage() / 5.f;
             finalFreq *= (1.f + fmSignal * fmAmount * 10.f);
         }
 
-        // Apply internal Through-Zero Linear FM from Mod oscillator (post-VCA)
-        float fmModAmount = smoothedFmAmt.process();  // Gray FM knob
+        // Internal FM amount
+        float fmModAmount = smoothedFmAmt.process();
         if (inputs[FM_AMT_CV].isConnected()) {
-            float fmAttenuation = params[FM_AMT_ATTEN].getValue();  // White attenuator knob
-            float fmCV = inputs[FM_AMT_CV].getVoltage() / 10.f;  // 0-10V to 0-1
+            float fmAttenuation = params[FM_AMT_ATTEN].getValue();
+            float fmCV = inputs[FM_AMT_CV].getVoltage() / 10.f;
             fmModAmount += fmCV * fmAttenuation;
             fmModAmount = clamp(fmModAmount, 0.f, 1.f);
         }
 
-        // True Through-Zero FM (like Befaco Pony VCO)
-        // Calculate base phase increment
-        float basePhaseInc = finalFreq * args.sampleTime;
-
-        // Calculate FM phase increment
-        float fmPhaseInc = 0.0f;
-        if (fmModAmount > 0.0f) {
-            // Exponential scaling for more musical FM control
-            float fmIndex = fmModAmount * fmModAmount * 4.f;  // Squared response, up to 4x
-
-            // FM phase increment: frequency * FM signal * sample time
-            // modSignalForModulation ranges from -1 to 1
-            // When FM signal is negative, phase increment becomes negative (oscillator runs backwards)
-            fmPhaseInc = finalFreq * modSignalForModulation * fmIndex * args.sampleTime;
-        }
-
-        // Total phase increment can be negative for true TZ-FM
-        float finalDeltaPhase = basePhaseInc + fmPhaseInc;
-
-        // Update final phase with TZ-FM phase increment (can be negative)
-        finalPhase += finalDeltaPhase;
-
-        // Get sync mode
-        int syncMode = (int)params[SYNC_MODE].getValue();
-
-        // Detect sync trigger BEFORE wrapping (when FINAL crosses 1.0)
-        bool syncTrigger = false;
-        if (finalPhase >= 1.0f && prevFinalPhase < 1.0f) {
-            syncTrigger = true;
-        }
-
-        // Also detect negative crossing for TZ-FM
-        if (finalPhase < 0.0f && prevFinalPhase >= 0.0f) {
-            syncTrigger = true;
-        }
-
-        // Apply sync to MOD oscillator based on mode
-        if (syncTrigger && syncMode > 0) {
-            if (syncMode == 2) {
-                // Hard sync: reset MOD phase immediately
-                modPhase = 0.f;
-            } else if (syncMode == 1) {
-                // Soft sync: only reset MOD if its phase is in latter half
-                if (modPhase > 0.5f) {
-                    modPhase = 0.f;
-                }
-            }
-        }
-
-        // Wrap phase to [0, 1] using floor (like Befaco)
-        finalPhase = finalPhase - std::floor(finalPhase);
-
-        float finalSignal;
-
-        // Check if external final input is connected
-        if (inputs[FINAL_EXT_IN].isConnected()) {
-            // Use external input (assuming ±5V audio range)
-            finalSignal = inputs[FINAL_EXT_IN].getVoltage() / 5.f; // Normalize to ±1
-            finalSignal = clamp(finalSignal, -1.f, 1.f);
-        } else {
-            // Generate Buchla-style "sine" with harmonics using internal oscillator
-            // Base sine wave
-            float fundamental = std::sin(2.f * M_PI * finalPhase);
-
-            // Add 2nd harmonic (octave) with about 8% amplitude
-            float harmonic2 = 0.08f * std::sin(4.f * M_PI * finalPhase);
-
-            // Add 3rd harmonic with about 5% amplitude
-            float harmonic3 = 0.05f * std::sin(6.f * M_PI * finalPhase);
-
-            // Mix them together
-            finalSignal = fundamental + harmonic2 + harmonic3;
-
-            // Normalize to maintain roughly -1 to 1 range
-            finalSignal *= 0.92f; // Slight attenuation to prevent clipping
-        }
-
-        // Apply VCA to oscillator outputs
-        // Note: modOutputWithVca and modSignalForModulation were already calculated above for FM
-        float finalOutput = finalSignal * 5.f;  // Raw final output (for scope)
-        float finalOutputWithVca = finalOutput * finalVcaGain;  // Apply VCA
-
-        // ===== FINAL Output Processing Chain: VCA -> Fold -> Order -> LPF =====
-
-        // For FINAL output: Always process the raw signal, then apply VCA at the end
-        // This allows the processing to work even when testing without triggers
-        // finalSignal already contains the raw principal signal (±1)
-
-        // 1. WAVEFOLDING - using HARMONICS knob (black knob at 125, 220)
+        // Get fold amount
         float foldAmount = smoothedHarmonics.process();
-        // Apply CV modulation if connected
         if (inputs[HARMONICS_CV].isConnected()) {
-            float foldCV = inputs[HARMONICS_CV].getVoltage() / 10.f;  // 0-10V to 0-1
+            float foldCV = inputs[HARMONICS_CV].getVoltage() / 10.f;
             foldAmount += foldCV;
             foldAmount = clamp(foldAmount, 0.f, 1.f);
         }
 
-        // Apply TM (Timbre Modulation) from Mod oscillator (post-VCA)
-        float tmAmount = smoothedFoldAmt.process();  // Gray TM knob
+        // TM amount
+        float tmAmount = smoothedFoldAmt.process();
         if (inputs[FOLD_AMT_CV].isConnected()) {
-            float tmAttenuation = params[FOLD_AMT_ATTEN].getValue();  // White attenuator knob
-            float tmCV = inputs[FOLD_AMT_CV].getVoltage() / 10.f;  // 0-10V to 0-1
+            float tmAttenuation = params[FOLD_AMT_ATTEN].getValue();
+            float tmCV = inputs[FOLD_AMT_CV].getVoltage() / 10.f;
             tmAmount += tmCV * tmAttenuation;
             tmAmount = clamp(tmAmount, 0.f, 1.f);
         }
-        if (tmAmount > 0.0f) {
-            // Modulate the fold amount with the post-VCA mod signal
-            // modSignalForModulation ranges from -1 to 1, convert to 0-1 for unipolar modulation
-            float timbreModulation = (modSignalForModulation * 0.5f + 0.5f) * tmAmount;
-            foldAmount += timbreModulation;  // Add full range modulation (0 to 1)
-            foldAmount = clamp(foldAmount, 0.f, 1.f);
-        }
 
-        if (foldAmount > 0.0f) {
-            finalSignal = wavefold(finalSignal, foldAmount);
-        }
-
-        // 2. RECTIFY (Asymmetric rectifier for harmonic generation, after VCA)
+        // Rectify amount
         float rectifyAmount = smoothedOrder.process();
-        // Apply CV modulation if connected
         if (inputs[ORDER_CV].isConnected()) {
-            float rectifyCV = inputs[ORDER_CV].getVoltage() / 10.f;  // 0-10V to 0-1
+            float rectifyCV = inputs[ORDER_CV].getVoltage() / 10.f;
             rectifyAmount += rectifyCV;
             rectifyAmount = clamp(rectifyAmount, 0.f, 1.f);
         }
 
-        // Apply RECT Modulation from Mod oscillator (post-VCA)
-        float rectModAmount = smoothedSymAmt.process();  // Gray knob (now RECT Mod)
+        // RECT modulation amount
+        float rectModAmount = smoothedSymAmt.process();
         if (inputs[AM_AMT_CV].isConnected()) {
-            float rectModAttenuation = params[AM_AMT_ATTEN].getValue();  // White attenuator knob
-            float rectModCV = inputs[AM_AMT_CV].getVoltage() / 10.f;  // 0-10V to 0-1
+            float rectModAttenuation = params[AM_AMT_ATTEN].getValue();
+            float rectModCV = inputs[AM_AMT_CV].getVoltage() / 10.f;
             rectModAmount += rectModCV * rectModAttenuation;
             rectModAmount = clamp(rectModAmount, 0.f, 1.f);
         }
-        if (rectModAmount > 0.0f) {
-            // Modulate rectification with the post-VCA mod signal
-            // modSignalForModulation ranges from -1 to 1, convert to unipolar for modulation
-            float rectModulation = (modSignalForModulation * 0.5f + 0.5f) * rectModAmount;
-            rectifyAmount += rectModulation;  // Add full modulation range (up to 100%)
-            rectifyAmount = clamp(rectifyAmount, 0.f, 1.f);
-        }
 
-        finalSignal = asymmetricRectifier(finalSignal, rectifyAmount);
-
-        // 3. LOWPASS FILTER (after VCA)
-        float lpfCutoffParam = smoothedLpfCutoff.process();  // 0-1
-        // Map parameter to frequency range (10Hz - 20kHz, exponential)
+        // LPF cutoff
+        float lpfCutoffParam = smoothedLpfCutoff.process();
         const float kLpfCutoffMin = 10.0f;
         const float kLpfCutoffMax = 20000.0f;
         float lpfCutoff = kLpfCutoffMin * std::pow(kLpfCutoffMax / kLpfCutoffMin, lpfCutoffParam);
 
-        // Apply CV modulation if connected
         if (inputs[LPF_CUTOFF_CV].isConnected()) {
-            float lpfCV = inputs[LPF_CUTOFF_CV].getVoltage() / 10.f;  // 0-10V to 0-1
-            float cvAmount = lpfCV * 2.f - 1.f;  // Convert to bipolar -1 to 1
-            // Apply exponential CV scaling
-            lpfCutoff *= std::pow(2.f, cvAmount * 2.f);  // ±2 octaves per ±1 CV
+            float lpfCV = inputs[LPF_CUTOFF_CV].getVoltage() / 10.f;
+            float cvAmount = lpfCV * 2.f - 1.f;
+            lpfCutoff *= std::pow(2.f, cvAmount * 2.f);
         }
 
-        // Clamp cutoff to valid range
-        lpfCutoff = clamp(lpfCutoff, 20.f, args.sampleRate * 0.49f);
+        lpfCutoff = clamp(lpfCutoff, 20.f, args.sampleRate * oversampleRate / 2.f * 0.49f);
 
-        // Update and apply filter
-        lpFilter.setCutoff(lpfCutoff);
-        finalSignal = lpFilter.process(finalSignal);
+        // Bass amount
+        float bassAmount = smoothedBass.process();
 
-        // Apply VCA at the end (after all processing) and scale to ±5V range
-        finalOutputWithVca = finalSignal * 5.f * finalVcaGain;
+        // Build processing state
+        ProcessState state;
+        state.modFreq = modFreq;
+        state.waveMorph = waveMorph;
+        state.finalFreq = finalFreq;
+        state.fmModAmount = fmModAmount;
+        state.foldAmount = foldAmount;
+        state.tmAmount = tmAmount;
+        state.rectifyAmount = rectifyAmount;
+        state.rectModAmount = rectModAmount;
+        state.lpfCutoff = lpfCutoff;
+        state.bassAmount = bassAmount;
+        state.triggerVoltage = triggerVoltage;
+        state.decayTime = decayTime;
+        state.isLongDecay = isLongDecay;
 
-        // BASS knob: Add clean sine to processed signal (with soft clipping)
-        float bassAmount = smoothedBass.process();  // 0 to 1
-        if (bassAmount > 0.0f) {
-            // finalOutput contains the clean sine (before processing)
-            // finalOutputWithVca contains the processed signal
-            // Add sine directly to the processed signal, scaled up to 2x for stronger effect
-            float cleanSine = finalOutput * finalVcaGain * bassAmount * 2.0f;  // Scale sine by bass amount * 2
-            finalOutputWithVca = finalOutputWithVca + cleanSine;
+        // ===== BLOCK PROCESSING (Like Surge XT) =====
+        // Output variables for this sample
+        float modOutputFinal, finalOutputFinal, finalSineOutputFinal;
 
-            // Soft clipping using tanh to prevent clipping while maintaining musicality
-            // Only apply soft clipping if the signal exceeds ±5V
-            if (std::abs(finalOutputWithVca) > 5.0f) {
-                float sign = finalOutputWithVca > 0 ? 1.0f : -1.0f;
-                // Soft clip the excess above 5V
-                float excess = std::abs(finalOutputWithVca) - 5.0f;
-                finalOutputWithVca = sign * (5.0f + std::tanh(excess * 0.3f) * 2.0f);
+        if (oversampleRate == 1) {
+            // No oversampling - direct processing
+            auto [modOut, finalOut, sineOut] = processSingleSample(state, args.sampleTime);
+            modOutputFinal = modOut;
+            finalOutputFinal = finalOut;
+            finalSineOutputFinal = sineOut;
+        } else {
+            // Block-based 2x oversampling (only 2x supported)
+            if (processPosition >= BLOCK_SIZE) {
+                processPosition = 0;
+
+                // Calculate oversample time (2x only)
+                float oversampledSampleTime = args.sampleTime / 2.0f;
+                int blockSizeOS = BLOCK_SIZE * 2;  // 16 samples
+
+                // Process entire block at 2x rate
+                for (int i = 0; i < blockSizeOS; i++) {
+                    auto [modOut, finalOut, sineOut] = processSingleSample(state, oversampledSampleTime);
+                    modOutputBuffer[i] = modOut;
+                    finalOutputBuffer[i] = finalOut;
+                    finalSineBuffer[i] = sineOut;
+                }
+
+                // Downsample: 2x → 1x (16 → 8 samples)
+                // Note: process_block_D2 requires (floatL, floatR, nsamples)
+                // For mono signals, use same buffer for both L and R
+                downFilter1.process_block_D2(modOutputBuffer, modOutputBuffer, BLOCK_SIZE * 2);
+                downFilter2.process_block_D2(finalOutputBuffer, finalOutputBuffer, BLOCK_SIZE * 2);
+                downFilter3.process_block_D2(finalSineBuffer, finalSineBuffer, BLOCK_SIZE * 2);
+
+                // Copy downsampled results
+                for (int i = 0; i < BLOCK_SIZE; i++) {
+                    modOutputDownsampled[i] = modOutputBuffer[i];
+                    finalOutputDownsampled[i] = finalOutputBuffer[i];
+                    finalSineDownsampled[i] = finalSineBuffer[i];
+                }
             }
+
+            // Output current sample from downsampled buffers
+            modOutputFinal = modOutputDownsampled[processPosition];
+            finalOutputFinal = finalOutputDownsampled[processPosition];
+            finalSineOutputFinal = finalSineDownsampled[processPosition];
+
+            processPosition++;
         }
 
         // Set outputs
-        outputs[MOD_SIGNAL_OUT].setVoltage(modOutputWithVca);
-        outputs[FINAL_SINE_OUT].setVoltage(finalOutput * finalVcaGain);  // Clean sine output (with VCA)
-        outputs[FINAL_FINAL_OUT].setVoltage(finalOutputWithVca);  // Mixed output with Bass control
+        outputs[MOD_SIGNAL_OUT].setVoltage(modOutputFinal);
+        outputs[FINAL_SINE_OUT].setVoltage(finalSineOutputFinal);
+        outputs[FINAL_FINAL_OUT].setVoltage(finalOutputFinal);
 
-        // Trigger light control (exactly like Observer)
+        // Trigger light control
         bool trig = !params[TRIG_PARAM].getValue();
         lights[TRIG_LIGHT].setBrightness(trig);
 
-        // Detect trigger if no longer recording (100% copy from VCV Scope)
+        // Scope recording
         if (bufferIndex >= SCOPE_BUFFER_SIZE) {
             bool triggered = false;
 
-            // Trigger immediately if trigger detection is disabled
             if (!trig) {
                 triggered = true;
-            }
-            else {
-                // Reset if triggered - use FINAL output as trigger source
-                // Using exact rescale from Observer: 0.f to 0.001f range
-                float trigVoltage = finalOutput;
-                if (scopeTriggers[0].process(rescale(trigVoltage, 0.f, 0.001f, 0.f, 1.f))) {
+            } else {
+                if (scopeTriggers[0].process(rescale(finalSineOutputFinal, 0.f, 0.001f, 0.f, 1.f))) {
                     triggered = true;
                 }
             }
@@ -1364,16 +1420,12 @@ struct NIGOQ : Module {
             }
         }
 
-        // Add point to buffer if recording (100% copy from Observer logic)
         if (bufferIndex < SCOPE_BUFFER_SIZE) {
-            // Compute time
             float deltaTime = dsp::exp2_taylor5(-params[SCOPE_TIME].getValue()) / SCOPE_BUFFER_SIZE;
             int frameCount = (int) std::ceil(deltaTime * args.sampleRate);
 
-            // Get VCA-processed outputs for scope display
-            // Show the actual output that goes to the jacks
-            float modSample = modOutputWithVca / 5.0f - 1.0f;  // Convert 0-10V to -1..1
-            float finalSample = finalOutputWithVca / 5.0f;  // ±5V to ±1 for display
+            float modSample = modOutputFinal / 5.0f - 1.0f;
+            float finalSample = finalOutputFinal / 5.0f;
             currentFinal.min = std::min(currentFinal.min, finalSample);
             currentFinal.max = std::max(currentFinal.max, finalSample);
             currentMod.min = std::min(currentMod.min, modSample);
@@ -1381,10 +1433,8 @@ struct NIGOQ : Module {
 
             if (++frameIndex >= frameCount) {
                 frameIndex = 0;
-                // Push current point
                 finalBuffer[bufferIndex] = currentFinal;
                 modBuffer[bufferIndex] = currentMod;
-                // Reset current point
                 currentFinal = ScopePoint();
                 currentMod = ScopePoint();
                 bufferIndex++;
@@ -1676,52 +1726,23 @@ struct NIGOQWidget : ModuleWidget {
 
         menu->addChild(createMenuLabel("Oversampling"));
 
+        // Simple checkbox for 2x oversample on/off
         struct OversampleMenuItem : MenuItem {
             NIGOQ* module;
-            int oversampleRate;
             void onAction(const event::Action& e) override {
-                module->oversampleRate = oversampleRate;
+                module->oversampleRate = (module->oversampleRate == 2) ? 1 : 2;
                 module->setupOversamplingFilters();
             }
         };
 
-        auto addOversampleItem = [&](const char* label, int rate) {
-            OversampleMenuItem* item = createMenuItem<OversampleMenuItem>(label, CHECKMARK(module->oversampleRate == rate));
-            item->module = module;
-            item->oversampleRate = rate;
-            menu->addChild(item);
-        };
-
-        addOversampleItem("Off (x1)", 1);
-        addOversampleItem("x2", 2);
-        addOversampleItem("x4", 4);
-        addOversampleItem("x8", 8);
-        addOversampleItem("x16", 16);
-        addOversampleItem("x32", 32);
+        OversampleMenuItem* oversampleItem = createMenuItem<OversampleMenuItem>("2x Oversample", CHECKMARK(module->oversampleRate == 2));
+        oversampleItem->module = module;
+        menu->addChild(oversampleItem);
 
         menu->addChild(new MenuSeparator);
 
-        menu->addChild(createMenuLabel("Filter Quality"));
-
-        struct FilterQualityMenuItem : MenuItem {
-            NIGOQ* module;
-            int quality;
-            void onAction(const event::Action& e) override {
-                module->oversampleQuality = quality;
-                // Quality affects filter coefficients, but we keep it simple for now
-            }
-        };
-
-        auto addQualityItem = [&](const char* label, int quality) {
-            FilterQualityMenuItem* item = createMenuItem<FilterQualityMenuItem>(label, CHECKMARK(module->oversampleQuality == quality));
-            item->module = module;
-            item->quality = quality;
-            menu->addChild(item);
-        };
-
-        addQualityItem("Low (fast, minimal CPU)", 0);
-        addQualityItem("Medium (balanced)", 1);
-        addQualityItem("High (best quality)", 2);
+        // Surge XT HalfRateFilter has fixed quality (M=6, steep=true)
+        // No quality menu needed - it's always highest quality
 
         menu->addChild(new MenuSeparator);
 

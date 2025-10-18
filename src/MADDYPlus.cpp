@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -635,6 +636,8 @@ std::vector<bool> generateMADDYPlusEuclideanRhythm(int length, int fill, int shi
 }
 
 struct MADDYPlus : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         FREQ_PARAM,
         SWING_PARAM,
@@ -1504,6 +1507,7 @@ struct MADDYPlus : Module {
 
 json_t* dataToJson() override {
         json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         json_object_set_new(rootJ, "modeValue", json_integer(modeValue));
         json_object_set_new(rootJ, "clockSourceValue", json_integer(clockSourceValue));
 
@@ -1540,6 +1544,11 @@ json_t* dataToJson() override {
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
      json_t* modeJ = json_object_get(rootJ, "modeValue");
         if (modeJ) {
             modeValue = json_integer_value(modeJ);
@@ -2083,9 +2092,11 @@ struct Ch3ClockSourceParamQuantity : ParamQuantity {
 
 
 struct MADDYPlusWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     MADDYPlusWidget(MADDYPlus* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/12HP.svg")));
+        panelThemeHelper.init(this, "12HP");
 
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -2365,7 +2376,15 @@ resetButton->module = module;
         }
     };
 
-   void appendContextMenu(Menu* menu) override {
+    void step() override {
+        MADDYPlus* module = dynamic_cast<MADDYPlus*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
         MADDYPlus* module = getModule<MADDYPlus>();
         if (!module) return;
 
@@ -2531,6 +2550,8 @@ resetButton->module = module;
 
             menu->addChild(new TrackShiftMenu(module, trackId));
         }
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

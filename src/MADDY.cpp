@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -580,6 +581,8 @@ std::vector<bool> generateMADDYEuclideanRhythm(int length, int fill, int shift) 
 }
 
 struct MADDY : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         FREQ_PARAM,
         SWING_PARAM,
@@ -1062,9 +1065,10 @@ struct MADDY : Module {
 
 json_t* dataToJson() override {
         json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         json_object_set_new(rootJ, "modeValue", json_integer(modeValue));
         json_object_set_new(rootJ, "clockSourceValue", json_integer(clockSourceValue));
-        
+
         // 儲存所有軌道的攻擊時間
         json_t* attackTimesJ = json_array();
         for (int i = 0; i < 3; ++i) {
@@ -1083,6 +1087,11 @@ json_t* dataToJson() override {
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
    	 json_t* modeJ = json_object_get(rootJ, "modeValue");
 	    if (modeJ) {
 	        modeValue = json_integer_value(modeJ);
@@ -1367,10 +1376,12 @@ struct ClockSourceParamQuantity : ParamQuantity {
 };
 
 struct MADDYWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     MADDYWidget(MADDY* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
-        
+        panelThemeHelper.init(this, "EuclideanRhythm");
+
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
         addChild(new MADDYEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "M A D D Y", 12.f, nvgRGB(255, 200, 0), true));
@@ -1629,7 +1640,9 @@ struct MADDYWidget : ModuleWidget {
             
             menu->addChild(new TrackShiftMenu(module, trackId));
         }
+
+        addPanelThemeMenu(menu, module);
     }
-}; 
+};
 
 Model* modelMADDY = createModel<MADDY, MADDYWidget>("MADDY");

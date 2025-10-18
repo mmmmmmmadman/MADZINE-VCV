@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -363,6 +364,8 @@ struct OversampledSineVCO {
 };
 
 struct TWNC : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         GLOBAL_LENGTH_PARAM,
         MANUAL_RESET_PARAM,
@@ -650,6 +653,19 @@ struct TWNC : Module {
         mainVCA.reset();
     }
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+    }
+
     void process(const ProcessArgs& args) override {
         bool globalClockActive = inputs[GLOBAL_CLOCK_INPUT].isConnected();
         bool globalClockTriggered = false;
@@ -826,9 +842,11 @@ struct TWNC : Module {
 };
 
 struct TWNCWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     TWNCWidget(TWNC* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -930,6 +948,21 @@ struct TWNCWidget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(74, 366), Vec(20, 6), "VCA", 6.f, nvgRGB(255, 133, 133), true));
         addChild(new TechnoEnhancedTextLabel(Vec(74, 372), Vec(20, 6), "ENV", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(102, 368), module, TWNC::TRACK2_VCA_ENV_OUTPUT));
+    }
+
+    void step() override {
+        TWNC* module = dynamic_cast<TWNC*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        TWNC* module = dynamic_cast<TWNC*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

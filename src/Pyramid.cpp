@@ -1,7 +1,10 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct Pyramid : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         X_PARAM,
         Y_PARAM,
@@ -87,6 +90,24 @@ struct Pyramid : Module {
         configOutput(BL_LOWER_OUTPUT, "7");
         configOutput(BR_LOWER_OUTPUT, "8");
         configOutput(SEND_OUTPUT, "Send");
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "sendPreLevel", json_boolean(sendPreLevel));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+        json_t* sendJ = json_object_get(rootJ, "sendPreLevel");
+        if (sendJ) {
+            sendPreLevel = json_boolean_value(sendJ);
+        }
     }
 
     float distance3D(float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -535,9 +556,11 @@ struct Pyramid3DDisplay : LedDisplay {
 };
 
 struct PyramidWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     PyramidWidget(Pyramid* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -595,12 +618,23 @@ struct PyramidWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(104, 368), module, Pyramid::BR_LOWER_OUTPUT));
     }
     
-    void appendContextMenu(Menu* menu) override {
-        Pyramid* module = getModule<Pyramid>();
+
+    void step() override {
+        Pyramid* module = dynamic_cast<Pyramid*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        Pyramid* module = dynamic_cast<Pyramid*>(this->module);
         if (!module) return;
         
         menu->addChild(new MenuSeparator);
         menu->addChild(createBoolPtrMenuItem("Send Pre-Level", "", &module->sendPreLevel));
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

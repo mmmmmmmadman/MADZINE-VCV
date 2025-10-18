@@ -1,7 +1,10 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct QQ : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamIds {
         TRACK1_DECAY_TIME_PARAM,
         TRACK1_SHAPE_PARAM,
@@ -42,6 +45,8 @@ struct QQ : Module {
         dsp::PulseGenerator trigPulse;
         float phase = 0.f;
         bool gateState = false;
+        float attackTime = 0.001f;  // Default 1ms attack time
+        float lastEnvOutput = 0.f;  // For retrigger mode
     };
 
     struct ScopePoint {
@@ -49,8 +54,8 @@ struct QQ : Module {
     };
 
     TrackState tracks[3];
-    
-    static constexpr float ATTACK_TIME = 0.001f;
+
+    bool retriggerEnabled = false;  // Retrigger option
     static constexpr int SCOPE_BUFFER_SIZE = 128;
     
     ScopePoint scopeBuffer[3][SCOPE_BUFFER_SIZE];
@@ -94,6 +99,47 @@ struct QQ : Module {
         configLight(TRACK3_TRIG_LIGHT, "Track 3 Trigger");
     }
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+
+        // Save attack times for each track
+        json_t* attackTimesJ = json_array();
+        for (int i = 0; i < 3; i++) {
+            json_array_append_new(attackTimesJ, json_real(tracks[i].attackTime));
+        }
+        json_object_set_new(rootJ, "attackTimes", attackTimesJ);
+
+        // Save retrigger option
+        json_object_set_new(rootJ, "retriggerEnabled", json_boolean(retriggerEnabled));
+
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
+        // Load attack times for each track
+        json_t* attackTimesJ = json_object_get(rootJ, "attackTimes");
+        if (attackTimesJ) {
+            for (int i = 0; i < 3; i++) {
+                json_t* attackTimeJ = json_array_get(attackTimesJ, i);
+                if (attackTimeJ) {
+                    tracks[i].attackTime = json_real_value(attackTimeJ);
+                }
+            }
+        }
+
+        // Load retrigger option
+        json_t* retriggerJ = json_object_get(rootJ, "retriggerEnabled");
+        if (retriggerJ) {
+            retriggerEnabled = json_boolean_value(retriggerJ);
+        }
+    }
+
     float smoothDecayEnvelope(float t, float totalTime, float shapeParam) {
         if (t >= totalTime) return 0.f;
         
@@ -118,15 +164,16 @@ struct QQ : Module {
     void process(const ProcessArgs& args) override {
         for (int i = 0; i < 3; i++) {
             bool triggered = tracks[i].trigTrigger.process(inputs[TRACK1_TRIG_INPUT + i].getVoltage(), 0.1f, 2.f);
-            
+
             if (triggered) {
+                // Always restart phase on trigger
                 tracks[i].phase = 0.f;
                 tracks[i].gateState = true;
                 tracks[i].trigPulse.trigger(0.03f);
             }
-            
+
             lights[TRACK1_TRIG_LIGHT + i].setBrightness(tracks[i].trigPulse.process(args.sampleTime) ? 1.f : 0.f);
-            
+
             float decayTime, shapeParam;
             if (i == 0) {
                 decayTime = params[TRACK1_DECAY_TIME_PARAM].getValue();
@@ -159,15 +206,26 @@ struct QQ : Module {
                 }
                 shapeParam = params[TRACK3_SHAPE_PARAM].getValue();
             }
-            
+
             float envOutput = 0.f;
-            
+
             if (tracks[i].gateState) {
-                if (tracks[i].phase < ATTACK_TIME) {
-                    envOutput = tracks[i].phase / ATTACK_TIME;
+                float attackTime = tracks[i].attackTime;  // Use per-track attack time
+
+                if (tracks[i].phase < attackTime) {
+                    // Attack phase
+                    if (retriggerEnabled && tracks[i].lastEnvOutput > 0.f) {
+                        // Retrigger mode: blend from last envelope output to 1.0
+                        float attackProgress = tracks[i].phase / attackTime;
+                        envOutput = tracks[i].lastEnvOutput + (1.f - tracks[i].lastEnvOutput) * attackProgress;
+                    } else {
+                        // Normal mode: attack from 0 to 1.0
+                        envOutput = tracks[i].phase / attackTime;
+                    }
                 } else {
-                    float decayPhase = tracks[i].phase - ATTACK_TIME;
-                    
+                    // Decay phase
+                    float decayPhase = tracks[i].phase - attackTime;
+
                     if (decayPhase >= decayTime) {
                         tracks[i].gateState = false;
                         envOutput = 0.f;
@@ -175,10 +233,13 @@ struct QQ : Module {
                         envOutput = smoothDecayEnvelope(decayPhase, decayTime, shapeParam);
                     }
                 }
-                
+
                 tracks[i].phase += args.sampleTime;
             }
-            
+
+            // Store last envelope output for retrigger
+            tracks[i].lastEnvOutput = envOutput;
+
             outputs[TRACK1_ENV_OUTPUT + i].setVoltage(envOutput * 10.f);
         }
         
@@ -398,10 +459,12 @@ struct QQScopeDisplay : LedDisplay {
 };
 
 struct QQWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     QQWidget(QQ* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SwingLFO.svg")));
-        
+        panelThemeHelper.init(this, "SwingLFO");
+
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
         addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Q_Q", 12.f, nvgRGB(255, 200, 0), true));
@@ -482,6 +545,100 @@ struct QQWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 343), module, QQ::TRACK1_ENV_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(15, 368), module, QQ::TRACK2_ENV_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 368), module, QQ::TRACK3_ENV_OUTPUT));
+    }
+
+    void step() override {
+        QQ* module = dynamic_cast<QQ*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        QQ* module = dynamic_cast<QQ*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
+
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Attack Time"));
+
+        // Attack Time Slider for Track 1
+        struct AttackTimeSlider1 : ui::Slider {
+            struct AttackTimeQuantity : Quantity {
+                QQ* module;
+                int trackIndex;
+                AttackTimeQuantity(QQ* module, int trackIndex) : module(module), trackIndex(trackIndex) {}
+
+                void setValue(float value) override {
+                    if (module) {
+                        value = clamp(value, 0.0f, 1.0f);
+                        float attackTime = rescale(value, 0.0f, 1.0f, 0.0005f, 0.020f);
+                        module->tracks[trackIndex].attackTime = attackTime;
+                    }
+                }
+
+                float getValue() override {
+                    if (module) {
+                        return rescale(module->tracks[trackIndex].attackTime, 0.0005f, 0.020f, 0.0f, 1.0f);
+                    }
+                    return 0.1f;
+                }
+
+                float getDefaultValue() override { return rescale(0.001f, 0.0005f, 0.020f, 0.0f, 1.0f); }
+                float getMinValue() override { return 0.0f; }
+                float getMaxValue() override { return 1.0f; }
+                std::string getLabel() override { return "Track " + std::to_string(trackIndex + 1) + " Attack"; }
+                std::string getUnit() override { return " ms"; }
+                std::string getDisplayValueString() override {
+                    if (module) {
+                        return string::f("%.2f", module->tracks[trackIndex].attackTime * 1000.0f);
+                    }
+                    return "1.00";
+                }
+            };
+
+            AttackTimeSlider1(QQ* module, int trackIndex) {
+                box.size.x = 200.0f;
+                quantity = new AttackTimeQuantity(module, trackIndex);
+            }
+
+            ~AttackTimeSlider1() {
+                delete quantity;
+            }
+        };
+
+        // Track 1
+        menu->addChild(createMenuLabel("Track 1"));
+        AttackTimeSlider1* slider1 = new AttackTimeSlider1(module, 0);
+        menu->addChild(slider1);
+
+        // Track 2
+        menu->addChild(createMenuLabel("Track 2"));
+        AttackTimeSlider1* slider2 = new AttackTimeSlider1(module, 1);
+        menu->addChild(slider2);
+
+        // Track 3
+        menu->addChild(createMenuLabel("Track 3"));
+        AttackTimeSlider1* slider3 = new AttackTimeSlider1(module, 2);
+        menu->addChild(slider3);
+
+        // Retrigger option
+        menu->addChild(new MenuSeparator);
+        struct RetriggerItem : ui::MenuItem {
+            QQ* module;
+            void onAction(const event::Action& e) override {
+                if (module) {
+                    module->retriggerEnabled = !module->retriggerEnabled;
+                }
+            }
+        };
+        RetriggerItem* retriggerItem = new RetriggerItem;
+        retriggerItem->text = "Retrigger";
+        retriggerItem->rightText = CHECKMARK(module->retriggerEnabled);
+        retriggerItem->module = module;
+        menu->addChild(retriggerItem);
     }
 };
 

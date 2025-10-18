@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct TechnoEnhancedTextLabel : TransparentWidget {
     std::string text;
@@ -106,6 +107,8 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct U8 : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         LEVEL_PARAM,
         DUCK_LEVEL_PARAM,
@@ -166,6 +169,19 @@ struct U8 : Module {
                 delayBuffer[c][i] = 0.0f;
             }
             delayWriteIndex[c] = 0;
+        }
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
         }
     }
 
@@ -302,9 +318,11 @@ struct U8 : Module {
 };
 
 struct U8Widget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     U8Widget(U8* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/SwingLFO.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
 
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -338,6 +356,21 @@ struct U8Widget : ModuleWidget {
 
         addOutput(createOutputCentered<PJ301MPort>(Vec(box.size.x - 15, 343), module, U8::LEFT_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(box.size.x - 15, 368), module, U8::RIGHT_OUTPUT));
+    }
+
+    void step() override {
+        U8* module = dynamic_cast<U8*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        U8* module = dynamic_cast<U8*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -169,6 +170,8 @@ struct UnifiedEnvelope {
 };
 
 struct TWNCLight : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         GLOBAL_LENGTH_PARAM,
         TRACK1_FILL_PARAM,
@@ -399,6 +402,19 @@ struct TWNCLight : Module {
         mainVCA.reset();
     }
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+    }
+
     void process(const ProcessArgs& args) override {
         bool globalClockActive = inputs[GLOBAL_CLOCK_INPUT].isConnected();
         bool globalClockTriggered = false;
@@ -546,9 +562,11 @@ struct TWNCLight : Module {
 };
 
 struct TWNCLightWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     TWNCLightWidget(TWNCLight* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -609,6 +627,21 @@ struct TWNCLightWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 343), module, TWNCLight::MAIN_VCA_ENV_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(15, 368), module, TWNCLight::TRACK1_FM_ENV_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 368), module, TWNCLight::TRACK2_VCA_ENV_OUTPUT));
+    }
+
+    void step() override {
+        TWNCLight* module = dynamic_cast<TWNCLight*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        TWNCLight* module = dynamic_cast<TWNCLight*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

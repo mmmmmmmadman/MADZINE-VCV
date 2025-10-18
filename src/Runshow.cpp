@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <chrono>
 
 // Enhanced text label (like MADDY+)
@@ -37,6 +38,8 @@ struct EnhancedTextLabel : TransparentWidget {
 };
 
 struct Runshow : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         RESET_PARAM,
         START_STOP_PARAM,
@@ -430,6 +433,7 @@ struct Runshow : Module {
         json_object_set_new(rootJ, "eighth_notes", json_integer(eighth_notes));
         json_object_set_new(rootJ, "sixteenth_notes", json_integer(sixteenth_notes));
         json_object_set_new(rootJ, "elapsedSeconds", json_real(elapsedSeconds));
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         return rootJ;
     }
 
@@ -461,6 +465,11 @@ struct Runshow : Module {
         json_t* elapsedSecondsJ = json_object_get(rootJ, "elapsedSeconds");
         if (elapsedSecondsJ)
             elapsedSeconds = json_real_value(elapsedSecondsJ);
+
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
     }
 };
 
@@ -764,10 +773,12 @@ struct WhiteBottomPanel : TransparentWidget {
 };
 
 struct RunshowWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
 
     RunshowWidget(Runshow* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/12HP.svg")));
+        panelThemeHelper.init(this, "12HP");
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // Screws removed for cleaner look
@@ -821,6 +832,21 @@ struct RunshowWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(107, 368), module, Runshow::BAR_2_OUTPUT));        // 第2小節
         addOutput(createOutputCentered<PJ301MPort>(Vec(137, 368), module, Runshow::BAR_3_OUTPUT));        // 第3小節
         addOutput(createOutputCentered<PJ301MPort>(Vec(168, 368), module, Runshow::BAR_4_OUTPUT));        // 第4小節
+    }
+
+    void step() override {
+        Runshow* module = dynamic_cast<Runshow*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        Runshow* module = dynamic_cast<Runshow*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

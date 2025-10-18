@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <numeric>
 #include <algorithm>
@@ -92,6 +93,8 @@ std::vector<bool> generateEuclideanRhythm(int length, int fill, int shift) {
 }
 
 struct EuclideanRhythm : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         MANUAL_RESET_PARAM,
         TRACK1_DIVMULT_PARAM,
@@ -429,6 +432,19 @@ struct EuclideanRhythm : Module {
         chain123.reset();
     }
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+    }
+
     void process(const ProcessArgs& args) override {
         bool globalClockActive = inputs[GLOBAL_CLOCK_INPUT].isConnected();
         bool globalClockTriggered = false;
@@ -560,9 +576,11 @@ struct EuclideanRhythm : Module {
 };
 
 struct EuclideanRhythmWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     EuclideanRhythmWidget(EuclideanRhythm* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -643,6 +661,21 @@ struct EuclideanRhythmWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(mixX - 12, 337), Vec(25, 10), "OR", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(mixX, outputY), module, EuclideanRhythm::MASTER_TRIG_OUTPUT));
         addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(Vec(mixX + 8, outputY + 17), module, EuclideanRhythm::OR_RED_LIGHT));
+    }
+
+    void step() override {
+        EuclideanRhythm* module = dynamic_cast<EuclideanRhythm*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        EuclideanRhythm* module = dynamic_cast<EuclideanRhythm*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

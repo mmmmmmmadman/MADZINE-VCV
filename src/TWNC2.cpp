@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -150,6 +151,8 @@ struct BasicSineVCO {
 };
 
 struct TWNC2 : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         KICK_VOLUME_PARAM,
         KICK_FREQ_PARAM,
@@ -302,6 +305,19 @@ struct TWNC2 : Module {
     void onReset() override {
     }
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+    }
+
     void process(const ProcessArgs& args) override {
         float kickEnvCV = clamp(inputs[KICK_ENV_INPUT].getVoltage() / 10.0f, 0.0f, 1.0f);
         float kickAccentCV = clamp(inputs[KICK_ACCENT_INPUT].getVoltage() / 10.0f, 0.0f, 1.0f);
@@ -430,9 +446,11 @@ struct TWNC2 : Module {
 };
 
 struct TWNC2Widget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     TWNC2Widget(TWNC2* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -531,6 +549,21 @@ struct TWNC2Widget : ModuleWidget {
         
         addChild(new TechnoEnhancedTextLabel(Vec(73, 362), Vec(20, 15), "R", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(100, 368), module, TWNC2::MIX_OUTPUT_R));
+    }
+
+    void step() override {
+        TWNC2* module = dynamic_cast<TWNC2*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        TWNC2* module = dynamic_cast<TWNC2*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

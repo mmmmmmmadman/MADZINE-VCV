@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <cmath>
 
 // Enhanced text label (same as other modules)
@@ -130,9 +131,8 @@ struct ADEnvelope {
     }
 
     float processTriggerEnvelope(float triggerVoltage, float sampleTime, float attack, float decay, float curve) {
-        bool isHighVoltage = (std::abs(triggerVoltage) > 9.5f);
-
-        if (phase == IDLE && isHighVoltage && trigger.process(triggerVoltage)) {
+        // Trigger on rising edge (SchmittTrigger uses 0.1V low / 2.0V high thresholds)
+        if (trigger.process(triggerVoltage)) {
             phase = ATTACK;
             phaseTime = 0.0f;
         }
@@ -177,17 +177,17 @@ struct ADEnvelope {
         attackTime = std::max(0.001f, attackTime);
         decayTime = std::max(0.001f, decayTime);
 
+        // Only use trigger envelope - gate voltage amplitude should NOT affect envelope output
         float triggerEnv = processTriggerEnvelope(triggerVoltage, sampleTime, attackTime, decayTime, curve);
-        float followerEnv = processEnvelopeFollower(triggerVoltage, sampleTime, attackTime, decayTime, curve);
 
-        float output = std::max(triggerEnv, followerEnv);
-
-        return output;
+        return triggerEnv;
     }
 };
 
 
 struct EnvVCA6 : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         // Channel 1
         CH1_ATTACK_PARAM,
@@ -309,6 +309,8 @@ struct EnvVCA6 : Module {
     bool gateOutputStates[6] = {false}; // Track gate output states
     bool lastEnvelopeActive[6] = {false}; // Track envelope state for end-of-cycle trigger
     dsp::PulseGenerator endOfCyclePulses[6]; // Generate end-of-cycle triggers
+    dsp::PulseGenerator startOfCyclePulses[6]; // Generate start-of-cycle triggers
+    bool lastGateHigh[6] = {false}; // Track gate input state for start trigger
 
     EnvVCA6() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -319,7 +321,11 @@ struct EnvVCA6 : Module {
             configParam(CH1_RELEASE_PARAM + i * 5, 0.f, 1.f, 0.5f, string::f("Ch %d Release", i + 1));
             configParam(CH1_OUT_VOL_PARAM + i * 5, 0.f, 1.f, 0.8f, string::f("Ch %d Out Volume", i + 1));
             configParam(CH1_GATE_TRIG_PARAM + i * 5, 0.f, 1.f, 0.f, string::f("Ch %d Manual Gate (Momentary)", i + 1));
-            configParam(CH1_SUM_LATCH_PARAM + i * 5, 0.f, 1.f, 0.f, string::f("Ch %d Sum Latch", i + 1));
+            if (i < 5) { // Only CH1-5 have sum buttons
+                configParam(CH1_SUM_LATCH_PARAM + i * 5, 0.f, 1.f, 0.f, string::f("Ch %d Sum to Ch6", i + 1));
+            } else { // CH6 sum button is disabled/hidden
+                configParam(CH1_SUM_LATCH_PARAM + i * 5, 0.f, 1.f, 0.f, "Disabled");
+            }
 
             // Configure inputs
             configInput(CH1_IN_L_INPUT + i * 4, string::f("Ch %d In L", i + 1));
@@ -345,7 +351,21 @@ struct EnvVCA6 : Module {
         }
 
         // Hidden parameter for gate output mode (controlled by context menu)
-        configParam(GATE_MODE_PARAM, 0.f, 1.f, 0.f, "Gate Output Mode");
+        // 0 = full cycle gate, 1 = end of cycle trigger, 2 = start+end triggers
+        configParam(GATE_MODE_PARAM, 0.f, 2.f, 0.f, "Gate Output Mode");
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
     }
 
     void process(const ProcessArgs& args) override {
@@ -394,12 +414,12 @@ struct EnvVCA6 : Module {
             float outL = inL * vcaGain;
             float outR = inR * vcaGain;
 
-            // Gate output logic (two modes)
-            bool gateMode = params[GATE_MODE_PARAM].getValue() > 0.5f; // 0 = full cycle, 1 = end trigger
+            // Gate output logic (three modes)
+            int gateMode = (int)params[GATE_MODE_PARAM].getValue(); // 0 = full cycle, 1 = end trigger, 2 = start+end
             float gateOutputVoltage = 0.f;
 
-            if (!gateMode) {
-                // Mode 0: Full cycle gate (current behavior)
+            if (gateMode == 0) {
+                // Mode 0: Full cycle gate (gate high during entire envelope)
                 if (combinedGate > 1.f) {
                     gateOutputStates[i] = true;
                 }
@@ -407,8 +427,8 @@ struct EnvVCA6 : Module {
                     gateOutputStates[i] = false;
                 }
                 gateOutputVoltage = gateOutputStates[i] ? 10.f : 0.f;
-            } else {
-                // Mode 1: End of cycle trigger
+            } else if (gateMode == 1) {
+                // Mode 1: End of cycle trigger only
                 bool envelopeActive = (envelopeOutput > 0.001f);
                 if (lastEnvelopeActive[i] && !envelopeActive) {
                     // Envelope just finished - trigger pulse
@@ -416,6 +436,27 @@ struct EnvVCA6 : Module {
                 }
                 lastEnvelopeActive[i] = envelopeActive;
                 gateOutputVoltage = endOfCyclePulses[i].process(args.sampleTime) ? 10.f : 0.f;
+            } else {
+                // Mode 2: Start + End of cycle triggers
+                bool gateHigh = (combinedGate > 1.f);
+                bool envelopeActive = (envelopeOutput > 0.001f);
+
+                // Detect rising edge of gate (start of cycle)
+                if (gateHigh && !lastGateHigh[i]) {
+                    startOfCyclePulses[i].trigger(1e-3f); // 1ms pulse at start
+                }
+                lastGateHigh[i] = gateHigh;
+
+                // Detect end of envelope (end of cycle)
+                if (lastEnvelopeActive[i] && !envelopeActive) {
+                    endOfCyclePulses[i].trigger(1e-3f); // 1ms pulse at end
+                }
+                lastEnvelopeActive[i] = envelopeActive;
+
+                // Output either trigger (start OR end)
+                bool startTrigger = startOfCyclePulses[i].process(args.sampleTime);
+                bool endTrigger = endOfCyclePulses[i].process(args.sampleTime);
+                gateOutputVoltage = (startTrigger || endTrigger) ? 10.f : 0.f;
             }
 
             // Set outputs
@@ -428,7 +469,7 @@ struct EnvVCA6 : Module {
             lights[CH1_VCA_LIGHT + i].setBrightness(vcaGain);
         }
 
-        // Sum outputs to CH6 (if sum latch is enabled)
+        // Sum outputs to CH6 (if sum latch is enabled) - ADD to CH6, don't replace
         float sumL = 0.f;
         float sumR = 0.f;
         float sumEnv = 0.f;
@@ -447,14 +488,18 @@ struct EnvVCA6 : Module {
             }
         }
 
-        // Override CH6 outputs with sum if any channels are summed
+        // ADD sum to CH6 outputs (not replace) if any channels are summed
         if (sumCount > 0) {
-            outputs[CH1_OUT_L_OUTPUT + 5 * 4].setVoltage(sumL); // CH6 L = Sum L
-            outputs[CH1_OUT_R_OUTPUT + 5 * 4].setVoltage(sumR); // CH6 R = Sum R
+            // Add summed audio to CH6's own output
+            float ch6L = outputs[CH1_OUT_L_OUTPUT + 5 * 4].getVoltage();
+            float ch6R = outputs[CH1_OUT_R_OUTPUT + 5 * 4].getVoltage();
+            outputs[CH1_OUT_L_OUTPUT + 5 * 4].setVoltage(ch6L + sumL);
+            outputs[CH1_OUT_R_OUTPUT + 5 * 4].setVoltage(ch6R + sumR);
 
-            // RMS envelope sum (prevents overload)
+            // Add RMS envelope sum to CH6's envelope
+            float ch6Env = outputs[CH1_ENV_OUTPUT + 5 * 4].getVoltage();
             float rmsEnv = std::sqrt(sumEnv / sumCount) * 10.f; // Back to 0-10V range
-            outputs[CH1_ENV_OUTPUT + 5 * 4].setVoltage(rmsEnv); // CH6 Env = Sum Env
+            outputs[CH1_ENV_OUTPUT + 5 * 4].setVoltage(std::max(ch6Env, rmsEnv)); // Use max to preserve CH6 envelope
         }
     }
 };
@@ -509,9 +554,11 @@ struct EnvVCA6ClickableLight : ParamWidget {
 };
 
 struct EnvVCA6Widget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     EnvVCA6Widget(EnvVCA6* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/12HP.svg")));
+        panelThemeHelper.init(this, "12HP");
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // Add module name and brand labels
@@ -579,7 +626,15 @@ struct EnvVCA6Widget : ModuleWidget {
         }
     }
 
-    void appendContextMenu(Menu* menu) override {
+    void step() override {
+        EnvVCA6* module = dynamic_cast<EnvVCA6*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
         EnvVCA6* module = dynamic_cast<EnvVCA6*>(this->module);
         if (!module) return;
 
@@ -590,27 +645,35 @@ struct EnvVCA6Widget : ModuleWidget {
 
         struct GateModeItem : MenuItem {
             EnvVCA6* module;
-            bool endTriggerMode;
+            int mode; // 0 = full cycle, 1 = end trigger, 2 = start+end
 
             void onAction(const event::Action& e) override {
-                module->params[EnvVCA6::GATE_MODE_PARAM].setValue(endTriggerMode ? 1.f : 0.f);
+                module->params[EnvVCA6::GATE_MODE_PARAM].setValue((float)mode);
             }
 
             void step() override {
-                rightText = (module->params[EnvVCA6::GATE_MODE_PARAM].getValue() > 0.5f == endTriggerMode) ? "✓" : "";
+                int currentMode = (int)module->params[EnvVCA6::GATE_MODE_PARAM].getValue();
+                rightText = (currentMode == mode) ? "✓" : "";
                 MenuItem::step();
             }
         };
 
-        GateModeItem* fullCycleItem = createMenuItem<GateModeItem>("Full Cycle Gate", "");
+        GateModeItem* fullCycleItem = createMenuItem<GateModeItem>("Full Cycle Gate", "Gate high during entire envelope");
         fullCycleItem->module = module;
-        fullCycleItem->endTriggerMode = false;
+        fullCycleItem->mode = 0;
         menu->addChild(fullCycleItem);
 
-        GateModeItem* endTriggerItem = createMenuItem<GateModeItem>("End of Cycle Trigger", "");
+        GateModeItem* endTriggerItem = createMenuItem<GateModeItem>("End of Cycle Trigger", "Trigger when envelope finishes");
         endTriggerItem->module = module;
-        endTriggerItem->endTriggerMode = true;
+        endTriggerItem->mode = 1;
         menu->addChild(endTriggerItem);
+
+        GateModeItem* startEndItem = createMenuItem<GateModeItem>("Start + End Triggers", "Triggers at both start and end of cycle");
+        startEndItem->module = module;
+        startEndItem->mode = 2;
+        menu->addChild(startEndItem);
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -235,6 +236,8 @@ struct BasicSineVCO {
 };
 
 struct KIMO : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         FILL_PARAM,
         ACCENT_PARAM,
@@ -386,6 +389,19 @@ struct KIMO : Module {
         accentVCA.reset();
     }
 
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+    }
+
     void process(const ProcessArgs& args) override {
         bool globalClockActive = inputs[CLK_INPUT].isConnected();
         bool globalClockTriggered = false;
@@ -476,9 +492,11 @@ struct KIMO : Module {
 };
 
 struct KIMOWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     KIMOWidget(KIMO* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -555,6 +573,21 @@ struct KIMOWidget : ModuleWidget {
 
         // AUDIO 輸出 (保持原座標)
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 368), module, KIMO::AUDIO_OUTPUT));
+    }
+
+    void step() override {
+        KIMO* module = dynamic_cast<KIMO*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        KIMO* module = dynamic_cast<KIMO*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

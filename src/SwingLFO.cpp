@@ -1,7 +1,10 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct SwingLFO : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         FREQ_PARAM,
         SWING_PARAM,
@@ -41,25 +44,38 @@ struct SwingLFO : Module {
 
     SwingLFO() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-        
+
         configParam(FREQ_PARAM, -3.0f, 7.0f, 1.5849624872207642f, "Frequency", " Hz", 2.0f, 1.0f);
         configParam(SWING_PARAM, 0.0f, 1.0f, 0.29900002479553223f, "Swing", "°", 0.0f, -90.0f, 180.0f);
         configParam(SHAPE_PARAM, 0.0f, 1.0f, 0.12099999934434891f, "Shape", "%", 0.f, 100.f);
         configParam(MIX_PARAM, 0.0f, 1.0f, 0.38400006294250488f, "Mix");
-        
+
         configParam(FREQ_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Freq CV Attenuverter");
         configParam(SWING_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Swing CV Attenuverter");
         configParam(SHAPE_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Shape CV Attenuverter");
         configParam(MIX_CV_ATTEN_PARAM, -1.0f, 1.0f, 0.0f, "Mix CV Attenuverter");
-        
+
         configInput(FREQ_CV_INPUT, "Frequency CV");
         configInput(SWING_CV_INPUT, "Swing CV");
         configInput(SHAPE_CV_INPUT, "Shape CV");
         configInput(RESET_INPUT, "Reset");
         configInput(MIX_CV_INPUT, "Mix CV");
-        
+
         configOutput(SAW_OUTPUT, "Saw Wave");
         configOutput(PULSE_OUTPUT, "Pulse Wave");
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
     }
 
     float getWaveform(float phase, int waveType, float shape) {
@@ -220,10 +236,12 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct SwingLFOWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     SwingLFOWidget(SwingLFO* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SwingLFO.svg")));
-        
+        panelThemeHelper.init(this, "EuclideanRhythm");
+
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
         float centerX = box.size.x / 2;
@@ -265,6 +283,21 @@ struct SwingLFOWidget : ModuleWidget {
         
         addChild(new EnhancedTextLabel(Vec(5, 360), Vec(20, 20), "PULSE", 8.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(centerX + 15, 368), module, SwingLFO::PULSE_OUTPUT));
+    }
+
+    void step() override {
+        SwingLFO* module = dynamic_cast<SwingLFO*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        SwingLFO* module = dynamic_cast<SwingLFO*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

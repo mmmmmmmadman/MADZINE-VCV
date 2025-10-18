@@ -932,7 +932,7 @@ struct DECAPyramidWidget : ModuleWidget {
             setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W.svg")));
             return;
         }
-        
+
         switch (module->panelTheme) {
             case 0:
                 setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_L.svg")));
@@ -942,6 +942,24 @@ struct DECAPyramidWidget : ModuleWidget {
                 break;
             case 2:
                 setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_M.svg")));
+                break;
+            case 3:
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_L_Boring.svg")));
+                break;
+            case 4:
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W_Boring.svg")));
+                break;
+            case 5:
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_M_Boring.svg")));
+                break;
+            case 6:
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_L_ToiletPaper.svg")));
+                break;
+            case 7:
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W_ToiletPaper.svg")));
+                break;
+            case 8:
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_M_ToiletPaper.svg")));
                 break;
         }
     }
@@ -966,11 +984,51 @@ struct DECAPyramidWidget : ModuleWidget {
         menu->addChild(createBoolPtrMenuItem("Send Pre-Level", "", &module->sendPreLevel));
         
         menu->addChild(new MenuSeparator);
-        menu->addChild(createIndexPtrSubmenuItem("Panel Theme", {
-            "Light",
-            "Wine", 
-            "Mellow"
-        }, &module->panelTheme));
+        menu->addChild(createSubmenuItem("Panel Theme", "", [=](Menu* menu) {
+            menu->addChild(createMenuLabel("Sashimi"));
+            menu->addChild(createCheckMenuItem("Light", "",
+                [=]() {return module->panelTheme == 0;},
+                [=]() {module->panelTheme = 0;}
+            ));
+            menu->addChild(createCheckMenuItem("Wine", "",
+                [=]() {return module->panelTheme == 1;},
+                [=]() {module->panelTheme = 1;}
+            ));
+            menu->addChild(createCheckMenuItem("Mellow", "",
+                [=]() {return module->panelTheme == 2;},
+                [=]() {module->panelTheme = 2;}
+            ));
+
+            menu->addChild(new MenuSeparator);
+            menu->addChild(createMenuLabel("Boring"));
+            menu->addChild(createCheckMenuItem("Boring Light", "",
+                [=]() {return module->panelTheme == 3;},
+                [=]() {module->panelTheme = 3;}
+            ));
+            menu->addChild(createCheckMenuItem("Boring Wine", "",
+                [=]() {return module->panelTheme == 4;},
+                [=]() {module->panelTheme = 4;}
+            ));
+            menu->addChild(createCheckMenuItem("Boring Mellow", "",
+                [=]() {return module->panelTheme == 5;},
+                [=]() {module->panelTheme = 5;}
+            ));
+
+            menu->addChild(new MenuSeparator);
+            menu->addChild(createMenuLabel("Toilet Paper"));
+            menu->addChild(createCheckMenuItem("Toilet Paper Light", "",
+                [=]() {return module->panelTheme == 6;},
+                [=]() {module->panelTheme = 6;}
+            ));
+            menu->addChild(createCheckMenuItem("Toilet Paper Wine", "",
+                [=]() {return module->panelTheme == 7;},
+                [=]() {module->panelTheme = 7;}
+            ));
+            menu->addChild(createCheckMenuItem("Toilet Paper Mellow", "",
+                [=]() {return module->panelTheme == 8;},
+                [=]() {module->panelTheme = 8;}
+            ));
+        }));
     }
 };
 

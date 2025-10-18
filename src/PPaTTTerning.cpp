@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
@@ -26,6 +27,8 @@ struct DensityParamQuantity : ParamQuantity {
 };
 
 struct PPaTTTerning : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         K1_PARAM, K2_PARAM, K3_PARAM, K4_PARAM, K5_PARAM,
         STYLE_PARAM, DENSITY_PARAM, CHAOS_PARAM,
@@ -131,10 +134,16 @@ struct PPaTTTerning : Module {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "track2Delay", json_integer(track2Delay));
         json_object_set_new(rootJ, "styleMode", json_integer(styleMode));
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         return rootJ;
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
         json_t* t2 = json_object_get(rootJ, "track2Delay");
         if (t2) {
             track2Delay = clamp((int)json_integer_value(t2), 0, 5);
@@ -414,9 +423,11 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct PPaTTTerningWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     PPaTTTerningWidget(PPaTTTerning* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SwingLFO.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         float centerX = box.size.x / 2;
         
@@ -500,6 +511,21 @@ struct PPaTTTerningWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(5, 360), Vec(20, 15), "CVD", 7.f, nvgRGB(255, 133, 133), true));
         addParam(createParamCentered<Trimpot>(Vec(15, 370), module, PPaTTTerning::CVD_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(45, 370), module, PPaTTTerning::CVD_CV_INPUT));
+    }
+
+    void step() override {
+        PPaTTTerning* module = dynamic_cast<PPaTTTerning*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        PPaTTTerning* module = dynamic_cast<PPaTTTerning*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

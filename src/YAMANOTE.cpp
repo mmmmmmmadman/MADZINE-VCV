@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
@@ -108,6 +109,8 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct YAMANOTE : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         CH1_SEND_A_PARAM,
         CH1_SEND_B_PARAM,
@@ -191,6 +194,19 @@ struct YAMANOTE : Module {
         configOutput(SEND_B_R_OUTPUT, "Send B Right");
         configOutput(MIX_L_OUTPUT, "Mix Left");
         configOutput(MIX_R_OUTPUT, "Mix Right");
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
     }
 
     void process(const ProcessArgs& args) override {
@@ -333,9 +349,11 @@ struct YAMANOTE : Module {
 };
 
 struct YAMANOTEWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     YAMANOTEWidget(YAMANOTE* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
 
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -385,6 +403,21 @@ struct YAMANOTEWidget : ModuleWidget {
 
         addInput(createInputCentered<PJ301MPort>(Vec(75, 343), module, YAMANOTE::RETURN_B_L_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(75, 368), module, YAMANOTE::RETURN_B_R_INPUT));
+    }
+
+    void step() override {
+        YAMANOTE* module = dynamic_cast<YAMANOTE*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        YAMANOTE* module = dynamic_cast<YAMANOTE*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

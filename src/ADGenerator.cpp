@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
@@ -250,6 +251,8 @@ struct HouseWidget : Widget {
 };
 
 struct ADGenerator : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         ATK_ALL_PARAM,
         DEC_ALL_PARAM,
@@ -594,6 +597,7 @@ struct ADGenerator : Module {
 
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         json_object_set_new(rootJ, "autoRouteEnabled", json_boolean(autoRouteEnabled));
         
         json_t* bpfEnabledJ = json_array();
@@ -618,6 +622,11 @@ struct ADGenerator : Module {
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+
         json_t* autoRouteJ = json_object_get(rootJ, "autoRouteEnabled");
         if (autoRouteJ) {
             autoRouteEnabled = json_boolean_value(autoRouteJ);
@@ -712,9 +721,11 @@ struct ADGenerator : Module {
 };
 
 struct ADGeneratorWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     ADGeneratorWidget(ADGenerator* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -784,6 +795,21 @@ struct ADGeneratorWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(38, 337), Vec(12, 10), "2", 7.f, nvgRGB(255, 133, 133), true));
         addChild(new EnhancedTextLabel(Vec(69, 337), Vec(12, 10), "3", 7.f, nvgRGB(255, 133, 133), true));
         addChild(new EnhancedTextLabel(Vec(96, 337), Vec(16, 10), "MIYA", 7.f, nvgRGB(255, 133, 133), true));
+    }
+
+    void step() override {
+        ADGenerator* module = dynamic_cast<ADGenerator*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        ADGenerator* module = dynamic_cast<ADGenerator*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

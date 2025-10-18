@@ -1,6 +1,9 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 struct KEN : Module {
+    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+
     enum ParamId {
         LEVEL_PARAM,
         PARAMS_LEN
@@ -83,6 +86,19 @@ struct KEN : Module {
             for (int j = 0; j < 2; j++) {
                 smoothedGains[i][j] = hrtfGains[i][j];
             }
+        }
+    }
+
+    json_t* dataToJson() override {
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
         }
     }
 
@@ -361,9 +377,11 @@ struct WhiteBackgroundBox : Widget {
 
 // StandardBlackKnob 現在從 widgets/Knobs.hpp 引入
 struct KENWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     KENWidget(KEN* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/EuclideanRhythm.svg")));
+        panelThemeHelper.init(this, "EuclideanRhythm");
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -390,6 +408,21 @@ struct KENWidget : ModuleWidget {
         
         addChild(new TechnoEnhancedTextLabel(Vec(35, 333), Vec(20, 10), "R", 8.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(45, 355), module, KEN::RIGHT_OUTPUT));
+    }
+
+    void step() override {
+        KEN* module = dynamic_cast<KEN*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
+    void appendContextMenu(ui::Menu* menu) override {
+        KEN* module = dynamic_cast<KEN*>(this->module);
+        if (!module) return;
+
+        addPanelThemeMenu(menu, module);
     }
 };
 
