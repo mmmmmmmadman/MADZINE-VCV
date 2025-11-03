@@ -1,0 +1,6 @@
+[submodule "sst-filters"]
+	path = sst-filters
+	url = https://github.com/surge-synthesizer/sst-filters.git
+[submodule "sst-basic-blocks"]
+	path = sst-basic-blocks
+	url = https://github.com/surge-synthesizer/sst-basic-blocks.git
