@@ -450,7 +450,7 @@ struct TWNC2Widget : ModuleWidget {
 
     TWNC2Widget(TWNC2* module) {
         setModule(module);
-        panelThemeHelper.init(this, "EuclideanRhythm");
+        panelThemeHelper.init(this, "8HP");
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

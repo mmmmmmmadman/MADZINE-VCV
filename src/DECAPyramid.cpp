@@ -929,37 +929,22 @@ struct DECAPyramidWidget : ModuleWidget {
     void updatePanel() {
         DECAPyramid* module = getModule<DECAPyramid>();
         if (!module) {
-            setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W.svg")));
+            setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP.svg")));
             return;
         }
 
         switch (module->panelTheme) {
             case 0:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_L.svg")));
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP.svg")));
                 break;
             case 1:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W.svg")));
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP_L.svg")));
                 break;
             case 2:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_M.svg")));
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP_W.svg")));
                 break;
             case 3:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_L_Boring.svg")));
-                break;
-            case 4:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W_Boring.svg")));
-                break;
-            case 5:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_M_Boring.svg")));
-                break;
-            case 6:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_L_ToiletPaper.svg")));
-                break;
-            case 7:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_W_ToiletPaper.svg")));
-                break;
-            case 8:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/DECAPyramid_M_ToiletPaper.svg")));
+                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP_M.svg")));
                 break;
         }
     }
@@ -985,48 +970,21 @@ struct DECAPyramidWidget : ModuleWidget {
         
         menu->addChild(new MenuSeparator);
         menu->addChild(createSubmenuItem("Panel Theme", "", [=](Menu* menu) {
-            menu->addChild(createMenuLabel("Sashimi"));
-            menu->addChild(createCheckMenuItem("Light", "",
+            menu->addChild(createCheckMenuItem("Sashimi", "",
                 [=]() {return module->panelTheme == 0;},
                 [=]() {module->panelTheme = 0;}
             ));
-            menu->addChild(createCheckMenuItem("Wine", "",
+            menu->addChild(createCheckMenuItem("Light", "",
                 [=]() {return module->panelTheme == 1;},
                 [=]() {module->panelTheme = 1;}
             ));
-            menu->addChild(createCheckMenuItem("Mellow", "",
+            menu->addChild(createCheckMenuItem("Wine", "",
                 [=]() {return module->panelTheme == 2;},
                 [=]() {module->panelTheme = 2;}
             ));
-
-            menu->addChild(new MenuSeparator);
-            menu->addChild(createMenuLabel("Boring"));
-            menu->addChild(createCheckMenuItem("Boring Light", "",
+            menu->addChild(createCheckMenuItem("Mellow", "",
                 [=]() {return module->panelTheme == 3;},
                 [=]() {module->panelTheme = 3;}
-            ));
-            menu->addChild(createCheckMenuItem("Boring Wine", "",
-                [=]() {return module->panelTheme == 4;},
-                [=]() {module->panelTheme = 4;}
-            ));
-            menu->addChild(createCheckMenuItem("Boring Mellow", "",
-                [=]() {return module->panelTheme == 5;},
-                [=]() {module->panelTheme = 5;}
-            ));
-
-            menu->addChild(new MenuSeparator);
-            menu->addChild(createMenuLabel("Toilet Paper"));
-            menu->addChild(createCheckMenuItem("Toilet Paper Light", "",
-                [=]() {return module->panelTheme == 6;},
-                [=]() {module->panelTheme = 6;}
-            ));
-            menu->addChild(createCheckMenuItem("Toilet Paper Wine", "",
-                [=]() {return module->panelTheme == 7;},
-                [=]() {module->panelTheme = 7;}
-            ));
-            menu->addChild(createCheckMenuItem("Toilet Paper Mellow", "",
-                [=]() {return module->panelTheme == 8;},
-                [=]() {module->panelTheme = 8;}
             ));
         }));
     }

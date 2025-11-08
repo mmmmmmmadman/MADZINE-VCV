@@ -240,7 +240,7 @@ struct SwingLFOWidget : ModuleWidget {
 
     SwingLFOWidget(SwingLFO* module) {
         setModule(module);
-        panelThemeHelper.init(this, "EuclideanRhythm");
+        panelThemeHelper.init(this, "4HP");
 
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         

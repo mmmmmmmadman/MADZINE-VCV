@@ -496,7 +496,7 @@ struct KIMOWidget : ModuleWidget {
 
     KIMOWidget(KIMO* module) {
         setModule(module);
-        panelThemeHelper.init(this, "EuclideanRhythm");
+        panelThemeHelper.init(this, "8HP");
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

@@ -28,7 +28,7 @@ void init(Plugin* p) {
     p->addModel(modelEllenRipley);
     p->addModel(modelMADDYPlus);
     p->addModel(modelNIGOQ);
-    p->addModel(modelMultiverse);
     p->addModel(modelRunshow);
     p->addModel(modelEnvVCA6);
+    p->addModel(modelWeiiiDocumenta);
 }

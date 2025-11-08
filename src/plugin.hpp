@@ -26,9 +26,9 @@ extern Model* modelQuantizer;
 extern Model* modelEllenRipley;
 extern Model* modelMADDYPlus;
 extern Model* modelNIGOQ;
-extern Model* modelMultiverse;
 extern Model* modelRunshow;
 extern Model* modelEnvVCA6;
+extern Model* modelWeiiiDocumenta;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

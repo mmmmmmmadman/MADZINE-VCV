@@ -1,7 +1,7 @@
 {
   "slug": "MADZINE",
   "name": "MADZINE",
-  "version": "2.3.1",
+  "version": "2.3.3",
   "license": "GPL-3.0-or-later",
   "brand": "MADZINE",
   "author": "MAD",
@@ -85,6 +85,12 @@
       "tags": ["Mixer", "Utility", "Compressor"]
     },
     {
+      "slug": "WeiiiDocumenta",
+      "name": "weiii documenta",
+      "description": "8-layer recording sampler with chaotic parameter morphing, feedback matrix and slice engine",
+      "tags": ["Sampler", "Effect", "Recording"]
+    },
+    {
       "slug": "YAMANOTE",
       "name": "YAMANOTE",
       "description": "8HP channel processor with chain, send/return function",
@@ -155,6 +161,12 @@
       "name": "Env VCA 6",
       "description": "6-channel envelope VCA processor with AD generators",
       "tags": ["Envelope generator", "VCA", "Mixer"]
+    },
+    {
+      "slug": "WeiiiDocumenta",
+      "name": "weiii documenta",
+      "description": "8-layer recording sampler with chaotic parameter morphing, feedback matrix and slice engine",
+      "tags": ["Sampler", "Effect", "Recording"]
     }
   ]
 }

@@ -463,7 +463,7 @@ struct QQWidget : ModuleWidget {
 
     QQWidget(QQ* module) {
         setModule(module);
-        panelThemeHelper.init(this, "SwingLFO");
+        panelThemeHelper.init(this, "4HP");
 
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
