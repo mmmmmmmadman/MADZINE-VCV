@@ -31,4 +31,5 @@ void init(Plugin* p) {
     p->addModel(modelRunshow);
     p->addModel(modelEnvVCA6);
     p->addModel(modelWeiiiDocumenta);
+    p->addModel(modelUniversalRhythm);
 }

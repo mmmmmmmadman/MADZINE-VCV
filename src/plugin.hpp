@@ -29,6 +29,7 @@ extern Model* modelNIGOQ;
 extern Model* modelRunshow;
 extern Model* modelEnvVCA6;
 extern Model* modelWeiiiDocumenta;
+extern Model* modelUniversalRhythm;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;
