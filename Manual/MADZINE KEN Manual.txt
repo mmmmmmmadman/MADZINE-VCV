@@ -1,0 +1,150 @@
+MADZINE KEN Module Manual
+
+================================================================================
+English
+================================================================================
+
+Overview
+--------
+The KEN module is an 8-to-2 binaural processor that converts 8-channel spatial audio to stereo headphone output using HRTF (Head-Related Transfer Function) processing. It is designed to work with the Pyramid and DECAPyramid modules, rendering their 8 speaker outputs as an immersive binaural experience for headphone listening.
+
+Features
+--------
+• HRTF binaural processing for realistic 3D audio over headphones
+• ITD (Interaural Time Difference) simulation with per-channel delays
+• ILD (Interaural Level Difference) with position-based gain calculation
+• Distance filtering - lowpass filter based on speaker distance
+• Elevation filtering - frequency shaping based on vertical position
+• Reverb filtering - distance-based reverb simulation
+• Compact 4HP design
+
+Controls
+--------
+• Level Knob: Output level (0-100%, default: 70%)
+
+Inputs
+------
+• Inputs 1-8: 8 speaker inputs from Pyramid/DECAPyramid
+
+Outputs
+-------
+• Left Output: Binaural left channel
+• Right Output: Binaural right channel
+
+Speaker Mapping
+---------------
+The 8 inputs correspond to virtual speaker positions arranged in a cube:
+• Input 1: Front-Left Upper (azimuth -45°, elevation +30°)
+• Input 2: Front-Right Upper (azimuth +45°, elevation +30°)
+• Input 3: Back-Left Upper (azimuth -135°, elevation +30°)
+• Input 4: Back-Right Upper (azimuth +135°, elevation +30°)
+• Input 5: Front-Left Lower (azimuth -45°, elevation -30°)
+• Input 6: Front-Right Lower (azimuth +45°, elevation -30°)
+• Input 7: Back-Left Lower (azimuth -135°, elevation -30°)
+• Input 8: Back-Right Lower (azimuth +135°, elevation -30°)
+
+HRTF Processing
+---------------
+The module processes each input through several stages to create realistic binaural audio:
+• ITD Processing: Applies interaural time differences based on azimuth angle
+• ILD Processing: Applies level differences for each ear based on position
+• Distance Filtering: Lowpass filter with cutoff based on distance (further = darker)
+• Elevation Filtering: Peak/lowpass filter based on vertical angle
+• Reverb Filtering: Highpass filter simulating distance-based reverb characteristics
+
+Usage
+-----
+• Connect the 8 outputs from Pyramid or DECAPyramid to KEN inputs 1-8
+• Connect KEN's L/R outputs to your audio interface or headphone output
+• Listen through headphones for the best binaural effect
+
+Technical Specifications
+------------------------
+• Input Range: ±10V
+• Output Range: ±10V
+• Inputs: 8 (speaker channels)
+• Outputs: 2 (stereo binaural)
+• Head Model Width: 18cm
+• ITD Delay Buffer: 128 samples
+• Module Width: 4HP
+
+================================================================================
+日本語
+================================================================================
+
+概要
+----
+KENモジュールは、HRTF(頭部伝達関数)処理を使用して8チャンネル空間オーディオをヘッドホン用ステレオ出力に変換する8入力2出力のバイノーラルプロセッサーです。PyramidやDECAPyramidモジュールと組み合わせて、ヘッドホンで没入感のある3Dオーディオ体験を実現します。
+
+機能
+----
+• HRTFバイノーラル処理
+• ITD(両耳時間差)シミュレーション
+• ILD(両耳レベル差)によるゲイン計算
+• 距離フィルタリング(遠い音ほど暗い)
+• 仰角フィルタリング
+• リバーブフィルタリング
+• コンパクトな4HPデザイン
+
+コントロール
+------------
+• レベルノブ: 出力レベル (0-100%, デフォルト: 70%)
+
+入力
+----
+• 入力1-8: Pyramid/DECAPyramidからの8スピーカー入力
+
+出力
+----
+• 左出力: バイノーラル左チャンネル
+• 右出力: バイノーラル右チャンネル
+
+技術仕様
+--------
+• 入力範囲: ±10V
+• 出力範囲: ±10V
+• 入力数: 8 (スピーカーチャンネル)
+• 出力数: 2 (ステレオバイノーラル)
+• モジュール幅: 4HP
+
+================================================================================
+繁體中文
+================================================================================
+
+概述
+----
+KEN 模組是一個 8 輸入 2 輸出的雙耳處理器，使用 HRTF（頭部相關傳遞函數）處理將 8 聲道空間音訊轉換為立體聲耳機輸出。設計用於與 Pyramid 和 DECAPyramid 模組搭配使用，在耳機上實現沉浸式 3D 音頻體驗。
+
+功能特點
+--------
+• HRTF 雙耳處理
+• ITD（耳間時間差）模擬
+• ILD（耳間音量差）增益計算
+• 距離濾波（越遠越暗）
+• 仰角濾波
+• 殘響濾波
+• 緊湊 4HP 設計
+
+控制
+----
+• 音量旋鈕：輸出音量（0-100%, 預設：70%）
+
+輸入
+----
+• 輸入 1-8：來自 Pyramid/DECAPyramid 的 8 個揚聲器輸入
+
+輸出
+----
+• 左輸出：雙耳左聲道
+• 右輸出：雙耳右聲道
+
+技術規格
+--------
+• 輸入範圍：±10V
+• 輸出範圍：±10V
+• 輸入數：8（揚聲器聲道）
+• 輸出數：2（立體聲雙耳）
+• 模組寬度：4HP
+
+================================================================================
+Version 2.3.5 MADZINE © 2025

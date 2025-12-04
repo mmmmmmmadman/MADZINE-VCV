@@ -1,0 +1,312 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue-Bold;\f1\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red109\green109\blue109;}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c50196\c50196\c50196;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww17920\viewh18780\viewkind0
+\deftab720
+\pard\pardeftab720\sa321\partightenfactor0
+
+\f0\b\fs24 \cf0 \expnd0\expndtw0\kerning0
+MADZINE Pyramid Module Manual\
+\pard\pardeftab720\sa298\partightenfactor0
+\cf0 English\
+\pard\pardeftab720\sa280\partightenfactor0
+\cf0 Overview\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0 \cf0 The Pyramid module is a 3D spatial audio panner that uses Vector Base Amplitude Panning (VBAP) to position sound sources within a virtual cube of 8 speakers. It provides smooth, continuous positioning control across three dimensions with CV modulation, making it ideal for immersive sound design and spatial audio experiments.\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 Features\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+
+\f1\b0 \cf0 \kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+3D spatial positioning
+\f1\b0  with X, Y, Z coordinate control\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+VBAP algorithm
+\f1\b0  for natural sound positioning across 8 outputs\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+CV control
+\f1\b0  for X, Y, Z, and Filter parameters\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+Bipolar filter
+\f1\b0  with lowpass (negative) and highpass (positive) modes\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+Send/Return
+\f1\b0  with stereo return for external effects processing\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+3D visualization display
+\f1\b0  showing current source position\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Compact 8HP design\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 Controls\
+\pard\pardeftab720\sa319\partightenfactor0
+\cf0 Position Section\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+X Knob
+\f1\b0 : Horizontal position (-1 to +1, default: 0)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Y Knob
+\f1\b0 : Vertical position (-1 to +1, default: 0)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Z Knob
+\f1\b0 : Front/back position (-1 to +1, default: 0)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+X/Y/Z CV Inputs
+\f1\b0 : CV modulation for position (\'b15V = full range)\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f0\b \cf0 Audio Section\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Level Knob
+\f1\b0 : Output level (0-100%, default: 70%)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Filter Knob
+\f1\b0 : Bipolar filter control (-1 to +1, default: 0)\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Negative values: Lowpass filter (darker)\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Center (0): Bypass\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Positive values: Highpass filter (brighter)\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+
+\f0\b \cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Filter CV Input
+\f1\b0 : CV modulation for filter (\'b15V = full range)\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f0\b \cf0 Send/Return Section\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Send Knob
+\f1\b0 : Effect send level (0-100%, default: 0%)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Send Output
+\f1\b0 : Mono send to external effects\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Return L/R Inputs
+\f1\b0 : Stereo return from external effects\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Send Pre/Post Level
+\f1\b0 : Configurable via right-click menu\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 Outputs\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	
+\f1\b0 \expnd0\expndtw0\kerning0
+8 speaker outputs arranged in a cube:\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Outputs 1-4
+\f1\b0 : Upper plane (FL, FR, BL, BR)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Outputs 5-8
+\f1\b0 : Lower plane (FL, FR, BL, BR)\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 Speaker Layout\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0 \cf0 The 8 outputs represent speakers positioned at the corners of a cube:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 1: Front-Left Upper\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 2: Front-Right Upper\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 3: Back-Left Upper\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 4: Back-Right Upper\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 5: Front-Left Lower\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 6: Front-Right Lower\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 7: Back-Left Lower\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output 8: Back-Right Lower\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 Technical Specifications\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	
+\f1\b0 \expnd0\expndtw0\kerning0
+Input Range: \'b110V (audio)\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+CV Range: \'b15V (position/filter)\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Output Range: \'b110V\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Position Range: -1 to +1 (all axes)\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Algorithm: VBAP (Vector Base Amplitude Panning)\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Filter: 12dB/oct Biquad (lowpass/highpass)\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Module Width: 8HP\
+\pard\pardeftab720\sa321\partightenfactor0
+
+\f0\b \cf0 \
+\pard\pardeftab720\sa298\partightenfactor0
+\cf0 \uc0\u26085 \u26412 \u35486 \
+\pard\pardeftab720\sa280\partightenfactor0
+\cf0 \uc0\u27010 \u35201 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0 \cf0 Pyramid\uc0\u12514 \u12472 \u12517 \u12540 \u12523 \u12399 \u12289 VBAP(Vector Base Amplitude Panning)\u12434 \u20351 \u29992 \u12375 \u12383 3D\u31354 \u38291 \u12458 \u12540 \u12487 \u12451 \u12458 \u12497 \u12490 \u12540 \u12391 \u12377 \u12290 8\u12388 \u12398 \u12473 \u12500 \u12540 \u12459 \u12540 \u20986 \u21147 \u12395 \u12424 \u12426 \u12289 \u20206 \u24819 \u30340 \u12394 \u12461 \u12517 \u12540 \u12502 \u31354 \u38291 \u20869 \u12391 \u12473 \u12512 \u12540 \u12474 \u306 a \u12469 \u12454 \u12531 \u12489 \u12509 \u12472 \u12471 \u12519 \u12491 \u12531 \u12464 \u12434 \u23455 \u29694 \u12375 \u12414 \u12377 \u12290 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 \uc0\u27231 \u33021 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+
+\f1\b0 \cf0 \kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+X, Y, Z\uc0\u12395 \u12424 \u12427 3D\u31354 \u38291 \u37197 \u32622 
+\f1\b0 \
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+VBAP\uc0\u12450 \u12523 \u12468 \u12522 \u12474 \u12512 
+\f1\b0 \uc0\u12395 \u12424 \u12427 \u33258 \u28982 \u12394 \u12469 \u12454 \u12531 \u12489 \u37197 \u32622 \
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+CV\uc0\u12467 \u12531 \u12488 \u12525 \u12540 \u12523 
+\f1\b0 (X, Y, Z, \uc0\u12501 \u12451 \u12523 \u12479 \u12540 )\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+\uc0\u21452 \u26997 \u24615 \u12501 \u12451 \u12523 \u12479 \u12540 
+\f1\b0 (\uc0\u12525 \u12540 \u12497 \u12473 /\u12495 \u12452 \u12497 \u12473 )\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+\uc0\u12475 \u12531 \u12489 /\u12522 \u12479 \u12540 \u12531 
+\f1\b0 (\uc0\u12473 \u12486 \u12524 \u12458 \u12522 \u12479 \u12540 \u12531 \u20184 \u12365 )\
+\kerning1\expnd0\expndtw0 	\'95	
+\f0\b \expnd0\expndtw0\kerning0
+3D\uc0\u12499 \u12472 \u12517 \u12450 \u12521 \u12452 \u12476 \u12540 \u12471 \u12519 \u12531 
+\f1\b0 \uc0\u12487 \u12451 \u12473 \u12503 \u12524 \u12452 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 \uc0\u12467 \u12531 \u12488 \u12525 \u12540 \u12523 \
+\pard\pardeftab720\sa319\partightenfactor0
+\cf0 \uc0\u12509 \u12472 \u12471 \u12519 \u12531 \u12475 \u12463 \u12471 \u12519 \u12531 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+X\uc0\u12494 \u12502 
+\f1\b0 : \uc0\u27700 \u24179 \u20301 \u32622 (-1\u12363 \u12425 +1, \u12487 \u12501 \u12457 \u12523 \u12488 : 0)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Y\uc0\u12494 \u12502 
+\f1\b0 : \uc0\u22402 \u30452 \u20301 \u32622 (-1\u12363 \u12425 +1, \u12487 \u12501 \u12457 \u12523 \u12488 : 0)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+Z\uc0\u12494 \u12502 
+\f1\b0 : \uc0\u21069 \u24460 \u20301 \u32622 (-1\u12363 \u12425 +1, \u12487 \u12501 \u12457 \u12523 \u12488 : 0)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+X/Y/Z CV\uc0\u20837 \u21147 
+\f1\b0 : \uc0\u20301 \u32622 \u12398 CV\u12514 \u12472 \u12517 \u12524 \u12540 \u12471 \u12519 \u12531 \
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f0\b \cf0 \uc0\u12458 \u12540 \u12487 \u12451 \u12458 \u12475 \u12463 \u12471 \u12519 \u12531 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u12524 \u12505 \u12523 \u12494 \u12502 
+\f1\b0 : \uc0\u20986 \u21147 \u12524 \u12505 \u12523 (0-100%, \u12487 \u12501 \u12457 \u12523 \u12488 : 70%)\
+
+\f0\b \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u12501 \u12451 \u12523 \u12479 \u12540 \u12494 \u12502 
+\f1\b0 : \uc0\u21452 \u26997 \u24615 \u12501 \u12451 \u12523 \u12479 \u12540 (-1\u12363 \u12425 +1)\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u36000 \u12398 \u20516 : \u12525 \u12540 \u12497 \u12473 \u12501 \u12451 \u12523 \u12479 \u12540 \
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u20013 \u22830 (0): \u12496 \u12452 \u12497 \u12473 \
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u27491 \u12398 \u20516 : \u12495 \u12452 \u12497 \u12473 \u12501 \u12451 \u12523 \u12479 \u12540 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b \cf0 \uc0\u25216 \u34899 \u20181 \u27096 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	
+\f1\b0 \expnd0\expndtw0\kerning0
+\uc0\u20837 \u21147 \u31684 \u22258 : \'b110V (\u12458 \u12540 \u12487 \u12451 \u12458 )\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+CV\uc0\u31684 \u22258 : \'b15V (\u12509 \u12472 \u12471 \u12519 \u12531 /\u12501 \u12451 \u12523 \u12479 \u12540 )\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u12509 \u12472 \u12471 \u12519 \u12531 \u31684 \u22258 : -1\u12363 \u12425 +1 (\u5168 \u36600 )\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u12450 \u12523 \u12468 \u12522 \u12474 \u12512 : VBAP\
+\kerning1\expnd0\expndtw0 	\'95	\expnd0\expndtw0\kerning0
+\uc0\u12514 \u12472 \u12517 \u12540 \u12523 \u24133 : 8HP\
+\pard\pardeftab720\sa321\partightenfactor0
+
+\f0\b \cf0 \
+\pard\pardeftab720\sa298\partightenfactor0
+\cf0 \uc0\u32321 \u39636 \u20013 \u25991 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 \uc0\u27010 \u36848 \
+  Pyramid \uc0\u27169 \u32068 \u26159 \u19968 \u20491 \u20351 \u29992  VBAP\u65288 \u21521 \u37327 \u22522 \u24213 \u25391 \u24133 \u24179 \u31227 \u65289 \u30340 \
+  3D \uc0\u31354 \u38291 \u38899 \u38971 \u24179 \u31227 \u22120 \u12290 \u23427 \u36879 \u36942  8 \u20491 \u25562 \u32882 \u22120 \u36664 \u20986 \u22312 \u34395 \u25836 \u31435 \u26041 \
+  \uc0\u39636 \u31354 \u38291 \u20839 \u23526 \u29694 \u24179 \u28369 \u12289 \u36899 \u32396 \u30340 \u32882 \u38899 \u23450 \u20301 \u25511 \u21046 \u12290 \
+\
+  \uc0\u21151 \u33021 \u29305 \u40670 \
+  \'95 X, Y, Z 3D \uc0\u31354 \u38291 \u23450 \u20301 \
+  \'95 VBAP \uc0\u28436 \u31639 \u27861 \u25552 \u20379 \u33258 \u28982 \u30340 \u32882 \u38899 \u23450 \u20301 \
+  \'95 CV \uc0\u25511 \u21046 \u65288 X, Y, Z, \u28670 \u27874 \u22120 \u65289 \
+  \'95 \uc0\u38617 \u26997 \u24615 \u28670 \u27874 \u22120 \u65288 \u20302 \u36890 /\u39640 \u36890 \u65289 \
+  \'95 \uc0\u30332 \u36865 /\u36820 \u22238 \u65288 \u31435 \u39636 \u32882 \u36820 \u22238 \u65289 \
+  \'95 3D \uc0\u35222 \u35258 \u21270 \u39023 \u31034 \
+\
+  \uc0\u25511 \u21046 \
+  \uc0\u20301 \u32622 \u21312 \
+  \'95 X \uc0\u26059 \u37397 \u65306 \u27700 \u24179 \u20301 \u32622 \u65288 -1 \u33267  +1, \u38928 \u35373 \u65306 0\u65289 \
+  \'95 Y \uc0\u26059 \u37397 \u65306 \u22402 \u30452 \u20301 \u32622 \u65288 -1 \u33267  +1, \u38928 \u35373 \u65306 0\u65289 \
+  \'95 Z \uc0\u26059 \u37397 \u65306 \u21069 \u24460 \u20301 \u32622 \u65288 -1 \u33267  +1, \u38928 \u35373 \u65306 0\u65289 \
+  \'95 X/Y/Z CV \uc0\u36664 \u20837 \u65306 \u20301 \u32622 \u30340  CV \u35519 \u35722 \
+\
+  \uc0\u38899 \u35338 \u21312 \
+  \'95 \uc0\u38899 \u37327 \u26059 \u37397 \u65306 \u36664 \u20986 \u38899 \u37327 \u65288 0-100%, \u38928 \u35373 \u65306 70%\u65289 \
+  \'95 \uc0\u28670 \u27874 \u22120 \u26059 \u37397 \u65306 \u38617 \u26997 \u24615 \u28670 \u27874 \u22120 \u65288 -1 \u33267  +1\u65289 \
+    - \uc0\u36000 \u20540 \u65306 \u20302 \u36890 \u28670 \u27874 \u22120 \
+    - \uc0\u20013 \u38291 \u65288 0\u65289 \u65306 \u26049 \u36335 \
+    - \uc0\u27491 \u20540 \u65306 \u39640 \u36890 \u28670 \u27874 \u22120 \
+\
+  \uc0\u25216 \u34899 \u35215 \u26684 \
+  \'95 \uc0\u36664 \u20837 \u31684 \u22285 \u65306 \'b110V\u65288 \u38899 \u35338 \u65289 \
+  \'95 CV \uc0\u31684 \u22285 \u65306 \'b15V\u65288 \u20301 \u32622 /\u28670 \u27874 \u22120 \u65289 \
+  \'95 \uc0\u20301 \u32622 \u31684 \u22285 \u65306 -1 \u33267  +1\u65288 \u25152 \u26377 \u36600 \u65289 \
+  \'95 \uc0\u28436 \u31639 \u27861 \u65306 VBAP\
+  \'95 \uc0\u27169 \u32068 \u23532 \u24230 \u65306 8HP\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\cf0 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3 Version 2.3.5 MADZINE \'a9 2025\
+}
