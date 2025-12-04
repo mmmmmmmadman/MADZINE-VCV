@@ -1,0 +1,251 @@
+WorldRhythm: A Unified Framework for Cross-Cultural Rhythm Generation Based on Ethnomusicological Principles
+
+Abstract
+
+This paper presents WorldRhythm, a rule-based algorithmic framework for generating rhythmic patterns across ten distinct musical cultures within a unified architecture. Unlike existing approaches that focus on single cultural traditions or rely on machine learning with Western-biased datasets, WorldRhythm employs a four-layer role hierarchy combined with culture-specific preference matrices and specialized engines for unique rhythmic concepts. The system integrates ethnomusicological research from West African polyrhythm, Afro-Cuban clave, Javanese gamelan, Balinese kotekan, Indian tala, and Balkan aksak traditions into a parameterized, interpretable generation system. This paper describes the core architecture, algorithmic processes, and theoretical foundations of the framework.
+
+Keywords: rhythm generation, computational ethnomusicology, cross-cultural music, interlocking patterns, polyrhythm, algorithmic composition
+
+1. Introduction
+
+Computational rhythm generation has predominantly focused on Western popular music styles. Major publicly available datasets such as the Groove MIDI Dataset and Magenta's drum transcription corpora consist almost entirely of Western genres including rock, pop, funk, and jazz. Machine learning approaches such as GrooVAE and Drum RNN, while successful for expressive drum performance generation, are trained primarily on these Western-centric datasets and lack explicit modeling of culture-specific rhythmic principles.
+
+Ethnomusicological research has documented sophisticated rhythmic systems across world cultures, including the timeline concept in West African music, the clave in Afro-Cuban traditions, the colotomic structure in Javanese gamelan, the kotekan interlocking in Balinese music, the tala cycles in Indian classical music, and the aksak asymmetric meters in Balkan folk music. However, these concepts have rarely been unified within a single generative framework.
+
+WorldRhythm addresses this gap by providing a parameterized, rule-based system that generates rhythmic patterns respecting the structural principles of multiple musical traditions. The framework is interpretable, controllable, and grounded in ethnomusicological literature.
+
+2. System Architecture
+
+2.1 Four-Layer Role Hierarchy
+
+WorldRhythm adopts a four-layer role system inspired by the functional stratification observed across multiple percussion traditions:
+
+Timeline: The referential rhythmic framework, analogous to the bell pattern in West African ensembles or the clave in Cuban music. This layer provides the temporal anchor around which other layers organize.
+
+Foundation: The low-frequency skeletal layer, characterized by sparse and stable patterns. This corresponds to the bass drum in most traditions, such as the dununba in West African music or the surdo in Brazilian samba.
+
+Groove: The complementary filling layer that interacts with the Foundation through interlocking relationships. This layer occupies the rhythmic spaces left by other layers.
+
+Lead: The most flexible layer for ornamentation and improvisation, corresponding to lead drums such as the djembe in West African music or the quinto in Cuban music.
+
+2.2 Style Preference Matrix
+
+Each of the ten supported styles defines a 16-position preference matrix for each of the four roles. Preference values range from 0.0 to 1.0, representing the probability weight for placing an onset at each position.
+
+Supported styles:
+- West African (12/8 bell pattern)
+- Afro-Cuban (son clave 3-2)
+- Brazilian (samba)
+- Balkan (aksak)
+- Indian (teental tala)
+- Gamelan (colotomic)
+- Jazz (swing)
+- Electronic (four-on-floor)
+- Breakbeat (syncopated)
+- Techno (minimal)
+
+Each style also defines density ranges per role and interlocking rules specifying whether layers should avoid or complement each other.
+
+2.3 Interlocking Mechanisms
+
+Two primary interlocking strategies are implemented:
+
+Avoidance: When generating a layer, positions where another specified layer already has onsets receive reduced probability weights. The avoidance strength is parameterized per style, ranging from 0.0 (no avoidance) to 1.0 (complete avoidance).
+
+Complementation: A layer prioritizes filling gaps left by another layer, creating rhythmic dialogue. This is particularly strong in West African and Gamelan styles.
+
+3. Core Algorithm
+
+3.1 Pattern Generation Process
+
+The main generation algorithm proceeds as follows:
+
+Step 1: Style and role selection
+- Input: style index, role type, pattern length, density, variation
+
+Step 2: Preference mapping
+- Map the 16-position preference array to the target pattern length using rounded interpolation
+- Result: position-specific probability weights
+
+Step 3: Skeleton generation (Foundation only)
+- For Foundation role, generate skeletal beats at strong metric positions
+- Beat 1: 95% probability
+- Beat 3: 70-85% probability (style-dependent)
+
+Step 4: Weighted position selection
+- Calculate cumulative probability from available positions
+- Randomly select positions proportional to preference weights
+- Repeat until target density is reached
+
+Step 5: Interlocking adjustment
+- If avoidance is enabled, reduce weights at occupied positions
+- If complementation is enabled, increase weights at gap positions
+
+Step 6: Velocity assignment
+- Base velocity from preference weight (0.25 + weight * 0.5)
+- Strong beat bonus (+0.2)
+- Random variation (plus or minus 0.12)
+- Clamp to valid range (0.2 to 1.0)
+
+3.2 Humanization Process
+
+After pattern generation, humanization applies culture-specific timing variations:
+
+Step 1: Retrieve style timing profile
+- Base variance (e.g., West African: 25ms, Jazz: 15ms, Techno: 2ms)
+- Role multipliers (Timeline: 0.2-0.5, Lead: 1.2-1.5)
+
+Step 2: Calculate BPM-dependent swing ratio
+- Slow tempo: higher swing (approximately 68%)
+- Fast tempo: approaching straight (approximately 54%)
+- Curve type varies by style (exponential for Jazz, plateau for West African)
+
+Step 3: Apply micro-timing offsets
+- Swing offset for off-beat positions
+- Random offset within style variance range
+
+Step 4: Ghost note insertion
+- Probability based on position weight and proximity to existing onsets
+- Velocity: 12-28% of normal
+
+4. Specialized Engines
+
+WorldRhythm includes five specialized engines for culture-specific rhythmic concepts that cannot be adequately represented by the preference matrix alone.
+
+4.1 IramaEngine (Javanese Density Levels)
+
+Implements the five-level irama system of Javanese gamelan:
+- Lancar: density multiplier 0.25
+- Tanggung: density multiplier 0.5
+- Dados: density multiplier 1.0
+- Wiled: density multiplier 1.5
+- Rangkep: density multiplier 2.0
+
+The engine also generates colotomic structures (gong punctuation patterns) appropriate to each irama level.
+
+4.2 KotekanEngine (Balinese Interlocking)
+
+Generates strict Polos-Sangsih interlocking pairs:
+- Nyog cag: strict alternation
+- Norot: anticipatory pattern
+- Kotekan telu: three-pitch sharing
+- Kotekan empat: four-pitch division
+
+Includes theoretical validation criteria derived from Tenzer (2000): complementarity (greater than 80%), continuity (greater than 60%), and balance (greater than 60%). These thresholds represent structural constraints from the ethnomusicological literature rather than empirically validated perceptual thresholds. Patterns failing these criteria undergo automatic correction to meet the theoretical requirements.
+
+4.3 PolymeterEngine (Multiple Cycle Overlay)
+
+Manages simultaneous cycles of different lengths:
+- Calculates least common multiple for global sync points
+- Tracks phase for each role independently
+- Supports multiple reset behaviors (full reset, phase preserve, gradual sync)
+- Maps 16-step patterns to arbitrary cycle lengths
+
+4.4 CallResponseEngine (Dialogue Structure)
+
+Generates call-response pairs with style-specific profiles:
+- Call types: phrase, accent, break, signal
+- Response types: echo, answer, unison, layered
+- Dynamic prediction of next call position based on history
+- Cross-bar response handling with overlap prevention
+
+4.5 AsymmetricGroupingEngine (Aksak Meters)
+
+Handles asymmetric beat groupings:
+- 7/8: 2+2+3, 2+3+2, 3+2+2
+- 9/8: 2+2+2+3, 2+2+3+2, 2+3+2+2
+- 11/8: 2+2+3+2+2
+- Accent patterns aligned to group boundaries
+- Mapping from standard 4/4 patterns to asymmetric meters
+
+5. Theoretical Foundation
+
+The system design draws from established ethnomusicological research:
+
+Timeline Theory (Kubik, 2010): The concept of an asymmetric timeline as a referential framework for ensemble organization informs the Timeline layer design.
+
+African Polyrhythm (Arom, 1991): The principles of interlocking and complementary rhythmic structures inform the avoidance and complementation mechanisms.
+
+Jazz Microtiming (Benadon, 2006): Research on BPM-dependent swing ratios and expressive timing informs the humanization system.
+
+Euclidean Rhythms (Toussaint, 2005): The mathematical distribution of onsets across pulses informs the weighted selection algorithm.
+
+Kotekan Theory (Tenzer, 2000): The Polos-Sangsih interlocking principles inform the KotekanEngine design.
+
+6. Discussion
+
+WorldRhythm differs from existing approaches in several aspects:
+
+Unified Framework: Unlike systems targeting single traditions, WorldRhythm handles ten distinct cultural styles within a single architecture.
+
+Rule-Based Approach: Unlike machine learning systems requiring large datasets, WorldRhythm uses parameterized rules derived from ethnomusicological analysis, providing interpretability and control.
+
+Specialized Engines: Unique rhythmic concepts (irama, kotekan, polymeter, call-response, aksak) receive dedicated algorithmic treatment rather than approximation through generic mechanisms.
+
+Parameterization: Culture-specific characteristics are captured through adjustable parameters (preference weights, interlocking strengths, timing variances) rather than implicit learned representations.
+
+Limitations include the abstraction of pitch information (the system generates rhythmic patterns only), the reduction of continuous cultural practices to discrete parameters, and the lack of real-time adaptive interaction.
+
+Scope of Validation: The current implementation achieves structural correctness, meaning generated patterns conform to the mathematical and formal principles documented in ethnomusicological literature. Cultural authenticity, which concerns whether patterns are perceptually recognized as stylistically appropriate by expert practitioners, requires separate perceptual evaluation studies that have not yet been conducted. The validation mechanisms in specialized engines (e.g., KotekanEngine) enforce theoretical constraints rather than empirically derived perceptual criteria.
+
+7. Conclusion
+
+WorldRhythm presents a unified framework for cross-cultural rhythm generation based on ethnomusicological principles. By combining a four-layer role hierarchy, style-specific preference matrices, interlocking mechanisms, humanization processes, and specialized engines for unique rhythmic concepts, the system generates patterns that respect the structural principles of diverse musical traditions.
+
+The framework addresses a gap in existing rhythm generation research, which has predominantly focused on Western music or single cultural traditions. Future work includes perceptual evaluation with musicians from represented traditions, extension to additional cultures, and integration with melodic and harmonic generation systems.
+
+References
+
+Arom, S. (1991). African Polyphony and Polyrhythm: Musical Structure and Methodology. Cambridge University Press.
+
+Benadon, F. (2006). Slicing the Beat: Jazz Eighth-Notes as Expressive Microrhythm. Ethnomusicology, 50(1), 73-98.
+
+Kubik, G. (2010). Theory of African Music. University of Chicago Press.
+
+Tenzer, M. (2000). Gamelan Gong Kebyar: The Art of Twentieth-Century Balinese Music. University of Chicago Press.
+
+Toussaint, G. (2005). The Euclidean Algorithm Generates Traditional Musical Rhythms. Proceedings of BRIDGES: Mathematical Connections in Art, Music and Science, 47-56.
+
+Appendix: Style Parameter Summary
+
+West African
+- Swing: 0.62
+- Timeline density: 40-55%
+- Foundation density: 8-15%
+- Timing variance: 25ms
+- Interlocking: strong avoidance, strong complement
+
+Afro-Cuban
+- Swing: 0.58
+- Timeline density: 30-35% (clave)
+- Foundation density: 25-35%
+- Timing variance: 18ms
+- Interlocking: no avoidance, strong complement
+
+Gamelan
+- Swing: 0.50 (straight)
+- Timeline density: 20-30%
+- Foundation density: 5-10%
+- Timing variance: 12ms
+- Interlocking: independent layers, kotekan between Groove and Lead
+
+Jazz
+- Swing: 0.65 (BPM-dependent: 0.68 slow, 0.54 fast)
+- Timeline density: 35-45%
+- Foundation density: 12-25%
+- Timing variance: 15ms
+- Interlocking: conversational, no fixed rules
+
+Electronic
+- Swing: 0.50 (straight)
+- Timeline density: 50-65%
+- Foundation density: 25% (four-on-floor)
+- Timing variance: 3ms
+- Interlocking: none (grid-locked)
+
+Techno
+- Swing: 0.50 (straight)
+- Timeline density: 60-75%
+- Foundation density: 25% (four-on-floor)
+- Timing variance: 2ms
+- Interlocking: none

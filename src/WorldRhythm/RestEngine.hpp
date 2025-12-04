@@ -374,9 +374,12 @@ public:
             if (dist(rng) < prob) {
                 int clusterSize = clusterDist(rng);
                 int restCount = 0;
+                int actualProcessed = 0;  // v0.19: 追蹤實際處理的位置數
 
                 // Apply rest cluster
                 for (int j = i; j < std::min(i + clusterSize, p.length); j++) {
+                    actualProcessed++;  // 記錄已處理的位置
+
                     if (!p.hasOnsetAt(j)) continue;
 
                     // Strong beats can break cluster
@@ -395,7 +398,8 @@ public:
                     restCount++;
                 }
 
-                i += clusterSize;
+                // v0.19: 使用實際處理的數量來前進，確保至少前進 1 步
+                i += std::max(1, actualProcessed);
             } else {
                 i++;
             }

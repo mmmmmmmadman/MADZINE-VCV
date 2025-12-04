@@ -39,6 +39,12 @@ private:
     float bpfZ1 = 0.0f;
     float bpfZ2 = 0.0f;
 
+    // v0.19: BPF 係數緩存（避免每個樣本重複計算三角函數）
+    float cachedFreq = -1.0f;
+    float cachedSampleRate = -1.0f;
+    float bpf_b0 = 0.0f, bpf_b2 = 0.0f;
+    float bpf_a1 = 0.0f, bpf_a2 = 0.0f;
+
     // VCA 包絡狀態
     float envValue = 0.0f;
     bool triggered = false;
@@ -131,32 +137,42 @@ public:
 
 private:
     /**
-     * 2-pole 帶通濾波器
+     * v0.19: 更新 BPF 係數（僅在參數變化時呼叫）
      */
-    float processBPF(float input) {
-        // 計算 BPF 係數
+    void updateBPFCoefficients() {
+        if (freq == cachedFreq && sampleRate == cachedSampleRate) {
+            return;  // 無變化，使用緩存
+        }
+
+        // 計算新係數
         float omega = 2.0f * M_PI * freq / sampleRate;
         float sinOmega = std::sin(omega);
         float cosOmega = std::cos(omega);
         float alpha = sinOmega / (2.0f * BPF_Q);
 
-        float b0 = alpha;
-        float b1 = 0.0f;
-        float b2 = -alpha;
         float a0 = 1.0f + alpha;
-        float a1 = -2.0f * cosOmega;
-        float a2 = 1.0f - alpha;
 
-        // 正規化
-        b0 /= a0;
-        b1 /= a0;
-        b2 /= a0;
-        a1 /= a0;
-        a2 /= a0;
+        // 正規化後的係數
+        bpf_b0 = alpha / a0;
+        bpf_b2 = -alpha / a0;
+        bpf_a1 = (-2.0f * cosOmega) / a0;
+        bpf_a2 = (1.0f - alpha) / a0;
 
-        // Direct Form II
-        float w = input - a1 * bpfZ1 - a2 * bpfZ2;
-        float output = b0 * w + b1 * bpfZ1 + b2 * bpfZ2;
+        // 更新緩存標記
+        cachedFreq = freq;
+        cachedSampleRate = sampleRate;
+    }
+
+    /**
+     * 2-pole 帶通濾波器（v0.19 優化版）
+     */
+    float processBPF(float input) {
+        // 確保係數是最新的（僅在參數變化時重新計算）
+        updateBPFCoefficients();
+
+        // Direct Form II（b1 = 0，已省略）
+        float w = input - bpf_a1 * bpfZ1 - bpf_a2 * bpfZ2;
+        float output = bpf_b0 * w + bpf_b2 * bpfZ2;
 
         bpfZ2 = bpfZ1;
         bpfZ1 = w;

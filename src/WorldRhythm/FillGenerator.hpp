@@ -281,7 +281,8 @@ public:
             // Stutter: 32nd note pairs at phrase boundaries
             if (i % 8 == 6 || i % 8 == 7) {
                 if (progress > 0.3f && dist(rng) < intensity * 0.7f) {
-                    float vel = 0.5f + progress * 0.35f + velVar(rng);
+                    // v0.19: 修正缺少的 intensity 乘數
+                    float vel = 0.5f + progress * 0.35f * intensity + velVar(rng);
                     pattern[i] = std::clamp(vel, 0.35f, 0.9f);
                 }
             }

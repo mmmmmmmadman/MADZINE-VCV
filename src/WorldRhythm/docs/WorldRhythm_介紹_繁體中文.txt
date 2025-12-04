@@ -1,0 +1,84 @@
+WorldRhythm 演算法功能介紹
+
+一、核心架構
+
+WorldRhythm 是一個跨文化節奏生成系統，基於民族音樂學研究設計。系統採用四層角色分工與風格偏好矩陣，產生具有文化特異性的節奏型態。
+
+二、四層角色系統
+
+1. Timeline（時間線）
+   作為節奏的參考框架，類似西非音樂中的鐘聲或古巴音樂中的 Clave。其他聲部圍繞此層組織。
+
+2. Foundation（基礎層）
+   提供低頻骨架，特性為稀疏且穩定。通常對應大鼓或低音打擊樂器。
+
+3. Groove（律動層）
+   填充節奏空間，與 Foundation 形成互補關係。
+
+4. Lead（裝飾層）
+   最自由的聲部，負責即興裝飾與變奏。
+
+三、風格偏好矩陣
+
+系統內建 10 種風格，每種風格定義 4 個角色各 16 個位置的偏好值（0.0-1.0）：
+
+- West African（西非 12/8）
+- Afro-Cuban（古巴）
+- Brazilian（巴西 Samba）
+- Balkan（巴爾幹 Aksak）
+- Indian（印度 Tala）
+- Gamelan（甘美朗）
+- Jazz（爵士）
+- Electronic（電子）
+- Breakbeat（碎拍）
+- Techno（鐵克諾）
+
+偏好值決定該位置被選中放置音符的機率。
+
+四、互鎖機制
+
+1. 閃避（Avoidance）
+   某層避開另一層已有音符的位置。
+
+2. 補位（Complement）
+   某層優先填補另一層的空隙。
+
+互鎖強度依風格調整：西非與甘美朗採用強互鎖，電子樂無互鎖。
+
+五、人性化處理
+
+1. 時序微偏移
+   依風格設定不同範圍：西非 ±25ms、爵士 ±15ms、電子 ±2ms。
+
+2. BPM 相依 Swing
+   慢速時 Swing 比例較高（約 68%），快速時趨近直拍（約 54%）。
+
+3. Ghost Notes
+   低力度的幽靈音符，力度為前一音的 25-50%。
+
+六、特殊引擎
+
+1. IramaEngine（密度層級）
+   甘美朗音樂的五級密度系統：Lancar、Tanggung、Dados、Wiled、Rangkep。
+
+2. KotekanEngine（互鎖生成）
+   峇里島 Polos-Sangsih 嚴格交替互鎖，兩聲部合成單一快速旋律。
+
+3. PolymeterEngine（多循環疊加）
+   不同長度循環同時進行，如 12 拍對 16 拍。
+
+4. CallResponseEngine（呼喊回應）
+   模擬傳統音樂中的對話結構，包含 Call 類型與 Response 類型。
+
+5. AsymmetricGroupingEngine（不對稱分組）
+   巴爾幹 Aksak 節奏，如 7/8 = 2+2+3。
+
+七、理論基礎
+
+本系統參考以下民族音樂學研究：
+
+- Simha Arom（1991）：非洲複節奏與互鎖結構
+- Gerhard Kubik（2010）：時間線理論
+- Fernando Benadon（2006）：爵士微時序研究
+- Godfried Toussaint（2013）：歐幾里得節奏
+- Michael Tenzer（2000）：峇里島 Kotekan 理論

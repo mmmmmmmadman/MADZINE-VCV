@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldRhythm</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e8e8e8;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: calc(100vh - 48px);
+        }
+        header {
+            text-align: center;
+            padding: 16px 0;
+            border-bottom: 3px solid #4a9eff;
+        }
+        h1 { font-size: 3em; color: #4a9eff; letter-spacing: 6px; font-weight: 300; }
+        .subtitle { color: #aaa; font-size: 1.1em; margin-top: 6px; }
+        
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .col { display: flex; flex-direction: column; gap: 16px; }
+        
+        .section {
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            flex: 1;
+        }
+        .section h2 {
+            color: #4a9eff;
+            font-size: 1.2em;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(74,158,255,0.4);
+            font-weight: 600;
+        }
+        
+        /* Roles */
+        .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .role {
+            background: rgba(0,0,0,0.4);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .role.t { border-color: #ff6b6b; }
+        .role.f { border-color: #4ecdc4; }
+        .role.g { border-color: #ffe66d; }
+        .role.l { border-color: #a29bfe; }
+        .role h3 { font-size: 1.05em; margin-bottom: 6px; }
+        .role p { font-size: 0.92em; color: #bbb; line-height: 1.4; }
+        
+        /* Styles */
+        .styles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .style-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        
+        /* Interlock */
+        .interlock-item {
+            background: rgba(0,0,0,0.4);
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .interlock-item:last-of-type { margin-bottom: 0; }
+        .interlock-item h3 { color: #4ecdc4; font-size: 1.05em; margin-bottom: 6px; }
+        .interlock-item p { font-size: 0.95em; color: #bbb; }
+        .note { font-size: 0.9em; color: #888; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Humanize */
+        .h-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 1em;
+        }
+        .h-row:last-child { border: none; }
+        .h-val { color: #ffe66d; font-family: 'Consolas', monospace; font-size: 1.05em; }
+        
+        /* Engines */
+        .engines { display: grid; gap: 10px; }
+        .engine {
+            background: rgba(0,0,0,0.4);
+            padding: 12px 14px;
+            border-radius: 8px;
+        }
+        .engine h3 { color: #a29bfe; font-size: 1em; margin-bottom: 4px; }
+        .engine p { font-size: 0.9em; color: #999; }
+        
+        /* Theory */
+        .refs { display: grid; gap: 6px; }
+        .ref {
+            font-size: 0.95em;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ref:last-child { border: none; }
+        .author { color: #4a9eff; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <h1>WORLDRHYTHM</h1>
+            <div class="subtitle">Cross-Cultural Rhythm Generation System Based on Ethnomusicological Research</div>
+        </header>
+
+        <div class="main">
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>Four-Layer Role System</h2>
+                    <div class="roles">
+                        <div class="role t">
+                            <h3>Timeline</h3>
+                            <p>Rhythmic reference framework. Analogous to bell pattern in West African music or Clave in Cuban music.</p>
+                        </div>
+                        <div class="role f">
+                            <h3>Foundation</h3>
+                            <p>Low-frequency skeleton. Sparse and stable. Corresponds to bass drum or low percussion.</p>
+                        </div>
+                        <div class="role g">
+                            <h3>Groove</h3>
+                            <p>Fills rhythmic space. Complementary relationship with Foundation layer.</p>
+                        </div>
+                        <div class="role l">
+                            <h3>Lead</h3>
+                            <p>Most flexible layer. Responsible for improvisation and ornamentation.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>Interlocking Mechanisms</h2>
+                    <div class="interlock-item">
+                        <h3>Avoidance</h3>
+                        <p>Layer avoids positions where another layer already has notes</p>
+                    </div>
+                    <div class="interlock-item">
+                        <h3>Complement</h3>
+                        <p>Layer prioritizes filling gaps left by another layer</p>
+                    </div>
+                    <div class="note">Strong: West African, Gamelan ・ None: Electronic</div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>Style Preference Matrix</h2>
+                    <div class="styles">
+                        <div class="style-item"><span class="dot" style="background:#ff6b6b"></span>West African (12/8)</div>
+                        <div class="style-item"><span class="dot" style="background:#4ecdc4"></span>Afro-Cuban</div>
+                        <div class="style-item"><span class="dot" style="background:#ffe66d"></span>Brazilian (Samba)</div>
+                        <div class="style-item"><span class="dot" style="background:#a29bfe"></span>Balkan (Aksak)</div>
+                        <div class="style-item"><span class="dot" style="background:#fd79a8"></span>Indian (Tala)</div>
+                        <div class="style-item"><span class="dot" style="background:#00b894"></span>Gamelan</div>
+                        <div class="style-item"><span class="dot" style="background:#0984e3"></span>Jazz</div>
+                        <div class="style-item"><span class="dot" style="background:#6c5ce7"></span>Electronic</div>
+                        <div class="style-item"><span class="dot" style="background:#e17055"></span>Breakbeat</div>
+                        <div class="style-item"><span class="dot" style="background:#636e72"></span>Techno</div>
+                    </div>
+                    <div class="note">Each style defines preference values (0.0-1.0) for 4 roles × 16 positions</div>
+                </div>
+                
+                <div class="section">
+                    <h2>Humanization</h2>
+                    <div class="h-row"><span>West African timing</span><span class="h-val">±25ms</span></div>
+                    <div class="h-row"><span>Jazz timing</span><span class="h-val">±15ms</span></div>
+                    <div class="h-row"><span>Electronic timing</span><span class="h-val">±2ms</span></div>
+                    <div class="h-row"><span>Swing (slow BPM)</span><span class="h-val">~68%</span></div>
+                    <div class="h-row"><span>Swing (fast BPM)</span><span class="h-val">~54%</span></div>
+                    <div class="h-row"><span>Ghost Notes velocity</span><span class="h-val">25-50%</span></div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>Specialized Engines</h2>
+                    <div class="engines">
+                        <div class="engine">
+                            <h3>IramaEngine — Density Levels</h3>
+                            <p>Javanese 5-level: Lancar → Tanggung → Dados → Wiled → Rangkep</p>
+                        </div>
+                        <div class="engine">
+                            <h3>KotekanEngine — Interlocking</h3>
+                            <p>Balinese Polos-Sangsih strict alternation, two parts → one rapid melody</p>
+                        </div>
+                        <div class="engine">
+                            <h3>PolymeterEngine — Cycle Overlay</h3>
+                            <p>Simultaneous different-length cycles (e.g., 12 beats vs 16 beats)</p>
+                        </div>
+                        <div class="engine">
+                            <h3>CallResponseEngine — Dialogue</h3>
+                            <p>Traditional music dialogue structure with Call and Response types</p>
+                        </div>
+                        <div class="engine">
+                            <h3>AsymmetricGroupingEngine</h3>
+                            <p>Balkan Aksak rhythms (e.g., 7/8 = 2+2+3)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>Theoretical Foundation</h2>
+                    <div class="refs">
+                        <div class="ref"><span class="author">Simha Arom (1991)</span> — African polyrhythm & interlock</div>
+                        <div class="ref"><span class="author">Gerhard Kubik (2010)</span> — Timeline theory</div>
+                        <div class="ref"><span class="author">Fernando Benadon (2006)</span> — Jazz microtiming</div>
+                        <div class="ref"><span class="author">Godfried Toussaint (2013)</span> — Euclidean rhythms</div>
+                        <div class="ref"><span class="author">Michael Tenzer (2000)</span> — Balinese Kotekan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

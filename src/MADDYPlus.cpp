@@ -965,7 +965,7 @@ struct MADDYPlus : Module {
     dsp::SchmittTrigger modeTrigger;
     dsp::PulseGenerator gateOutPulse;
 
-    int currentStep = 0, sequenceLength = 16, stepToKnobMapping[64];
+    int currentStep = 0, sequenceLength = 16, stepToKnobMapping[64] = {0};
     float previousVoltage = -999.0f;
     int modeValue = 1;
     int clockSourceValue = 0;
@@ -1001,10 +1001,8 @@ struct MADDYPlus : Module {
     float ch2PreviousCVDOutput = -999.0f;
     float ch3PreviousCVDOutput = -999.0f;
 
-    // Custom pattern support
-    bool useCustomPattern[3] = {false, false, false};
-    std::vector<int> customPattern[3];
-    int customPatternIndex[3] = {0, 0, 0};
+    // Custom pattern support (default minimalist pattern: 0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1)
+    std::vector<int> customPattern = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
 
     MADDYPlus() {
         // Allocate buffers on heap to avoid stack overflow
@@ -1174,27 +1172,10 @@ struct MADDYPlus : Module {
     }
 
     void generateMapping() {
-        // Use custom pattern if enabled
-        if (useCustomPattern[0] && !customPattern[0].empty()) {
-            float density = params[DENSITY_PARAM].getValue();
-
-            // Density controls how many knobs are available
-            int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
-
-            sequenceLength = customPattern[0].size();
-            sequenceLength = clamp(sequenceLength, 1, 64);
-
-            for (int i = 0; i < sequenceLength; i++) {
-                // Clamp knob index to available knobs
-                int knobIndex = customPattern[0][i] % primaryKnobs;
-                stepToKnobMapping[i] = knobIndex;
-            }
-            return;
-        }
-
         float density = params[DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
+        // Density controls sequence length
         if (density < 0.2f) {
             sequenceLength = 8 + (int)(density * 20);
         } else if (density < 0.4f) {
@@ -1213,51 +1194,76 @@ struct MADDYPlus : Module {
             sequenceLength = clamp(sequenceLength, 4, 64);
         }
 
+        // Density controls how many knobs are available
         int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
 
-        for (int i = 0; i < 64; i++) stepToKnobMapping[i] = 0;
+        // Fill entire array with valid pattern (not just sequenceLength)
+        // This prevents accessing uninitialized values if currentStep exceeds sequenceLength
 
         switch (modeValue) {
-            case 0:
-                for (int i = 0; i < sequenceLength; i++) {
+            case 0: // Sequential
+                for (int i = 0; i < 64; i++) {
                     stepToKnobMapping[i] = i % primaryKnobs;
                 }
                 break;
-            case 1: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < sequenceLength; i++) {
-                    stepToKnobMapping[i] = minimalistPattern[i % 32] % primaryKnobs;
+            case 1: { // Custom - use customPattern, loop to fill entire array
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    // Safety: if pattern is empty, use sequential
+                    for (int i = 0; i < 64; i++) {
+                        stepToKnobMapping[i] = i % primaryKnobs;
+                    }
+                } else {
+                    for (int i = 0; i < 64; i++) {
+                        int val = customPattern[i % patternLen];
+                        // Ensure value is in valid range (0 to primaryKnobs-1)
+                        stepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
-            case 2: {
+            case 2: { // Jump
                 int jumpPattern[5] = {0, 2, 4, 1, 3};
-                for (int i = 0; i < sequenceLength; i++) {
+                for (int i = 0; i < 64; i++) {
                     stepToKnobMapping[i] = jumpPattern[i % 5] % primaryKnobs;
                 }
                 break;
             }
-            case 3:
-                for (int i = 0; i < sequenceLength; i++) {
+            case 3: // Rev Sequential
+                for (int i = 0; i < 64; i++) {
                     stepToKnobMapping[i] = (primaryKnobs - 1) - (i % primaryKnobs);
                 }
                 break;
-            case 4: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < sequenceLength; i++) {
-                    int reverseIndex = 31 - (i % 32);
-                    stepToKnobMapping[i] = minimalistPattern[reverseIndex] % primaryKnobs;
+            case 4: { // Rev Custom - use customPattern reversed, loop to fill entire array
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    // Safety: if pattern is empty, use reverse sequential
+                    for (int i = 0; i < 64; i++) {
+                        stepToKnobMapping[i] = (primaryKnobs - 1) - (i % primaryKnobs);
+                    }
+                } else {
+                    for (int i = 0; i < 64; i++) {
+                        int reverseIndex = (patternLen - 1) - (i % patternLen);
+                        int val = customPattern[reverseIndex];
+                        // Ensure value is in valid range (0 to primaryKnobs-1)
+                        stepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
-            case 5: {
+            case 5: { // Rev Jump
                 int jumpPattern[5] = {0, 2, 4, 1, 3};
-                for (int i = 0; i < sequenceLength; i++) {
+                for (int i = 0; i < 64; i++) {
                     int reverseIndex = 4 - (i % 5);
                     stepToKnobMapping[i] = jumpPattern[reverseIndex] % primaryKnobs;
                 }
                 break;
             }
+            default: // Safety: use sequential if mode is invalid
+                for (int i = 0; i < 64; i++) {
+                    stepToKnobMapping[i] = i % primaryKnobs;
+                }
+                break;
         }
 
         if (chaos > 0.3f) {
@@ -1270,24 +1276,6 @@ struct MADDYPlus : Module {
     }
 
     void generateCh2Mapping() {
-        // Use custom pattern if enabled
-        if (useCustomPattern[1] && !customPattern[1].empty()) {
-            float density = params[CH2_DENSITY_PARAM].getValue();
-
-            // Density controls how many knobs are available
-            int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
-
-            ch2SequenceLength = customPattern[1].size();
-            ch2SequenceLength = clamp(ch2SequenceLength, 1, 64);
-
-            for (int i = 0; i < ch2SequenceLength; i++) {
-                // Clamp knob index to available knobs
-                int knobIndex = customPattern[1][i] % primaryKnobs;
-                ch2StepToKnobMapping[i] = knobIndex;
-            }
-            return;
-        }
-
         float density = params[CH2_DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
@@ -1366,24 +1354,6 @@ struct MADDYPlus : Module {
     }
 
     void generateCh3Mapping() {
-        // Use custom pattern if enabled
-        if (useCustomPattern[2] && !customPattern[2].empty()) {
-            float density = params[CH3_DENSITY_PARAM].getValue();
-
-            // Density controls how many knobs are available
-            int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
-
-            ch3SequenceLength = customPattern[2].size();
-            ch3SequenceLength = clamp(ch3SequenceLength, 1, 64);
-
-            for (int i = 0; i < ch3SequenceLength; i++) {
-                // Clamp knob index to available knobs
-                int knobIndex = customPattern[2][i] % primaryKnobs;
-                ch3StepToKnobMapping[i] = knobIndex;
-            }
-            return;
-        }
-
         float density = params[CH3_DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
@@ -1525,20 +1495,12 @@ json_t* dataToJson() override {
     }
     json_object_set_new(rootJ, "shifts", shiftsJ);
 
-        // Save custom patterns
-        json_t* customPatternsJ = json_array();
-        for (int ch = 0; ch < 3; ch++) {
-            json_t* channelJ = json_object();
-            json_object_set_new(channelJ, "useCustomPattern", json_boolean(useCustomPattern[ch]));
-
-            json_t* patternJ = json_array();
-            for (int step : customPattern[ch]) {
-                json_array_append_new(patternJ, json_integer(step));
-            }
-            json_object_set_new(channelJ, "pattern", patternJ);
-            json_array_append_new(customPatternsJ, channelJ);
+        // Save custom pattern
+        json_t* customPatternJ = json_array();
+        for (int step : customPattern) {
+            json_array_append_new(customPatternJ, json_integer(step));
         }
-        json_object_set_new(rootJ, "customPatterns", customPatternsJ);
+        json_object_set_new(rootJ, "customPattern", customPatternJ);
 
         return rootJ;
     }
@@ -1581,31 +1543,23 @@ json_t* dataToJson() override {
             }
             }
 
-        // Load custom patterns
-        json_t* customPatternsJ = json_object_get(rootJ, "customPatterns");
-        if (customPatternsJ) {
-            for (int ch = 0; ch < 3; ch++) {
-                json_t* channelJ = json_array_get(customPatternsJ, ch);
-                if (channelJ) {
-                    json_t* useCustomJ = json_object_get(channelJ, "useCustomPattern");
-                    if (useCustomJ) {
-                        useCustomPattern[ch] = json_boolean_value(useCustomJ);
-                    }
-
-                    json_t* patternJ = json_object_get(channelJ, "pattern");
-                    if (patternJ) {
-                        customPattern[ch].clear();
-                        size_t arraySize = json_array_size(patternJ);
-                        for (size_t i = 0; i < arraySize; i++) {
-                            json_t* stepJ = json_array_get(patternJ, i);
-                            if (stepJ) {
-                                customPattern[ch].push_back(json_integer_value(stepJ));
-                            }
-                        }
-                    }
+        // Load custom pattern
+        json_t* customPatternJ = json_object_get(rootJ, "customPattern");
+        if (customPatternJ) {
+            customPattern.clear();
+            size_t arraySize = json_array_size(customPatternJ);
+            for (size_t i = 0; i < arraySize; i++) {
+                json_t* stepJ = json_array_get(customPatternJ, i);
+                if (stepJ) {
+                    customPattern.push_back(json_integer_value(stepJ));
                 }
             }
         }
+
+        // Regenerate mapping after loading custom pattern
+        generateMapping();
+        generateCh2Mapping();
+        generateCh3Mapping();
     }
 
     void process(const ProcessArgs& args) override {
@@ -1734,17 +1688,22 @@ json_t* dataToJson() override {
     }
 
         if (patternClockTriggered) {
+            // First advance step, then regenerate mapping
             currentStep = (currentStep + 1) % sequenceLength;
             generateMapping();
+            // Ensure currentStep is within bounds after sequenceLength may have changed
+            if (currentStep >= sequenceLength) currentStep = currentStep % sequenceLength;
 
-            int newActiveKnob = stepToKnobMapping[currentStep];
+            int newActiveKnob = clamp(stepToKnobMapping[currentStep], 0, 4);
             float newVoltage = params[K1_PARAM + newActiveKnob].getValue();
 
             if (newVoltage != previousVoltage) gateOutPulse.trigger(0.01f);
             previousVoltage = newVoltage;
         }
 
-        int activeKnob = stepToKnobMapping[currentStep];
+        // Ensure currentStep is always valid
+        int safeStep = clamp(currentStep, 0, 63);
+        int activeKnob = clamp(stepToKnobMapping[safeStep], 0, 4);
         outputs[CV_OUTPUT].setVoltage(params[K1_PARAM + activeKnob].getValue());
         outputs[TRIG_OUTPUT].setVoltage(gateOutPulse.process(args.sampleTime) ? 10.0f : 0.0f);
 
@@ -1970,16 +1929,16 @@ struct MADDYPlusClickableLight : ParamWidget {
 struct Ch1ModeParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         MADDYPlus* module = dynamic_cast<MADDYPlus*>(this->module);
-        if (!module) return "Minimalism";
+        if (!module) return "Custom";
 
         switch (module->modeValue) {
             case 0: return "Sequential";
-            case 1: return "Minimalism";
+            case 1: return "Custom";
             case 2: return "Jump";
             case 3: return "Rev Sequential";
-            case 4: return "Rev Minimalism";
+            case 4: return "Rev Custom";
             case 5: return "Rev Jump";
-            default: return "Minimalism";
+            default: return "Custom";
         }
     }
 
@@ -1991,16 +1950,16 @@ struct Ch1ModeParamQuantity : ParamQuantity {
 struct Ch2ModeParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         MADDYPlus* module = dynamic_cast<MADDYPlus*>(this->module);
-        if (!module) return "Minimalism";
+        if (!module) return "Custom";
 
         switch (module->ch2ModeValue) {
             case 0: return "Sequential";
-            case 1: return "Minimalism";
+            case 1: return "Custom";
             case 2: return "Jump";
             case 3: return "Rev Sequential";
-            case 4: return "Rev Minimalism";
+            case 4: return "Rev Custom";
             case 5: return "Rev Jump";
-            default: return "Minimalism";
+            default: return "Custom";
         }
     }
 
@@ -2012,16 +1971,16 @@ struct Ch2ModeParamQuantity : ParamQuantity {
 struct Ch3ModeParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         MADDYPlus* module = dynamic_cast<MADDYPlus*>(this->module);
-        if (!module) return "Minimalism";
+        if (!module) return "Custom";
 
         switch (module->ch3ModeValue) {
             case 0: return "Sequential";
-            case 1: return "Minimalism";
+            case 1: return "Custom";
             case 2: return "Jump";
             case 3: return "Rev Sequential";
-            case 4: return "Rev Minimalism";
+            case 4: return "Rev Custom";
             case 5: return "Rev Jump";
-            default: return "Minimalism";
+            default: return "Custom";
         }
     }
 
@@ -2332,15 +2291,14 @@ resetButton->module = module;
 
     struct PatternTextField : ui::TextField {
         MADDYPlus* module;
-        int channelId;
 
-        PatternTextField(MADDYPlus* module, int channelId) : module(module), channelId(channelId) {
+        PatternTextField(MADDYPlus* module) : module(module) {
             box.size.x = 200;
             placeholder = "e.g. 12312345";
 
-            if (module && !module->customPattern[channelId].empty()) {
+            if (module && !module->customPattern.empty()) {
                 text = "";
-                for (int step : module->customPattern[channelId]) {
+                for (int step : module->customPattern) {
                     text += std::to_string(step + 1);
                 }
             }
@@ -2358,19 +2316,11 @@ resetButton->module = module;
                 }
 
                 if (!steps.empty()) {
-                    module->customPattern[channelId] = steps;
-                    module->customPatternIndex[channelId] = 0;
-
+                    module->customPattern = steps;
                     // Immediately regenerate mappings
-                    if (channelId == 0) module->generateMapping();
-                    else if (channelId == 1) module->generateCh2Mapping();
-                    else if (channelId == 2) module->generateCh3Mapping();
+                    module->generateMapping();
                 }
-
-                ui::MenuOverlay* overlay = getAncestorOfType<ui::MenuOverlay>();
-                if (overlay) {
-                    overlay->requestDelete();
-                }
+                e.consume(this);
             }
             TextField::onSelectKey(e);
         }
@@ -2389,41 +2339,37 @@ resetButton->module = module;
         if (!module) return;
 
         menu->addChild(new MenuSeparator);
-        menu->addChild(createMenuLabel("Custom Pattern"));
+        menu->addChild(createMenuLabel("Custom Pattern (for Custom mode)"));
 
-        const char* channelNames[3] = {"Channel 1", "Channel 2", "Channel 3"};
-        for (int ch = 0; ch < 3; ch++) {
-            menu->addChild(createMenuLabel(channelNames[ch]));
-
-            struct PatternEnableItem : ui::MenuItem {
-                MADDYPlus* module;
-                int channelId;
-
-                PatternEnableItem(MADDYPlus* module, int channelId) : module(module), channelId(channelId) {
-                    text = "Use Custom Pattern";
-                    rightText = CHECKMARK(module && module->useCustomPattern[channelId]);
-                }
-
-                void onAction(const event::Action& e) override {
-                    if (module) {
-                        module->useCustomPattern[channelId] = !module->useCustomPattern[channelId];
-                    }
-                }
-            };
-
-            menu->addChild(new PatternEnableItem(module, ch));
-
-            menu->addChild(createMenuLabel("Pattern (1-5):"));
-            menu->addChild(new PatternTextField(module, ch));
-
-            if (!module->customPattern[ch].empty()) {
-                std::string currentPattern = "Current: ";
-                for (int step : module->customPattern[ch]) {
-                    currentPattern += std::to_string(step + 1);
-                }
-                menu->addChild(createMenuLabel(currentPattern));
+        // Show current pattern
+        if (!module->customPattern.empty()) {
+            std::string currentPattern = "Current: ";
+            for (int step : module->customPattern) {
+                currentPattern += std::to_string(step + 1);
             }
+            menu->addChild(createMenuLabel(currentPattern));
         }
+
+        menu->addChild(createMenuLabel("Enter pattern (1-5):"));
+        menu->addChild(new PatternTextField(module));
+
+        // Reset Custom button
+        struct ResetCustomItem : ui::MenuItem {
+            MADDYPlus* module;
+
+            ResetCustomItem(MADDYPlus* module) : module(module) {
+                text = "Reset to Default";
+            }
+
+            void onAction(const event::Action& e) override {
+                if (module) {
+                    module->customPattern = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
+                    module->generateMapping();
+                }
+            }
+        };
+
+        menu->addChild(new ResetCustomItem(module));
 
         menu->addChild(new MenuSeparator);
         menu->addChild(createMenuLabel("Attack Time"));

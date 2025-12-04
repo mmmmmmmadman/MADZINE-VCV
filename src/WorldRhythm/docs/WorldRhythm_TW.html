@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldRhythm</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e8e8e8;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: calc(100vh - 48px);
+        }
+        header {
+            text-align: center;
+            padding: 16px 0;
+            border-bottom: 3px solid #4a9eff;
+        }
+        h1 { font-size: 3em; color: #4a9eff; letter-spacing: 6px; font-weight: 300; }
+        .subtitle { color: #aaa; font-size: 1.1em; margin-top: 6px; }
+        
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .col { display: flex; flex-direction: column; gap: 16px; }
+        
+        .section {
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            flex: 1;
+        }
+        .section h2 {
+            color: #4a9eff;
+            font-size: 1.2em;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(74,158,255,0.4);
+            font-weight: 600;
+        }
+        
+        .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .role {
+            background: rgba(0,0,0,0.4);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .role.t { border-color: #ff6b6b; }
+        .role.f { border-color: #4ecdc4; }
+        .role.g { border-color: #ffe66d; }
+        .role.l { border-color: #a29bfe; }
+        .role h3 { font-size: 1.05em; margin-bottom: 6px; }
+        .role p { font-size: 0.92em; color: #bbb; line-height: 1.5; }
+        
+        .styles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .style-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        
+        .interlock-item {
+            background: rgba(0,0,0,0.4);
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .interlock-item:last-of-type { margin-bottom: 0; }
+        .interlock-item h3 { color: #4ecdc4; font-size: 1.05em; margin-bottom: 6px; }
+        .interlock-item p { font-size: 0.95em; color: #bbb; }
+        .note { font-size: 0.9em; color: #888; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        .h-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 1em;
+        }
+        .h-row:last-child { border: none; }
+        .h-val { color: #ffe66d; font-family: 'Consolas', monospace; font-size: 1.05em; }
+        
+        .engines { display: grid; gap: 10px; }
+        .engine {
+            background: rgba(0,0,0,0.4);
+            padding: 12px 14px;
+            border-radius: 8px;
+        }
+        .engine h3 { color: #a29bfe; font-size: 1em; margin-bottom: 4px; }
+        .engine p { font-size: 0.9em; color: #999; }
+        
+        .refs { display: grid; gap: 6px; }
+        .ref {
+            font-size: 0.95em;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ref:last-child { border: none; }
+        .author { color: #4a9eff; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <h1>WORLDRHYTHM</h1>
+            <div class="subtitle">基於民族音樂學研究的跨文化節奏生成系統</div>
+        </header>
+
+        <div class="main">
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>一、四層角色系統</h2>
+                    <div class="roles">
+                        <div class="role t">
+                            <h3>Timeline 時間線</h3>
+                            <p>節奏參考框架，類似西非音樂中的鐘聲或古巴音樂中的 Clave。</p>
+                        </div>
+                        <div class="role f">
+                            <h3>Foundation 基礎層</h3>
+                            <p>低頻骨架，稀疏且穩定。對應大鼓或低音打擊樂器。</p>
+                        </div>
+                        <div class="role g">
+                            <h3>Groove 律動層</h3>
+                            <p>填充節奏空間，與 Foundation 形成互補關係。</p>
+                        </div>
+                        <div class="role l">
+                            <h3>Lead 裝飾層</h3>
+                            <p>最自由的聲部，負責即興裝飾與變奏。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、互鎖機制</h2>
+                    <div class="interlock-item">
+                        <h3>閃避 Avoidance</h3>
+                        <p>某層避開另一層已有音符的位置</p>
+                    </div>
+                    <div class="interlock-item">
+                        <h3>補位 Complement</h3>
+                        <p>某層優先填補另一層的空隙</p>
+                    </div>
+                    <div class="note">強互鎖：西非、甘美朗 ・ 無互鎖：電子樂</div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>二、風格偏好矩陣</h2>
+                    <div class="styles">
+                        <div class="style-item"><span class="dot" style="background:#ff6b6b"></span>西非 12/8</div>
+                        <div class="style-item"><span class="dot" style="background:#4ecdc4"></span>古巴 Afro-Cuban</div>
+                        <div class="style-item"><span class="dot" style="background:#ffe66d"></span>巴西 Samba</div>
+                        <div class="style-item"><span class="dot" style="background:#a29bfe"></span>巴爾幹 Aksak</div>
+                        <div class="style-item"><span class="dot" style="background:#fd79a8"></span>印度 Tala</div>
+                        <div class="style-item"><span class="dot" style="background:#00b894"></span>甘美朗 Gamelan</div>
+                        <div class="style-item"><span class="dot" style="background:#0984e3"></span>爵士 Jazz</div>
+                        <div class="style-item"><span class="dot" style="background:#6c5ce7"></span>電子 Electronic</div>
+                        <div class="style-item"><span class="dot" style="background:#e17055"></span>碎拍 Breakbeat</div>
+                        <div class="style-item"><span class="dot" style="background:#636e72"></span>鐵克諾 Techno</div>
+                    </div>
+                    <div class="note">每種風格定義 4 個角色 × 16 個位置的偏好值（0.0-1.0）</div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、人性化處理</h2>
+                    <div class="h-row"><span>西非時序偏移</span><span class="h-val">±25ms</span></div>
+                    <div class="h-row"><span>爵士時序偏移</span><span class="h-val">±15ms</span></div>
+                    <div class="h-row"><span>電子時序偏移</span><span class="h-val">±2ms</span></div>
+                    <div class="h-row"><span>Swing（慢速）</span><span class="h-val">~68%</span></div>
+                    <div class="h-row"><span>Swing（快速）</span><span class="h-val">~54%</span></div>
+                    <div class="h-row"><span>Ghost Notes 力度</span><span class="h-val">25-50%</span></div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>五、特殊引擎</h2>
+                    <div class="engines">
+                        <div class="engine">
+                            <h3>IramaEngine 密度層級</h3>
+                            <p>甘美朗五級密度：Lancar → Tanggung → Dados → Wiled → Rangkep</p>
+                        </div>
+                        <div class="engine">
+                            <h3>KotekanEngine 互鎖生成</h3>
+                            <p>峇里島 Polos-Sangsih 嚴格交替，兩聲部合成單一快速旋律</p>
+                        </div>
+                        <div class="engine">
+                            <h3>PolymeterEngine 多循環疊加</h3>
+                            <p>不同長度循環同時進行（如 12 拍對 16 拍）</p>
+                        </div>
+                        <div class="engine">
+                            <h3>CallResponseEngine 呼喊回應</h3>
+                            <p>模擬傳統音樂中的對話結構，包含 Call 與 Response 類型</p>
+                        </div>
+                        <div class="engine">
+                            <h3>AsymmetricGroupingEngine 不對稱分組</h3>
+                            <p>巴爾幹 Aksak 節奏（如 7/8 = 2+2+3）</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>六、理論基礎</h2>
+                    <div class="refs">
+                        <div class="ref"><span class="author">Simha Arom (1991)</span> — 非洲複節奏與互鎖結構</div>
+                        <div class="ref"><span class="author">Gerhard Kubik (2010)</span> — 時間線理論</div>
+                        <div class="ref"><span class="author">Fernando Benadon (2006)</span> — 爵士微時序研究</div>
+                        <div class="ref"><span class="author">Godfried Toussaint (2013)</span> — 歐幾里得節奏</div>
+                        <div class="ref"><span class="author">Michael Tenzer (2000)</span> — 峇里島 Kotekan 理論</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

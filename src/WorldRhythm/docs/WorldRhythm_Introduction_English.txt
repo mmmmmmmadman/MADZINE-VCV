@@ -1,0 +1,84 @@
+WorldRhythm Algorithm Overview
+
+1. Core Architecture
+
+WorldRhythm is a cross-cultural rhythm generation system based on ethnomusicological research. The system employs a four-layer role hierarchy and style preference matrices to generate rhythmic patterns with culture-specific characteristics.
+
+2. Four-Layer Role System
+
+Timeline
+   Serves as the rhythmic reference framework, analogous to the bell pattern in West African music or the Clave in Cuban music. Other layers organize around this layer.
+
+Foundation
+   Provides the low-frequency skeleton, characterized by sparse and stable patterns. Typically corresponds to bass drum or low-pitched percussion.
+
+Groove
+   Fills the rhythmic space, forming a complementary relationship with Foundation.
+
+Lead
+   The most flexible layer, responsible for improvisation and ornamentation.
+
+3. Style Preference Matrix
+
+The system includes 10 built-in styles, each defining preference values (0.0-1.0) for 16 positions across 4 roles:
+
+- West African (12/8)
+- Afro-Cuban
+- Brazilian (Samba)
+- Balkan (Aksak)
+- Indian (Tala)
+- Gamelan
+- Jazz
+- Electronic
+- Breakbeat
+- Techno
+
+Preference values determine the probability of placing a note at each position.
+
+4. Interlocking Mechanisms
+
+Avoidance
+   One layer avoids positions where another layer already has notes.
+
+Complement
+   One layer prioritizes filling gaps left by another layer.
+
+Interlocking strength varies by style: West African and Gamelan use strong interlocking; Electronic uses none.
+
+5. Humanization
+
+Timing Micro-offsets
+   Style-specific ranges: West African ±25ms, Jazz ±15ms, Electronic ±2ms.
+
+BPM-Dependent Swing
+   Higher swing ratio at slow tempos (approximately 68%), approaching straight feel at fast tempos (approximately 54%).
+
+Ghost Notes
+   Low-velocity notes at 25-50% of the preceding note's velocity.
+
+6. Specialized Engines
+
+IramaEngine (Density Levels)
+   Javanese Gamelan five-level density system: Lancar, Tanggung, Dados, Wiled, Rangkep.
+
+KotekanEngine (Interlocking Generation)
+   Balinese Polos-Sangsih strict alternating interlock, combining two parts into a single rapid melodic line.
+
+PolymeterEngine (Multiple Cycle Overlay)
+   Simultaneous cycles of different lengths, such as 12 beats against 16 beats.
+
+CallResponseEngine (Call and Response)
+   Simulates traditional music dialogue structures, including Call types and Response types.
+
+AsymmetricGroupingEngine (Asymmetric Grouping)
+   Balkan Aksak rhythms, such as 7/8 = 2+2+3.
+
+7. Theoretical Foundation
+
+This system references the following ethnomusicological research:
+
+- Simha Arom (1991): African polyrhythm and interlocking structures
+- Gerhard Kubik (2010): Timeline theory
+- Fernando Benadon (2006): Jazz microtiming studies
+- Godfried Toussaint (2013): Euclidean rhythms
+- Michael Tenzer (2000): Balinese Kotekan theory

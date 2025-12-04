@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldRhythm</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Hiragino Kaku Gothic Pro', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e8e8e8;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: calc(100vh - 48px);
+        }
+        header {
+            text-align: center;
+            padding: 16px 0;
+            border-bottom: 3px solid #4a9eff;
+        }
+        h1 { font-size: 3em; color: #4a9eff; letter-spacing: 6px; font-weight: 300; }
+        .subtitle { color: #aaa; font-size: 1.1em; margin-top: 6px; }
+        
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .col { display: flex; flex-direction: column; gap: 16px; }
+        
+        .section {
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            flex: 1;
+        }
+        .section h2 {
+            color: #4a9eff;
+            font-size: 1.2em;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(74,158,255,0.4);
+            font-weight: 600;
+        }
+        
+        .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .role {
+            background: rgba(0,0,0,0.4);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .role.t { border-color: #ff6b6b; }
+        .role.f { border-color: #4ecdc4; }
+        .role.g { border-color: #ffe66d; }
+        .role.l { border-color: #a29bfe; }
+        .role h3 { font-size: 1.05em; margin-bottom: 6px; }
+        .role p { font-size: 0.92em; color: #bbb; line-height: 1.5; }
+        
+        .styles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .style-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        
+        .interlock-item {
+            background: rgba(0,0,0,0.4);
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .interlock-item:last-of-type { margin-bottom: 0; }
+        .interlock-item h3 { color: #4ecdc4; font-size: 1.05em; margin-bottom: 6px; }
+        .interlock-item p { font-size: 0.95em; color: #bbb; }
+        .note { font-size: 0.9em; color: #888; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        .h-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 1em;
+        }
+        .h-row:last-child { border: none; }
+        .h-val { color: #ffe66d; font-family: 'Consolas', monospace; font-size: 1.05em; }
+        
+        .engines { display: grid; gap: 10px; }
+        .engine {
+            background: rgba(0,0,0,0.4);
+            padding: 12px 14px;
+            border-radius: 8px;
+        }
+        .engine h3 { color: #a29bfe; font-size: 1em; margin-bottom: 4px; }
+        .engine p { font-size: 0.9em; color: #999; }
+        
+        .refs { display: grid; gap: 6px; }
+        .ref {
+            font-size: 0.95em;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ref:last-child { border: none; }
+        .author { color: #4a9eff; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <h1>WORLDRHYTHM</h1>
+            <div class="subtitle">民族音楽学の研究に基づいた異文化リズム生成システム</div>
+        </header>
+
+        <div class="main">
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>一、4層役割システム</h2>
+                    <div class="roles">
+                        <div class="role t">
+                            <h3>Timeline タイムライン</h3>
+                            <p>リズムの基準フレームワーク。西アフリカのベルやキューバのクラーベに相当。</p>
+                        </div>
+                        <div class="role f">
+                            <h3>Foundation ファンデーション</h3>
+                            <p>低周波の骨格。疎かつ安定。バスドラムや低音打楽器に対応。</p>
+                        </div>
+                        <div class="role g">
+                            <h3>Groove グルーヴ</h3>
+                            <p>リズム空間を埋め、Foundationと補完関係を形成。</p>
+                        </div>
+                        <div class="role l">
+                            <h3>Lead リード</h3>
+                            <p>最も自由なレイヤー。即興と装飾を担当。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、インターロック機構</h2>
+                    <div class="interlock-item">
+                        <h3>回避 Avoidance</h3>
+                        <p>あるレイヤーが別レイヤーで既に音符がある位置を避ける</p>
+                    </div>
+                    <div class="interlock-item">
+                        <h3>補完 Complement</h3>
+                        <p>あるレイヤーが別レイヤーの空白を優先的に埋める</p>
+                    </div>
+                    <div class="note">強い：西アフリカ、ガムラン ・ なし：エレクトロニック</div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>二、スタイル優先度マトリクス</h2>
+                    <div class="styles">
+                        <div class="style-item"><span class="dot" style="background:#ff6b6b"></span>西アフリカ 12/8</div>
+                        <div class="style-item"><span class="dot" style="background:#4ecdc4"></span>アフロキューバン</div>
+                        <div class="style-item"><span class="dot" style="background:#ffe66d"></span>ブラジル サンバ</div>
+                        <div class="style-item"><span class="dot" style="background:#a29bfe"></span>バルカン アクサク</div>
+                        <div class="style-item"><span class="dot" style="background:#fd79a8"></span>インド ターラ</div>
+                        <div class="style-item"><span class="dot" style="background:#00b894"></span>ガムラン</div>
+                        <div class="style-item"><span class="dot" style="background:#0984e3"></span>ジャズ</div>
+                        <div class="style-item"><span class="dot" style="background:#6c5ce7"></span>エレクトロニック</div>
+                        <div class="style-item"><span class="dot" style="background:#e17055"></span>ブレイクビーツ</div>
+                        <div class="style-item"><span class="dot" style="background:#636e72"></span>テクノ</div>
+                    </div>
+                    <div class="note">各スタイルは4役割 × 16ポジションの優先度値（0.0-1.0）を定義</div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、ヒューマナイズ処理</h2>
+                    <div class="h-row"><span>西アフリカ タイミング</span><span class="h-val">±25ms</span></div>
+                    <div class="h-row"><span>ジャズ タイミング</span><span class="h-val">±15ms</span></div>
+                    <div class="h-row"><span>電子 タイミング</span><span class="h-val">±2ms</span></div>
+                    <div class="h-row"><span>スウィング（低速）</span><span class="h-val">~68%</span></div>
+                    <div class="h-row"><span>スウィング（高速）</span><span class="h-val">~54%</span></div>
+                    <div class="h-row"><span>ゴーストノート</span><span class="h-val">25-50%</span></div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="section" style="flex:2">
+                    <h2>五、特殊エンジン</h2>
+                    <div class="engines">
+                        <div class="engine">
+                            <h3>IramaEngine 密度レベル</h3>
+                            <p>ジャワ5段階密度：Lancar → Tanggung → Dados → Wiled → Rangkep</p>
+                        </div>
+                        <div class="engine">
+                            <h3>KotekanEngine インターロック生成</h3>
+                            <p>バリ島Polos-Sangsih厳密交互、2パート→1高速メロディ</p>
+                        </div>
+                        <div class="engine">
+                            <h3>PolymeterEngine 複数サイクル重畳</h3>
+                            <p>異なる長さのサイクルが同時進行（例：12拍対16拍）</p>
+                        </div>
+                        <div class="engine">
+                            <h3>CallResponseEngine コールアンドレスポンス</h3>
+                            <p>伝統音楽の対話構造をシミュレート、CallとResponseタイプを含む</p>
+                        </div>
+                        <div class="engine">
+                            <h3>AsymmetricGroupingEngine 非対称グルーピング</h3>
+                            <p>バルカンアクサクリズム（例：7/8 = 2+2+3）</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>六、理論的基盤</h2>
+                    <div class="refs">
+                        <div class="ref"><span class="author">Simha Arom (1991)</span> — アフリカのポリリズムとインターロック</div>
+                        <div class="ref"><span class="author">Gerhard Kubik (2010)</span> — タイムライン理論</div>
+                        <div class="ref"><span class="author">Fernando Benadon (2006)</span> — ジャズのマイクロタイミング</div>
+                        <div class="ref"><span class="author">Godfried Toussaint (2013)</span> — ユークリッドリズム</div>
+                        <div class="ref"><span class="author">Michael Tenzer (2000)</span> — バリ島コテカン理論</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

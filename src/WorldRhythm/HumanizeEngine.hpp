@@ -536,24 +536,40 @@ public:
         }
     }
 
-    // 獲取更精確的 swing timing offset（毫秒）
-    float getSwingTimingOffset(int step, float bpm) const {
+    // ========================================
+    // v0.19: 統一的 Swing Offset 計算
+    // ========================================
+    // 核心計算函數：根據 BPM 和 swing ratio 計算毫秒偏移
+    // 設計原則：
+    // - 120 BPM 時，swing ratio 0.67 (triplet) 應產生約 20-25ms 偏移
+    // - 偏移量隨 BPM 成反比（慢速 = 更長偏移，快速 = 更短偏移）
+    // - 最大偏移限制在 50ms，避免過度搖擺破壞節奏感
+    float calculateSwingOffsetMs(float bpm) const {
         float swingRatio = getDynamicSwingRatio();
 
+        // 計算一個 16 分音符的時長（這是 swing 影響的最小單位）
+        float sixteenthNoteDuration = 60000.0f / bpm / 4.0f;  // ms
+
+        // Swing ratio 轉換為時間偏移
+        // 0.5 = straight (0ms offset)
+        // 0.67 = triplet swing (約 1/6 的 16 分音符延遲)
+        // 公式：(ratio - 0.5) * 2 * sixteenthNote * scaleFactor
+        // scaleFactor = 0.5 確保最大偏移約為 16 分音符的 17%
+        float swingOffset = (swingRatio - 0.5f) * sixteenthNoteDuration;
+
+        // 限制最大偏移（避免極慢 BPM 時偏移過大）
+        return std::min(swingOffset, 50.0f);
+    }
+
+    // 獲取更精確的 swing timing offset（毫秒）
+    // v0.19: 統一使用 calculateSwingOffsetMs()
+    float getSwingTimingOffset(int step, float bpm) const {
         // 只有 off-beat 位置有 swing
         if (step % 2 == 0) {
             return 0.0f;  // On-beat: 無偏移
         }
 
-        // 計算一個 8 分音符的時長
-        float eighthNoteDuration = 60000.0f / bpm / 2.0f;  // ms
-
-        // Swing ratio 轉換為時間偏移
-        // 0.5 = straight (0ms offset)
-        // 0.67 = triplet swing (~1/3 of eighth note late)
-        float swingOffset = (swingRatio - 0.5f) * 2.0f * eighthNoteDuration;
-
-        return swingOffset;
+        return calculateSwingOffsetMs(bpm);
     }
 
     // 獲取帶有 BPM 感知的完整 microtiming
@@ -653,7 +669,7 @@ public:
     }
 
     // ========================================
-    // Microtiming with Groove Template (v0.16 enhanced)
+    // Microtiming with Groove Template (v0.16 enhanced, v0.19 unified swing)
     // ========================================
     float getGrooveMicrotiming(int step, Role role, float amount) const {
         const GrooveTemplate& groove = grooveTemplates[currentGrooveIndex];
@@ -663,11 +679,9 @@ public:
         float baseOffset = groove.offsets[pos] * amount;
 
         // Apply BPM-aware swing to off-beat positions
-        float swingRatio = getDynamicSwingRatio();
+        // v0.19: 統一使用 calculateSwingOffsetMs() 確保一致性
         if (pos % 2 == 1) {  // Off-beat positions (e, a)
-            // Convert swing ratio to timing offset
-            // 0.5 = straight (0ms), 0.67 = triplet (~20ms late at 120bpm)
-            float swingOffset = (swingRatio - 0.5f) * 40.0f * amount;
+            float swingOffset = calculateSwingOffsetMs(currentBPM) * amount;
             baseOffset += swingOffset;
         }
 
