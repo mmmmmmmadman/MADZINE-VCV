@@ -171,7 +171,7 @@
     {
       "slug": "Multiverse",
       "name": "Multiverse",
-      "description": "8-channel visual mixer with real-time waveform display (macOS Apple Silicon only)",
+      "description": "4-channel analog style visual synth (macOS Apple Silicon only)",
       "tags": ["Visual", "Mixer"]
     }
   ]
