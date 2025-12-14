@@ -1402,7 +1402,7 @@ const moduleManuals = {
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
 <li><b>BPM</b>: Tempo control (20-300 BPM)</li>
 <li><b>SWING</b>: Swing amount (0-100%)</li>
-<li><b>EXT CLK</b>: External clock input</li>
+<li><b>CLK SRC</b>: Clock source selector (internal/external mode via knob)</li>
 <li><b>RESET</b>: Reset all sequences</li>
 </ul>
 
@@ -1424,9 +1424,11 @@ const moduleManuals = {
 
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Outputs</h3>
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-<li>BD, SN, HH trigger outputs</li>
-<li>CV sequencer output</li>
-<li>Clock and reset outputs</li>
+<li>CLK: Clock output</li>
+<li>BD, SN, HH: Individual trigger outputs</li>
+<li>CHAIN 12, 23, 123: Combined trigger outputs</li>
+<li>CV: Sequencer CV output</li>
+<li>TRIG: Sequencer trigger output</li>
 </ul>
 
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Specifications</h3>
@@ -1452,8 +1454,15 @@ const moduleManuals = {
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
 <li><b>BPM</b>: Tempo control (20-300 BPM)</li>
 <li><b>SWING</b>: Swing amount (0-100%)</li>
-<li><b>EXT CLK</b>: External clock input</li>
+<li><b>CLK SRC</b>: Clock source selector (internal/external mode via knob)</li>
 <li><b>RESET</b>: Reset all sequences</li>
+</ul>
+
+<h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">CV Inputs</h3>
+<ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+<li><b>CLK CV</b>: Clock rate CV modulation</li>
+<li><b>CH2 CV</b>: CV2 channel modulation input</li>
+<li><b>CH3 CV</b>: CV3 channel modulation input</li>
 </ul>
 
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Euclidean Tracks (BD, SN, HH)</h3>
@@ -1481,9 +1490,12 @@ const moduleManuals = {
 
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Outputs</h3>
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-<li>BD, SN, HH trigger outputs</li>
-<li>CV1, CV2, CV3 sequencer outputs</li>
-<li>Clock and reset outputs</li>
+<li>CLK: Clock output</li>
+<li>RESET: Reset output</li>
+<li>BD, SN, HH: Individual trigger outputs</li>
+<li>CHAIN 12, 23, 123: Combined trigger outputs</li>
+<li>CV1, CV2, CV3: Sequencer CV outputs</li>
+<li>TRIG1, TRIG2, TRIG3: Sequencer trigger outputs</li>
 </ul>
 
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Specifications</h3>
@@ -1600,10 +1612,23 @@ const moduleManuals = {
 <li><b>DECAY/SHAPE</b>: Envelope control</li>
 </ul>
 
+<h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Inputs</h3>
+<ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+<li><b>CLK</b>: Global clock input</li>
+<li><b>RESET</b>: Reset sequence to step 1</li>
+<li><b>DRUM FREQ CV</b>: Drum frequency CV modulation</li>
+<li><b>DRUM DECAY CV</b>: Drum decay CV modulation</li>
+<li><b>HATS FREQ CV</b>: Hi-hat frequency CV modulation</li>
+<li><b>HATS DECAY CV</b>: Hi-hat decay CV modulation</li>
+</ul>
+
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Outputs</h3>
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-<li>Track 1/2 audio outputs</li>
-<li>VCA ENV, DRUM FM ENV, HATS VCA ENV (0-10V)</li>
+<li><b>TRACK 1</b>: Drum audio output</li>
+<li><b>TRACK 2</b>: Hi-hat audio output</li>
+<li><b>VCA ENV</b>: Main VCA envelope (0-10V)</li>
+<li><b>DRUM FM ENV</b>: Drum FM envelope (0-10V)</li>
+<li><b>HATS VCA ENV</b>: Hi-hat VCA envelope (0-10V)</li>
 </ul>
 
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Specifications</h3>
@@ -1671,9 +1696,17 @@ const moduleManuals = {
 <li>Attack-Decay envelopes with shape control</li>
 </ul>
 
-<h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Global Controls</h3>
+<h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Inputs</h3>
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
 <li><b>CLK</b>: Clock input (0.1V-2V trigger)</li>
+<li><b>DRUM FREQ CV</b>: Drum frequency CV modulation</li>
+<li><b>DRUM DECAY CV</b>: Drum decay CV modulation</li>
+<li><b>HATS FREQ CV</b>: Hi-hat frequency CV modulation</li>
+<li><b>HATS DECAY CV</b>: Hi-hat decay CV modulation</li>
+</ul>
+
+<h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Global Controls</h3>
+<ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
 <li><b>LEN</b>: Sequence length (1-32 steps)</li>
 </ul>
 
