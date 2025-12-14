@@ -104,6 +104,49 @@ struct ParameterMorpher {
 };
 
 // ============================================================================
+// Speed 參數非線性映射
+// 旋鈕 0% = -8x, 25% = 0, 50% = 1x, 100% = 8x
+// ============================================================================
+
+inline float knobToSpeed(float knob) {
+    if (knob < 0.25f) {
+        // 0% → -8, 25% → 0
+        return -8.0f + knob * 32.0f;
+    } else if (knob < 0.5f) {
+        // 25% → 0, 50% → 1
+        return (knob - 0.25f) * 4.0f;
+    } else {
+        // 50% → 1, 100% → 8
+        return 1.0f + (knob - 0.5f) * 14.0f;
+    }
+}
+
+inline float speedToKnob(float speed) {
+    if (speed < 0.0f) {
+        return (speed + 8.0f) / 32.0f;
+    } else if (speed < 1.0f) {
+        return 0.25f + speed / 4.0f;
+    } else {
+        return 0.5f + (speed - 1.0f) / 14.0f;
+    }
+}
+
+// 自定義 ParamQuantity 用於非線性 Speed 顯示
+struct SpeedParamQuantity : ParamQuantity {
+    float getDisplayValue() override {
+        return knobToSpeed(getValue());
+    }
+    void setDisplayValue(float displayValue) override {
+        setValue(speedToKnob(displayValue));
+    }
+};
+
+// 自定義 ParamQuantity 用於 Poly 參數
+struct PolyParamQuantity : ParamQuantity {
+    // 使用 defaultValue = 1.0f，基類的 reset() 會自動使用
+};
+
+// ============================================================================
 // 主模組
 // ============================================================================
 
@@ -159,6 +202,7 @@ struct WeiiiDocumenta : Module {
         THRESHOLD_CV_INPUT,
         FEEDBACK_AMOUNT_CV_INPUT,
         SPEED_CV_INPUT,
+        POLY_CV_INPUT,
         SH_AMOUNT_CV_INPUT,
         SH_RATE_CV_INPUT,
 
@@ -178,8 +222,6 @@ struct WeiiiDocumenta : Module {
     enum OutputId {
         MAIN_OUTPUT_L,
         MAIN_OUTPUT_R,
-        MAX_OUTPUT,
-        MIN_OUTPUT,
         SH_CV_OUTPUT,
         SEND_L_OUTPUT,
         SEND_R_OUTPUT,
@@ -189,7 +231,7 @@ struct WeiiiDocumenta : Module {
 
     enum LightId {
         REC_LIGHT,
-        ENUMS(PLAY_LIGHT, 2),  // GreenRed light for Play (green) / Loop (red)
+        ENUMS(PLAY_LIGHT, 2),  // GreenBlue light for Play (green) / Loop (blue)
         MORPH_LIGHT,
 
         LIGHTS_LEN
@@ -331,9 +373,29 @@ struct WeiiiDocumenta : Module {
         configParam(EQ_MID_PARAM, -12.0f, 12.0f, 0.0f, "Mid EQ (2.5kHz)", " dB");
         configParam(EQ_HIGH_PARAM, -12.0f, 12.0f, 0.0f, "High EQ (12kHz)", " dB");
 
-        // Speed (-8 = -8x反向, 0 = 停止, +8 = +8x正向, 預設1 = 1x原速)
-        configParam(SPEED_PARAM, -8.0f, 8.0f, 1.0f, "Playback Speed", "x");
+        // Speed: 旋鈕 0-1 映射到 -8x~8x (25%=0, 50%=1x)
+        configParam(SPEED_PARAM, 0.0f, 1.0f, 0.5f, "Playback Speed", "x");
+        delete paramQuantities[SPEED_PARAM];
+        paramQuantities[SPEED_PARAM] = new SpeedParamQuantity;
+        paramQuantities[SPEED_PARAM]->module = this;
+        paramQuantities[SPEED_PARAM]->paramId = SPEED_PARAM;
+        paramQuantities[SPEED_PARAM]->minValue = 0.0f;
+        paramQuantities[SPEED_PARAM]->maxValue = 1.0f;
+        paramQuantities[SPEED_PARAM]->defaultValue = 0.5f;  // 1x 速度
+        paramQuantities[SPEED_PARAM]->name = "Playback Speed";
+        paramQuantities[SPEED_PARAM]->unit = "x";
+
+        // Poly: 1-8 voices, 預設 1
         configParam(POLY_PARAM, 1.0f, 8.0f, 1.0f, "Polyphonic Voices");
+        delete paramQuantities[POLY_PARAM];
+        paramQuantities[POLY_PARAM] = new PolyParamQuantity;
+        paramQuantities[POLY_PARAM]->module = this;
+        paramQuantities[POLY_PARAM]->paramId = POLY_PARAM;
+        paramQuantities[POLY_PARAM]->minValue = 1.0f;
+        paramQuantities[POLY_PARAM]->maxValue = 8.0f;
+        paramQuantities[POLY_PARAM]->defaultValue = 1.0f;  // 1 voice
+        paramQuantities[POLY_PARAM]->name = "Polyphonic Voices";
+        paramQuantities[POLY_PARAM]->snapEnabled = true;
 
         // S&H (Sample & Hold) - Rate使用對數映射，中央為1Hz, AMT為增益控制(0-5x)
         configParam(SH_SLEW_PARAM, 0.0f, 1.0f, 0.3f, "S&H Slew Time", " s", 0.f, 1.f);
@@ -344,7 +406,7 @@ struct WeiiiDocumenta : Module {
 
         // 按鈕
         configButton(REC_BUTTON_PARAM, "Record");
-        configButton(PLAY_BUTTON_PARAM, "Play/Loop (cycles: Stop → Loop → Play)");
+        configButton(PLAY_BUTTON_PARAM, "Play/Loop (cycles: Loop → Play)");
         configButton(CLEAR_BUTTON_PARAM, "Stop (hold 2 sec to Clear)");
 
         // 輸入
@@ -354,6 +416,7 @@ struct WeiiiDocumenta : Module {
         configInput(THRESHOLD_CV_INPUT, "Threshold CV");
         configInput(FEEDBACK_AMOUNT_CV_INPUT, "Feedback Amount CV");
         configInput(SPEED_CV_INPUT, "Speed CV");
+        configInput(POLY_CV_INPUT, "Polyphonic CV");
         configInput(SH_AMOUNT_CV_INPUT, "S&H Amount CV");
         configInput(SH_RATE_CV_INPUT, "S&H Rate CV");
         configInput(RETURN_L_INPUT, "Return L");
@@ -366,8 +429,6 @@ struct WeiiiDocumenta : Module {
         // 輸出
         configOutput(MAIN_OUTPUT_L, "Main L");
         configOutput(MAIN_OUTPUT_R, "Main R");
-        configOutput(MAX_OUTPUT, "Max");
-        configOutput(MIN_OUTPUT, "Min");
         configOutput(SH_CV_OUTPUT, "S&H CV");
         configOutput(SEND_L_OUTPUT, "Send L");
         configOutput(SEND_R_OUTPUT, "Send R");
@@ -501,7 +562,12 @@ struct WeiiiDocumenta : Module {
         }
 
         // ===== Polyphonic voice management =====
-        int newNumVoices = (int)std::round(params[POLY_PARAM].getValue());
+        float polyValue = params[POLY_PARAM].getValue();
+        if (inputs[POLY_CV_INPUT].isConnected()) {
+            float polyCv = inputs[POLY_CV_INPUT].getVoltage() / 10.0f * 7.0f; // 0-10V -> 0-7 additional voices
+            polyValue = clamp(polyValue + polyCv, 1.0f, 8.0f);
+        }
+        int newNumVoices = (int)std::round(polyValue);
         newNumVoices = clamp(newNumVoices, 1, 8);
 
         if (newNumVoices != numVoices) {
@@ -598,19 +664,19 @@ struct WeiiiDocumenta : Module {
         // 更新燈號
         lights[REC_LIGHT].setBrightness(isRecording ? 1.0f : 0.0f);
 
-        // PLAY/LOOP light: GreenRedLight - Green for Play, Red for Loop
+        // PLAY/LOOP light: GreenBlueLight - Green for Play, Blue for Loop
         if (isPlaying) {
             // Green for Play mode
             lights[PLAY_LIGHT + 0].setBrightness(1.0f);  // Green
-            lights[PLAY_LIGHT + 1].setBrightness(0.0f);  // Red
+            lights[PLAY_LIGHT + 1].setBrightness(0.0f);  // Blue
         } else if (isLooping) {
-            // Red for Loop mode
+            // Blue for Loop mode
             lights[PLAY_LIGHT + 0].setBrightness(0.0f);  // Green
-            lights[PLAY_LIGHT + 1].setBrightness(1.0f);  // Red
+            lights[PLAY_LIGHT + 1].setBrightness(1.0f);  // Blue
         } else {
             // Off for Stop
             lights[PLAY_LIGHT + 0].setBrightness(0.0f);  // Green
-            lights[PLAY_LIGHT + 1].setBrightness(0.0f);  // Red
+            lights[PLAY_LIGHT + 1].setBrightness(0.0f);  // Blue
         }
 
         // 處理漸變隨機系統
@@ -722,11 +788,11 @@ struct WeiiiDocumenta : Module {
                     }
                 }
 
-                // 播放速度控制: -8x 到 +8x，預設 1x
-                float playbackSpeed = params[SPEED_PARAM].getValue();
+                // 播放速度控制: 旋鈕非線性映射 -8x 到 +8x
+                float playbackSpeed = knobToSpeed(params[SPEED_PARAM].getValue());
                 if (inputs[SPEED_CV_INPUT].isConnected()) {
                     float speedCv = inputs[SPEED_CV_INPUT].getVoltage();
-                    playbackSpeed = clamp(playbackSpeed + speedCv * 0.8f, -8.0f, 8.0f);
+                    playbackSpeed = clamp(playbackSpeed + speedCv, -8.0f, 8.0f);
                 }
 
                 // 檢查是否超出範圍（支援正反向播放）
@@ -1015,15 +1081,9 @@ struct WeiiiDocumenta : Module {
         outputL = softLimit(outputL);
         outputR = softLimit(outputR);
 
-        // MAX/MIN 輸出：比較 L 和 R 聲道，輸出較大者和較小者
-        float maxOutput = std::max(outputL, outputR);
-        float minOutput = std::min(outputL, outputR);
-
         // 輸出
         outputs[MAIN_OUTPUT_L].setVoltage(outputL);
         outputs[MAIN_OUTPUT_R].setVoltage(outputR);
-        outputs[MAX_OUTPUT].setVoltage(maxOutput);
-        outputs[MIN_OUTPUT].setVoltage(minOutput);
 
     }
 
@@ -1207,9 +1267,9 @@ struct WeiiiDocumenta : Module {
             float randomDir = random::uniform() * 2.0f - 1.0f;
             float combinedDirection = shDirection + randomDir;
             float current = morphers[idx].originalValue;
-            float baseRange = 8.0f;
+            float baseRange = 0.5f;  // 參數範圍 0-1
             float delta = combinedDirection * baseRange * morphScale;
-            morphers[idx++].targetValue = clamp(current + delta, -8.0f, 8.0f);
+            morphers[idx++].targetValue = clamp(current + delta, 0.0f, 1.0f);
         }
     }
 
@@ -1738,7 +1798,7 @@ struct WeiiiDocumenta : Module {
         smoothedLoopEnd.reset(1.0f);
 
         // 重設可能造成雜音的參數
-        params[SPEED_PARAM].setValue(1.0f);  // 正常1x速度
+        params[SPEED_PARAM].setValue(0.5f);  // 正常1x速度 (旋鈕中間位置)
         params[FEEDBACK_AMOUNT_PARAM].setValue(0.0f);
         smoothedFeedbackAmount.reset(0.0f);
 
@@ -1988,6 +2048,56 @@ struct EnhancedTextLabel : TransparentWidget {
 // Widget Components
 // ============================================================================
 
+// Underline widget for labels
+struct UnderlineWidget : TransparentWidget {
+    NVGcolor color;
+
+    UnderlineWidget(Vec pos, Vec size, NVGcolor color) {
+        box.pos = pos;
+        box.size = size;
+        this->color = color;
+    }
+
+    void draw(const DrawArgs& args) override {
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+        nvgFillColor(args.vg, color);
+        nvgFill(args.vg);
+    }
+};
+
+// Green-Blue light for Play/Loop
+struct GreenBlueLight : GrayModuleLightWidget {
+    GreenBlueLight() {
+        addBaseColor(nvgRGB(100, 200, 150));   // Soft teal-green for Play
+        addBaseColor(nvgRGB(100, 150, 255));   // Blue for Loop
+    }
+};
+
+// Connection line from knob to CV input (for Speed/Poly section)
+struct SpeedPolyCVLine : Widget {
+    Vec knobPos;
+    Vec cvPos;
+    NVGcolor color;
+
+    SpeedPolyCVLine(Vec knob, Vec cv, NVGcolor col = nvgRGB(180, 180, 180)) {
+        knobPos = knob;
+        cvPos = cv;
+        color = col;
+        box.pos = Vec(0, 0);
+        box.size = Vec(180, 400);
+    }
+
+    void draw(const DrawArgs& args) override {
+        nvgBeginPath(args.vg);
+        nvgStrokeWidth(args.vg, 1.0f);
+        nvgStrokeColor(args.vg, color);
+        nvgMoveTo(args.vg, knobPos.x, knobPos.y);
+        nvgLineTo(args.vg, cvPos.x, cvPos.y);
+        nvgStroke(args.vg);
+    }
+};
+
 // White background panel for bottom section
 struct WhiteBottomPanel : TransparentWidget {
     void draw(const DrawArgs& args) override {
@@ -2020,6 +2130,7 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         // ========== 標題區 ==========
         addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "weiii documenta", 12.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
+        addChild(new EnhancedTextLabel(Vec(0, 27), Vec(box.size.x, 12), "Collaborated with weiii", 10.f, nvgRGB(255, 255, 255), false));
 
         // ========== 波形顯示 (Y=43-90，高度增加 10px) ==========
         WaveformDisplay* waveDisplay = new WaveformDisplay();
@@ -2047,9 +2158,12 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         addChild(createLightCentered<MediumLight<RedLight>>(Vec(btn1X-11, 110), module, WeiiiDocumenta::REC_LIGHT));
         addInput(createInputCentered<PJ301MPort>(Vec(btn1X+13, 110), module, WeiiiDocumenta::REC_TRIGGER_INPUT));
 
-        addChild(new EnhancedTextLabel(Vec(btn2X-24, 89), Vec(48, 10), "PLAY/LOOP", 7.f, nvgRGB(255, 255, 255), true));
+        // PLAY/LOOP label with underlines
+        addChild(new EnhancedTextLabel(Vec(btn2X-30, 89), Vec(50, 10), "PLAY/LOOP", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new UnderlineWidget(Vec(btn2X-21, 97), Vec(14, 1), nvgRGB(100, 200, 150)));  // Green underline for PLAY
+        addChild(new UnderlineWidget(Vec(btn2X-4, 97), Vec(14, 1), nvgRGB(100, 150, 255)));  // Blue underline for LOOP
         addParam(createParamCentered<VCVButton>(Vec(btn2X-11, 110), module, WeiiiDocumenta::PLAY_BUTTON_PARAM));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(btn2X-11, 110), module, WeiiiDocumenta::PLAY_LIGHT));
+        addChild(createLightCentered<MediumLight<GreenBlueLight>>(Vec(btn2X-11, 110), module, WeiiiDocumenta::PLAY_LIGHT));
         addInput(createInputCentered<PJ301MPort>(Vec(btn2X+13, 110), module, WeiiiDocumenta::PLAY_TRIGGER_INPUT));
 
         addChild(new EnhancedTextLabel(Vec(btn3X-22, 92), Vec(44, 10), "(2Sec for Clear)", 5.f, nvgRGB(180, 180, 180), false));
@@ -2130,32 +2244,35 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         // ========== I/O 區域 ==========
         // 白色背景從 Y=330 開始
 
-        // Speed 控制 (左側，X=19，粉紅色文字)
-        addChild(new EnhancedTextLabel(Vec(-1, 335), Vec(40, 15), "SPEED", 6.f, nvgRGB(255, 133, 133), true));
-        addParam(createParamCentered<RoundBlackKnob>(Vec(19, 360), module, WeiiiDocumenta::SPEED_PARAM));
-        addInput(createInputCentered<PJ301MPort>(Vec(46, 368), module, WeiiiDocumenta::SPEED_CV_INPUT));
+        // 第一行 Y=343: I/L
+        addChild(new EnhancedTextLabel(Vec(-2, 337), Vec(20, 15), "I/L", 6.f, nvgRGB(255, 133, 133), true));
+        addInput(createInputCentered<PJ301MPort>(Vec(24, 343), module, WeiiiDocumenta::AUDIO_INPUT_L));
 
-        // Polyphonic voices control (replacing SPEED_CV_ATTEN)
-        addChild(new EnhancedTextLabel(Vec(20, 329), Vec(62, 10), "POLYPHONIC", 5.f, nvgRGB(255, 133, 133), false));
-        addParam(createParamCentered<Trimpot>(Vec(51, 345), module, WeiiiDocumenta::POLY_PARAM));
+        // 第二行 Y=368: I/R
+        addChild(new EnhancedTextLabel(Vec(-2, 362), Vec(20, 15), "I/R", 6.f, nvgRGB(255, 133, 133), true));
+        addInput(createInputCentered<PJ301MPort>(Vec(24, 368), module, WeiiiDocumenta::AUDIO_INPUT_R));
 
-        // 第一行 Y=343: I/L / MAX / O/L
-        addChild(new EnhancedTextLabel(Vec(59, 337), Vec(20, 15), "I/L", 6.f, nvgRGB(255, 133, 133), true));
-        addInput(createInputCentered<PJ301MPort>(Vec(85, 343), module, WeiiiDocumenta::AUDIO_INPUT_L));
+        // 連接線先加入 (在底層)
+        addChild(new SpeedPolyCVLine(Vec(55, 354), Vec(88, 343), nvgRGB(150, 150, 150)));  // Speed knob -> Speed CV
+        addChild(new SpeedPolyCVLine(Vec(120, 354), Vec(88, 368), nvgRGB(150, 150, 150))); // Poly knob -> Poly CV
 
-        addChild(new EnhancedTextLabel(Vec(94, 337), Vec(20, 15), "MAX", 6.f, nvgRGB(255, 133, 133), true));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(122, 343), module, WeiiiDocumenta::MAX_OUTPUT));
+        // Speed 控制
+        addChild(new EnhancedTextLabel(Vec(40, 332), Vec(30, 10), "SPEED", 6.f, nvgRGB(255, 133, 133), true));
+        addParam(createParamCentered<MediumGrayKnob>(Vec(55, 354), module, WeiiiDocumenta::SPEED_PARAM));
 
+        // Polyphonic 控制 (X=120 同 S&H Amount CV Input)
+        addChild(new EnhancedTextLabel(Vec(100, 332), Vec(40, 10), "POLY", 6.f, nvgRGB(255, 133, 133), true));
+        addParam(createParamCentered<MediumGrayKnob>(Vec(120, 354), module, WeiiiDocumenta::POLY_PARAM));
+
+        // CV inputs 垂直排列在兩旋鈕中間 (X=88), Y對齊 I/L O/L (343) 和 I/R O/R (368)
+        addInput(createInputCentered<PJ301MPort>(Vec(88, 343), module, WeiiiDocumenta::SPEED_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(88, 368), module, WeiiiDocumenta::POLY_CV_INPUT));
+
+        // O/L
         addChild(new EnhancedTextLabel(Vec(133, 337), Vec(20, 15), "O/L", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(160, 343), module, WeiiiDocumenta::MAIN_OUTPUT_L));
 
-        // 第二行 Y=368: I/R / MIN / O/R
-        addChild(new EnhancedTextLabel(Vec(59, 362), Vec(20, 15), "I/R", 6.f, nvgRGB(255, 133, 133), true));
-        addInput(createInputCentered<PJ301MPort>(Vec(85, 368), module, WeiiiDocumenta::AUDIO_INPUT_R));
-
-        addChild(new EnhancedTextLabel(Vec(94, 362), Vec(20, 15), "MIN", 6.f, nvgRGB(255, 133, 133), true));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(122, 368), module, WeiiiDocumenta::MIN_OUTPUT));
-
+        // O/R
         addChild(new EnhancedTextLabel(Vec(133, 362), Vec(20, 15), "O/R", 6.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(160, 368), module, WeiiiDocumenta::MAIN_OUTPUT_R));
     }

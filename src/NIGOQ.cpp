@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 #include <cmath>
 #include "dsp/resampler.hpp"
 #include <sst/filters/HalfRateFilter.h>
@@ -373,6 +374,9 @@ struct NIGOQ : Module {
     int frameIndex = 0;
 
     VisualDisplay* visualDisplay = nullptr;
+
+    // Panel theme
+    int panelTheme = 0;
 
     // Oscillators
     float modPhase = 0.f;
@@ -925,6 +929,7 @@ struct NIGOQ : Module {
 
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
         json_object_set_new(rootJ, "oversampleRate", json_integer(oversampleRate));
         json_object_set_new(rootJ, "attackTime", json_real(attackTime));
         // Save randomization settings
@@ -937,6 +942,9 @@ struct NIGOQ : Module {
     }
 
     void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) panelTheme = json_integer_value(themeJ);
+
         json_t* oversampleRateJ = json_object_get(rootJ, "oversampleRate");
         if (oversampleRateJ) {
             oversampleRate = json_integer_value(oversampleRateJ);
@@ -1583,9 +1591,11 @@ struct ClickableLight : ParamWidget {
 
 // ===== Module Widget =====
 struct NIGOQWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     NIGOQWidget(NIGOQ* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/12HP.svg")));
+        panelThemeHelper.init(this, "12HP");
 
 
         // Title labels
@@ -1718,9 +1728,19 @@ struct NIGOQWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(145, 339), Vec(40, 10), "FINAL", 7.f, nvgRGB(255, 133, 133), true));
     }
 
+    void step() override {
+        NIGOQ* module = dynamic_cast<NIGOQ*>(this->module);
+        if (module) {
+            panelThemeHelper.step(module);
+        }
+        ModuleWidget::step();
+    }
+
     void appendContextMenu(Menu* menu) override {
         NIGOQ* module = dynamic_cast<NIGOQ*>(this->module);
         if (!module) return;
+
+        addPanelThemeMenu(menu, module);
 
         menu->addChild(new MenuSeparator);
 

@@ -110,27 +110,14 @@ public:
     }
 
     /**
-     * 雙擊歸零功能 - 智能歸零到合適的值
-     * 這樣已經有自定義 onDoubleClick 的模組不會被影響
+     * 雙擊歸零功能 - 使用參數的 defaultValue
      */
     void onDoubleClick(const event::DoubleClick& e) override {
         if (enableDoubleClickReset) {
             ParamQuantity* pq = getParamQuantity();
             if (pq) {
-                float minValue = pq->getMinValue();
-                float maxValue = pq->getMaxValue();
-                float targetValue;
-
-                // 如果範圍包含 0，歸零
-                if (minValue <= 0.0f && maxValue >= 0.0f) {
-                    targetValue = 0.0f;
-                }
-                // 如果範圍不包含 0，歸到中點
-                else {
-                    targetValue = (minValue + maxValue) / 2.0f;
-                }
-
-                pq->setValue(targetValue);
+                // 直接使用 setValue + getDefaultValue 確保正確歸位
+                pq->setValue(pq->getDefaultValue());
                 e.consume(this);
                 return;
             }

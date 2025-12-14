@@ -3,33 +3,41 @@
 
 // Simple panel theme helper
 struct PanelThemeHelper {
-    SvgPanel* lightPanel = nullptr;
-    SvgPanel* darkPanel = nullptr;
+    SvgPanel* sashimiPanel = nullptr;
+    SvgPanel* boringPanel = nullptr;
     SvgPanel* toiletPaperPanel = nullptr;
+    SvgPanel* winePanel = nullptr;
 
     void init(ModuleWidget* widget, const std::string& baseName) {
-        // Create light (Sashimi) panel
-        lightPanel = createPanel(asset::plugin(pluginInstance, "res/" + baseName + ".svg"));
-        widget->setPanel(lightPanel);
+        // Create Sashimi (pink) panel - default
+        sashimiPanel = createPanel(asset::plugin(pluginInstance, "res/" + baseName + "_Sashimi.svg"));
+        widget->setPanel(sashimiPanel);
 
-        // Create dark (Boring) panel as overlay
-        darkPanel = new SvgPanel();
-        darkPanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/" + baseName + "_Boring.svg")));
-        darkPanel->visible = false;
-        widget->addChild(darkPanel);
+        // Create Boring (dark gray) panel as overlay
+        boringPanel = new SvgPanel();
+        boringPanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/" + baseName + "_Boring.svg")));
+        boringPanel->visible = false;
+        widget->addChild(boringPanel);
 
-        // Create white (Toilet Paper) panel as overlay
+        // Create Toilet Paper (light gray) panel as overlay
         toiletPaperPanel = new SvgPanel();
         toiletPaperPanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/" + baseName + "_ToiletPaper.svg")));
         toiletPaperPanel->visible = false;
         widget->addChild(toiletPaperPanel);
+
+        // Create Wine (wine red) panel as overlay
+        winePanel = new SvgPanel();
+        winePanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/" + baseName + "_Wine.svg")));
+        winePanel->visible = false;
+        widget->addChild(winePanel);
     }
 
     template<typename TModule>
     void step(TModule* module) {
-        if (module && darkPanel && toiletPaperPanel) {
-            darkPanel->visible = (module->panelTheme == 1);
+        if (module && boringPanel && toiletPaperPanel && winePanel) {
+            boringPanel->visible = (module->panelTheme == 1);
             toiletPaperPanel->visible = (module->panelTheme == 2);
+            winePanel->visible = (module->panelTheme == 3);
         }
     }
 };
@@ -70,4 +78,9 @@ inline void addPanelThemeMenu(ui::Menu* menu, TModule* module) {
     toiletPaperItem->module = module;
     toiletPaperItem->theme = 2;
     menu->addChild(toiletPaperItem);
+
+    ThemeItem* wineItem = createMenuItem<ThemeItem>("Wine");
+    wineItem->module = module;
+    wineItem->theme = 3;
+    menu->addChild(wineItem);
 }

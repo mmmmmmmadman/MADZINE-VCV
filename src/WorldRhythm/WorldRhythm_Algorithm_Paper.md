@@ -2,7 +2,7 @@
 
 **摘要**
 
-本文提出 WorldRhythm，一個能夠生成多種世界音樂風格節奏並支援跨風格混合的演算法系統。該系統基於民族音樂學研究，將十種主要節奏傳統的核心特徵參數化，並透過角色分層、互鎖生成、以及風格相容性矩陣等機制，實現既保有各風格特色又能相互協調的混合節奏生成。實驗結果顯示，此演算法能有效產生具有音樂性的跨文化節奏組合。
+本文提出 WorldRhythm，一個能夠生成多種世界音樂風格節奏並支援跨風格混合的演算法系統。該系統基於民族音樂學研究，將十種主要節奏傳統的核心特徵參數化，並透過角色分層、互鎖生成、風格相容性矩陣、以及 Articulation Profile 系統等機制，實現既保有各風格特色又能相互協調的混合節奏生成。Articulation Profile 系統為每種風格的每個角色定義專屬的裝飾技法（Flam、Drag、Ruff、Buzz），使生成的節奏更具文化特異性。實驗結果顯示，此演算法能有效產生具有音樂性的跨文化節奏組合。
 
 **關鍵詞**：節奏生成、世界音樂、演算法作曲、跨文化音樂、互鎖節奏
 
@@ -297,6 +297,79 @@ float getGhostVelocity(float previousVelocity, int styleIndex) {
 }
 ```
 
+### 4.5 Articulation Profile 系統
+
+為了實現風格特異性的裝飾技法，系統採用基於民族音樂學研究的 Articulation Profile 對照表。每種風格的每個角色都有專屬的裝飾技法設定。
+
+**裝飾技法類型**
+
+```cpp
+enum class ArticulationType {
+    None,   // 無裝飾
+    Flam,   // 雙擊（前置裝飾音）
+    Drag,   // 拖曳（雙前置音）
+    Ruff,   // 滾奏（三前置音）
+    Buzz    // 蜂鳴滾奏（連續細碎擊點）
+};
+```
+
+**Profile 結構**
+
+```cpp
+struct ArticulationEntry {
+    ArticulationType type;      // 裝飾技法類型
+    float baseProbability;      // 基礎發生機率
+    bool onAccentsOnly;         // 僅在重音時觸發
+    bool onStrongBeats;         // 僅在強拍時觸發
+};
+
+// 10 種風格 × 4 種角色 = 40 組 Profile
+static const ArticulationEntry profiles[10][4];
+```
+
+**風格特異性設計**
+
+各風格的 Articulation 設計基於民族音樂學文獻：
+
+| 風格 | Timeline | Foundation | Groove | Lead |
+|------|----------|------------|--------|------|
+| 西非 | Flam 中機率 | Drag 低機率 | Flam 高機率 | Ruff 中機率 |
+| 古巴 | Flam 低機率 | None | Flam 中機率 | Drag 高機率 |
+| 巴西 | Flam 中機率 | Drag 低機率 | Ruff 高機率 | Buzz 中機率 |
+| 爵士 | Flam 低機率 | Drag 低機率 | Buzz 中機率 | Ruff 高機率 |
+| 電子 | None | None | Flam 低機率 | Flam 低機率 |
+
+**選擇演算法**
+
+```cpp
+ArticulationType selectArticulation(int styleIndex, int roleIndex,
+                                    float amount, bool isAccent,
+                                    bool isStrongBeat) {
+    const ArticulationEntry& entry = profiles[styleIndex][roleIndex];
+
+    // 條件檢查
+    if (entry.onAccentsOnly && !isAccent) return None;
+    if (entry.onStrongBeats && !isStrongBeat) return None;
+
+    // 機率計算：基礎機率 × 使用者控制量
+    float probability = entry.baseProbability * amount;
+
+    if (randomFloat() < probability) {
+        return entry.type;
+    }
+    return None;
+}
+```
+
+**民族音樂學參考**
+
+Articulation Profile 的設計參考以下研究：
+
+- Afrodrumming.com：西非打擊樂的 Flam 與 Drag 技法
+- Marc Dédouvan：古巴打擊樂的裝飾音傳統
+- Gamelan.org.nz：甘美朗音樂的 Kotekan 交織技法
+- Jazz 鼓法文獻：Brush 與 Stick 的裝飾音差異
+
 ---
 
 ## 五、風格特定引擎
@@ -440,7 +513,8 @@ BreakPattern chopBreak(const BreakPattern& original, ChopStyle style);
 1. **多風格支援**：涵蓋十種主要世界音樂節奏傳統
 2. **智慧混合**：透過相容性矩陣與可變強度互鎖，實現跨風格融合
 3. **人性化處理**：風格特異性的時序與力度變異，提升音樂性
-4. **模組化架構**：易於擴展新風格與新功能
+4. **Articulation Profile**：基於民族音樂學的裝飾技法系統，每種風格×角色組合都有專屬設定
+5. **模組化架構**：易於擴展新風格與新功能
 
 此系統為音樂創作者提供了一個探索跨文化節奏融合的工具，同時保持對各傳統的尊重與理解。
 

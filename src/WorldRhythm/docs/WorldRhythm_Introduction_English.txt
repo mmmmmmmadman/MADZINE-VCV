@@ -1,8 +1,8 @@
-WorldRhythm Algorithm Overview
+Universal Rhythm Algorithm Overview
 
 1. Core Architecture
 
-WorldRhythm is a cross-cultural rhythm generation system based on ethnomusicological research. The system employs a four-layer role hierarchy and style preference matrices to generate rhythmic patterns with culture-specific characteristics.
+Universal Rhythm is a cross-cultural rhythm generation system based on ethnomusicological research. The system employs a four-layer role hierarchy and style preference matrices to generate rhythmic patterns with culture-specific characteristics.
 
 2. Four-Layer Role System
 
@@ -56,7 +56,30 @@ BPM-Dependent Swing
 Ghost Notes
    Low-velocity notes at 25-50% of the preceding note's velocity.
 
-6. Specialized Engines
+Accent Enhancement
+   Prioritizes adding accents on strong beat positions (0, 4, 8, 12) to increase rhythmic intensity.
+
+6. Articulation Profile System
+
+A style-specific ornamentation system based on ethnomusicological research. Each style and role combination has dedicated settings.
+
+Technique Types
+   - Flam: Grace note preceding main hit
+   - Drag: Double grace notes
+   - Ruff: Triple grace notes
+   - Buzz: Continuous rapid strokes
+
+Operation
+   - Single knob controls probability
+   - Technique type automatically determined by style and role
+   - Each role reads its own style setting
+
+Research Sources
+   - Afrodrumming.com: West African percussion techniques
+   - Marc Dédouvan: Cuban percussion ornamentation
+   - Gamelan.org.nz: Gamelan Kotekan techniques
+
+7. Specialized Engines
 
 IramaEngine (Density Levels)
    Javanese Gamelan five-level density system: Lancar, Tanggung, Dados, Wiled, Rangkep.
@@ -73,7 +96,7 @@ CallResponseEngine (Call and Response)
 AsymmetricGroupingEngine (Asymmetric Grouping)
    Balkan Aksak rhythms, such as 7/8 = 2+2+3.
 
-7. Theoretical Foundation
+8. Theoretical Foundation
 
 This system references the following ethnomusicological research:
 

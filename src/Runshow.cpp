@@ -37,6 +37,18 @@ struct EnhancedTextLabel : TransparentWidget {
     }
 };
 
+// Waveform names for display
+static const char* WAVEFORM_NAMES[] = {"Attack", "Triangle", "Decay", "Sine", "Square"};
+
+struct WaveformParamQuantity : ParamQuantity {
+    std::string getDisplayValueString() override {
+        float v = getValue();
+        int index = static_cast<int>(std::round(v));
+        index = clamp(index, 0, 4);
+        return WAVEFORM_NAMES[index];
+    }
+};
+
 struct Runshow : Module {
     int panelTheme = 0; // 0 = Sashimi, 1 = Boring
 
@@ -119,29 +131,44 @@ struct Runshow : Module {
         // Clamp morph to 0.0-4.0 range
         morph = std::max(0.f, std::min(4.f, morph));
 
-        // Generate all base waveforms
-        float rampUp = phase * 10.f;                                              // 0V to 10V linear
-        float triangle = phase < 0.5f ? phase * 20.f : (1.f - phase) * 20.f;     // Triangle
-        float sawDown = (1.f - phase) * 10.f;                                    // 10V to 0V linear
-        float sine = (std::sin(phase * 2.f * M_PI) * 0.5f + 0.5f) * 10.f;       // Sine 0V-10V
-        float pulse = 10.f;                                                       // Constant 10V
+        // Generate all base waveforms (all start at 0V, end at 0V)
+        // Attack: 慢速上升，垂直下降
+        float attack = phase < 0.99f
+            ? (phase / 0.99f) * 10.f
+            : 0.f;
+
+        // Triangle: 對稱三角波
+        float triangle = phase < 0.5f
+            ? phase * 20.f
+            : (1.f - phase) * 20.f;
+
+        // Decay: 垂直上升，慢速下降
+        float decay = phase < 0.01f
+            ? 10.f
+            : ((1.f - phase) / 0.99f) * 10.f;
+
+        // Sine: 半波正弦
+        float sine = std::sin(phase * M_PI) * 10.f;
+
+        // Square: 垂直上升，保持，垂直下降
+        float square = (phase > 0.f && phase < 1.f) ? 10.f : 0.f;
 
         // Smooth morphing between adjacent waveforms
         if (morph < 1.f) {
-            // Morph between Ramp Up and Triangle
-            return rampUp * (1.f - morph) + triangle * morph;
+            // Morph between Attack and Triangle
+            return attack * (1.f - morph) + triangle * morph;
         } else if (morph < 2.f) {
-            // Morph between Triangle and Saw Down
+            // Morph between Triangle and Decay
             float blend = morph - 1.f;
-            return triangle * (1.f - blend) + sawDown * blend;
+            return triangle * (1.f - blend) + decay * blend;
         } else if (morph < 3.f) {
-            // Morph between Saw Down and Sine
+            // Morph between Decay and Sine
             float blend = morph - 2.f;
-            return sawDown * (1.f - blend) + sine * blend;
+            return decay * (1.f - blend) + sine * blend;
         } else {
-            // Morph between Sine and Pulse
+            // Morph between Sine and Square
             float blend = morph - 3.f;
-            return sine * (1.f - blend) + pulse * blend;
+            return sine * (1.f - blend) + square * blend;
         }
     }
 
@@ -153,7 +180,18 @@ struct Runshow : Module {
 
         // 配置 6 個新旋鈕參數
         configParam(TIMER_30MIN_PARAM, 1.f, 99.f, 10.f, "Pulse Width (Bar %)", " %");
-        configParam(TIMER_15MIN_PARAM, 0.f, 4.f, 4.f, "Waveform Shape");
+        configParam(TIMER_15MIN_PARAM, 0.f, 4.f, 4.f, "Waveform");
+        // 使用自定義 ParamQuantity 顯示波形名稱
+        delete paramQuantities[TIMER_15MIN_PARAM];
+        paramQuantities[TIMER_15MIN_PARAM] = new WaveformParamQuantity;
+        paramQuantities[TIMER_15MIN_PARAM]->module = this;
+        paramQuantities[TIMER_15MIN_PARAM]->paramId = TIMER_15MIN_PARAM;
+        paramQuantities[TIMER_15MIN_PARAM]->minValue = 0.0f;
+        paramQuantities[TIMER_15MIN_PARAM]->maxValue = 4.0f;
+        paramQuantities[TIMER_15MIN_PARAM]->defaultValue = 4.0f;
+        paramQuantities[TIMER_15MIN_PARAM]->name = "Waveform";
+        paramQuantities[TIMER_15MIN_PARAM]->snapEnabled = true;
+
         configParam(BAR_1_PARAM, 1.f, 16.f, 16.f, "Bar 1 Length", " clocks");
         configParam(BAR_2_PARAM, 1.f, 16.f, 16.f, "Bar 2 Length", " clocks");
         configParam(BAR_3_PARAM, 1.f, 16.f, 16.f, "Bar 3 Length", " clocks");

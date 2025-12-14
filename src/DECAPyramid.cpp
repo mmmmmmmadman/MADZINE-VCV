@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
+#include "widgets/PanelTheme.hpp"
 struct DECAPyramid : Module {
     enum ParamId {
         X_PARAM_1, Y_PARAM_1, Z_PARAM_1, LEVEL_PARAM_1, FILTER_PARAM_1, SENDA_PARAM_1, SENDB_PARAM_1,
@@ -745,9 +746,11 @@ struct DECAPyramid3DDisplay : LedDisplay {
 };
 
 struct DECAPyramidWidget : ModuleWidget {
+    PanelThemeHelper panelThemeHelper;
+
     DECAPyramidWidget(DECAPyramid* module) {
         setModule(module);
-        updatePanel();
+        panelThemeHelper.init(this, "40HP");
         
         box.size = Vec(40 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -926,67 +929,20 @@ struct DECAPyramidWidget : ModuleWidget {
         }
     }
     
-    void updatePanel() {
-        DECAPyramid* module = getModule<DECAPyramid>();
-        if (!module) {
-            setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP.svg")));
-            return;
-        }
-
-        switch (module->panelTheme) {
-            case 0:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP.svg")));
-                break;
-            case 1:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP_L.svg")));
-                break;
-            case 2:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP_W.svg")));
-                break;
-            case 3:
-                setPanel(createPanel(asset::plugin(pluginInstance, "res/40HP_M.svg")));
-                break;
-        }
-    }
-    
     void step() override {
         DECAPyramid* module = getModule<DECAPyramid>();
-        if (module) {
-            static int lastTheme = -1;
-            if (lastTheme != module->panelTheme) {
-                updatePanel();
-                lastTheme = module->panelTheme;
-            }
-        }
+        panelThemeHelper.step(module);
         ModuleWidget::step();
     }
     
     void appendContextMenu(Menu* menu) override {
         DECAPyramid* module = getModule<DECAPyramid>();
         if (!module) return;
-        
+
         menu->addChild(new MenuSeparator);
         menu->addChild(createBoolPtrMenuItem("Send Pre-Level", "", &module->sendPreLevel));
-        
-        menu->addChild(new MenuSeparator);
-        menu->addChild(createSubmenuItem("Panel Theme", "", [=](Menu* menu) {
-            menu->addChild(createCheckMenuItem("Sashimi", "",
-                [=]() {return module->panelTheme == 0;},
-                [=]() {module->panelTheme = 0;}
-            ));
-            menu->addChild(createCheckMenuItem("Light", "",
-                [=]() {return module->panelTheme == 1;},
-                [=]() {module->panelTheme = 1;}
-            ));
-            menu->addChild(createCheckMenuItem("Wine", "",
-                [=]() {return module->panelTheme == 2;},
-                [=]() {module->panelTheme = 2;}
-            ));
-            menu->addChild(createCheckMenuItem("Mellow", "",
-                [=]() {return module->panelTheme == 3;},
-                [=]() {module->panelTheme = 3;}
-            ));
-        }));
+
+        addPanelThemeMenu(menu, module);
     }
 };
 

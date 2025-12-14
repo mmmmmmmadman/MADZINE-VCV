@@ -8,6 +8,7 @@
 #include "WorldRhythm/RestEngine.hpp"
 #include "WorldRhythm/FillGenerator.hpp"
 #include "WorldRhythm/ArticulationEngine.hpp"
+#include "WorldRhythm/ArticulationProfiles.hpp"
 #include "WorldRhythm/KotekanEngine.hpp"
 #include "WorldRhythm/LlamadaEngine.hpp"
 #include "WorldRhythm/CrossRhythmEngine.hpp"
@@ -33,30 +34,11 @@ const char* STYLE_NAMES[10] = {
     "Gamelan", "Jazz", "Electronic", "Breakbeat", "Techno"
 };
 
-// Articulation type names for display
-const char* ARTICULATION_NAMES[8] = {
-    "Normal", "Ghost", "Accent", "Rim", "Flam", "Drag", "Buzz", "Ruff"
-};
-
 // Groove template names
 const char* GROOVE_TEMPLATE_NAMES[7] = {
     "Auto", "Straight", "Swing", "African", "Latin", "LaidBack", "Pushed"
 };
 
-// Map param index to ArticulationType
-inline WorldRhythm::ArticulationType getArticulationType(int index) {
-    switch (index) {
-        case 0: return WorldRhythm::ArticulationType::NORMAL;
-        case 1: return WorldRhythm::ArticulationType::GHOST;
-        case 2: return WorldRhythm::ArticulationType::ACCENT;
-        case 3: return WorldRhythm::ArticulationType::RIM;
-        case 4: return WorldRhythm::ArticulationType::FLAM;
-        case 5: return WorldRhythm::ArticulationType::DRAG;
-        case 6: return WorldRhythm::ArticulationType::BUZZ;
-        case 7: return WorldRhythm::ArticulationType::RUFF;
-        default: return WorldRhythm::ArticulationType::NORMAL;
-    }
-}
 
 // MUJI-inspired palette with better contrast between styles
 const NVGcolor STYLE_COLORS[10] = {
@@ -86,25 +68,7 @@ struct StyleParamQuantity : ParamQuantity {
     }
 };
 
-struct ArticulationParamQuantity : ParamQuantity {
-    std::string getDisplayValueString() override {
-        int index = static_cast<int>(getValue());
-        if (index >= 0 && index < 8) {
-            return ARTICULATION_NAMES[index];
-        }
-        return ParamQuantity::getDisplayValueString();
-    }
-};
 
-struct GrooveTemplateParamQuantity : ParamQuantity {
-    std::string getDisplayValueString() override {
-        int index = static_cast<int>(getValue());
-        if (index >= 0 && index < 7) {
-            return GROOVE_TEMPLATE_NAMES[index];
-        }
-        return ParamQuantity::getDisplayValueString();
-    }
-};
 
 // ============================================================================
 // Helper Widgets (MADDY+ style)
@@ -464,20 +428,21 @@ struct UniversalRhythm : Module {
         REST_PARAM,
         // Fill parameter (combined probability + intensity)
         FILL_PARAM,
-        // Articulation and Groove parameters
+        // Articulation parameter
         ARTICULATION_PARAM,
-        GROOVE_TEMPLATE_PARAM,
         // Ghost and Accent parameters
         GHOST_PARAM,
         ACCENT_PROB_PARAM,
+        // Spread parameter (stereo width)
+        SPREAD_PARAM,
         // Buttons
         REGENERATE_PARAM,
         RESET_BUTTON_PARAM,
-        // Spread parameters (per-role)
-        TIMELINE_SPREAD_PARAM,
-        FOUNDATION_SPREAD_PARAM,
-        GROOVE_SPREAD_PARAM,
-        LEAD_SPREAD_PARAM,
+        // Mix parameters (per-role): 0 = internal synth only, 1 = external only
+        TIMELINE_MIX_PARAM,
+        FOUNDATION_MIX_PARAM,
+        GROOVE_MIX_PARAM,
+        LEAD_MIX_PARAM,
         PARAMS_LEN
     };
 
@@ -585,14 +550,17 @@ struct UniversalRhythm : Module {
     worldrhythm::ExtendedDrumSynth drumSynth;
 
     // Pattern storage
-    MultiVoicePatterns patterns;
+    MultiVoicePatterns patterns;           // Working patterns (with rest applied)
+    MultiVoicePatterns originalPatterns;   // Original patterns (before rest)
     int roleLengths[4] = {16, 16, 16, 16};  // Per-role lengths
     int currentSteps[4] = {0, 0, 0, 0};     // Per-role step counters
     int currentBar = 0;
+    float appliedRest = 0.0f;              // Last applied rest amount
 
     // Cached synth parameters for TUNE/DECAY modification
     float cachedFreqs[8] = {0};
     float cachedDecays[8] = {0};
+    float currentFreqs[8] = {0};  // Actual frequencies after FREQ knob/CV modulation (for Pitch CV output)
 
     // Triggers and pulses
     dsp::SchmittTrigger clockTrigger;
@@ -635,6 +603,9 @@ struct UniversalRhythm : Module {
         int voice = -1;
         float velocity = 0;
         bool isAccent = false;
+        int role = 0;           // Role index for articulation profile
+        bool isStrongBeat = false;  // For articulation selection
+        bool isSubNote = false;     // True for articulation sub-notes (no further articulation needed)
     };
     std::vector<DelayedTrigger> delayedTriggers;
 
@@ -643,7 +614,6 @@ struct UniversalRhythm : Module {
     float lastDensities[4] = {-1.f, -1.f, -1.f, -1.f};
     int lastLengths[4] = {-1, -1, -1, -1};
     float lastVariation = -1.0f;
-    float lastRest = -1.0f;
     float lastRoleFreqs[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     float lastRoleDecays[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     float lastSwing = 0.5f;
@@ -653,10 +623,14 @@ struct UniversalRhythm : Module {
         float amplitude = 0.0f;
         float decayRate = 0.0f;
 
-        void trigger(float decayTimeMs, float sampleRate) {
+        void trigger(float decayTimeMs, float sampleRate, float velocity = 1.0f) {
             amplitude = 1.0f;
+            // Velocity affects decay length (same formula as internal synth)
+            // vel=1.0 -> 100% decay, vel=0.5 -> 46% decay, vel=0.2 -> 17% decay
+            float velScale = 0.1f + 0.9f * std::pow(velocity, 1.5f);
+            float actualDecayMs = decayTimeMs * velScale;
             // Convert decay time to decay rate per sample
-            decayRate = 1.0f / (decayTimeMs * 0.001f * sampleRate);
+            decayRate = 1.0f / (actualDecayMs * 0.001f * sampleRate);
         }
 
         float process() {
@@ -675,7 +649,7 @@ struct UniversalRhythm : Module {
     };
 
     VCAEnvelope externalVCA[8];  // One VCA per voice for external audio gating
-    float currentSpread[4] = {0.0f, 0.0f, 0.0f, 0.0f};  // Current spread value per role
+    float currentMix[4] = {0.0f, 0.0f, 0.0f, 0.0f};  // Current mix value per role (0=internal, 1=external)
 
     UniversalRhythm() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -703,10 +677,10 @@ struct UniversalRhythm : Module {
                         std::string(roleNames[r]) + " Decay", "x");
         }
 
-        // SPREAD parameters (per-role)
+        // MIX parameters (per-role): 0 = internal synth, 1 = external input
         for (int r = 0; r < 4; r++) {
-            configParam(TIMELINE_SPREAD_PARAM + r, 0.0f, 1.0f, 0.0f,
-                       std::string(roleNames[r]) + " Spread", "%", 0.0f, 100.0f);
+            configParam(TIMELINE_MIX_PARAM + r, 0.0f, 1.0f, 0.0f,
+                       std::string(roleNames[r]) + " Mix", "%", 0.0f, 100.0f);
         }
 
         // Global parameters
@@ -719,15 +693,12 @@ struct UniversalRhythm : Module {
         configParam(FILL_PARAM, 0.0f, 1.0f, 0.3f, "Fill", "%", 0.0f, 100.0f);  // Combined probability + intensity
 
         // Articulation and Groove parameters
-        configParam<ArticulationParamQuantity>(ARTICULATION_PARAM, 0.0f, 7.0f, 0.0f, "Articulation");
-        getParamQuantity(ARTICULATION_PARAM)->snapEnabled = true;
-
-        configParam<GrooveTemplateParamQuantity>(GROOVE_TEMPLATE_PARAM, 0.0f, 6.0f, 0.0f, "Groove Template");
-        getParamQuantity(GROOVE_TEMPLATE_PARAM)->snapEnabled = true;
+        configParam(ARTICULATION_PARAM, 0.0f, 1.0f, 0.0f, "Articulation", "%", 0.0f, 100.0f);
 
         // Ghost and Accent parameters
         configParam(GHOST_PARAM, 0.0f, 1.0f, 0.0f, "Ghost Notes", "%", 0.0f, 100.0f);
-        configParam(ACCENT_PROB_PARAM, 0.0f, 1.0f, 0.3f, "Accent Probability", "%", 0.0f, 100.0f);
+        configParam(ACCENT_PROB_PARAM, 0.0f, 1.0f, 0.0f, "Accent", "%", 0.0f, 100.0f);
+        configParam(SPREAD_PARAM, 0.0f, 1.0f, 0.5f, "Spread", "%", 0.0f, 100.0f);
 
         // Regenerate button
         configParam(REGENERATE_PARAM, 0.0f, 1.0f, 0.0f, "Regenerate");
@@ -735,9 +706,9 @@ struct UniversalRhythm : Module {
         // Reset button
         configParam(RESET_BUTTON_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 
-        // Spread parameters (per-role stereo spread)
+        // Mix parameters (per-role: 0=internal synth, 1=external audio)
         for (int r = 0; r < 4; r++) {
-            configParam(TIMELINE_SPREAD_PARAM + r, 0.0f, 1.0f, 0.5f, std::string(roleNames[r]) + " Spread", "%", 0.0f, 100.0f);
+            configParam(TIMELINE_MIX_PARAM + r, 0.0f, 1.0f, 0.0f, std::string(roleNames[r]) + " Mix (Int/Ext)", "%", 0.0f, 100.0f);
         }
 
         // Note: TUNE_PARAM and DECAY_PARAM removed - now per-role
@@ -776,8 +747,8 @@ struct UniversalRhythm : Module {
         for (int i = 0; i < 8; i++) {
             configOutput(VOICE1_AUDIO_OUTPUT + i, std::string(voiceLabels[i]) + " Audio");
             configOutput(VOICE1_GATE_OUTPUT + i, std::string(voiceLabels[i]) + " Gate");
-            configOutput(VOICE1_CV_OUTPUT + i, std::string(voiceLabels[i]) + " Velocity CV");
-            configOutput(VOICE1_ACCENT_OUTPUT + i, std::string(voiceLabels[i]) + " Accent");
+            configOutput(VOICE1_CV_OUTPUT + i, std::string(voiceLabels[i]) + " Pitch CV (1V/Oct, C4=0V)");
+            configOutput(VOICE1_ACCENT_OUTPUT + i, std::string(voiceLabels[i]) + " Velocity CV");
         }
 
         // Initialize
@@ -841,6 +812,7 @@ struct UniversalRhythm : Module {
                 if (cachedFreqs[voiceIdx] > 0) {
                     float newFreq = cachedFreqs[voiceIdx] * freqMult;
                     float newDecay = cachedDecays[voiceIdx] * decayMult;
+                    currentFreqs[voiceIdx] = newFreq;  // Store for Pitch CV output
                     int styleIndex = lastStyles[role];
                     if (styleIndex >= 0 && styleIndex <= 9) {
                         const worldrhythm::ExtendedStylePreset& preset = worldrhythm::EXTENDED_PRESETS[styleIndex];
@@ -984,33 +956,34 @@ struct UniversalRhythm : Module {
             if (humanizeAmount > 0.01f) {
                 humanize.setStyle(styleIndex);
                 humanize.setSwing(swingAmount);  // Apply swing parameter
-                // Apply groove template (0 = Auto uses style default)
-                int grooveTemplate = static_cast<int>(params[GROOVE_TEMPLATE_PARAM].getValue());
-                if (grooveTemplate == 0) {
-                    humanize.setGrooveForStyle(styleIndex);  // Auto: use style default
-                } else {
-                    humanize.setGrooveTemplate(grooveTemplate - 1);  // Manual: 1-6 maps to 0-5
-                }
+                humanize.setGrooveForStyle(styleIndex);  // Auto groove based on style
                 humanize.humanizePattern(patterns.patterns[r * 2], roleType, currentBar, 4);
                 humanize.humanizePattern(patterns.patterns[r * 2 + 1], roleType, currentBar, 4);
             }
 
             // Generate accents with adjustable probability
-            float accentProb = params[ACCENT_PROB_PARAM].getValue();
+            // Generate base accents from style
             patternGen.generateAccents(patterns.patterns[r * 2], roleType, style);
             patternGen.generateAccents(patterns.patterns[r * 2 + 1], roleType, style);
 
-            // Adjust accents based on accentProb (reduce existing accents)
-            if (accentProb < 0.99f) {
+            // Add extra accents based on ACCENT_PARAM (0=none, 1=all onsets become accents)
+            float accentAmount = params[ACCENT_PROB_PARAM].getValue();
+            if (accentAmount > 0.01f) {
                 for (int i = 0; i < patterns.patterns[r * 2].length; i++) {
-                    if (patterns.patterns[r * 2].accents[i]) {
-                        if ((float)rand() / RAND_MAX > accentProb) {
-                            patterns.patterns[r * 2].accents[i] = false;
+                    // Only add accents to existing onsets that aren't already accented
+                    if (patterns.patterns[r * 2].hasOnsetAt(i) && !patterns.patterns[r * 2].accents[i]) {
+                        // Prioritize strong beats (positions 0, 4, 8, 12 in 16-step)
+                        bool isStrongBeat = (i % 4 == 0);
+                        float prob = isStrongBeat ? accentAmount : accentAmount * 0.5f;
+                        if ((float)rand() / RAND_MAX < prob) {
+                            patterns.patterns[r * 2].accents[i] = true;
                         }
                     }
-                    if (patterns.patterns[r * 2 + 1].accents[i]) {
-                        if ((float)rand() / RAND_MAX > accentProb) {
-                            patterns.patterns[r * 2 + 1].accents[i] = false;
+                    if (patterns.patterns[r * 2 + 1].hasOnsetAt(i) && !patterns.patterns[r * 2 + 1].accents[i]) {
+                        bool isStrongBeat = (i % 4 == 0);
+                        float prob = isStrongBeat ? accentAmount : accentAmount * 0.5f;
+                        if ((float)rand() / RAND_MAX < prob) {
+                            patterns.patterns[r * 2 + 1].accents[i] = true;
                         }
                     }
                 }
@@ -1023,6 +996,10 @@ struct UniversalRhythm : Module {
                 patternGen.addGhostNotes(patterns.patterns[r * 2], style, ghostAmount * roleMultiplier);
                 patternGen.addGhostNotes(patterns.patterns[r * 2 + 1], style, ghostAmount * roleMultiplier * 0.8f);
             }
+
+            // Save original patterns (before rest) for on-the-fly rest adjustment
+            originalPatterns.patterns[r * 2] = patterns.patterns[r * 2];
+            originalPatterns.patterns[r * 2 + 1] = patterns.patterns[r * 2 + 1];
 
             // Apply RestEngine (position-weighted rest)
             if (restAmount > 0.01f) {
@@ -1050,7 +1027,6 @@ struct UniversalRhythm : Module {
         applySynthModifiers();
 
         lastVariation = variation;
-        lastRest = restAmount;
         lastSwing = swingAmount;
     }
 
@@ -1199,34 +1175,32 @@ struct UniversalRhythm : Module {
         if (humanizeAmount > 0.01f) {
             humanize.setStyle(styleIndex);
             humanize.setSwing(swingAmount);
-            // Apply groove template (0 = Auto uses style default)
-            int grooveTemplate = static_cast<int>(params[GROOVE_TEMPLATE_PARAM].getValue());
-            if (grooveTemplate == 0) {
-                humanize.setGrooveForStyle(styleIndex);  // Auto: use style default
-            } else {
-                humanize.setGrooveTemplate(grooveTemplate - 1);  // Manual: 1-6 maps to 0-5
-            }
+            humanize.setGrooveForStyle(styleIndex);  // Auto groove based on style
             humanize.humanizePattern(patterns.patterns[role * 2], roleType, currentBar, 4);
             humanize.humanizePattern(patterns.patterns[role * 2 + 1], roleType, currentBar, 4);
         }
 
         // Generate accents with adjustable probability
-        float accentProb = params[ACCENT_PROB_PARAM].getValue();
+        // Generate base accents from style
         patternGen.generateAccents(patterns.patterns[role * 2], roleType, style);
         patternGen.generateAccents(patterns.patterns[role * 2 + 1], roleType, style);
 
-        // Adjust accents based on accentProb (reduce or increase existing accents)
-        if (accentProb < 0.99f) {
+        // Add extra accents based on ACCENT_PARAM (0=none, 1=all onsets become accents)
+        float accentAmount = params[ACCENT_PROB_PARAM].getValue();
+        if (accentAmount > 0.01f) {
             for (int i = 0; i < patterns.patterns[role * 2].length; i++) {
-                if (patterns.patterns[role * 2].accents[i]) {
-                    // Probabilistically remove accents based on accentProb
-                    if ((float)rand() / RAND_MAX > accentProb) {
-                        patterns.patterns[role * 2].accents[i] = false;
+                if (patterns.patterns[role * 2].hasOnsetAt(i) && !patterns.patterns[role * 2].accents[i]) {
+                    bool isStrongBeat = (i % 4 == 0);
+                    float prob = isStrongBeat ? accentAmount : accentAmount * 0.5f;
+                    if ((float)rand() / RAND_MAX < prob) {
+                        patterns.patterns[role * 2].accents[i] = true;
                     }
                 }
-                if (patterns.patterns[role * 2 + 1].accents[i]) {
-                    if ((float)rand() / RAND_MAX > accentProb) {
-                        patterns.patterns[role * 2 + 1].accents[i] = false;
+                if (patterns.patterns[role * 2 + 1].hasOnsetAt(i) && !patterns.patterns[role * 2 + 1].accents[i]) {
+                    bool isStrongBeat = (i % 4 == 0);
+                    float prob = isStrongBeat ? accentAmount : accentAmount * 0.5f;
+                    if ((float)rand() / RAND_MAX < prob) {
+                        patterns.patterns[role * 2 + 1].accents[i] = true;
                     }
                 }
             }
@@ -1240,6 +1214,10 @@ struct UniversalRhythm : Module {
             patternGen.addGhostNotes(patterns.patterns[role * 2], style, ghostAmount * roleMultiplier);
             patternGen.addGhostNotes(patterns.patterns[role * 2 + 1], style, ghostAmount * roleMultiplier * 0.8f);
         }
+
+        // Save original patterns (before rest) for on-the-fly rest adjustment
+        originalPatterns.patterns[role * 2] = patterns.patterns[role * 2];
+        originalPatterns.patterns[role * 2 + 1] = patterns.patterns[role * 2 + 1];
 
         // Apply RestEngine (position-weighted rest)
         if (restAmount > 0.01f) {
@@ -1270,11 +1248,47 @@ struct UniversalRhythm : Module {
         regenerateAllPatternsInterlocked();
     }
 
+    // Reapply rest from original patterns without regenerating rhythm
+    void reapplyRest(float restAmount) {
+        for (int role = 0; role < 4; role++) {
+            int baseParam = role * 5;
+            int styleIndex = static_cast<int>(params[TIMELINE_STYLE_PARAM + baseParam].getValue());
+            styleIndex = clamp(styleIndex, 0, WorldRhythm::NUM_STYLES - 1);
+            WorldRhythm::Role roleType = static_cast<WorldRhythm::Role>(role);
+
+            // Copy from original patterns
+            patterns.patterns[role * 2] = originalPatterns.patterns[role * 2];
+            patterns.patterns[role * 2 + 1] = originalPatterns.patterns[role * 2 + 1];
+
+            // Apply rest if needed
+            if (restAmount > 0.01f) {
+                restEngine.setStyle(styleIndex);
+                restEngine.applyRest(patterns.patterns[role * 2], roleType, restAmount);
+                restEngine.applyRest(patterns.patterns[role * 2 + 1], roleType, restAmount);
+            }
+        }
+        appliedRest = restAmount;
+    }
+
     // Trigger voice with articulation type applied
-    // Uses ArticulationEngine for Flam, Drag, Ruff, Buzz ornaments
-    void triggerWithArticulation(int voice, float velocity, bool accent, float sampleRate) {
-        int articulationType = static_cast<int>(params[ARTICULATION_PARAM].getValue());
-        WorldRhythm::ArticulationType art = getArticulationType(articulationType);
+    // Uses ArticulationProfiles to select articulation based on style, role, and amount
+    void triggerWithArticulation(int voice, float velocity, bool accent, float sampleRate,
+                                  int role = -1, bool isStrongBeat = false) {
+        // Get articulation amount from parameter (0 = no articulation, 1 = max)
+        float articulationAmount = params[ARTICULATION_PARAM].getValue();
+
+        // Determine role from voice if not provided
+        if (role < 0) {
+            role = voice / 2;  // Each role has 2 voices
+        }
+
+        // Get style for this specific role (each role can have different style)
+        int baseParam = role * 5;  // 5 params per role
+        int currentStyle = static_cast<int>(params[TIMELINE_STYLE_PARAM + baseParam].getValue());
+
+        // Select articulation using profile system
+        WorldRhythm::ArticulationType art = WorldRhythm::selectArticulation(
+            currentStyle, role, articulationAmount, accent, isStrongBeat);
 
         float finalVel = velocity;
 
@@ -1302,14 +1316,14 @@ struct UniversalRhythm : Module {
             case WorldRhythm::ArticulationType::FLAM: {
                 // Use ArticulationEngine for proper flam generation
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateFlam(velocity);
-                scheduleExpandedHit(voice, hit, accent, sampleRate);
+                scheduleExpandedHit(voice, hit, accent, sampleRate, role);
                 break;
             }
 
             case WorldRhythm::ArticulationType::DRAG: {
                 // Use ArticulationEngine for proper drag generation
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateDrag(velocity);
-                scheduleExpandedHit(voice, hit, accent, sampleRate);
+                scheduleExpandedHit(voice, hit, accent, sampleRate, role);
                 break;
             }
 
@@ -1317,14 +1331,14 @@ struct UniversalRhythm : Module {
                 // Use ArticulationEngine for proper buzz generation
                 // Duration of 0.032s gives 4 bounces at default 15ms interval
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateBuzz(velocity, 0.032f, 4);
-                scheduleExpandedHit(voice, hit, accent, sampleRate);
+                scheduleExpandedHit(voice, hit, accent, sampleRate, role);
                 break;
             }
 
             case WorldRhythm::ArticulationType::RUFF: {
                 // Use ArticulationEngine for proper ruff generation
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateRuff(velocity);
-                scheduleExpandedHit(voice, hit, accent, sampleRate);
+                scheduleExpandedHit(voice, hit, accent, sampleRate, role);
                 break;
             }
 
@@ -1343,7 +1357,16 @@ struct UniversalRhythm : Module {
     }
 
     // Helper: Schedule ExpandedHit notes as DelayedTriggers
-    void scheduleExpandedHit(int voice, const WorldRhythm::ExpandedHit& hit, bool accent, float sampleRate) {
+    void scheduleExpandedHit(int voice, const WorldRhythm::ExpandedHit& hit, bool accent, float sampleRate, int role) {
+        // Pre-calculate decay multiplier for VCA
+        int baseParam = role * 5;
+        float decayMult = params[TIMELINE_DECAY_PARAM + baseParam].getValue();
+        if (inputs[TIMELINE_DECAY_CV_INPUT + role * 4].isConnected()) {
+            decayMult += inputs[TIMELINE_DECAY_CV_INPUT + role * 4].getVoltage() * 0.18f;
+            decayMult = clamp(decayMult, 0.2f, 2.0f);
+        }
+        float vcaDecayMs = 200.0f * decayMult;
+
         for (size_t i = 0; i < hit.notes.size(); i++) {
             const WorldRhythm::ExpandedNote& note = hit.notes[i];
 
@@ -1355,6 +1378,10 @@ struct UniversalRhythm : Module {
                 // First note with zero or negative timing: trigger immediately
                 drumSynth.triggerVoice(voice, note.velocity);
                 gatePulses[voice].trigger(0.001f);
+                currentVelocities[voice] = note.velocity;
+                currentAccents[voice] = note.isAccent && accent;
+                // Trigger VCA for external audio
+                externalVCA[voice].trigger(vcaDecayMs, sampleRate, note.velocity);
                 if (note.isAccent && accent) {
                     accentPulses[voice].trigger(0.001f);
                 }
@@ -1367,12 +1394,19 @@ struct UniversalRhythm : Module {
                 dt.voice = voice;
                 dt.velocity = note.velocity;
                 dt.isAccent = note.isAccent && accent;
+                dt.role = role;  // Pass role for VCA triggering
+                dt.isStrongBeat = false;
+                dt.isSubNote = true;  // Mark as sub-note (no further articulation needed)
                 if (dt.samplesRemaining > 0) {
                     delayedTriggers.push_back(dt);
                 } else if (i > 0) {
                     // Immediate trigger for notes at same time as first
                     drumSynth.triggerVoice(voice, note.velocity);
                     gatePulses[voice].trigger(0.001f);
+                    currentVelocities[voice] = note.velocity;
+                    currentAccents[voice] = note.isAccent && accent;
+                    // Trigger VCA for external audio
+                    externalVCA[voice].trigger(vcaDecayMs, sampleRate, note.velocity);
                 }
             }
         }
@@ -1492,16 +1526,36 @@ struct UniversalRhythm : Module {
             initialized = true;
         }
 
-        // Process delayed triggers (for Flam, Drag, Buzz, Ruff articulations)
+        // Process delayed triggers (for swing/groove timing and Flam, Drag, Buzz, Ruff articulations)
         for (auto it = delayedTriggers.begin(); it != delayedTriggers.end(); ) {
             it->samplesRemaining -= 1.0f;
             if (it->samplesRemaining <= 0) {
-                drumSynth.triggerVoice(it->voice, it->velocity);
-                gatePulses[it->voice].trigger(0.001f);
-                currentVelocities[it->voice] = it->velocity;
-                currentAccents[it->voice] = it->isAccent;
-                if (it->isAccent) {
-                    accentPulses[it->voice].trigger(0.001f);
+                // Calculate VCA decay for this role
+                int baseParam = it->role * 5;
+                float decayMult = params[TIMELINE_DECAY_PARAM + baseParam].getValue();
+                if (inputs[TIMELINE_DECAY_CV_INPUT + it->role * 4].isConnected()) {
+                    decayMult += inputs[TIMELINE_DECAY_CV_INPUT + it->role * 4].getVoltage() * 0.18f;
+                    decayMult = clamp(decayMult, 0.2f, 2.0f);
+                }
+                float vcaDecayMs = 200.0f * decayMult;
+
+                if (!it->isSubNote) {
+                    // Main trigger - apply articulation
+                    triggerWithArticulation(it->voice, it->velocity, it->isAccent, args.sampleRate,
+                                           it->role, it->isStrongBeat);
+                    // Trigger VCA for external audio
+                    externalVCA[it->voice].trigger(vcaDecayMs, args.sampleRate, it->velocity);
+                } else {
+                    // Articulation sub-note - direct trigger (no further articulation)
+                    drumSynth.triggerVoice(it->voice, it->velocity);
+                    gatePulses[it->voice].trigger(0.001f);
+                    currentVelocities[it->voice] = it->velocity;
+                    currentAccents[it->voice] = it->isAccent;
+                    // Trigger VCA for external audio (sub-notes also trigger VCA)
+                    externalVCA[it->voice].trigger(vcaDecayMs, args.sampleRate, it->velocity);
+                    if (it->isAccent) {
+                        accentPulses[it->voice].trigger(0.001f);
+                    }
                 }
                 it = delayedTriggers.erase(it);
             } else {
@@ -1518,8 +1572,8 @@ struct UniversalRhythm : Module {
         }
         // Note: Swing is read in regenerate functions, not here - changes don't trigger regeneration
 
-        bool globalRegenNeeded = std::abs(variation - lastVariation) > 0.05f ||
-                                  std::abs(restAmount - lastRest) > 0.05f;
+        // Only variation triggers full regeneration, REST is applied on-the-fly
+        bool globalRegenNeeded = std::abs(variation - lastVariation) > 0.05f;
 
         // Check per-role FREQ/DECAY changes (don't need full regen, just synth update)
         bool synthUpdateNeeded = false;
@@ -1579,7 +1633,12 @@ struct UniversalRhythm : Module {
 
         if (globalRegenNeeded) {
             lastVariation = variation;
-            lastRest = restAmount;
+            appliedRest = restAmount;
+        }
+
+        // Check if REST amount changed significantly (reapply without regen)
+        if (std::abs(restAmount - appliedRest) > 0.03f) {
+            reapplyRest(restAmount);
         }
 
         // Process reset (input or button)
@@ -1694,6 +1753,10 @@ struct UniversalRhythm : Module {
                         decayMult = clamp(decayMult, 0.2f, 2.0f);
                     }
 
+                    // Determine if this is a strong beat (positions 0, 4, 8, 12 in 16-step)
+                    // Used by both primary and secondary voices
+                    bool isStrongBeat = (useStep % 4 == 0);
+
                     // Primary voice
                     WorldRhythm::Pattern& primaryPattern = fillActive ? fillPatterns.patterns[voiceBase] : patterns.patterns[voiceBase];
                     if (useStep < static_cast<int>(primaryPattern.length) && primaryPattern.hasOnsetAt(useStep)) {
@@ -1702,17 +1765,18 @@ struct UniversalRhythm : Module {
                         vel *= groove.velMods[pos];
                         vel = std::clamp(vel, 0.0f, 1.0f);
                         bool accent = primaryPattern.accents[useStep];
+
                         if (totalDelaySamples > 1.0f) {
                             // Positive delay: use delayed trigger
-                            delayedTriggers.push_back({totalDelaySamples, voiceBase, vel, accent});
+                            delayedTriggers.push_back({totalDelaySamples, voiceBase, vel, accent, r, isStrongBeat});
                         } else {
                             // Zero or negative delay: trigger immediately
                             // (negative means "ahead of beat" - we trigger now, which is effectively early)
-                            triggerWithArticulation(voiceBase, vel, accent, args.sampleRate);
+                            triggerWithArticulation(voiceBase, vel, accent, args.sampleRate, r, isStrongBeat);
                             // Trigger VCA for external audio (use decay parameter for envelope length)
-                            // Base decay of 200ms, scaled by decay parameter
+                            // Base decay of 200ms, scaled by decay parameter and velocity
                             float vcaDecayMs = 200.0f * decayMult;
-                            externalVCA[voiceBase].trigger(vcaDecayMs, args.sampleRate);
+                            externalVCA[voiceBase].trigger(vcaDecayMs, args.sampleRate, vel);
                         }
                     }
 
@@ -1725,12 +1789,12 @@ struct UniversalRhythm : Module {
                         vel = std::clamp(vel, 0.0f, 1.0f);
                         bool accent = secondaryPattern.accents[useStep];
                         if (totalDelaySamples > 1.0f) {
-                            delayedTriggers.push_back({totalDelaySamples, voiceBase + 1, vel, accent});
+                            delayedTriggers.push_back({totalDelaySamples, voiceBase + 1, vel, accent, r, isStrongBeat});
                         } else {
-                            triggerWithArticulation(voiceBase + 1, vel, accent, args.sampleRate);
+                            triggerWithArticulation(voiceBase + 1, vel, accent, args.sampleRate, r, isStrongBeat);
                             // Trigger VCA for external audio (use decay parameter for envelope length)
                             float vcaDecayMs2 = 200.0f * decayMult;
-                            externalVCA[voiceBase + 1].trigger(vcaDecayMs2, args.sampleRate);
+                            externalVCA[voiceBase + 1].trigger(vcaDecayMs2, args.sampleRate, vel);
                         }
                     }
 
@@ -1761,16 +1825,32 @@ struct UniversalRhythm : Module {
             }
         }
 
-        // Process audio with external inputs and stereo spread
+        // Process audio with internal/external mix and stereo spread
         float mixL = 0.0f;
         float mixR = 0.0f;
 
+        float spread = params[SPREAD_PARAM].getValue();
+
+        // Role-based stereo panning (based on mixing research)
+        // Role indices: 0=Timeline, 1=Foundation, 2=Groove, 3=Lead
+        // Pan positions for voice1 and voice2 per role (at spread=1.0)
+        // Foundation: both center (low freq rule)
+        // Timeline: both slightly right (like hi-hat/clave)
+        // Groove: split left/right (like congas/toms)
+        // Lead: both left (like bongos, balances Timeline on right)
+        const float rolePanV1[4] = { 0.20f,  0.0f, -0.30f, -0.40f};  // Timeline, Foundation, Groove, Lead
+        const float rolePanV2[4] = { 0.25f,  0.0f,  0.30f, -0.50f};  // Timeline, Foundation, Groove, Lead
+
         for (int r = 0; r < 4; r++) {
             int voiceBase = r * 2;
-            float spread = params[TIMELINE_SPREAD_PARAM + r].getValue();  // 0.0 to 1.0
-            currentSpread[r] = spread;
+            float mix = params[TIMELINE_MIX_PARAM + r].getValue();  // 0.0 = internal, 1.0 = external
+            currentMix[r] = mix;
 
-            // Voice 1 (Primary) - panned based on spread
+            // Get pan positions for this role
+            float pan1 = rolePanV1[r] * spread;
+            float pan2 = rolePanV2[r] * spread;
+
+            // Voice 1 (Primary)
             int v1 = voiceBase;
             float synthAudio1 = drumSynth.processVoice(v1) * 5.0f;
 
@@ -1785,21 +1865,18 @@ struct UniversalRhythm : Module {
                 }
             }
 
-            // Combine internal synth + external audio for voice 1
-            float combined1 = synthAudio1 + extAudio1;
-
-            // Pan voice 1: at spread=0, center; at spread=1.0, full left
-            float pan1L = 1.0f - (spread * 0.5f);  // 1.0 to 0.5
-            float pan1R = 1.0f - (spread * 0.5f);  // 1.0 to 0.5 (but will be attenuated more)
-            if (spread > 0.0f) {
-                pan1R = 1.0f - spread;  // Goes from 1.0 to 0.0 as spread increases
-            }
+            // Mix internal synth and external audio based on mix parameter
+            float combined1 = synthAudio1 * (1.0f - mix) + extAudio1 * mix;
 
             outputs[VOICE1_AUDIO_OUTPUT + v1].setVoltage(combined1);
-            mixL += combined1 * pan1L * 0.25f;
-            mixR += combined1 * pan1R * 0.25f;
 
-            // Voice 2 (Secondary) - panned opposite based on spread
+            // Apply stereo panning (linear panning)
+            float gainL1 = 0.5f * (1.0f - pan1);
+            float gainR1 = 0.5f * (1.0f + pan1);
+            mixL += combined1 * gainL1;
+            mixR += combined1 * gainR1;
+
+            // Voice 2 (Secondary)
             int v2 = voiceBase + 1;
             float synthAudio2 = drumSynth.processVoice(v2) * 5.0f;
 
@@ -1814,19 +1891,16 @@ struct UniversalRhythm : Module {
                 }
             }
 
-            // Combine internal synth + external audio for voice 2
-            float combined2 = synthAudio2 + extAudio2;
-
-            // Pan voice 2: at spread=0, center; at spread=1.0, full right
-            float pan2L = 1.0f - (spread * 0.5f);
-            float pan2R = 1.0f - (spread * 0.5f);
-            if (spread > 0.0f) {
-                pan2L = 1.0f - spread;  // Goes from 1.0 to 0.0 as spread increases
-            }
+            // Mix internal synth and external audio based on mix parameter
+            float combined2 = synthAudio2 * (1.0f - mix) + extAudio2 * mix;
 
             outputs[VOICE1_AUDIO_OUTPUT + v2].setVoltage(combined2);
-            mixL += combined2 * pan2L * 0.25f;
-            mixR += combined2 * pan2R * 0.25f;
+
+            // Apply stereo panning (linear panning)
+            float gainL2 = 0.5f * (1.0f - pan2);
+            float gainR2 = 0.5f * (1.0f + pan2);
+            mixL += combined2 * gainL2;
+            mixR += combined2 * gainR2;
         }
 
         outputs[MIX_L_OUTPUT].setVoltage(std::tanh(mixL) * 5.0f);
@@ -1836,13 +1910,23 @@ struct UniversalRhythm : Module {
         bool clockGate = clockPulse.process(args.sampleTime);
         lights[CLOCK_LIGHT].setBrightness(clockGate ? 1.0f : 0.0f);
 
+        // C4 = 261.63 Hz = 0V (1V/Oct standard)
+        const float C4_FREQ = 261.63f;
+
         for (int i = 0; i < 8; i++) {
             bool gate = gatePulses[i].process(args.sampleTime);
-            bool accent = accentPulses[i].process(args.sampleTime);
 
             outputs[VOICE1_GATE_OUTPUT + i].setVoltage(gate ? 10.0f : 0.0f);
-            outputs[VOICE1_CV_OUTPUT + i].setVoltage(currentVelocities[i] * 10.0f);  // 0-10V velocity CV
-            outputs[VOICE1_ACCENT_OUTPUT + i].setVoltage(accent ? 10.0f : 0.0f);
+
+            // Pitch CV: 1V/Oct, C4 (261.63Hz) = 0V
+            float pitchCV = 0.0f;
+            if (currentFreqs[i] > 0) {
+                pitchCV = std::log2(currentFreqs[i] / C4_FREQ);
+            }
+            outputs[VOICE1_CV_OUTPUT + i].setVoltage(pitchCV);
+
+            // Velocity CV: 0-10V
+            outputs[VOICE1_ACCENT_OUTPUT + i].setVoltage(currentVelocities[i] * 10.0f);
 
             lights[VOICE1_LIGHT + i].setBrightness(gate ? 1.0f : 0.0f);
         }
@@ -1945,13 +2029,19 @@ struct URPatternDisplay : TransparentWidget {
 
         if (!module) return;
 
+        // Safety check: ensure params vector is initialized
+        if (module->params.empty()) return;
+
         float rowHeight = box.size.y / 8.0f;
 
         // Get colors from each role's style (2 voices per role, secondary is slightly dimmer)
         NVGcolor colors[8];
         for (int role = 0; role < 4; role++) {
             int baseParam = role * 5;
-            int styleIndex = static_cast<int>(module->params[UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam].getValue());
+            int paramIdx = UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam;
+            // Safety check for param index
+            if (paramIdx < 0 || paramIdx >= static_cast<int>(module->params.size())) continue;
+            int styleIndex = static_cast<int>(module->params[paramIdx].getValue());
             styleIndex = clamp(styleIndex, 0, 9);
             NVGcolor baseColor = STYLE_COLORS[styleIndex];
             colors[role * 2] = baseColor;  // Primary voice - full color
@@ -1968,12 +2058,21 @@ struct URPatternDisplay : TransparentWidget {
         for (int displayRow = 0; displayRow < 4; displayRow++) {
             int role = displayToRole[displayRow];
             int length = module->roleLengths[role];
+
+            // Safety check: skip if length is invalid (prevents division by zero and inf)
+            if (length <= 0 || length > 64) continue;
+
             int step = module->currentSteps[role];
+            // Clamp step to valid range
+            step = clamp(step, 0, length - 1);
+
             float stepWidth = box.size.x / length;
 
             // Current step indicator for this role
             int baseParam = role * 5;
-            int styleIndex = static_cast<int>(module->params[UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam].getValue());
+            int paramIdx2 = UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam;
+            if (paramIdx2 < 0 || paramIdx2 >= static_cast<int>(module->params.size())) continue;
+            int styleIndex = static_cast<int>(module->params[paramIdx2].getValue());
             styleIndex = clamp(styleIndex, 0, 9);
             NVGcolor stepColor = STYLE_COLORS[styleIndex];
             nvgBeginPath(args.vg);
@@ -1986,9 +2085,14 @@ struct URPatternDisplay : TransparentWidget {
                 int v = role * 2 + voiceIdx;
                 float y = (displayRow * 2 + voiceIdx) * rowHeight + rowHeight / 2.0f;
 
-                for (int i = 0; i < length; i++) {
-                    if (module->patterns.patterns[v].hasOnsetAt(i)) {
-                        float vel = module->patterns.patterns[v].getVelocity(i);
+                // Safety check: ensure pattern is valid
+                if (v < 0 || v >= 8) continue;
+                const auto& pattern = module->patterns.patterns[v];
+                int patternLength = std::min(length, static_cast<int>(pattern.length));
+
+                for (int i = 0; i < patternLength; i++) {
+                    if (pattern.hasOnsetAt(i)) {
+                        float vel = pattern.getVelocity(i);
                         float x = i * stepWidth + stepWidth / 2.0f;
                         float radius = 1.5f + vel * 1.5f;
 
@@ -2012,7 +2116,7 @@ struct UniversalRhythmWidget : ModuleWidget {
 
     UniversalRhythmWidget(UniversalRhythm* module) {
         setModule(module);
-        panelThemeHelper.init(this, "UniversalRhythm");
+        panelThemeHelper.init(this, "40HP");
 
         box.size = Vec(40 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -2054,43 +2158,43 @@ struct UniversalRhythmWidget : ModuleWidget {
         float globalX = 175;
         float globalSpacing = 35;
         addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "VARI", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::VARIATION_PARAM));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::VARIATION_PARAM));
 
         globalX += globalSpacing;
         addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "HUMAN", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::HUMANIZE_PARAM));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::HUMANIZE_PARAM));
 
         globalX += globalSpacing;
         addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "SWING", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::SWING_PARAM));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::SWING_PARAM));
 
         globalX += globalSpacing;
         addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "REST", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::REST_PARAM));
-        addInput(createInputCentered<PJ301MPort>(Vec(globalX + 23, ctrlY + 5), module, UniversalRhythm::REST_CV_INPUT));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::REST_PARAM));
+        addInput(createInputCentered<PJ301MPort>(Vec(globalX + 25, ctrlY + 5), module, UniversalRhythm::REST_CV_INPUT));
 
-        // Fill section (knob first, then input)
-        float fillX = 380;
-        addChild(new URTextLabel(Vec(fillX - 10, ctrlLabelY), Vec(20, 12), "FILL", 8.f, nvgRGB(255, 200, 100), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(fillX, ctrlY + 5), module, UniversalRhythm::FILL_PARAM));
-        addInput(createInputCentered<PJ301MPort>(Vec(fillX + 23, ctrlY + 5), module, UniversalRhythm::FILL_INPUT));
+        // Fill section (REST CV input X + 35)
+        float fillX = globalX + 25 + 35;  // REST CV input + 35
+        addChild(new URTextLabel(Vec(fillX - 10, ctrlLabelY), Vec(20, 12), "FILL", 8.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(fillX, ctrlY + 5), module, UniversalRhythm::FILL_PARAM));
+        addInput(createInputCentered<PJ301MPort>(Vec(fillX + 25, ctrlY + 5), module, UniversalRhythm::FILL_INPUT));
 
-        // Articulation and Groove section
-        float artX = 433;
-        addChild(new URTextLabel(Vec(artX - 12, ctrlLabelY), Vec(24, 12), "ARTIC", 7.f, nvgRGB(200, 255, 200), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ARTICULATION_PARAM));
-
-        artX += 33;
-        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "GROOVE", 6.f, nvgRGB(200, 255, 200), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::GROOVE_TEMPLATE_PARAM));
+        // Articulation section
+        float artX = fillX + 25 + 35;  // FILL CV input + 35
+        addChild(new URTextLabel(Vec(artX - 24, ctrlLabelY), Vec(48, 12), "Articulation", 7.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ARTICULATION_PARAM));
 
         artX += 33;
-        addChild(new URTextLabel(Vec(artX - 13, ctrlLabelY), Vec(26, 12), "GHOST", 7.f, nvgRGB(180, 180, 255), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::GHOST_PARAM));
+        addChild(new URTextLabel(Vec(artX - 13, ctrlLabelY), Vec(26, 12), "GHOST", 7.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::GHOST_PARAM));
 
         artX += 33;
-        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "ACCENT", 7.f, nvgRGB(180, 180, 255), true));
-        addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ACCENT_PROB_PARAM));
+        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "ACCENT", 7.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ACCENT_PROB_PARAM));
+
+        artX += 43;  // +10px extra spacing before SPREAD
+        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "SPREAD", 7.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::SPREAD_PARAM));
 
         // Separators (at vertical separator top position Y=151)
         addChild(new URHorizontalLine(Vec(0, 151), Vec(box.size.x, 1)));  // Below global controls
@@ -2174,10 +2278,10 @@ struct UniversalRhythmWidget : ModuleWidget {
             addInput(createInputCentered<PJ301MPort>(Vec(leftCol + 28 + 12, row3ElementY), module,
                      UniversalRhythm::TIMELINE_AUDIO_INPUT_1 + role * 2));
 
-            // SPREAD at rightCol position (same X as Decay knob)
-            addChild(new URTextLabel(Vec(rightCol - 14, row3LabelY), Vec(30, 10), "SPREAD", 7.f, white, true));
+            // MIX at rightCol position (same X as Decay knob) - 0=internal, 1=external
+            addChild(new URTextLabel(Vec(rightCol - 15, row3LabelY), Vec(30, 10), "MIX", 7.f, white, true));
             addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, row3ElementY), module,
-                     UniversalRhythm::TIMELINE_SPREAD_PARAM + role));
+                     UniversalRhythm::TIMELINE_MIX_PARAM + role));
 
             // EXT IN 2 at rightCol + 28 position (same X as Decay CV input)
             addChild(new URTextLabel(Vec(rightCol + 28 - 14, row3LabelY), Vec(30, 10), "EXT IN 2", 7.f, white, true));
@@ -2202,10 +2306,10 @@ struct UniversalRhythmWidget : ModuleWidget {
         float mixY = (row1Y + row2Y) / 2;  // Centered between two rows (355.5)
 
         // Left side labels (type indicators) - 40px width
-        addChild(new URTextLabel(Vec(3, 337), Vec(18, 15), "AUD", 6.f, labelColor, true));
-        addChild(new URTextLabel(Vec(21, 337), Vec(18, 15), "GATE", 6.f, labelColor, true));
-        addChild(new URTextLabel(Vec(3, 362), Vec(18, 15), "CV", 6.f, labelColor, true));
-        addChild(new URTextLabel(Vec(21, 362), Vec(18, 15), "ACC", 6.f, labelColor, true));
+        addChild(new URTextLabel(Vec(3, 337), Vec(18, 15), "Audio", 6.f, labelColor, true));
+        addChild(new URTextLabel(Vec(21, 337), Vec(18, 15), "Gate", 6.f, labelColor, true));
+        addChild(new URTextLabel(Vec(3, 362), Vec(18, 15), "Freq", 6.f, labelColor, true));
+        addChild(new URTextLabel(Vec(21, 362), Vec(18, 15), "Velo", 6.f, labelColor, true));
 
         // 8 voices: each voice has 4 outputs (AUD, GATE on row1; CV, ACC on row2)
         // Port spacing within voice: 30px (26+4), voice name centered above
@@ -2238,12 +2342,13 @@ struct UniversalRhythmWidget : ModuleWidget {
         }
 
         // MIX L/R outputs at the end (vertically stacked)
-        float mixX = voiceStartX + 8 * (voiceWidth + voiceGap) - 20 + 4;  // Original X position
-        // MIX label at original X - 2, same Y as FD1/FD2 labels
-        addChild(new URTextLabel(Vec(mixX + 5 - 10 - 2, mixY - 5), Vec(20, 10), "MIX", 6.f, labelColor, true));
-        // MIX outputs X+10+2+4 from original
-        addOutput(createOutputCentered<PJ301MPort>(Vec(mixX + 5 + 10 + 2 + 4, row1Y), module, UniversalRhythm::MIX_L_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(mixX + 5 + 10 + 2 + 4, row2Y), module, UniversalRhythm::MIX_R_OUTPUT));
+        float mixOutputX = voiceStartX + 8 * (voiceWidth + voiceGap) + 1;  // Output X position
+        float mixLabelCenterX = mixOutputX - 18;  // Label center X (left of outputs)
+        // MIX label - box.pos.x = centerX - box.size.x/2 for proper centering
+        addChild(new URTextLabel(Vec(mixLabelCenterX - 10, mixY - 5), Vec(20, 10), "MIX", 6.f, labelColor, true));
+        // MIX outputs
+        addOutput(createOutputCentered<PJ301MPort>(Vec(mixOutputX, row1Y), module, UniversalRhythm::MIX_L_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(mixOutputX, row2Y), module, UniversalRhythm::MIX_R_OUTPUT));
     }
 
     void step() override {
