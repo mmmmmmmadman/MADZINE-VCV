@@ -30,7 +30,7 @@ extern Model* modelRunshow;
 extern Model* modelEnvVCA6;
 extern Model* modelWeiiiDocumenta;
 extern Model* modelUniversalRhythm;
-#ifdef __APPLE__
+#ifdef ARCH_MAC
 extern Model* modelMultiverse;
 #endif
 
