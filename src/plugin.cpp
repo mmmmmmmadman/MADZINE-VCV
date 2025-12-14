@@ -32,4 +32,7 @@ void init(Plugin* p) {
     p->addModel(modelEnvVCA6);
     p->addModel(modelWeiiiDocumenta);
     p->addModel(modelUniversalRhythm);
+#ifdef __APPLE__
+    p->addModel(modelMultiverse);
+#endif
 }

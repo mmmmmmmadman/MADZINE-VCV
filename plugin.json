@@ -167,6 +167,12 @@
       "name": "Universal Rhythm",
       "description": "Cross-cultural rhythm generator based on ethnomusicological principles with 10 world music styles",
       "tags": ["Sequencer", "Clock generator", "Drum"]
+    },
+    {
+      "slug": "Multiverse",
+      "name": "Multiverse",
+      "description": "8-channel visual mixer with real-time waveform display (macOS Apple Silicon only)",
+      "tags": ["Visual", "Mixer"]
     }
   ]
 }

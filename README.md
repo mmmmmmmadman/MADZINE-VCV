@@ -34,6 +34,9 @@ A collection of creative modules for VCV Rack, focusing on rhythm generation, mi
 - **Pyramid** (8 HP) - 3D panning router
 - **DECAPyramid** (40 HP) - 8-track 3D panning router with send/return
 
+### Experimental
+- **Multiverse** (8 HP) - 8-channel visual mixer with real-time waveform display (macOS Apple Silicon only)
+
 ### Utility
 - **AD Generator** (4 HP) - Attack Decay envelope generator
 - **Pinpple** (8 HP) - Ping filter hihat synthesizer with dynamic FM modulation

@@ -30,6 +30,9 @@ extern Model* modelRunshow;
 extern Model* modelEnvVCA6;
 extern Model* modelWeiiiDocumenta;
 extern Model* modelUniversalRhythm;
+#ifdef __APPLE__
+extern Model* modelMultiverse;
+#endif
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;
