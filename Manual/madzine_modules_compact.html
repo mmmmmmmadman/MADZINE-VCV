@@ -826,7 +826,8 @@ const moduleManuals = {
 <li><b>Attack</b>: Attack time (1ms-1s, exponential scaling)</li>
 <li><b>Release</b>: Release time (1ms-1s, exponential scaling)</li>
 <li><b>Out Vol</b>: Output volume (0-100%, default: 80%)</li>
-<li><b>Manual Button</b>: Momentary gate trigger (pink LED)</li>
+<li><b>Manual Button</b>: Momentary gate trigger - hold to activate, release to stop (pink LED)</li>
+<li><b>AHR Button</b>: Toggle AD/AHR mode - AHR adds Hold stage between Attack and Release</li>
 <li><b>Sum Button</b>: Route channel to Channel 6 sum bus</li>
 </ul>
 
@@ -835,7 +836,7 @@ const moduleManuals = {
 <li><b>In L/R</b>: Stereo audio input (±5V, auto mono-to-stereo)</li>
 <li><b>Gate</b>: Trigger input (&gt;9.5V threshold)</li>
 <li><b>Vol Ctrl</b>: Volume CV (0-10V)</li>
-<li><b>Gate Out</b>: Full cycle gate or end-of-cycle 1ms trigger (menu)</li>
+<li><b>Gate Out</b>: Three modes via menu - Full cycle gate, End trigger (1ms), Start+End triggers</li>
 <li><b>Env Out</b>: Envelope voltage (0-10V)</li>
 <li><b>Out L/R</b>: Processed stereo output (±5V)</li>
 </ul>
@@ -1318,7 +1319,7 @@ const moduleManuals = {
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">I/O</h3>
 <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
 <li>Stereo audio in/out with Send/Return for external effects</li>
-<li>MAX/MIN outputs (maximum/minimum of L/R channels)</li>
+<li>Main L/R stereo outputs</li>
 <li>S&H CV output (±10V)</li>
 <li>CV inputs for all major parameters</li>
 </ul>
@@ -1381,7 +1382,7 @@ const moduleManuals = {
 <h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Outputs</h3>
 <ul style="padding-left: 1.5rem;">
 <li>Stereo MIX L/R</li>
-<li>Per-voice: Audio, Gate, Velocity CV, Accent</li>
+<li>Per-voice: Audio, Gate, Pitch CV (1V/Oct, C4=0V), Velocity CV</li>
 </ul>
 `,
   'MADDY': `<h3 style="color: #ff6b9d; margin-bottom: 0.8rem; border-bottom: 2px solid #2a2a4a; padding-bottom: 0.5rem;">Overview</h3>
