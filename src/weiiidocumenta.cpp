@@ -26,6 +26,11 @@ struct AudioLayer {
     bool active = true;
     int currentSliceIndex = 0;    // 目前播放的切片索引
     int lastScanTargetIndex = -1; // 上次 SCAN 的目標切片索引
+    // Slice crossfade state (for single voice mode)
+    float fadeEnvelope = 1.0f;    // 0-1 fade envelope
+    bool fadingOut = false;       // Currently fading out
+    int pendingSliceIndex = -1;   // Slice to switch to after fade out
+    int pendingPlaybackPosition = 0; // Position to start at after fade out
 
     AudioLayer() {
         // 預設 60 秒 @ 48kHz
@@ -41,6 +46,10 @@ struct AudioLayer {
         recordedLength = 0;
         currentSliceIndex = 0;
         lastScanTargetIndex = -1;
+        fadeEnvelope = 1.0f;
+        fadingOut = false;
+        pendingSliceIndex = -1;
+        pendingPlaybackPosition = 0;
     }
 };
 
@@ -332,12 +341,20 @@ struct WeiiiDocumenta : Module {
     SmoothedParam smoothedFeedbackDelay;
 
     // ===== Polyphonic Voice System =====
+    // Slice crossfade: 0.1ms fade in/out to prevent clicks (max freq ~5kHz)
+    static constexpr float SLICE_FADE_TIME_MS = 0.1f;
+
     struct Voice {
         int sliceIndex = 0;           // 此 voice 正在播放的 slice
         int playbackPosition = 0;     // 在該 slice 內的播放位置
         float playbackPhase = 0.0f;   // 播放相位（用於速度控制）
         float sliceChangeTimer = 0.0f; // 計時器：用於動態切換 slice
         float speedMultiplier = 1.0f;  // 每個 voice 的隨機速度倍率 (0.5-2.0)
+        // Slice crossfade state
+        float fadeEnvelope = 1.0f;    // 0-1 fade envelope
+        bool fadingOut = false;       // Currently fading out
+        int pendingSliceIndex = -1;   // Slice to switch to after fade out
+        int pendingPlaybackPosition = 0; // Position to start at after fade out
     };
 
     std::vector<Voice> voices;        // 當前所有 voice
@@ -454,10 +471,37 @@ struct WeiiiDocumenta : Module {
         float outputL = 0.0f;
         float outputR = 0.0f;
 
+        // Calculate fade increment: 0.1ms fade time
+        // fadeIncrement = 1.0 / (fadeTime_ms * sampleRate / 1000)
+        float fadeIncrement = 1000.0f / (SLICE_FADE_TIME_MS * sampleRate);
+
         if ((isPlaying || isLooping) && layer.active && layer.recordedLength > 0) {
             // Polyphonic playback - mix all voices
             if (numVoices == 1 || voices.empty()) {
                 // Single voice - use layer playback position
+
+                // Update fade envelope
+                if (layer.fadingOut) {
+                    layer.fadeEnvelope -= fadeIncrement;
+                    if (layer.fadeEnvelope <= 0.0f) {
+                        layer.fadeEnvelope = 0.0f;
+                        layer.fadingOut = false;
+                        // Execute pending slice switch
+                        if (layer.pendingSliceIndex >= 0) {
+                            layer.currentSliceIndex = layer.pendingSliceIndex;
+                            layer.playbackPosition = layer.pendingPlaybackPosition;
+                            layer.playbackPhase = 0.0f;
+                            layer.pendingSliceIndex = -1;
+                        }
+                    }
+                } else if (layer.fadeEnvelope < 1.0f) {
+                    // Fading in
+                    layer.fadeEnvelope += fadeIncrement;
+                    if (layer.fadeEnvelope > 1.0f) {
+                        layer.fadeEnvelope = 1.0f;
+                    }
+                }
+
                 float floatPos = (float)layer.playbackPosition + layer.playbackPhase;
                 int pos0 = (int)floatPos % layer.recordedLength;
                 int pos1 = (pos0 + 1) % layer.recordedLength;
@@ -466,17 +510,45 @@ struct WeiiiDocumenta : Module {
                 // 線性插值
                 outputL = layer.bufferL[pos0] * (1.0f - frac) + layer.bufferL[pos1] * frac;
                 outputR = layer.bufferR[pos0] * (1.0f - frac) + layer.bufferR[pos1] * frac;
+
+                // Apply fade envelope
+                outputL *= layer.fadeEnvelope;
+                outputR *= layer.fadeEnvelope;
             } else {
                 // Multiple voices - mix them together
                 for (int i = 0; i < numVoices; i++) {
+                    // Update fade envelope for this voice
+                    if (voices[i].fadingOut) {
+                        voices[i].fadeEnvelope -= fadeIncrement;
+                        if (voices[i].fadeEnvelope <= 0.0f) {
+                            voices[i].fadeEnvelope = 0.0f;
+                            voices[i].fadingOut = false;
+                            // Execute pending slice switch
+                            if (voices[i].pendingSliceIndex >= 0) {
+                                voices[i].sliceIndex = voices[i].pendingSliceIndex;
+                                voices[i].playbackPosition = voices[i].pendingPlaybackPosition;
+                                voices[i].playbackPhase = 0.0f;
+                                voices[i].pendingSliceIndex = -1;
+                            }
+                        }
+                    } else if (voices[i].fadeEnvelope < 1.0f) {
+                        // Fading in
+                        voices[i].fadeEnvelope += fadeIncrement;
+                        if (voices[i].fadeEnvelope > 1.0f) {
+                            voices[i].fadeEnvelope = 1.0f;
+                        }
+                    }
+
                     float floatPos = (float)voices[i].playbackPosition + voices[i].playbackPhase;
                     int pos0 = (int)floatPos % layer.recordedLength;
                     int pos1 = (pos0 + 1) % layer.recordedLength;
                     float frac = floatPos - (int)floatPos;
 
-                    // 線性插值
-                    outputL += layer.bufferL[pos0] * (1.0f - frac) + layer.bufferL[pos1] * frac;
-                    outputR += layer.bufferR[pos0] * (1.0f - frac) + layer.bufferR[pos1] * frac;
+                    // 線性插值 with fade envelope
+                    float voiceL = (layer.bufferL[pos0] * (1.0f - frac) + layer.bufferL[pos1] * frac) * voices[i].fadeEnvelope;
+                    float voiceR = (layer.bufferR[pos0] * (1.0f - frac) + layer.bufferR[pos1] * frac) * voices[i].fadeEnvelope;
+                    outputL += voiceL;
+                    outputR += voiceR;
                 }
 
                 // Divide by numVoices to prevent clipping
@@ -770,16 +842,25 @@ struct WeiiiDocumenta : Module {
                         int targetSliceIndex = (int)std::round(scanValue * (slices.size() - 1));
                         targetSliceIndex = clamp(targetSliceIndex, 0, slices.size() - 1);
 
-                        // 只在 SCAN 目標切片改變時才跳轉
+                        // 只在 SCAN 目標切片改變時才跳轉（使用 crossfade）
                         if (targetSliceIndex != layer.lastScanTargetIndex && slices[targetSliceIndex].active) {
-                            layer.currentSliceIndex = targetSliceIndex;
-                            layer.playbackPosition = slices[targetSliceIndex].startSample;
                             layer.lastScanTargetIndex = targetSliceIndex;
 
-                            // Sync voice 0 in polyphonic mode
-                            if (numVoices > 1 && !voices.empty()) {
-                                voices[0].sliceIndex = targetSliceIndex;
-                                voices[0].playbackPosition = slices[targetSliceIndex].startSample;
+                            // Use crossfade for slice switching
+                            if (numVoices == 1 || voices.empty()) {
+                                // Single voice mode - trigger fade out with pending switch
+                                if (!layer.fadingOut && layer.pendingSliceIndex < 0) {
+                                    layer.fadingOut = true;
+                                    layer.pendingSliceIndex = targetSliceIndex;
+                                    layer.pendingPlaybackPosition = slices[targetSliceIndex].startSample;
+                                }
+                            } else {
+                                // Polyphonic mode - sync voice 0 with crossfade
+                                if (!voices[0].fadingOut && voices[0].pendingSliceIndex < 0) {
+                                    voices[0].fadingOut = true;
+                                    voices[0].pendingSliceIndex = targetSliceIndex;
+                                    voices[0].pendingPlaybackPosition = slices[targetSliceIndex].startSample;
+                                }
                             }
                         }
                     } else {
@@ -816,32 +897,42 @@ struct WeiiiDocumenta : Module {
                             if (isReverse) {
                                 // 反向播放：檢查是否小於起點，前進到上一個切片
                                 if (layer.playbackPosition < sliceStart) {
-                                    if (layer.currentSliceIndex > 0) {
-                                        layer.currentSliceIndex--;
-                                        layer.playbackPosition = slices[layer.currentSliceIndex].endSample;
-                                    } else {
-                                        layer.playbackPosition = loopEndSample - 1;
-                                        layer.currentSliceIndex = slices.size() - 1;
+                                    // Use crossfade for slice boundary
+                                    int newSliceIndex = (layer.currentSliceIndex > 0) ? layer.currentSliceIndex - 1 : (int)slices.size() - 1;
+                                    int newPosition = (layer.currentSliceIndex > 0) ? slices[newSliceIndex].endSample : loopEndSample - 1;
+                                    if (!layer.fadingOut && layer.pendingSliceIndex < 0) {
+                                        layer.fadingOut = true;
+                                        layer.pendingSliceIndex = newSliceIndex;
+                                        layer.pendingPlaybackPosition = newPosition;
                                     }
                                 }
                             } else {
                                 // 正向播放：檢查是否超過終點
                                 if (isLooping) {
-                                    // Loop mode: loop within current slice only
+                                    // Loop mode: loop within current slice only (with crossfade)
                                     if (layer.playbackPosition > sliceEnd) {
-                                        layer.playbackPosition = sliceStart;
+                                        if (!layer.fadingOut && layer.pendingSliceIndex < 0) {
+                                            layer.fadingOut = true;
+                                            layer.pendingSliceIndex = layer.currentSliceIndex;
+                                            layer.pendingPlaybackPosition = sliceStart;
+                                        }
                                     }
                                 } else {
                                     // Play mode: advance to next slice, or loop at end
                                     if (layer.playbackPosition >= loopEndSample) {
-                                        // Reached end - loop from beginning
-                                        layer.playbackPosition = 0;
-                                        layer.currentSliceIndex = 0;
+                                        // Reached end - loop from beginning (with crossfade)
+                                        if (!layer.fadingOut && layer.pendingSliceIndex < 0) {
+                                            layer.fadingOut = true;
+                                            layer.pendingSliceIndex = 0;
+                                            layer.pendingPlaybackPosition = 0;
+                                        }
                                     } else if (layer.playbackPosition > sliceEnd) {
-                                        // Move to next slice
-                                        layer.currentSliceIndex = (layer.currentSliceIndex + 1) % (int)slices.size();
-                                        if (slices[layer.currentSliceIndex].active) {
-                                            layer.playbackPosition = slices[layer.currentSliceIndex].startSample;
+                                        // Move to next slice (with crossfade)
+                                        int newSliceIndex = (layer.currentSliceIndex + 1) % (int)slices.size();
+                                        if (slices[newSliceIndex].active && !layer.fadingOut && layer.pendingSliceIndex < 0) {
+                                            layer.fadingOut = true;
+                                            layer.pendingSliceIndex = newSliceIndex;
+                                            layer.pendingPlaybackPosition = slices[newSliceIndex].startSample;
                                         }
                                     }
                                 }
@@ -877,31 +968,41 @@ struct WeiiiDocumenta : Module {
 
                                 if (isReverse) {
                                     if (voices[i].playbackPosition < sliceStart) {
-                                        if (voices[i].sliceIndex > 0) {
-                                            voices[i].sliceIndex--;
-                                            voices[i].playbackPosition = slices[voices[i].sliceIndex].endSample;
-                                        } else {
-                                            voices[i].playbackPosition = loopEndSample - 1;
-                                            voices[i].sliceIndex = slices.size() - 1;
+                                        // Use crossfade for slice boundary
+                                        int newSliceIndex = (voices[i].sliceIndex > 0) ? voices[i].sliceIndex - 1 : (int)slices.size() - 1;
+                                        int newPosition = (voices[i].sliceIndex > 0) ? slices[newSliceIndex].endSample : loopEndSample - 1;
+                                        if (!voices[i].fadingOut && voices[i].pendingSliceIndex < 0) {
+                                            voices[i].fadingOut = true;
+                                            voices[i].pendingSliceIndex = newSliceIndex;
+                                            voices[i].pendingPlaybackPosition = newPosition;
                                         }
                                     }
                                 } else {
                                     if (isLooping) {
-                                        // Loop mode: loop within current slice only
+                                        // Loop mode: loop within current slice only (with crossfade)
                                         if (voices[i].playbackPosition > sliceEnd) {
-                                            voices[i].playbackPosition = sliceStart;
+                                            if (!voices[i].fadingOut && voices[i].pendingSliceIndex < 0) {
+                                                voices[i].fadingOut = true;
+                                                voices[i].pendingSliceIndex = voices[i].sliceIndex;
+                                                voices[i].pendingPlaybackPosition = sliceStart;
+                                            }
                                         }
                                     } else {
                                         // Play mode: advance to next slice, or loop at end
                                         if (voices[i].playbackPosition >= loopEndSample) {
-                                            // Reached end - loop from beginning
-                                            voices[i].playbackPosition = 0;
-                                            voices[i].sliceIndex = 0;
+                                            // Reached end - loop from beginning (with crossfade)
+                                            if (!voices[i].fadingOut && voices[i].pendingSliceIndex < 0) {
+                                                voices[i].fadingOut = true;
+                                                voices[i].pendingSliceIndex = 0;
+                                                voices[i].pendingPlaybackPosition = 0;
+                                            }
                                         } else if (voices[i].playbackPosition > sliceEnd) {
-                                            // Move to next slice
-                                            voices[i].sliceIndex = (voices[i].sliceIndex + 1) % (int)slices.size();
-                                            if (slices[voices[i].sliceIndex].active) {
-                                                voices[i].playbackPosition = slices[voices[i].sliceIndex].startSample;
+                                            // Move to next slice (with crossfade)
+                                            int newSliceIndex = (voices[i].sliceIndex + 1) % (int)slices.size();
+                                            if (slices[newSliceIndex].active && !voices[i].fadingOut && voices[i].pendingSliceIndex < 0) {
+                                                voices[i].fadingOut = true;
+                                                voices[i].pendingSliceIndex = newSliceIndex;
+                                                voices[i].pendingPlaybackPosition = slices[newSliceIndex].startSample;
                                             }
                                         }
                                     }
@@ -925,7 +1026,7 @@ struct WeiiiDocumenta : Module {
                             voices[i].sliceChangeTimer -= args.sampleTime;
 
                             if (voices[i].sliceChangeTimer <= 0.0f) {
-                                // Time to switch to a random slice
+                                // Time to switch to a random slice (with crossfade)
                                 std::uniform_int_distribution<int> sliceDist(0, slices.size() - 1);
                                 int newSliceIndex = sliceDist(randomEngine);
 
@@ -936,9 +1037,12 @@ struct WeiiiDocumenta : Module {
                                     attempts++;
                                 }
 
-                                voices[i].sliceIndex = newSliceIndex;
-                                voices[i].playbackPosition = slices[newSliceIndex].startSample;
-                                voices[i].playbackPhase = 0.0f;
+                                // Use crossfade for dynamic slice switch
+                                if (!voices[i].fadingOut && voices[i].pendingSliceIndex < 0) {
+                                    voices[i].fadingOut = true;
+                                    voices[i].pendingSliceIndex = newSliceIndex;
+                                    voices[i].pendingPlaybackPosition = slices[newSliceIndex].startSample;
+                                }
 
                                 // Reset timer with random interval (0.5-2.0 seconds)
                                 std::uniform_real_distribution<float> timerDist(0.5f, 2.0f);

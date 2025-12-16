@@ -703,9 +703,9 @@ struct MADDYPlus : Module {
     };
 
     float phase = 0.0f;
-    float swingPhase = 0.0f;
+    float secondPhase = 0.0f;  // SwingLFO style second phase
     dsp::PulseGenerator clockPulse;
-    bool isSwingBeat = false;
+    float prevSwingPulse = 0.0f;  // For detecting rising edge
 
     struct TrackState {
         int divMultValue = 0;
@@ -1433,8 +1433,8 @@ struct MADDYPlus : Module {
 
     void onReset() override {
         phase = 0.0f;
-        swingPhase = 0.0f;
-        isSwingBeat = false;
+        secondPhase = 0.0f;
+        prevSwingPulse = 0.0f;
         globalClockSeconds = 0.5f;
         for (int i = 0; i < 3; ++i) {
             tracks[i].reset();
@@ -1600,21 +1600,30 @@ json_t* dataToJson() override {
 
         float deltaPhase = freq * args.sampleTime;
         phase += deltaPhase;
-        internalClockTriggered = false;
-
-        float phaseThreshold = 1.0f;
-        if (isSwingBeat && swing > 0.0f) {
-            float swingOffset = swing * 0.25f;
-            phaseThreshold = 1.0f + swingOffset;
+        if (phase >= 1.0f) {
+            phase -= 1.0f;
         }
 
-        if (phase >= phaseThreshold) {
-            phase -= phaseThreshold;
+        // SwingLFO style: calculate second phase with swing offset
+        float phaseOffset = (180.0f - swing * 90.0f) * M_PI / 180.0f;
+        secondPhase = phase + (phaseOffset / (2.0f * M_PI));
+        while (secondPhase >= 1.0f)
+            secondPhase -= 1.0f;
+
+        // Generate swing pulse (shape=0 → pulseWidth=0.01, mix=0.5)
+        float pulseWidth = 0.01f;
+        float mainPulse = (phase < pulseWidth) ? 10.0f : 0.0f;
+        float secondPulse = (secondPhase < pulseWidth) ? 10.0f : 0.0f;
+        float mixedPulse = (mainPulse * 0.5f + secondPulse * 0.5f) * 2.0f;  // Mix 50%, double output to 0-10V
+
+        // Detect rising edge as clock trigger
+        internalClockTriggered = false;
+        if (mixedPulse > 0.0f && prevSwingPulse == 0.0f) {
             clockPulse.trigger(0.001f);
             internalClockTriggered = true;
-            globalClockSeconds = phaseThreshold / freq;
-            isSwingBeat = !isSwingBeat;
+            globalClockSeconds = 0.5f / freq;  // Approximate half period
         }
+        prevSwingPulse = mixedPulse;
 
         float clockOutput = clockPulse.process(args.sampleTime) ? 10.0f : 0.0f;
         outputs[CLK_OUTPUT].setVoltage(clockOutput);
