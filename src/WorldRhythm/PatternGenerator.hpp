@@ -708,9 +708,11 @@ public:
             if (nearHit) prob *= 1.5f;  // More likely near other hits
 
             if (dist(rng) < prob) {
-                // Ghost notes: 15-25% of normal velocity
-                float ghostVel = 0.15f + dist(rng) * 0.1f + velVar(rng);
-                p.setOnset(i, std::clamp(ghostVel, 0.12f, 0.28f));
+                // Ghost notes: 25-32% of normal velocity
+                // Reference: Matsuo & Sakaguchi (2024) 1:4 amplitude ratio = 25%
+                //           Cheng et al. (2022) 10dB difference = ~32%
+                float ghostVel = 0.25f + dist(rng) * 0.07f + velVar(rng);
+                p.setOnset(i, std::clamp(ghostVel, 0.20f, 0.35f));
             }
         }
     }

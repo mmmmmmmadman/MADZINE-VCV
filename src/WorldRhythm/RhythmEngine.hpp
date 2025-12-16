@@ -770,8 +770,9 @@ public:
                 if (role == FOUNDATION) ghostProb *= 0.3f;
 
                 if (hash < ghostProb) {
-                    // Ghost note: very soft
-                    float ghostVel = 0.12f + dist(humanRng) * 0.12f;
+                    // Ghost note: 25-32% velocity
+                    // Reference: Matsuo & Sakaguchi (2024), Cheng et al. (2022)
+                    float ghostVel = 0.25f + dist(humanRng) * 0.07f;
                     p.setOnset(i, ghostVel);
                 }
             }

@@ -642,6 +642,11 @@ public:
             : 0.0f;
 
         // 綜合判定
+        // NOTE: These thresholds (80%, 60%, 60%) are operational definitions
+        // by the author, not derived from Tenzer or other ethnomusicological
+        // literature. Tenzer's analyses use qualitative descriptions, not
+        // percentage metrics. These values provide reasonable quality control
+        // but should not be cited as academic standards.
         result.isValid = (result.complementarity >= 0.8f) &&
                         (result.continuity >= 0.6f) &&
                         (result.balance >= 0.6f);

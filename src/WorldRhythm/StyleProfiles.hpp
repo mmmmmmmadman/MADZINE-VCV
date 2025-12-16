@@ -2,9 +2,25 @@
 
 namespace WorldRhythm {
 
+// ========================================
+// Swing Ratio Academic Reference (v0.20)
+// ========================================
+// Friberg, A., & Sundström, A. (2002). Swing Ratios and Ensemble
+// Timing in Jazz Performance: Evidence for a Common Rhythmic Pattern.
+// Music Perception, 19(3), 333-349.
+//
+// Key findings:
+// - Slow tempo (~120 BPM): swing ratio up to 3.5:1 (0.78)
+// - Medium tempo: 2.0:1 (triplet feel, 0.67)
+// - Fast tempo (300+ BPM): approaches 1.0:1 (straight, 0.50)
+// - Short note absolute duration ~100ms at medium-fast tempos
+//
+// Swing ratio values below follow these research findings,
+// with style-specific adjustments based on ethnomusicological practice.
+
 struct StyleProfile {
     const char* name;
-    float swing;  // 0.5 = straight, 0.67 = triplet
+    float swing;  // 0.5 = straight, 0.67 = triplet (Friberg & Sundström 2002)
 
     // 16-position weights for each role (0.0 - 1.0)
     float timeline[16];
