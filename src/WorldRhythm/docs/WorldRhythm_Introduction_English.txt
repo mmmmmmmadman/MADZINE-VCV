@@ -48,13 +48,15 @@ Interlocking strength varies by style: West African and Gamelan use strong inter
 5. Humanization
 
 Timing Micro-offsets
-   Style-specific ranges: West African ±25ms, Jazz ±15ms, Electronic ±2ms.
+   Style-specific ranges: West African ±22ms, Jazz ±12ms, Electronic ±5ms.
+   (Based on Polak & London 2014, Friberg & Sundström 2002)
 
 BPM-Dependent Swing
    Higher swing ratio at slow tempos (approximately 68%), approaching straight feel at fast tempos (approximately 54%).
 
 Ghost Notes
-   Low-velocity notes at 25-50% of the preceding note's velocity.
+   Low-velocity notes at 25-32% of the preceding note's velocity.
+   (Based on Matsuo & Sakaguchi 2024, Cheng et al. 2022)
 
 Accent Enhancement
    Prioritizes adding accents on strong beat positions (0, 4, 8, 12) to increase rhythmic intensity.

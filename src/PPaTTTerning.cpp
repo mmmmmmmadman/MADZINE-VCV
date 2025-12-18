@@ -27,7 +27,7 @@ struct DensityParamQuantity : ParamQuantity {
 };
 
 struct PPaTTTerning : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         K1_PARAM, K2_PARAM, K3_PARAM, K4_PARAM, K5_PARAM,
@@ -58,7 +58,10 @@ struct PPaTTTerning : Module {
     int currentStep = 0, sequenceLength = 16, stepToKnobMapping[64];
     float previousVoltage = -999.0f;
     int styleMode = 1;
-    
+
+    // Custom pattern support
+    std::vector<int> customPattern = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
+
     // CPU 最佳化：參數變化檢測（模仿 MADDY 策略）
     float lastDensity = -1.0f;
     float lastChaos = -1.0f;
@@ -135,6 +138,14 @@ struct PPaTTTerning : Module {
         json_object_set_new(rootJ, "track2Delay", json_integer(track2Delay));
         json_object_set_new(rootJ, "styleMode", json_integer(styleMode));
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+
+        // Save custom pattern
+        json_t* customPatternJ = json_array();
+        for (int step : customPattern) {
+            json_array_append_new(customPatternJ, json_integer(step));
+        }
+        json_object_set_new(rootJ, "customPattern", customPatternJ);
+
         return rootJ;
     }
 
@@ -149,13 +160,26 @@ struct PPaTTTerning : Module {
             track2Delay = clamp((int)json_integer_value(t2), 0, 5);
             params[DELAY_PARAM].setValue((float)track2Delay);
         }
-        
+
         json_t* styleJ = json_object_get(rootJ, "styleMode");
         if (styleJ) {
             styleMode = clamp((int)json_integer_value(styleJ), 0, 2);
             params[STYLE_PARAM].setValue((float)styleMode);
         }
-        
+
+        // Load custom pattern
+        json_t* customPatternJ = json_object_get(rootJ, "customPattern");
+        if (customPatternJ) {
+            customPattern.clear();
+            size_t arraySize = json_array_size(customPatternJ);
+            for (size_t i = 0; i < arraySize; i++) {
+                json_t* stepJ = json_array_get(customPatternJ, i);
+                if (stepJ) {
+                    customPattern.push_back(json_integer_value(stepJ));
+                }
+            }
+        }
+
         updateOutputDescriptions();
         // 重新載入後需要重新生成映射
         mappingNeedsUpdate = true;
@@ -176,14 +200,7 @@ struct PPaTTTerning : Module {
             sequenceLength = 28 + (int)((density - 0.2f) * 60);
         }
         sequenceLength = clamp(sequenceLength, 8, 48);
-        
-        if (chaos > 0.0f) {
-            float chaosRange = chaos * sequenceLength * 0.5f;
-            float randomOffset = (random::uniform() - 0.5f) * 2.0f * chaosRange;
-            sequenceLength += (int)randomOffset;
-            sequenceLength = clamp(sequenceLength, 4, 64);
-        }
-        
+
         int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
         
         for (int i = 0; i < 64; i++) stepToKnobMapping[i] = 0;
@@ -194,10 +211,17 @@ struct PPaTTTerning : Module {
                     stepToKnobMapping[i] = i % primaryKnobs;
                 }
                 break;
-            case 1: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < sequenceLength; i++) {
-                    stepToKnobMapping[i] = minimalistPattern[i % 32] % primaryKnobs;
+            case 1: { // Custom - use customPattern
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    for (int i = 0; i < sequenceLength; i++) {
+                        stepToKnobMapping[i] = i % primaryKnobs;
+                    }
+                } else {
+                    for (int i = 0; i < sequenceLength; i++) {
+                        int val = customPattern[i % patternLen];
+                        stepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
@@ -225,11 +249,16 @@ struct PPaTTTerning : Module {
             }
         }
         
-        if (chaos > 0.3f) {
-            int chaosSteps = (int)(chaos * sequenceLength * 0.3f);
+        if (chaos > 0.0f) {
+            int chaosSteps = (int)(chaos * sequenceLength * 0.5f);
             for (int i = 0; i < chaosSteps; i++) {
                 int randomStep = random::u32() % sequenceLength;
-                stepToKnobMapping[randomStep] = random::u32() % 5;
+                if (chaos > 0.5f && primaryKnobs < 5) {
+                    // Select knobs outside the density range
+                    stepToKnobMapping[randomStep] = primaryKnobs + (random::u32() % (5 - primaryKnobs));
+                } else {
+                    stepToKnobMapping[randomStep] = random::u32() % 5;
+                }
             }
         }
     }
@@ -363,15 +392,15 @@ struct StyleParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         PPaTTTerning* module = dynamic_cast<PPaTTTerning*>(this->module);
         if (!module) return "Sequential";
-        
+
         switch (module->styleMode) {
             case 0: return "Sequential";
-            case 1: return "Minimalism";
+            case 1: return "Custom";
             case 2: return "Jump";
-            default: return "Minimalism";
+            default: return "Custom";
         }
     }
-    
+
     std::string getLabel() override {
         return "Mode";
     }
@@ -513,6 +542,39 @@ struct PPaTTTerningWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(45, 370), module, PPaTTTerning::CVD_CV_INPUT));
     }
 
+    struct PatternTextField : ui::TextField {
+        PPaTTTerning* module;
+
+        PatternTextField(PPaTTTerning* module) : module(module) {
+            box.size.x = 200;
+            placeholder = "e.g. 12312345";
+
+            if (module && !module->customPattern.empty()) {
+                text = "";
+                for (int step : module->customPattern) {
+                    text += std::to_string(step + 1);
+                }
+            }
+        }
+
+        void onChange(const event::Change& e) override {
+            TextField::onChange(e);
+            if (!module) return;
+
+            std::vector<int> steps;
+            for (char c : text) {
+                if (c >= '1' && c <= '5') {
+                    steps.push_back(c - '1');
+                }
+            }
+
+            if (!steps.empty()) {
+                module->customPattern = steps;
+                module->generateMapping();
+            }
+        }
+    };
+
     void step() override {
         PPaTTTerning* module = dynamic_cast<PPaTTTerning*>(this->module);
         if (module) {
@@ -524,6 +586,38 @@ struct PPaTTTerningWidget : ModuleWidget {
     void appendContextMenu(ui::Menu* menu) override {
         PPaTTTerning* module = dynamic_cast<PPaTTTerning*>(this->module);
         if (!module) return;
+
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Custom Pattern (for Custom mode)"));
+
+        // Show current pattern
+        if (!module->customPattern.empty()) {
+            std::string currentPattern = "Current: ";
+            for (int step : module->customPattern) {
+                currentPattern += std::to_string(step + 1);
+            }
+            menu->addChild(createMenuLabel(currentPattern));
+        }
+
+        menu->addChild(createMenuLabel("Enter pattern (1-5):"));
+        menu->addChild(new PatternTextField(module));
+
+        // Reset Custom button
+        struct ResetCustomItem : ui::MenuItem {
+            PPaTTTerning* module;
+
+            ResetCustomItem(PPaTTTerning* module) : module(module) {
+                text = "Reset to Default";
+            }
+
+            void onAction(const event::Action& e) override {
+                if (module) {
+                    module->customPattern = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
+                    module->generateMapping();
+                }
+            }
+        };
+        menu->addChild(new ResetCustomItem(module));
 
         addPanelThemeMenu(menu, module);
     }

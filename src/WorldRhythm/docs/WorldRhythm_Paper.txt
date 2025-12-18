@@ -8,7 +8,9 @@ Keywords: rhythm generation, computational ethnomusicology, cross-cultural music
 
 1. Introduction
 
-Computational rhythm generation has predominantly focused on Western popular music styles. Major publicly available datasets such as the Groove MIDI Dataset and Magenta's drum transcription corpora consist almost entirely of Western genres including rock, pop, funk, and jazz. Machine learning approaches such as GrooVAE and Drum RNN, while successful for expressive drum performance generation, are trained primarily on these Western-centric datasets and lack explicit modeling of culture-specific rhythmic principles.
+Computational rhythm generation has predominantly focused on Western popular music styles. Major publicly available datasets such as the Groove MIDI Dataset and Magenta's drum transcription corpora consist almost entirely of Western genres including rock, pop, funk, and jazz. Recent research (Mehta et al., 2024) analyzing over one million hours of audio datasets found that 86% focus on Global North music, with 93% of researchers primarily studying Western music. Machine learning approaches such as GrooVAE and Drum RNN, while successful for expressive drum performance generation, are trained primarily on these Western-centric datasets and lack explicit modeling of culture-specific rhythmic principles.
+
+Several computational systems have addressed non-Western musical traditions individually: the CompMusic project (UPF Barcelona) developed datasets and tala detection systems for Carnatic and Hindustani music; Euclidean rhythm generators based on Toussaint's research have been widely implemented; and various gamelan algorithmic composition systems exist. However, these efforts typically target single traditions. Additionally, computational systems for tabla and mridangam transcription have achieved approximately 93% accuracy, demonstrating the viability of modeling specific traditions.
 
 Ethnomusicological research has documented sophisticated rhythmic systems across world cultures, including the timeline concept in West African music, the clave in Afro-Cuban traditions, the colotomic structure in Javanese gamelan, the kotekan interlocking in Balinese music, the tala cycles in Indian classical music, and the aksak asymmetric meters in Balkan folk music. However, these concepts have rarely been unified within a single generative framework.
 
@@ -165,7 +167,7 @@ The system design draws from established ethnomusicological research:
 
 Timeline Theory (Kubik, 2010): The concept of an asymmetric timeline as a referential framework for ensemble organization informs the Timeline layer design.
 
-African Polyrhythm (Arom, 1991): The principles of interlocking and complementary rhythmic structures inform the avoidance and complementation mechanisms.
+African Polyrhythm (Arom, 1991): The principles of interlocking and complementary rhythmic structures inform the avoidance and complementation mechanisms. Note that Arom's research focuses on Central Africa (Aka Pygmies, Banda Linda), rather than West Africa where timeline patterns are most prominent. While the principles are applicable, the specific practices differ between these regions.
 
 Jazz Microtiming (Benadon, 2006): Research on BPM-dependent swing ratios and expressive timing informs the humanization system.
 
@@ -216,6 +218,8 @@ Polak, R., & London, J. (2014). Timing and Meter in Mande Drumming from Mali. Mu
 Tenzer, M. (2000). Gamelan Gong Kebyar: The Art of Twentieth-Century Balinese Music. University of Chicago Press.
 
 Toussaint, G. (2005). The Euclidean Algorithm Generates Traditional Musical Rhythms. Proceedings of BRIDGES: Mathematical Connections in Art, Music and Science, 47-56.
+
+Mehta, A., et al. (2024). Missing Melodies: AI Music Generation and the Need for Diverse Training Data. arXiv preprint.
 
 Appendix: Style Parameter Summary
 

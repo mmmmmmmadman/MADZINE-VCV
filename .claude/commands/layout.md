@@ -48,3 +48,30 @@
 - 標籤都在控制元件上方
 - bold=true 用於大部分標籤
 - 右鍵選單必須有 addPanelThemeMenu()
+
+## 文字標籤置中的根本原因與正確做法
+
+**問題**：使用 URTextLabel 或類似的置中對齊標籤時，文字常常會偏右。
+
+**根本原因**：
+URTextLabel 使用 `NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE`，文字在 `box.size.x / 2.f` 處繪製。
+因此，要讓文字視覺中心對齊某個 X 座標，必須正確計算 `box.pos.x`：
+
+```
+box.pos.x = targetCenterX - (box.size.x / 2)
+```
+
+**錯誤做法**（導致偏移）：
+```cpp
+// 直接用目標 X 作為 box.pos.x - 錯誤！
+addChild(new URTextLabel(Vec(targetX, y), Vec(20, 10), "TEXT", ...));
+```
+
+**正確做法**：
+```cpp
+// 計算：box.pos.x = centerX - box.size.x/2
+float boxWidth = 20;
+addChild(new URTextLabel(Vec(targetCenterX - boxWidth/2, y), Vec(boxWidth, 10), "TEXT", ...));
+```
+
+**記住**：`box.pos` 是標籤框的左上角，不是文字中心！

@@ -532,24 +532,8 @@ struct HorizontalLine : Widget {
 struct DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         float value = getValue();
-        int steps, primaryKnobs;
-        
-        if (value < 0.2f) {
-            steps = 8 + (int)(value * 20);
-            primaryKnobs = 2;
-        } else if (value < 0.4f) {
-            steps = 12 + (int)((value - 0.2f) * 40);
-            primaryKnobs = 3;
-        } else if (value < 0.6f) {
-            steps = 20 + (int)((value - 0.4f) * 40);
-            primaryKnobs = 4;
-        } else {
-            steps = 28 + (int)((value - 0.6f) * 50.1f);
-            primaryKnobs = 5;
-        }
-        steps = clamp(steps, 8, 48);
-        
-        return string::f("%d knobs, %d steps", primaryKnobs, steps);
+        int primaryKnobs = (value < 0.2f) ? 2 : (value < 0.4f) ? 3 : (value < 0.6f) ? 4 : 5;
+        return string::f("%d knobs", primaryKnobs);
     }
 };
 
@@ -581,7 +565,7 @@ std::vector<bool> generateMADDYEuclideanRhythm(int length, int fill, int shift) 
 }
 
 struct MADDY : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         FREQ_PARAM,
@@ -889,12 +873,15 @@ struct MADDY : Module {
     int modeValue = 1;
     int clockSourceValue = 0;
 
+    // Custom pattern support
+    std::vector<int> customPattern = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
+
     MADDY() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         
         configParam(FREQ_PARAM, -3.0f, 7.0f, 2.8073549270629883f, "Frequency", " Hz", 2.0f, 1.0f);
         configParam(SWING_PARAM, 0.0f, 1.0f, 0.0f, "Swing", "°", 0.0f, -90.0f, 180.0f);
-        configParam(LENGTH_PARAM, 1.0f, 32.0f, 16.0f, "Length");
+        configParam(LENGTH_PARAM, 1.0f, 48.0f, 16.0f, "Length");
         getParamQuantity(LENGTH_PARAM)->snapEnabled = true;
         configParam(DECAY_PARAM, 0.0f, 1.0f, 0.30000001192092896f, "Decay");
         
@@ -992,25 +979,12 @@ struct MADDY : Module {
     void generateMapping() {
         float density = params[DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
-        
-        if (density < 0.2f) {
-            sequenceLength = 8 + (int)(density * 20);
-        } else if (density < 0.4f) {
-            sequenceLength = 12 + (int)((density - 0.2f) * 40);
-        } else if (density < 0.6f) {
-            sequenceLength = 20 + (int)((density - 0.4f) * 40);
-        } else {
-            sequenceLength = 28 + (int)((density - 0.6f) * 50.1f);
-        }
-        sequenceLength = clamp(sequenceLength, 8, 48);
-        
-        if (chaos > 0.0f) {
-            float chaosRange = chaos * sequenceLength * 0.5f;
-            float randomOffset = (random::uniform() - 0.5f) * 2.0f * chaosRange;
-            sequenceLength += (int)randomOffset;
-            sequenceLength = clamp(sequenceLength, 4, 64);
-        }
-        
+
+        // sequenceLength 由 LENGTH_PARAM 決定（與 Euclidean 同步）
+        sequenceLength = (int)params[LENGTH_PARAM].getValue();
+        sequenceLength = clamp(sequenceLength, 1, 48);
+
+        // density 只決定使用幾個旋鈕
         int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
         
         for (int i = 0; i < 64; i++) stepToKnobMapping[i] = 0;
@@ -1021,10 +995,17 @@ struct MADDY : Module {
                     stepToKnobMapping[i] = i % primaryKnobs;
                 }
                 break;
-            case 1: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < sequenceLength; i++) {
-                    stepToKnobMapping[i] = minimalistPattern[i % 32] % primaryKnobs;
+            case 1: { // Custom - use customPattern
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    for (int i = 0; i < sequenceLength; i++) {
+                        stepToKnobMapping[i] = i % primaryKnobs;
+                    }
+                } else {
+                    for (int i = 0; i < sequenceLength; i++) {
+                        int val = customPattern[i % patternLen];
+                        stepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
@@ -1037,11 +1018,16 @@ struct MADDY : Module {
             }
         }
         
-        if (chaos > 0.3f) {
-            int chaosSteps = (int)(chaos * sequenceLength * 0.3f);
+        if (chaos > 0.0f) {
+            int chaosSteps = (int)(chaos * sequenceLength * 0.5f);
             for (int i = 0; i < chaosSteps; i++) {
                 int randomStep = random::u32() % sequenceLength;
-                stepToKnobMapping[randomStep] = random::u32() % 5;
+                if (chaos > 0.5f && primaryKnobs < 5) {
+                    // Select knobs outside the density range
+                    stepToKnobMapping[randomStep] = primaryKnobs + (random::u32() % (5 - primaryKnobs));
+                } else {
+                    stepToKnobMapping[randomStep] = random::u32() % 5;
+                }
             }
         }
     }
@@ -1082,7 +1068,14 @@ json_t* dataToJson() override {
    	 json_array_append_new(shiftsJ, json_integer(tracks[i].shift));
 	}
 	json_object_set_new(rootJ, "shifts", shiftsJ);
-        
+
+        // 儲存 customPattern
+        json_t* customPatternJ = json_array();
+        for (int step : customPattern) {
+            json_array_append_new(customPatternJ, json_integer(step));
+        }
+        json_object_set_new(rootJ, "customPattern", customPatternJ);
+
         return rootJ;
     }
 
@@ -1123,6 +1116,19 @@ json_t* dataToJson() override {
             		}
         	}
             }
+
+        // 讀取 customPattern
+        json_t* customPatternJ = json_object_get(rootJ, "customPattern");
+        if (customPatternJ) {
+            customPattern.clear();
+            size_t arraySize = json_array_size(customPatternJ);
+            for (size_t i = 0; i < arraySize; i++) {
+                json_t* stepJ = json_array_get(customPatternJ, i);
+                if (stepJ) {
+                    customPattern.push_back(json_integer_value(stepJ));
+                }
+            }
+        }
 	}
 
     void process(const ProcessArgs& args) override {
@@ -1347,13 +1353,13 @@ struct DynamicTextLabel : TransparentWidget {
 struct ModeParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         MADDY* module = dynamic_cast<MADDY*>(this->module);
-        if (!module) return "Minimalism";
-        
+        if (!module) return "Custom";
+
         switch (module->modeValue) {
             case 0: return "Sequential";
-            case 1: return "Minimalism";
+            case 1: return "Custom";
             case 2: return "Jump";
-            default: return "Minimalism";
+            default: return "Custom";
         }
     }
     
@@ -1510,12 +1516,45 @@ struct MADDYWidget : ModuleWidget {
     struct AttackTimeItem : ui::MenuItem {
         MADDY* module;
         float attackTime;
-        
+
         void onAction(const event::Action& e) override {
             if (module) {
                 for (int i = 0; i < 3; ++i) {
                     module->tracks[i].attackTime = attackTime;
                 }
+            }
+        }
+    };
+
+    struct PatternTextField : ui::TextField {
+        MADDY* module;
+
+        PatternTextField(MADDY* module) : module(module) {
+            box.size.x = 200;
+            placeholder = "e.g. 12312345";
+
+            if (module && !module->customPattern.empty()) {
+                text = "";
+                for (int step : module->customPattern) {
+                    text += std::to_string(step + 1);
+                }
+            }
+        }
+
+        void onChange(const event::Change& e) override {
+            TextField::onChange(e);
+            if (!module) return;
+
+            std::vector<int> steps;
+            for (char c : text) {
+                if (c >= '1' && c <= '5') {
+                    steps.push_back(c - '1');
+                }
+            }
+
+            if (!steps.empty()) {
+                module->customPattern = steps;
+                module->generateMapping();
             }
         }
     };
@@ -1650,7 +1689,46 @@ struct MADDYWidget : ModuleWidget {
             menu->addChild(new TrackShiftMenu(module, trackId));
         }
 
+        // Custom Pattern
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Custom Pattern (for Custom mode)"));
+
+        // Show current pattern
+        if (!module->customPattern.empty()) {
+            std::string currentPattern = "Current: ";
+            for (int step : module->customPattern) {
+                currentPattern += std::to_string(step + 1);
+            }
+            menu->addChild(createMenuLabel(currentPattern));
+        }
+
+        menu->addChild(createMenuLabel("Enter pattern (1-5):"));
+        menu->addChild(new PatternTextField(module));
+
+        // Reset Custom button
+        struct ResetCustomItem : ui::MenuItem {
+            MADDY* module;
+
+            ResetCustomItem(MADDY* module) : module(module) {
+                text = "Reset to Default";
+            }
+
+            void onAction(const event::Action& e) override {
+                if (module) {
+                    module->customPattern = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
+                    module->generateMapping();
+                }
+            }
+        };
+        menu->addChild(new ResetCustomItem(module));
+
         addPanelThemeMenu(menu, module);
+    }
+
+    void step() override {
+        if (auto* m = dynamic_cast<MADDY*>(module))
+            panelThemeHelper.step(m);
+        ModuleWidget::step();
     }
 };
 

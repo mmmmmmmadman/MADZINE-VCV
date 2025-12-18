@@ -397,7 +397,7 @@ struct MultiVoicePatterns {
 // ============================================================================
 
 struct UniversalRhythm : Module {
-    int panelTheme = 0;
+    int panelTheme = -1; // -1 = Auto (follow VCV)
 
     enum ParamId {
         // Per-role parameters (4 roles x 5 params: Style, Density, Length, Freq, Decay)

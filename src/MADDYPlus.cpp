@@ -531,24 +531,8 @@ struct HorizontalLine : Widget {
 struct DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         float value = getValue();
-        int steps, primaryKnobs;
-
-        if (value < 0.2f) {
-            steps = 8 + (int)(value * 20);
-            primaryKnobs = 2;
-        } else if (value < 0.4f) {
-            steps = 12 + (int)((value - 0.2f) * 40);
-            primaryKnobs = 3;
-        } else if (value < 0.6f) {
-            steps = 20 + (int)((value - 0.4f) * 40);
-            primaryKnobs = 4;
-        } else {
-            steps = 28 + (int)((value - 0.6f) * 50.1f);
-            primaryKnobs = 5;
-        }
-        steps = clamp(steps, 8, 48);
-
-        return string::f("%d knobs, %d steps", primaryKnobs, steps);
+        int primaryKnobs = (value < 0.2f) ? 2 : (value < 0.4f) ? 3 : (value < 0.6f) ? 4 : 5;
+        return string::f("%d knobs", primaryKnobs);
     }
 
     std::string getLabel() override {
@@ -559,22 +543,8 @@ struct DensityParamQuantity : ParamQuantity {
 struct Ch2DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         float value = getValue();
-        int steps, primaryKnobs;
-        if (value < 0.2f) {
-            steps = 8 + (int)(value * 20);
-            primaryKnobs = 2;
-        } else if (value < 0.4f) {
-            steps = 12 + (int)((value - 0.2f) * 40);
-            primaryKnobs = 3;
-        } else if (value < 0.6f) {
-            steps = 20 + (int)((value - 0.4f) * 40);
-            primaryKnobs = 4;
-        } else {
-            steps = 28 + (int)((value - 0.6f) * 50.1f);
-            primaryKnobs = 5;
-        }
-        steps = clamp(steps, 8, 48);
-        return string::f("%d knobs, %d steps", primaryKnobs, steps);
+        int primaryKnobs = (value < 0.2f) ? 2 : (value < 0.4f) ? 3 : (value < 0.6f) ? 4 : 5;
+        return string::f("%d knobs", primaryKnobs);
     }
 
     std::string getLabel() override {
@@ -585,22 +555,8 @@ struct Ch2DensityParamQuantity : ParamQuantity {
 struct Ch3DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         float value = getValue();
-        int steps, primaryKnobs;
-        if (value < 0.2f) {
-            steps = 8 + (int)(value * 20);
-            primaryKnobs = 2;
-        } else if (value < 0.4f) {
-            steps = 12 + (int)((value - 0.2f) * 40);
-            primaryKnobs = 3;
-        } else if (value < 0.6f) {
-            steps = 20 + (int)((value - 0.4f) * 40);
-            primaryKnobs = 4;
-        } else {
-            steps = 28 + (int)((value - 0.6f) * 50.1f);
-            primaryKnobs = 5;
-        }
-        steps = clamp(steps, 8, 48);
-        return string::f("%d knobs, %d steps", primaryKnobs, steps);
+        int primaryKnobs = (value < 0.2f) ? 2 : (value < 0.4f) ? 3 : (value < 0.6f) ? 4 : 5;
+        return string::f("%d knobs", primaryKnobs);
     }
 
     std::string getLabel() override {
@@ -636,7 +592,7 @@ std::vector<bool> generateMADDYPlusEuclideanRhythm(int length, int fill, int shi
 }
 
 struct MADDYPlus : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         FREQ_PARAM,
@@ -1017,7 +973,7 @@ struct MADDYPlus : Module {
 
         configParam(FREQ_PARAM, -3.0f, 7.0f, 2.8073549270629883f, "Frequency", " Hz", 2.0f, 1.0f);
         configParam(SWING_PARAM, 0.0f, 1.0f, 0.0f, "Swing", "°", 0.0f, -90.0f, 180.0f);
-        configParam(LENGTH_PARAM, 1.0f, 32.0f, 32.0f, "Length");
+        configParam(LENGTH_PARAM, 1.0f, 48.0f, 32.0f, "Length");
         getParamQuantity(LENGTH_PARAM)->snapEnabled = true;
         configParam(DECAY_PARAM, 0.0f, 1.0f, 0.30000001192092896f, "Decay");
 
@@ -1175,26 +1131,11 @@ struct MADDYPlus : Module {
         float density = params[DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
-        // Density controls sequence length
-        if (density < 0.2f) {
-            sequenceLength = 8 + (int)(density * 20);
-        } else if (density < 0.4f) {
-            sequenceLength = 12 + (int)((density - 0.2f) * 40);
-        } else if (density < 0.6f) {
-            sequenceLength = 20 + (int)((density - 0.4f) * 40);
-        } else {
-            sequenceLength = 28 + (int)((density - 0.6f) * 50.1f);
-        }
-        sequenceLength = clamp(sequenceLength, 8, 48);
+        // sequenceLength 由 LENGTH_PARAM 決定（與 Euclidean 同步）
+        sequenceLength = (int)params[LENGTH_PARAM].getValue();
+        sequenceLength = clamp(sequenceLength, 1, 48);
 
-        if (chaos > 0.0f) {
-            float chaosRange = chaos * sequenceLength * 0.5f;
-            float randomOffset = (random::uniform() - 0.5f) * 2.0f * chaosRange;
-            sequenceLength += (int)randomOffset;
-            sequenceLength = clamp(sequenceLength, 4, 64);
-        }
-
-        // Density controls how many knobs are available
+        // density 只決定使用幾個旋鈕
         int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
 
         // Fill entire array with valid pattern (not just sequenceLength)
@@ -1266,11 +1207,16 @@ struct MADDYPlus : Module {
                 break;
         }
 
-        if (chaos > 0.3f) {
-            int chaosSteps = (int)(chaos * sequenceLength * 0.3f);
+        if (chaos > 0.0f) {
+            int chaosSteps = (int)(chaos * sequenceLength * 0.5f);
             for (int i = 0; i < chaosSteps; i++) {
                 int randomStep = random::u32() % sequenceLength;
-                stepToKnobMapping[randomStep] = random::u32() % primaryKnobs;
+                if (chaos > 0.5f && primaryKnobs < 5) {
+                    // Select knobs outside the density range
+                    stepToKnobMapping[randomStep] = primaryKnobs + (random::u32() % (5 - primaryKnobs));
+                } else {
+                    stepToKnobMapping[randomStep] = random::u32() % 5;
+                }
             }
         }
     }
@@ -1279,24 +1225,11 @@ struct MADDYPlus : Module {
         float density = params[CH2_DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
-        if (density < 0.2f) {
-            ch2SequenceLength = 8 + (int)(density * 20);
-        } else if (density < 0.4f) {
-            ch2SequenceLength = 12 + (int)((density - 0.2f) * 40);
-        } else if (density < 0.6f) {
-            ch2SequenceLength = 20 + (int)((density - 0.4f) * 40);
-        } else {
-            ch2SequenceLength = 28 + (int)((density - 0.6f) * 50.1f);
-        }
-        ch2SequenceLength = clamp(ch2SequenceLength, 8, 48);
+        // ch2SequenceLength 由 LENGTH_PARAM 決定（與 Euclidean 同步）
+        ch2SequenceLength = (int)params[LENGTH_PARAM].getValue();
+        ch2SequenceLength = clamp(ch2SequenceLength, 1, 48);
 
-        if (chaos > 0.0f) {
-            float chaosRange = chaos * ch2SequenceLength * 0.5f;
-            float randomOffset = (random::uniform() - 0.5f) * 2.0f * chaosRange;
-            ch2SequenceLength += (int)randomOffset;
-            ch2SequenceLength = clamp(ch2SequenceLength, 4, 64);
-        }
-
+        // density 只決定使用幾個旋鈕
         int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
 
         for (int i = 0; i < 64; i++) ch2StepToKnobMapping[i] = 0;
@@ -1307,10 +1240,17 @@ struct MADDYPlus : Module {
                     ch2StepToKnobMapping[i] = i % primaryKnobs;
                 }
                 break;
-            case 1: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < ch2SequenceLength; i++) {
-                    ch2StepToKnobMapping[i] = minimalistPattern[i % 32] % primaryKnobs;
+            case 1: { // Custom - use shared customPattern
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    for (int i = 0; i < ch2SequenceLength; i++) {
+                        ch2StepToKnobMapping[i] = i % primaryKnobs;
+                    }
+                } else {
+                    for (int i = 0; i < ch2SequenceLength; i++) {
+                        int val = customPattern[i % patternLen];
+                        ch2StepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
@@ -1326,11 +1266,18 @@ struct MADDYPlus : Module {
                     ch2StepToKnobMapping[i] = (primaryKnobs - 1) - (i % primaryKnobs);
                 }
                 break;
-            case 4: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < ch2SequenceLength; i++) {
-                    int reverseIndex = 31 - (i % 32);
-                    ch2StepToKnobMapping[i] = minimalistPattern[reverseIndex] % primaryKnobs;
+            case 4: { // Rev Custom - use shared customPattern reversed
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    for (int i = 0; i < ch2SequenceLength; i++) {
+                        ch2StepToKnobMapping[i] = (primaryKnobs - 1) - (i % primaryKnobs);
+                    }
+                } else {
+                    for (int i = 0; i < ch2SequenceLength; i++) {
+                        int reverseIndex = (patternLen - 1) - (i % patternLen);
+                        int val = customPattern[reverseIndex];
+                        ch2StepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
@@ -1344,11 +1291,16 @@ struct MADDYPlus : Module {
             }
         }
 
-        if (chaos > 0.3f) {
-            int chaosSteps = (int)(chaos * ch2SequenceLength * 0.3f);
+        if (chaos > 0.0f) {
+            int chaosSteps = (int)(chaos * ch2SequenceLength * 0.5f);
             for (int i = 0; i < chaosSteps; i++) {
                 int randomStep = random::u32() % ch2SequenceLength;
-                ch2StepToKnobMapping[randomStep] = random::u32() % 5;
+                if (chaos > 0.5f && primaryKnobs < 5) {
+                    // Select knobs outside the density range
+                    ch2StepToKnobMapping[randomStep] = primaryKnobs + (random::u32() % (5 - primaryKnobs));
+                } else {
+                    ch2StepToKnobMapping[randomStep] = random::u32() % 5;
+                }
             }
         }
     }
@@ -1357,24 +1309,11 @@ struct MADDYPlus : Module {
         float density = params[CH3_DENSITY_PARAM].getValue();
         float chaos = params[CHAOS_PARAM].getValue();
 
-        if (density < 0.2f) {
-            ch3SequenceLength = 8 + (int)(density * 20);
-        } else if (density < 0.4f) {
-            ch3SequenceLength = 12 + (int)((density - 0.2f) * 40);
-        } else if (density < 0.6f) {
-            ch3SequenceLength = 20 + (int)((density - 0.4f) * 40);
-        } else {
-            ch3SequenceLength = 28 + (int)((density - 0.6f) * 50.1f);
-        }
-        ch3SequenceLength = clamp(ch3SequenceLength, 8, 48);
+        // ch3SequenceLength 由 LENGTH_PARAM 決定（與 Euclidean 同步）
+        ch3SequenceLength = (int)params[LENGTH_PARAM].getValue();
+        ch3SequenceLength = clamp(ch3SequenceLength, 1, 48);
 
-        if (chaos > 0.0f) {
-            float chaosRange = chaos * ch3SequenceLength * 0.5f;
-            float randomOffset = (random::uniform() - 0.5f) * 2.0f * chaosRange;
-            ch3SequenceLength += (int)randomOffset;
-            ch3SequenceLength = clamp(ch3SequenceLength, 4, 64);
-        }
-
+        // density 只決定使用幾個旋鈕
         int primaryKnobs = (density < 0.2f) ? 2 : (density < 0.4f) ? 3 : (density < 0.6f) ? 4 : 5;
 
         for (int i = 0; i < 64; i++) ch3StepToKnobMapping[i] = 0;
@@ -1385,10 +1324,17 @@ struct MADDYPlus : Module {
                     ch3StepToKnobMapping[i] = i % primaryKnobs;
                 }
                 break;
-            case 1: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < ch3SequenceLength; i++) {
-                    ch3StepToKnobMapping[i] = minimalistPattern[i % 32] % primaryKnobs;
+            case 1: { // Custom - use shared customPattern
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    for (int i = 0; i < ch3SequenceLength; i++) {
+                        ch3StepToKnobMapping[i] = i % primaryKnobs;
+                    }
+                } else {
+                    for (int i = 0; i < ch3SequenceLength; i++) {
+                        int val = customPattern[i % patternLen];
+                        ch3StepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
@@ -1404,11 +1350,18 @@ struct MADDYPlus : Module {
                     ch3StepToKnobMapping[i] = (primaryKnobs - 1) - (i % primaryKnobs);
                 }
                 break;
-            case 4: {
-                int minimalistPattern[32] = {0,1,2,0,1,2,3,4,3,4,0,1,2,0,1,2,3,4,3,4,1,3,2,4,0,2,1,3,0,4,2,1};
-                for (int i = 0; i < ch3SequenceLength; i++) {
-                    int reverseIndex = 31 - (i % 32);
-                    ch3StepToKnobMapping[i] = minimalistPattern[reverseIndex] % primaryKnobs;
+            case 4: { // Rev Custom - use shared customPattern reversed
+                int patternLen = customPattern.size();
+                if (patternLen == 0) {
+                    for (int i = 0; i < ch3SequenceLength; i++) {
+                        ch3StepToKnobMapping[i] = (primaryKnobs - 1) - (i % primaryKnobs);
+                    }
+                } else {
+                    for (int i = 0; i < ch3SequenceLength; i++) {
+                        int reverseIndex = (patternLen - 1) - (i % patternLen);
+                        int val = customPattern[reverseIndex];
+                        ch3StepToKnobMapping[i] = clamp(val % primaryKnobs, 0, primaryKnobs - 1);
+                    }
                 }
                 break;
             }
@@ -1422,11 +1375,16 @@ struct MADDYPlus : Module {
             }
         }
 
-        if (chaos > 0.3f) {
-            int chaosSteps = (int)(chaos * ch3SequenceLength * 0.3f);
+        if (chaos > 0.0f) {
+            int chaosSteps = (int)(chaos * ch3SequenceLength * 0.5f);
             for (int i = 0; i < chaosSteps; i++) {
                 int randomStep = random::u32() % ch3SequenceLength;
-                ch3StepToKnobMapping[randomStep] = random::u32() % 5;
+                if (chaos > 0.5f && primaryKnobs < 5) {
+                    // Select knobs outside the density range
+                    ch3StepToKnobMapping[randomStep] = primaryKnobs + (random::u32() % (5 - primaryKnobs));
+                } else {
+                    ch3StepToKnobMapping[randomStep] = random::u32() % 5;
+                }
             }
         }
     }
@@ -1667,6 +1625,11 @@ json_t* dataToJson() override {
         float chain123Output = chain123.processStep(tracks, args.sampleTime, internalClockTriggered, decayParam, chain123Trigger);
         outputs[CHAIN_123_OUTPUT].setVoltage(chain123Output);
 
+        // Process chain clock pulses once and save results for all channels
+        bool chain12ClockTriggered = chain12.clockPulse.process(args.sampleTime) > 0.0f;
+        bool chain23ClockTriggered = chain23.clockPulse.process(args.sampleTime) > 0.0f;
+        bool chain123ClockTriggered = chain123.clockPulse.process(args.sampleTime) > 0.0f;
+
         modeValue = (int)std::round(params[MODE_PARAM].getValue());
 
         clockSourceValue = (int)std::round(params[CLOCK_SOURCE_PARAM].getValue());
@@ -1686,13 +1649,13 @@ json_t* dataToJson() override {
             patternClockTriggered = tracks[2].justTriggered;
             break;
         case 4:
-            patternClockTriggered = chain12.clockPulse.process(args.sampleTime) > 0.0f;
+            patternClockTriggered = chain12ClockTriggered;
             break;
         case 5:
-            patternClockTriggered = chain23.clockPulse.process(args.sampleTime) > 0.0f;
+            patternClockTriggered = chain23ClockTriggered;
             break;
         case 6:
-            patternClockTriggered = chain123.clockPulse.process(args.sampleTime) > 0.0f;
+            patternClockTriggered = chain123ClockTriggered;
             break;
     }
 
@@ -1736,13 +1699,13 @@ json_t* dataToJson() override {
                 ch2PatternClockTriggered = tracks[2].justTriggered;
                 break;
             case 4:
-                ch2PatternClockTriggered = chain12.clockPulse.process(args.sampleTime) > 0.0f;
+                ch2PatternClockTriggered = chain12ClockTriggered;
                 break;
             case 5:
-                ch2PatternClockTriggered = chain23.clockPulse.process(args.sampleTime) > 0.0f;
+                ch2PatternClockTriggered = chain23ClockTriggered;
                 break;
             case 6:
-                ch2PatternClockTriggered = chain123.clockPulse.process(args.sampleTime) > 0.0f;
+                ch2PatternClockTriggered = chain123ClockTriggered;
                 break;
         }
 
@@ -1820,13 +1783,13 @@ json_t* dataToJson() override {
                 ch3PatternClockTriggered = tracks[2].justTriggered;
                 break;
             case 4:
-                ch3PatternClockTriggered = chain12.clockPulse.process(args.sampleTime) > 0.0f;
+                ch3PatternClockTriggered = chain12ClockTriggered;
                 break;
             case 5:
-                ch3PatternClockTriggered = chain23.clockPulse.process(args.sampleTime) > 0.0f;
+                ch3PatternClockTriggered = chain23ClockTriggered;
                 break;
             case 6:
-                ch3PatternClockTriggered = chain123.clockPulse.process(args.sampleTime) > 0.0f;
+                ch3PatternClockTriggered = chain123ClockTriggered;
                 break;
         }
 
@@ -2313,25 +2276,24 @@ resetButton->module = module;
             }
         }
 
-        void onSelectKey(const event::SelectKey& e) override {
-            if (e.action == GLFW_PRESS && e.key == GLFW_KEY_ENTER) {
-                if (!module) return;
+        void onChange(const event::Change& e) override {
+            TextField::onChange(e);
+            if (!module) return;
 
-                std::vector<int> steps;
-                for (char c : text) {
-                    if (c >= '1' && c <= '5') {
-                        steps.push_back(c - '1');
-                    }
+            std::vector<int> steps;
+            for (char c : text) {
+                if (c >= '1' && c <= '5') {
+                    steps.push_back(c - '1');
                 }
-
-                if (!steps.empty()) {
-                    module->customPattern = steps;
-                    // Immediately regenerate mappings
-                    module->generateMapping();
-                }
-                e.consume(this);
             }
-            TextField::onSelectKey(e);
+
+            if (!steps.empty()) {
+                module->customPattern = steps;
+                // Immediately regenerate all mappings
+                module->generateMapping();
+                module->generateCh2Mapping();
+                module->generateCh3Mapping();
+            }
         }
     };
 

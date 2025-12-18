@@ -376,7 +376,7 @@ struct NIGOQ : Module {
     VisualDisplay* visualDisplay = nullptr;
 
     // Panel theme
-    int panelTheme = 0;
+    int panelTheme = -1; // -1 = Auto (follow VCV)
 
     // Oscillators
     float modPhase = 0.f;

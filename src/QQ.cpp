@@ -3,7 +3,7 @@
 #include "widgets/PanelTheme.hpp"
 
 struct QQ : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamIds {
         TRACK1_DECAY_TIME_PARAM,

@@ -107,7 +107,7 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct U8 : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         LEVEL_PARAM,

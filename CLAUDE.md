@@ -153,3 +153,63 @@ export RACK_DIR=~/Documents/VCV-Dev/Rack-SDK
 
 - GitHub: https://github.com/mmmmmmmadman/MADZINE-VCV
 - Email: madzinetw@gmail.com
+
+---
+
+## 已知問題與注意事項
+
+### Manual HTML 點擊功能消失問題
+
+**問題描述**：修改 `madzine_modules_compact_v2.html` 時，點擊小卡開啟大卡的功能會因 JavaScript 語法錯誤而失效。
+
+**根本原因**：
+1. 刪除 HTML 元素後，對應的 JavaScript 仍引用該元素，導致 `null` 錯誤
+2. 刪除程式碼區塊時，可能遺漏函數的開頭或結尾大括號 `{}`
+3. 翻譯字串中的多行內容必須使用 `\n` 而非實際換行
+
+**預防措施**：
+- 修改 HTML 結構後，必須同步修改對應的 JavaScript
+- 每次修改後執行 JavaScript 語法驗證：
+  ```bash
+  awk 'NR>=3122 && NR<=3887' madzine_modules_compact_v2.html > /tmp/js.js && node --check /tmp/js.js
+  ```
+- 翻譯字串必須保持單行格式
+
+### Manual HTML 雙卡片上下層切換 CSS 問題
+
+**問題描述**：Manual（紅色）與 Quick Reference（藍色）雙卡片切換時，底層卡片的大小和 hover 效果不一致。
+
+**根本原因**：
+1. **CSS 特異性問題**：`.card-stack.has-quickref .stacked-card.card-front` (0,0,4,0) 高於 `.stacked-card.card-front.inactive` (0,0,3,0)，導致樣式被覆蓋
+2. **transform 屬性互斥**：hover 時如果只設定 `translate()` 而缺少 `scale()`，會覆蓋基本狀態的縮放，造成卡片突然變大
+
+**解決方案**：
+1. 紅色卡片（card-front）在底層時：
+   - 基本狀態：`transform: scale(0.92) translate(3px, 3px)`
+   - hover 狀態：`transform: scale(0.92) translate(25px, 25px)`
+   - 必須使用 `.card-stack.has-quickref .stacked-card.card-front.inactive` 選擇器以提高特異性
+
+2. 藍色卡片（card-back）在底層時：
+   - 基本狀態：`transform: translate(5px, 5px)`
+   - hover 狀態：`transform: translate(15px, 15px)`
+
+**注意事項**：
+- 修改 hover 的 transform 時，必須保留基本狀態的所有 transform 函數（scale、translate 等）
+- 兩張卡片的 hover 位移量可以不同，視覺上紅色（25px）比藍色（15px）大是正常的
+
+### Manual 版本號更新
+
+**重要**：每次修改 Manual 內容後，必須更新版本號以避免覆蓋舊版本。
+
+**更新位置**：`Manual/build_manual.py` 檔案末尾
+```python
+with open('madzine_modules_compact_vX.X.html', 'w', encoding='utf-8') as f:
+    ...
+print("已生成: madzine_modules_compact_vX.X.html")
+```
+
+**版本號規則**：
+- 格式：`vMajor.Minor`（例：v3.8）
+- Minor 版本：每次內容修改時遞增
+- Major 版本：重大結構改變時遞增
+

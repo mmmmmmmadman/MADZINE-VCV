@@ -1,0 +1,266 @@
+WorldRhythm：基於民族音樂學原理的跨文化節奏生成統一框架
+
+摘要
+
+本文介紹 WorldRhythm，一個基於規則的演算法框架，能夠在統一架構內生成涵蓋十種不同音樂文化的節奏模式。與專注於單一文化傳統或依賴西方偏向資料集的機器學習方法不同，WorldRhythm 採用四層角色階層，結合文化特定的偏好矩陣和針對獨特節奏概念的專門引擎。該系統整合了西非複節奏、古巴 Clave、爪哇甘美朗、峇里島 Kotekan、印度 Tala 和巴爾幹 Aksak 傳統的民族音樂學研究，建構出一個參數化、可解釋的生成系統。本文描述該框架的核心架構、演算法流程和理論基礎。
+
+關鍵詞：節奏生成、計算民族音樂學、跨文化音樂、互鎖模式、複節奏、演算法作曲
+
+一、緒論
+
+計算節奏生成主要集中在西方流行音樂風格。主要公開資料集如 Groove MIDI Dataset 和 Magenta 的鼓轉錄語料庫幾乎完全由西方類型組成，包括搖滾、流行、放克和爵士。近期研究（Mehta et al., 2024）分析了超過一百萬小時的音訊資料集，發現 86% 集中在全球北方音樂，93% 的研究者主要研究西方音樂。機器學習方法如 GrooVAE 和 Drum RNN，雖然在表達性鼓演奏生成方面取得成功，但主要在這些以西方為中心的資料集上訓練，缺乏對文化特定節奏原則的明確建模。
+
+已有若干計算系統分別處理非西方音樂傳統：CompMusic 專案（巴塞隆納 UPF）為卡納提克和印度斯坦尼音樂開發了資料集和 Tala 偵測系統；基於 Toussaint 研究的歐幾里得節奏生成器已被廣泛實作；以及各種甘美朗演算法作曲系統。然而，這些努力通常針對單一傳統。此外，Tabla 和 Mridangam 轉錄的計算系統已達到約 93% 的準確率，證明了對特定傳統建模的可行性。
+
+民族音樂學研究已記錄了世界各地複雜的節奏系統，包括西非音樂中的時間線概念、古巴傳統中的 Clave、爪哇甘美朗的 Colotomic 結構、峇里島音樂的 Kotekan 互鎖、印度古典音樂的 Tala 循環，以及巴爾幹民間音樂的 Aksak 非對稱拍子。然而，這些概念很少在單一生成框架內統一。
+
+WorldRhythm 透過提供一個參數化、基於規則的系統來填補這一空白，該系統生成尊重多種音樂傳統結構原則的節奏模式。該框架可解釋、可控制，並以民族音樂學文獻為基礎。
+
+二、系統架構
+
+2.1 四層角色階層
+
+WorldRhythm 採用受多種打擊樂傳統功能分層啟發的四層角色系統：
+
+Timeline（時間線）：節奏參考框架，類似於西非合奏中的鐘聲模式或古巴音樂中的 Clave。此層提供其他層組織的時間錨點。
+
+Foundation（基礎層）：低頻骨架層，特徵為稀疏且穩定的模式。對應於大多數傳統中的大鼓，如西非音樂中的 Dununba 或巴西森巴中的 Surdo。
+
+Groove（律動層）：透過互鎖關係與基礎層互動的補充填充層。此層佔據其他層留下的節奏空間。
+
+Lead（裝飾層）：最靈活的裝飾和即興層，對應於主導鼓如西非音樂中的 Djembe 或古巴音樂中的 Quinto。
+
+2.2 風格偏好矩陣
+
+十種支援的風格各自為四個角色定義 16 位置偏好矩陣。偏好值範圍從 0.0 到 1.0，代表在每個位置放置起音的機率權重。
+
+支援的風格：
+- 西非（12/8 鐘聲模式）
+- 古巴（Son Clave 3-2）
+- 巴西（森巴）
+- 巴爾幹（Aksak）
+- 印度（Teental Tala）
+- 甘美朗（Colotomic）
+- 爵士（搖擺）
+- 電子（四拍底鼓）
+- 碎拍（切分）
+- Techno（極簡）
+
+每種風格還定義了每個角色的密度範圍和互鎖規則，指定層是否應該閃避或補充彼此。
+
+2.3 互鎖機制
+
+實作了兩種主要互鎖策略：
+
+閃避：生成某層時，另一指定層已有起音的位置會降低機率權重。閃避強度按風格參數化，範圍從 0.0（無閃避）到 1.0（完全閃避）。
+
+補充：某層優先填補另一層留下的空隙，創造節奏對話。這在西非和甘美朗風格中特別強烈。
+
+三、核心演算法
+
+3.1 模式生成流程
+
+主要生成演算法流程如下：
+
+步驟 1：風格和角色選擇
+- 輸入：風格索引、角色類型、模式長度、密度、變體
+
+步驟 2：偏好映射
+- 使用四捨五入內插將 16 位置偏好陣列映射到目標模式長度
+- 結果：位置特定的機率權重
+
+步驟 3：骨架生成（僅限基礎層）
+- 對於基礎層角色，在強拍位置生成骨架拍點
+- 第 1 拍：95% 機率
+- 第 3 拍：70-85% 機率（依風格而定）
+
+步驟 4：加權位置選擇
+- 從可用位置計算累積機率
+- 依偏好權重比例隨機選擇位置
+- 重複直到達到目標密度
+
+步驟 5：互鎖調整
+- 若啟用閃避，降低已佔用位置的權重
+- 若啟用補充，提高空隙位置的權重
+
+步驟 6：力度分配
+- 基於偏好權重的基礎力度（0.25 + 權重 × 0.5）
+- 強拍加成（+0.2）
+- 隨機變化（正負 0.12）
+- 限制在有效範圍（0.2 到 1.0）
+
+3.2 人性化處理
+
+模式生成後，人性化處理應用文化特定的時序變化：
+
+步驟 1：取得風格時序設定檔
+- 基礎變異數（例如：西非 22ms、爵士 12ms、Techno 2ms）
+  （基於 Polak & London 2014、Friberg & Sundström 2002、Danielsen et al. 2015）
+- 角色乘數（Timeline：0.2-0.5、Lead：1.2-1.5）
+
+步驟 2：計算 BPM 相依搖擺比
+- 慢速：較高搖擺（約 68%）
+- 快速：趨近直拍（約 54%）
+- 曲線類型因風格而異（爵士為指數型、西非為平台型）
+
+步驟 3：應用微時序偏移
+- 對非正拍位置應用搖擺偏移
+- 在風格變異範圍內的隨機偏移
+
+步驟 4：鬼音插入
+- 機率基於位置權重和與現有起音的接近程度
+- 力度：正常的 25-32%（Matsuo & Sakaguchi 2024、Cheng et al. 2022）
+
+四、專門引擎
+
+WorldRhythm 包含五個專門引擎，用於無法僅透過偏好矩陣充分表示的文化特定節奏概念。
+
+4.1 IramaEngine（爪哇密度層級）
+
+實作爪哇甘美朗的五級 Irama 系統：
+- Lancar：密度乘數 0.25
+- Tanggung：密度乘數 0.5
+- Dados：密度乘數 1.0
+- Wiled：密度乘數 1.5
+- Rangkep：密度乘數 2.0
+
+該引擎還生成適合每個 Irama 層級的 Colotomic 結構（鑼點標記模式）。
+
+4.2 KotekanEngine（峇里島互鎖）
+
+生成嚴格的 Polos-Sangsih 互鎖配對：
+- Nyog cag：嚴格交替
+- Norot：預期模式
+- Kotekan telu：三音共享
+- Kotekan empat：四音劃分
+
+包含源自 Tenzer（2000）的理論驗證標準：互補性（大於 80%）、連續性（大於 60%）和平衡性（大於 60%）。這些閾值代表民族音樂學文獻中的結構約束，而非經驗驗證的感知閾值。未達標準的模式會自動修正以符合理論要求。
+
+4.3 PolymeterEngine（多循環疊加）
+
+管理不同長度的同時循環：
+- 計算全局同步點的最小公倍數
+- 獨立追蹤每個角色的相位
+- 支援多種重置行為（完全重置、保持相位、漸進同步）
+- 將 16 步模式映射到任意循環長度
+
+4.4 CallResponseEngine（對話結構）
+
+生成具有風格特定設定檔的呼喚-回應配對：
+- 呼喚類型：樂句、重音、中斷、信號
+- 回應類型：回聲、回答、齊奏、分層
+- 基於歷史的下一個呼喚位置動態預測
+- 跨小節回應處理與重疊預防
+
+4.5 AsymmetricGroupingEngine（Aksak 拍子）
+
+處理非對稱拍組：
+- 7/8：2+2+3、2+3+2、3+2+2
+- 9/8：2+2+2+3、2+2+3+2、2+3+2+2
+- 11/8：2+2+3+2+2
+- 重音模式對齊組邊界
+- 從標準 4/4 模式映射到非對稱拍子
+
+五、理論基礎
+
+系統設計源自已建立的民族音樂學研究：
+
+時間線理論（Kubik, 2010）：非對稱時間線作為合奏組織參考框架的概念，啟發了 Timeline 層設計。
+
+非洲複節奏（Arom, 1991）：互鎖和互補節奏結構的原則啟發了閃避和補充機制。需要注意的是，Arom 的研究聚焦於中非（阿卡俾格米人、Banda Linda），而非時間線模式最為突出的西非。雖然原則適用，但這些地區的具體實踐有所不同。
+
+爵士微時序（Benadon, 2006）：關於 BPM 相依搖擺比和表達性時序的研究啟發了人性化系統。
+
+歐幾里得節奏（Toussaint, 2005）：脈衝間起音的數學分布啟發了加權選擇演算法。
+
+Kotekan 理論（Tenzer, 2000）：Polos-Sangsih 互鎖原則啟發了 KotekanEngine 設計。
+
+六、討論
+
+WorldRhythm 在幾個方面與現有方法不同：
+
+統一框架：與針對單一傳統的系統不同，WorldRhythm 在單一架構內處理十種不同的文化風格。
+
+基於規則的方法：與需要大量資料集的機器學習系統不同，WorldRhythm 使用源自民族音樂學分析的參數化規則，提供可解釋性和可控性。
+
+專門引擎：獨特的節奏概念（Irama、Kotekan、複拍、呼喚-回應、Aksak）獲得專門的演算法處理，而非透過通用機制近似。
+
+參數化：文化特定特徵透過可調參數（偏好權重、互鎖強度、時序變異）捕捉，而非隱式學習表示。
+
+局限性包括音高資訊的抽象（系統僅生成節奏模式）、連續文化實踐簡化為離散參數，以及缺乏即時適應性互動。
+
+驗證範圍：目前的實作達到結構正確性，意味著生成的模式符合民族音樂學文獻中記載的數學和形式原則。文化真實性（即模式是否被專業從業者感知認定為風格適當）需要尚未進行的獨立感知評估研究。專門引擎中的驗證機制（如 KotekanEngine）強制執行理論約束，而非經驗導出的感知標準。
+
+七、結論
+
+WorldRhythm 呈現了一個基於民族音樂學原理的跨文化節奏生成統一框架。透過結合四層角色階層、風格特定偏好矩陣、互鎖機制、人性化處理和針對獨特節奏概念的專門引擎，系統生成尊重多樣音樂傳統結構原則的模式。
+
+該框架填補了現有節奏生成研究的空白，這些研究主要集中在西方音樂或單一文化傳統。未來工作包括與所代表傳統的音樂家進行感知評估、擴展到其他文化，以及與旋律和和聲生成系統整合。
+
+參考文獻
+
+Arom, S. (1991). African Polyphony and Polyrhythm: Musical Structure and Methodology. Cambridge University Press.
+
+Benadon, F. (2006). Slicing the Beat: Jazz Eighth-Notes as Expressive Microrhythm. Ethnomusicology, 50(1), 73-98.
+
+Cheng, T.Z., Creel, S.C., & Iversen, J.R. (2022). How Do You Feel the Rhythm: Dynamic Motor-Auditory Interactions Are Involved in the Imagination of Hierarchical Timing. Journal of Neuroscience, 42(3), 500-512.
+
+Danielsen, A., et al. (2015). Effects of instructed timing and tempo on snare drum sound in drum kit performance. Journal of the Acoustical Society of America, 138(4), 2301-2316.
+
+Friberg, A., & Sundström, A. (2002). Swing Ratios and Ensemble Timing in Jazz Performance: Evidence for a Common Rhythmic Pattern. Music Perception, 19(3), 333-349.
+
+Kubik, G. (2010). Theory of African Music. University of Chicago Press.
+
+Matsuo, H., & Sakaguchi, Y. (2024). Effects of Rhythm and Accent Patterns on Tempo-Keeping Property of Finger Tapping. i-Perception. DOI: 10.1177/20592043241276959
+
+Polak, R., & London, J. (2014). Timing and Meter in Mande Drumming from Mali. Music Theory Online, 20(1).
+
+Tenzer, M. (2000). Gamelan Gong Kebyar: The Art of Twentieth-Century Balinese Music. University of Chicago Press.
+
+Toussaint, G. (2005). The Euclidean Algorithm Generates Traditional Musical Rhythms. Proceedings of BRIDGES: Mathematical Connections in Art, Music and Science, 47-56.
+
+Mehta, A., et al. (2024). Missing Melodies: AI Music Generation and the Need for Diverse Training Data. arXiv preprint.
+
+附錄：風格參數摘要
+
+西非
+- 搖擺：0.62（Friberg & Sundström 2002）
+- Timeline 密度：40-55%
+- Foundation 密度：8-15%
+- 時序變異：22ms（Polak & London 2014）
+- 互鎖：強閃避、強補充
+
+古巴
+- 搖擺：0.58
+- Timeline 密度：30-35%（Clave）
+- Foundation 密度：25-35%
+- 時序變異：16ms
+- 互鎖：無閃避、強補充
+
+甘美朗
+- 搖擺：0.50（直拍）
+- Timeline 密度：20-30%
+- Foundation 密度：5-10%
+- 時序變異：12ms
+- 互鎖：獨立層、Groove 與 Lead 之間有 Kotekan
+
+爵士
+- 搖擺：0.65（BPM 相依：慢速 0.68、快速 0.54；Friberg & Sundström 2002）
+- Timeline 密度：35-45%
+- Foundation 密度：12-25%
+- 時序變異：12ms（Friberg & Sundström 2002）
+- 互鎖：對話式、無固定規則
+
+電子
+- 搖擺：0.50（直拍）
+- Timeline 密度：50-65%
+- Foundation 密度：25%（四拍底鼓）
+- 時序變異：5ms（EDM 人性化研究）
+- 互鎖：無（格線鎖定）
+
+Techno
+- 搖擺：0.50（直拍）
+- Timeline 密度：60-75%
+- Foundation 密度：25%（四拍底鼓）
+- 時序變異：2ms
+- 互鎖：無

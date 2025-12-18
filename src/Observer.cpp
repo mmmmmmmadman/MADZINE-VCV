@@ -3,7 +3,7 @@
 #include "widgets/PanelTheme.hpp"
 
 struct Observer : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamIds {
         TIME_PARAM,

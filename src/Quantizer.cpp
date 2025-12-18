@@ -1,13 +1,21 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
 #include "widgets/PanelTheme.hpp"
+#include "Microtuning/MicrotunePresets.hpp"
+
+using namespace Microtuning;
+
+// ============================================================================
+// Helper Widgets
+// ============================================================================
+
 struct EnhancedTextLabel : TransparentWidget {
     std::string text;
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -16,23 +24,21 @@ struct EnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
         nvgFillColor(args.vg, color);
-        
+
         if (bold) {
             float offset = 0.3f;
             nvgText(args.vg, box.size.x / 2.f - offset, box.size.y / 2.f, text.c_str(), NULL);
             nvgText(args.vg, box.size.x / 2.f + offset, box.size.y / 2.f, text.c_str(), NULL);
             nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f - offset, text.c_str(), NULL);
             nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f + offset, text.c_str(), NULL);
-            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
-        } else {
-            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
         }
+        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
     }
 };
 
@@ -41,399 +47,425 @@ struct WhiteBackgroundBox : Widget {
         box.pos = pos;
         box.size = size;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgBeginPath(args.vg);
         nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
         nvgFillColor(args.vg, nvgRGB(255, 255, 255));
         nvgFill(args.vg);
-        
         nvgStrokeWidth(args.vg, 1.0f);
         nvgStrokeColor(args.vg, nvgRGBA(200, 200, 200, 255));
         nvgStroke(args.vg);
     }
 };
 
-// StandardBlackKnob 現在從 widgets/Knobs.hpp 引入
-// Microtune knob for 20x20 size
-// MicrotuneKnob 現在從 widgets/Knobs.hpp 引入
+// Forward declaration
+struct Quantizer;
+
+// ============================================================================
+// Quantizer Module
+// ============================================================================
+
 struct Quantizer : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV)
 
     enum ParamIds {
-        SCALE_PARAM,
-        OFFSET_PARAM,
-        // Microtune parameters for 12 notes
-        C_MICROTUNE_PARAM,
-        CS_MICROTUNE_PARAM,
-        D_MICROTUNE_PARAM,
-        DS_MICROTUNE_PARAM,
-        E_MICROTUNE_PARAM,
-        F_MICROTUNE_PARAM,
-        FS_MICROTUNE_PARAM,
-        G_MICROTUNE_PARAM,
-        GS_MICROTUNE_PARAM,
-        A_MICROTUNE_PARAM,
-        AS_MICROTUNE_PARAM,
-        B_MICROTUNE_PARAM,
-        NUM_PARAMS
+        SCALE_PARAM, OFFSET_PARAM,
+        MICROTUNE_PARAM, // 24 microtune params (MICROTUNE_PARAM + 0..23)
+        NUM_PARAMS = MICROTUNE_PARAM + 24
     };
-    enum InputIds {
-        PITCH_INPUT,
-        PITCH_INPUT_2,
-        PITCH_INPUT_3,
-        OFFSET_CV_INPUT,
-        NUM_INPUTS
-    };
-    enum OutputIds {
-        PITCH_OUTPUT,
-        PITCH_OUTPUT_2,
-        PITCH_OUTPUT_3,
-        NUM_OUTPUTS
-    };
-    enum LightIds {
-        NUM_LIGHTS
+    enum InputIds { PITCH_INPUT, PITCH_INPUT_2, PITCH_INPUT_3, SCALE_CV_INPUT, OFFSET_CV_INPUT, NUM_INPUTS };
+    enum OutputIds { PITCH_OUTPUT, PITCH_OUTPUT_2, PITCH_OUTPUT_3, NUM_OUTPUTS };
+    enum LightIds { NUM_LIGHTS };
+
+    bool enabledNotes[24];  // 24 notes (2 octaves)
+    int ranges[48];         // 48 half-semitone slots for 2 octaves
+    bool playingNotes[24];
+
+    // Direction tracking
+    static const int MAX_POLY = 16;
+    float lastNote[3][MAX_POLY] = {};
+    bool ascending[3][MAX_POLY] = {};
+    float ascCents[12] = {}, descCents[12] = {};
+    bool hasDirectional = false;
+    int currentPreset = 0;
+
+    // Note names for 2 octaves
+    static constexpr const char* NOTE_NAMES[24] = {
+        "C1", "C#1", "D1", "D#1", "E1", "F1", "F#1", "G1", "G#1", "A1", "A#1", "B1",
+        "C2", "C#2", "D2", "D#2", "E2", "F2", "F#2", "G2", "G#2", "A2", "A#2", "B2"
     };
 
-    bool enabledNotes[12];
-    // Intervals [i / 24, (i+1) / 24) V mapping to the closest enabled note
-    int ranges[24];
-    bool playingNotes[12];
-    
-    // Microtune presets (in cents)
-    static const float EQUAL_TEMPERAMENT[12];
-    static const float JUST_INTONATION[12];
-    static const float PYTHAGOREAN[12];
-    static const float ARABIC_MAQAM[12];
-    static const float INDIAN_RAGA[12];
-    static const float GAMELAN_PELOG[12];
-    static const float JAPANESE_GAGAKU[12];
-    static const float TURKISH_MAKAM[12];
-    static const float PERSIAN_DASTGAH[12];
-    static const float QUARTER_TONE[12];
-    
-    int currentPreset = 0;
+    // Scale presets (note enabled states) - applied to both octaves
+    static const bool SCALES[16][12];
 
     Quantizer() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-        configParam(SCALE_PARAM, 0.0f, 2.0f, 1.0f, "Scale", "%", 0.f, 100.f);
+        configParam(SCALE_PARAM, 0.f, 2.f, 1.f, "Scale", "%", 0.f, 100.f);
         configParam(OFFSET_PARAM, -1.f, 1.f, 0.f, "Pre-offset", " semitones", 0.f, 12.f);
-        
-        // Configure microtune parameters for each note
-        std::string noteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-        for (int i = 0; i < 12; i++) {
-            configParam(C_MICROTUNE_PARAM + i, -50.f, 50.f, 0.f, noteNames[i] + " Microtune", " cents");
-        }
-        
+
+        for (int i = 0; i < 24; i++)
+            configParam(MICROTUNE_PARAM + i, -50.f, 50.f, 0.f, std::string(NOTE_NAMES[i]) + " Microtune", " cents");
+
         configInput(PITCH_INPUT, "CV1");
         configInput(PITCH_INPUT_2, "CV2");
         configInput(PITCH_INPUT_3, "CV3");
+        configInput(SCALE_CV_INPUT, "Scale CV");
         configInput(OFFSET_CV_INPUT, "Offset CV");
         configOutput(PITCH_OUTPUT, "Pitch");
         configOutput(PITCH_OUTPUT_2, "Pitch 2");
         configOutput(PITCH_OUTPUT_3, "Pitch 3");
         configBypass(PITCH_INPUT, PITCH_OUTPUT);
-
         onReset();
     }
 
     void onReset() override {
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 24; i++)
             enabledNotes[i] = true;
-        }
+        for (int i = 0; i < 12; i++)
+            ascCents[i] = descCents[i] = 0.f;
+        for (int t = 0; t < 3; t++)
+            for (int c = 0; c < MAX_POLY; c++) {
+                lastNote[t][c] = 0.f;
+                ascending[t][c] = true;
+            }
+        hasDirectional = false;
         updateRanges();
     }
 
     void onRandomize() override {
-        for (int i = 0; i < 12; i++) {
-            enabledNotes[i] = (random::uniform() < 0.5f);
-        }
+        for (int i = 0; i < 24; i++)
+            enabledNotes[i] = random::uniform() < 0.5f;
         updateRanges();
     }
 
     void process(const ProcessArgs& args) override {
-        bool playingNotes[12] = {};
-        float scaleParam = params[SCALE_PARAM].getValue();
-        float offsetParam = params[OFFSET_PARAM].getValue();
-        
-        // Add CV offset
-        if (inputs[OFFSET_CV_INPUT].isConnected()) {
-            offsetParam += inputs[OFFSET_CV_INPUT].getVoltage();
-        }
+        bool playing[24] = {};
+        float scale = params[SCALE_PARAM].getValue();
+        if (inputs[SCALE_CV_INPUT].isConnected())
+            scale += inputs[SCALE_CV_INPUT].getVoltage() * 0.2f;  // ±1V = ±0.2 scale
+        float offset = params[OFFSET_PARAM].getValue();
+        if (inputs[OFFSET_CV_INPUT].isConnected())
+            offset += inputs[OFFSET_CV_INPUT].getVoltage();
 
-        // Process all three tracks
-        for (int track = 0; track < 3; track++) {
-            int inputId = PITCH_INPUT + track;
-            int outputId = PITCH_OUTPUT + track;
-            
-            int channels = std::max(inputs[inputId].getChannels(), 1);
-            
-            for (int c = 0; c < channels; c++) {
-                float pitch = inputs[inputId].getVoltage(c);
+        for (int t = 0; t < 3; t++) {
+            int ch = std::max(inputs[PITCH_INPUT + t].getChannels(), 1);
+            for (int c = 0; c < ch; c++) {
+                float pitch = inputs[PITCH_INPUT + t].getVoltage(c);
+                pitch = (pitch + offset) * scale;
 
-                // Apply offset first (before quantization)
-                pitch += offsetParam;
+                // Map to 48 slots (2 octaves × 24 half-semitone slots)
+                // pitch * 12 = semitones, * 2 = half-semitone slots
+                int slot = std::floor(pitch * 24);
+                int twoOctaveBlock = eucDiv(slot, 48);
+                slot = eucMod(slot, 48);
 
-                // Apply scale
-                pitch *= scaleParam;
+                // ranges[] stores note index within 2 octaves (0-23)
+                int qNote24 = ranges[slot];  // 0-23 within the 2-octave block
+                int qNoteSemitone = twoOctaveBlock * 24 + qNote24;  // absolute semitone
 
-                // Quantize to enabled notes
-                int range = std::floor(pitch * 24);
-                int octave = eucDiv(range, 24);
-                range -= octave * 24;
-                int quantizedNote = ranges[range] + octave * 12;
-                int noteInOctave = eucMod(quantizedNote, 12);
-                playingNotes[noteInOctave] = true;
+                int noteIdx24 = eucMod(qNote24, 24);
+                int noteIdx12 = eucMod(qNote24, 12);
+                playing[noteIdx24] = true;
 
-                // Apply microtune to the quantized note
-                float microtuneOffset = params[C_MICROTUNE_PARAM + noteInOctave].getValue() / 1200.f; // Convert cents to volts (1200 cents = 1V)
-                pitch = float(quantizedNote) / 12.f + microtuneOffset;
+                // Direction detection & microtune
+                float mt;
+                if (hasDirectional) {
+                    float diff = (float)qNoteSemitone - lastNote[t][c];
+                    if (diff > 0.5f) ascending[t][c] = true;
+                    else if (diff < -0.5f) ascending[t][c] = false;
+                    mt = ascending[t][c] ? ascCents[noteIdx12] : descCents[noteIdx12];
+                } else {
+                    mt = params[MICROTUNE_PARAM + noteIdx24].getValue();
+                }
+                lastNote[t][c] = (float)qNoteSemitone;
 
-                outputs[outputId].setVoltage(pitch, c);
+                // Output: 1V/octave = 12 semitones per volt
+                outputs[PITCH_OUTPUT + t].setVoltage((float)qNoteSemitone / 12.f + mt / 1200.f, c);
             }
-            outputs[outputId].setChannels(channels);
+            outputs[PITCH_OUTPUT + t].setChannels(ch);
         }
-        std::memcpy(this->playingNotes, playingNotes, sizeof(playingNotes));
+        std::memcpy(playingNotes, playing, sizeof(playing));
     }
-    
+
     void updateRanges() {
-        // Check if no notes are enabled
-        bool anyEnabled = false;
-        for (int note = 0; note < 12; note++) {
-            if (enabledNotes[note]) {
-                anyEnabled = true;
-                break;
+        bool any = false;
+        for (int i = 0; i < 24 && !any; i++) any = enabledNotes[i];
+
+        // 48 slots for 2 octaves (24 semitones × 2 slots each)
+        for (int i = 0; i < 48; i++) {
+            int closest = 0, minDist = INT_MAX;
+            // Search within the 2-octave range plus neighbors
+            for (int n = -12; n <= 36; n++) {
+                int noteIdx = eucMod(n, 24);
+                if (any && !enabledNotes[noteIdx]) continue;
+                // i/2 gives semitone position (0-23), n is candidate semitone
+                int d = std::abs((i + 1) / 2 - n);
+                if (d < minDist) { closest = n; minDist = d; }
+                else if (d > minDist) break;
             }
-        }
-        // Find closest notes for each range
-        for (int i = 0; i < 24; i++) {
-            int closestNote = 0;
-            int closestDist = INT_MAX;
-            for (int note = -12; note <= 24; note++) {
-                int dist = std::abs((i + 1) / 2 - note);
-                // Ignore enabled state if no notes are enabled
-                if (anyEnabled && !enabledNotes[eucMod(note, 12)]) {
-                    continue;
-                }
-                if (dist < closestDist) {
-                    closestNote = note;
-                    closestDist = dist;
-                }
-                else {
-                    // If dist increases, we won't find a better one.
-                    break;
-                }
-            }
-            ranges[i] = closestNote;
+            ranges[i] = closest;
         }
     }
 
-    void applyMicrotunePreset(int presetIndex) {
-        const float* preset = nullptr;
-        
-        switch (presetIndex) {
-            case 0: preset = EQUAL_TEMPERAMENT; break;
-            case 1: preset = JUST_INTONATION; break;
-            case 2: preset = PYTHAGOREAN; break;
-            case 3: preset = ARABIC_MAQAM; break;
-            case 4: preset = INDIAN_RAGA; break;
-            case 5: preset = GAMELAN_PELOG; break;
-            case 6: preset = JAPANESE_GAGAKU; break;
-            case 7: preset = TURKISH_MAKAM; break;
-            case 8: preset = PERSIAN_DASTGAH; break;
-            case 9: preset = QUARTER_TONE; break;
-        }
-        
-        if (preset) {
+    void applyPreset(int idx) {
+        const float* p = getPreset(idx);
+        for (int i = 0; i < 24; i++)
+            params[MICROTUNE_PARAM + i].setValue(p[i % 12]);
+        hasDirectional = false;
+    }
+
+    void applyDirectional(int idx) {
+        if (idx >= 0 && idx < DIRECTIONAL_COUNT) {
+            const float* asc = getAscending(idx);
+            const float* desc = getDescending(idx);
             for (int i = 0; i < 12; i++) {
-                params[C_MICROTUNE_PARAM + i].setValue(preset[i]);
+                ascCents[i] = asc[i];
+                descCents[i] = desc[i];
             }
+            for (int i = 0; i < 24; i++)
+                params[MICROTUNE_PARAM + i].setValue(asc[i % 12]);
+            hasDirectional = true;
         }
     }
-    
-    void applyScalePreset(int scaleIndex) {
-        // Scale presets: true = note enabled, false = note disabled
-        // Note order: C, C#, D, D#, E, F, F#, G, G#, A, A#, B
-        static const bool SCALE_PRESETS[16][12] = {
-            {true, true, true, true, true, true, true, true, true, true, true, true}, // Chromatic
-            {true, false, true, false, true, true, false, true, false, true, false, true}, // Major (Ionian)
-            {true, false, true, true, false, true, false, true, true, false, true, false}, // Minor (Aeolian)
-            {true, false, true, false, true, false, false, true, false, true, false, true}, // Pentatonic Major
-            {true, false, false, true, false, true, false, true, false, false, true, false}, // Pentatonic Minor
-            {true, false, true, true, false, true, false, true, false, true, true, false}, // Dorian
-            {true, true, false, true, false, true, false, true, true, false, true, false}, // Phrygian
-            {true, false, true, false, true, false, true, true, false, true, false, true}, // Lydian
-            {true, false, true, false, true, true, false, true, false, true, true, false}, // Mixolydian
-            {true, true, false, true, false, true, true, false, true, false, true, false}, // Locrian
-            {true, false, false, false, true, false, false, true, false, false, false, false}, // Major Triad
-            {true, false, false, true, false, false, false, true, false, false, false, false}, // Minor Triad
-            {true, false, true, true, false, true, false, true, true, false, true, true}, // Blues
-            {true, true, false, true, true, false, true, true, true, false, true, true}, // Arabic
-            {true, false, true, true, true, false, true, true, false, true, true, false}, // Japanese
-            {true, false, true, false, true, true, true, true, false, true, false, true}  // Whole Tone
-        };
-        
-        if (scaleIndex >= 0 && scaleIndex < 16) {
-            for (int i = 0; i < 12; i++) {
-                enabledNotes[i] = SCALE_PRESETS[scaleIndex][i];
-            }
+
+    void applyScale(int idx) {
+        if (idx >= 0 && idx < 16) {
+            for (int i = 0; i < 24; i++)
+                enabledNotes[i] = SCALES[idx][i % 12];
             updateRanges();
         }
     }
 
     json_t* dataToJson() override {
-        json_t* rootJ = json_object();
-        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_t* root = json_object();
+        json_object_set_new(root, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(root, "currentPreset", json_integer(currentPreset));
+        json_object_set_new(root, "hasDirectional", json_boolean(hasDirectional));
 
-        json_t* enabledNotesJ = json_array();
+        json_t* notes = json_array();
+        for (int i = 0; i < 24; i++)
+            json_array_append_new(notes, json_boolean(enabledNotes[i]));
+        json_object_set_new(root, "enabledNotes", notes);
+
+        json_t* asc = json_array();
+        json_t* desc = json_array();
         for (int i = 0; i < 12; i++) {
-            json_array_insert_new(enabledNotesJ, i, json_boolean(enabledNotes[i]));
+            json_array_append_new(asc, json_real(ascCents[i]));
+            json_array_append_new(desc, json_real(descCents[i]));
         }
-        json_object_set_new(rootJ, "enabledNotes", enabledNotesJ);
-        json_object_set_new(rootJ, "currentPreset", json_integer(currentPreset));
-
-        return rootJ;
+        json_object_set_new(root, "ascCents", asc);
+        json_object_set_new(root, "descCents", desc);
+        return root;
     }
 
-    void dataFromJson(json_t* rootJ) override {
-        json_t* themeJ = json_object_get(rootJ, "panelTheme");
-        if (themeJ) {
-            panelTheme = json_integer_value(themeJ);
-        }
+    void dataFromJson(json_t* root) override {
+        json_t* j;
+        if ((j = json_object_get(root, "panelTheme"))) panelTheme = json_integer_value(j);
+        if ((j = json_object_get(root, "currentPreset"))) currentPreset = json_integer_value(j);
+        if ((j = json_object_get(root, "hasDirectional"))) hasDirectional = json_boolean_value(j);
 
-        json_t* enabledNotesJ = json_object_get(rootJ, "enabledNotes");
-        if (enabledNotesJ) {
-            for (int i = 0; i < 12; i++) {
-                json_t* enabledNoteJ = json_array_get(enabledNotesJ, i);
-                if (enabledNoteJ)
-                    enabledNotes[i] = json_boolean_value(enabledNoteJ);
+        if ((j = json_object_get(root, "enabledNotes"))) {
+            size_t len = json_array_size(j);
+            if (len == 12) {
+                // Legacy: 12-note format, expand to 24
+                for (int i = 0; i < 12; i++) {
+                    bool v = json_boolean_value(json_array_get(j, i));
+                    enabledNotes[i] = enabledNotes[i + 12] = v;
+                }
+            } else {
+                for (int i = 0; i < 24; i++)
+                    if (json_t* n = json_array_get(j, i)) enabledNotes[i] = json_boolean_value(n);
             }
         }
-        
-        json_t* presetJ = json_object_get(rootJ, "currentPreset");
-        if (presetJ) {
-            currentPreset = json_integer_value(presetJ);
-        }
-        
+
+        if ((j = json_object_get(root, "ascCents")))
+            for (int i = 0; i < 12; i++)
+                if (json_t* n = json_array_get(j, i)) ascCents[i] = json_real_value(n);
+
+        if ((j = json_object_get(root, "descCents")))
+            for (int i = 0; i < 12; i++)
+                if (json_t* n = json_array_get(j, i)) descCents[i] = json_real_value(n);
+
         updateRanges();
     }
 };
 
-// Static member definitions
-const float Quantizer::EQUAL_TEMPERAMENT[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const float Quantizer::JUST_INTONATION[12] = {0, -29.3, -3.9, 15.6, -13.7, -2.0, -31.3, 2.0, -27.4, -15.6, 17.6, -11.7};
-const float Quantizer::PYTHAGOREAN[12] = {0, -90.2, 3.9, -5.9, 7.8, -2.0, -92.2, 2.0, -88.3, 5.9, -3.9, 9.8};
-const float Quantizer::ARABIC_MAQAM[12] = {0, 0, -50, 0, 0, 0, 0, 0, -50, 0, -50, 0};
-const float Quantizer::INDIAN_RAGA[12] = {0, 22, -28, 22, -28, 0, 22, 0, 22, -28, 22, -28};
-const float Quantizer::GAMELAN_PELOG[12] = {0, 0, 40, 0, -20, 20, 0, 0, 40, 0, -20, 20};
-const float Quantizer::JAPANESE_GAGAKU[12] = {0, 0, -14, 0, 16, 0, 0, 0, -14, 16, 0, 16};
-const float Quantizer::TURKISH_MAKAM[12] = {0, 24, -24, 24, 0, 24, -24, 0, 24, -24, 24, 0};
-const float Quantizer::PERSIAN_DASTGAH[12] = {0, 0, -34, 0, 16, 0, 0, 0, -34, 16, 0, 16};
-const float Quantizer::QUARTER_TONE[12] = {0, 50, 0, 50, 0, 0, 50, 0, 50, 0, 50, 0};
+// Scale presets
+const bool Quantizer::SCALES[16][12] = {
+    {1,1,1,1,1,1,1,1,1,1,1,1}, // Chromatic
+    {1,0,1,0,1,1,0,1,0,1,0,1}, // Major
+    {1,0,1,1,0,1,0,1,1,0,1,0}, // Minor
+    {1,0,1,0,1,0,0,1,0,1,0,0}, // Penta Major
+    {1,0,0,1,0,1,0,1,0,0,1,0}, // Penta Minor
+    {1,0,1,1,0,1,0,1,0,1,1,0}, // Dorian
+    {1,1,0,1,0,1,0,1,1,0,1,0}, // Phrygian
+    {1,0,1,0,1,0,1,1,0,1,0,1}, // Lydian
+    {1,0,1,0,1,1,0,1,0,1,1,0}, // Mixolydian
+    {1,1,0,1,0,1,1,0,1,0,1,0}, // Locrian
+    {1,0,0,0,1,0,0,1,0,0,0,0}, // Major Triad
+    {1,0,0,1,0,0,0,1,0,0,0,0}, // Minor Triad
+    {1,0,1,1,0,1,0,1,1,0,1,1}, // Blues
+    {1,1,0,1,1,0,1,1,1,0,1,1}, // Arabic
+    {1,0,1,1,1,0,1,1,0,1,1,0}, // Japanese
+    {1,0,1,0,1,1,1,1,0,1,0,1}  // Whole Tone
+};
 
-struct QuantizerButton : OpaqueWidget {
-    int note;
-    Quantizer* module;
+// ============================================================================
+// Widget Classes
+// ============================================================================
 
-    void drawLayer(const DrawArgs& args, int layer) override {
-        if (layer != 1)
-            return;
+// Note toggle switch (small square) - Yellow/Dark colors
+struct NoteToggle : OpaqueWidget {
+    Quantizer* module = nullptr;
+    int noteIdx = 0;
 
-        Rect r = box.zeroPos();
-        const float margin = mm2px(1.0);
-        Rect rMargin = r.grow(Vec(margin, margin));
-
-        nvgBeginPath(args.vg);
-        nvgRect(args.vg, RECT_ARGS(rMargin));
-        nvgFillColor(args.vg, nvgRGB(0x12, 0x12, 0x12));
-        nvgFill(args.vg);
-
-        nvgBeginPath(args.vg);
-        nvgRect(args.vg, RECT_ARGS(r));
-        if (module ? module->playingNotes[note] : (note == 0)) {
-            nvgFillColor(args.vg, SCHEME_YELLOW);
-        }
-        else if (module ? module->enabledNotes[note] : true) {
-            nvgFillColor(args.vg, nvgRGB(0x7f, 0x6b, 0x0a));
-        }
-        else {
-            nvgFillColor(args.vg, nvgRGB(0x40, 0x40, 0x40));
-        }
-        nvgFill(args.vg);
+    NoteToggle() {
+        box.size = Vec(8, 8);
     }
 
-    void onDragStart(const event::DragStart& e) override {
-        if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            module->enabledNotes[note] ^= true;
-            module->updateRanges();
+    void draw(const DrawArgs& args) override {
+        bool enabled = module ? module->enabledNotes[noteIdx] : true;
+        bool playing = module ? module->playingNotes[noteIdx] : false;
+
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 1.5f);
+
+        if (playing)
+            nvgFillColor(args.vg, nvgRGB(255, 220, 0));  // Bright yellow when playing
+        else if (enabled)
+            nvgFillColor(args.vg, nvgRGB(200, 170, 0));  // Yellow when enabled
+        else
+            nvgFillColor(args.vg, nvgRGB(20, 20, 20));   // Deep black when disabled
+        nvgFill(args.vg);
+
+        nvgStrokeColor(args.vg, nvgRGB(60, 60, 60));
+        nvgStrokeWidth(args.vg, 0.5f);
+        nvgStroke(args.vg);
+    }
+
+    void onButton(const event::Button& e) override {
+        if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_PRESS) {
+            if (module) {
+                module->enabledNotes[noteIdx] ^= true;
+                module->updateRanges();
+            }
+            e.consume(this);
         }
-        OpaqueWidget::onDragStart(e);
+        OpaqueWidget::onButton(e);
     }
 
     void onDragEnter(const event::DragEnter& e) override {
         if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            QuantizerButton* origin = dynamic_cast<QuantizerButton*>(e.origin);
-            if (origin) {
-                module->enabledNotes[note] = module->enabledNotes[origin->note];;
-                module->updateRanges();
+            if (auto* origin = dynamic_cast<NoteToggle*>(e.origin)) {
+                if (module) {
+                    module->enabledNotes[noteIdx] = module->enabledNotes[origin->noteIdx];
+                    module->updateRanges();
+                }
             }
         }
         OpaqueWidget::onDragEnter(e);
     }
 };
 
-struct QuantizerDisplay : LedDisplay {
-    void setModule(Quantizer* module) {
-        // Use exact VCV Rack original positions and sizes but scaled to 80%
-        std::vector<Vec> noteAbsPositions = {
-            mm2px(Vec(2.242 * 0.8, 60.54 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 58.416 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 52.043 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 49.919 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 45.67 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 39.298 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 37.173 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 30.801 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 28.677 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 22.304 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 20.18 * 0.8)),
-            mm2px(Vec(2.242 * 0.8, 15.931 * 0.8)),
-        };
-        std::vector<Vec> noteSizes = {
-            mm2px(Vec(10.734 * 0.8, 5.644 * 0.8)),
-            mm2px(Vec(8.231 * 0.8, 3.52 * 0.8)),
-            mm2px(Vec(10.734 * 0.8, 7.769 * 0.8)),
-            mm2px(Vec(8.231 * 0.8, 3.52 * 0.8)),
-            mm2px(Vec(10.734 * 0.8, 5.644 * 0.8)),
-            mm2px(Vec(10.734 * 0.8, 5.644 * 0.8)),
-            mm2px(Vec(8.231 * 0.8, 3.52 * 0.8)),
-            mm2px(Vec(10.734 * 0.8, 7.769 * 0.8)),
-            mm2px(Vec(8.231 * 0.8, 3.52 * 0.8)),
-            mm2px(Vec(10.734 * 0.8, 7.768 * 0.8)),
-            mm2px(Vec(8.231 * 0.8, 3.52 * 0.8)),
-            mm2px(Vec(10.734 * 0.8, 5.644 * 0.8)),
-        };
+// Microtune slider bar (horizontal) - Line indicator instead of dot
+struct MicrotuneSlider : OpaqueWidget {
+    Quantizer* module = nullptr;
+    int noteIdx = 0;
+    bool isBlackKey = false;
+    float dragStartValue = 0.f;
 
-        // White notes
-        static const std::vector<int> whiteNotes = {0, 2, 4, 5, 7, 9, 11};
-        for (int note : whiteNotes) {
-            QuantizerButton* quantizerButton = new QuantizerButton();
-            quantizerButton->box.pos = noteAbsPositions[note] - box.pos;
-            quantizerButton->box.size = noteSizes[note];
-            quantizerButton->module = module;
-            quantizerButton->note = note;
-            addChild(quantizerButton);
+    MicrotuneSlider() {
+        box.size = Vec(40, 9);
+    }
+
+    void draw(const DrawArgs& args) override {
+        bool enabled = module ? module->enabledNotes[noteIdx] : true;
+        bool playing = module ? module->playingNotes[noteIdx] : false;
+        float value = module ? module->params[Quantizer::MICROTUNE_PARAM + noteIdx].getValue() : 0.f;
+
+        // Background bar
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2.f);
+
+        if (!enabled) {
+            nvgFillColor(args.vg, nvgRGB(40, 40, 40));  // Dark when disabled
+        } else if (isBlackKey) {
+            nvgFillColor(args.vg, playing ? nvgRGB(80, 80, 80) : nvgRGB(30, 30, 30));  // Black key
+        } else {
+            nvgFillColor(args.vg, playing ? nvgRGB(255, 255, 200) : nvgRGB(240, 240, 240));  // White key
         }
-        // Black notes
-        static const std::vector<int> blackNotes = {1, 3, 6, 8, 10};
-        for (int note : blackNotes) {
-            QuantizerButton* quantizerButton = new QuantizerButton();
-            quantizerButton->box.pos = noteAbsPositions[note] - box.pos;
-            quantizerButton->box.size = noteSizes[note];
-            quantizerButton->module = module;
-            quantizerButton->note = note;
-            addChild(quantizerButton);
+        nvgFill(args.vg);
+
+        // Border
+        nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
+        nvgStrokeWidth(args.vg, 0.5f);
+        nvgStroke(args.vg);
+
+        // Value indicator - vertical line only (no dot)
+        if (enabled) {
+            float centerX = box.size.x / 2.f;
+            float lineX = centerX + (value / 50.f) * (box.size.x / 2.f - 2.f);
+
+            // Position line
+            nvgBeginPath(args.vg);
+            nvgMoveTo(args.vg, lineX, 1);
+            nvgLineTo(args.vg, lineX, box.size.y - 1);
+            nvgStrokeColor(args.vg, playing ? nvgRGB(255, 100, 0) : nvgRGB(255, 150, 0));
+            nvgStrokeWidth(args.vg, 2.f);
+            nvgStroke(args.vg);
         }
+    }
+
+    void onDragStart(const event::DragStart& e) override {
+        if (e.button == GLFW_MOUSE_BUTTON_LEFT && module) {
+            dragStartValue = module->params[Quantizer::MICROTUNE_PARAM + noteIdx].getValue();
+        }
+        OpaqueWidget::onDragStart(e);
+    }
+
+    void onDragMove(const event::DragMove& e) override {
+        if (module) {
+            float delta = e.mouseDelta.x * 0.5f;  // Sensitivity
+            float newValue = clamp(dragStartValue + delta, -50.f, 50.f);
+            dragStartValue = newValue;
+            module->params[Quantizer::MICROTUNE_PARAM + noteIdx].setValue(newValue);
+        }
+        OpaqueWidget::onDragMove(e);
+    }
+
+    void onDoubleClick(const event::DoubleClick& e) override {
+        if (module) {
+            module->params[Quantizer::MICROTUNE_PARAM + noteIdx].setValue(0.f);
+        }
+        OpaqueWidget::onDoubleClick(e);
+    }
+};
+
+// Complete note row (toggle + slider)
+struct NoteRow : Widget {
+    NoteToggle* toggle = nullptr;
+    MicrotuneSlider* slider = nullptr;
+
+    void init(Quantizer* module, int noteIdx, bool isBlackKey, float y, float moduleWidth) {
+        float toggleX = 2.f;
+        float sliderX = 12.f;  // Both black and white keys left-aligned
+        float sliderW = moduleWidth - 14.f;  // Full width for white keys
+        if (isBlackKey) {
+            sliderW = sliderW * 0.7f;  // Black keys 30% shorter
+        }
+
+        toggle = new NoteToggle();
+        toggle->module = module;
+        toggle->noteIdx = noteIdx;
+        toggle->box.pos = Vec(toggleX, y);
+
+        slider = new MicrotuneSlider();
+        slider->module = module;
+        slider->noteIdx = noteIdx;
+        slider->isBlackKey = isBlackKey;
+        slider->box.pos = Vec(sliderX, y);
+        slider->box.size.x = sliderW;
     }
 };
 
@@ -443,150 +475,111 @@ struct QuantizerWidget : ModuleWidget {
     QuantizerWidget(Quantizer* module) {
         setModule(module);
         panelThemeHelper.init(this, "4HP");
-
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        // Title
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Quantizer", 12.f, nvgRGB(255, 200, 0), true));
-        addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
+        float W = box.size.x;
 
-        // Scale knob - added above offset
-        addChild(new EnhancedTextLabel(Vec(31, 30), Vec(30, 15), "SCALE", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(46, 55), module, Quantizer::SCALE_PARAM));
+        // Title with MADZINE brand (standard size)
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(W, 20), "Quanti2er", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 13), Vec(W, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
-        // Offset knob - moved down to make room for scale
-        addChild(new EnhancedTextLabel(Vec(31, 75), Vec(30, 15), "OFFSET", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(46, 100), module, Quantizer::OFFSET_PARAM));
-        
-        // CV IN label and input - moved down accordingly
-        addChild(new EnhancedTextLabel(Vec(31, 115), Vec(30, 15), "CV IN", 6.f, nvgRGB(255, 255, 255), true));
-        addInput(createInputCentered<PJ301MPort>(Vec(46, 140), module, Quantizer::OFFSET_CV_INPUT));
+        // Knobs area with labels (using MediumGrayKnob like MADDY+)
+        addChild(new EnhancedTextLabel(Vec(0, 32), Vec(30, 10), "Amount", 6.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(15, 52), module, Quantizer::SCALE_PARAM));
+        addInput(createInputCentered<PJ301MPort>(Vec(15, 76), module, Quantizer::SCALE_CV_INPUT));
 
-        // Quantizer piano display - moved up by 1mm
-        QuantizerDisplay* quantizerDisplay = createWidget<QuantizerDisplay>(mm2px(Vec(1.0, 12.0)));
-        quantizerDisplay->box.size = mm2px(Vec(15.24 * 0.66, 55.88 * 0.75));
-        quantizerDisplay->setModule(module);
-        addChild(quantizerDisplay);
+        addChild(new EnhancedTextLabel(Vec(30, 32), Vec(30, 10), "Offset", 6.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(45, 52), module, Quantizer::OFFSET_PARAM));
+        addInput(createInputCentered<PJ301MPort>(Vec(45, 76), module, Quantizer::OFFSET_CV_INPUT));
 
-        // 12 microtune knobs with correct black/white key mapping
-        std::string noteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-        
-        // Map positions to correct notes with C at bottom
-        int leftPositions[5] = {1, 3, 6, 8, 10}; // C#, D#, F#, G#, A# (black keys)
-        int rightPositions[7] = {0, 2, 4, 5, 7, 9, 11}; // C, D, E, F, G, A, B (white keys)
-        
-        Vec leftCoords[5] = {
-            Vec(15, 310),  // C# (top left) - moved up 10px
-            Vec(15, 285),  // D# - moved up 10px
-            Vec(15, 235),  // F# - moved up 10px
-            Vec(15, 210),  // G# - moved up 10px
-            Vec(15, 185)   // A# (bottom left) - moved up 10px
-        };
-        
-        Vec rightCoords[7] = {
-            Vec(45, 320),  // C (bottom right) - moved up 10px
-            Vec(45, 295),  // D - moved up 10px
-            Vec(45, 270),  // E - moved up 10px
-            Vec(45, 245),  // F - moved up 10px
-            Vec(45, 220),  // G - moved up 10px
-            Vec(45, 195),  // A - moved up 10px
-            Vec(45, 170)   // B (top right) - moved up 10px
-        };
+        // Note rows (Y: 88-328, 24 rows, ~10px each)
+        // Order: B2, A#2, A2, ... C2, B1, A#1, ... C1 (top to bottom)
+        // Note indices: 23=B2, 22=A#2, ... 12=C2, 11=B1, ... 0=C1
+        const float startY = 88.f;
+        const float rowH = 10.f;
+        const int noteOrder[24] = {23,22,21,20,19,18,17,16,15,14,13,12, 11,10,9,8,7,6,5,4,3,2,1,0};
+        const bool isBlack[12] = {false,true,false,true,false,false,true,false,true,false,true,false}; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
 
-        // Place black keys (left side) - removed labels
-        for (int i = 0; i < 5; i++) {
-            int noteIndex = leftPositions[i];
-            addParam(createParamCentered<MicrotuneKnob>(leftCoords[i], module, Quantizer::C_MICROTUNE_PARAM + noteIndex));
-        }
-        
-        // Place white keys (right side) - removed labels
-        for (int i = 0; i < 7; i++) {
-            int noteIndex = rightPositions[i];
-            addParam(createParamCentered<MicrotuneKnob>(rightCoords[i], module, Quantizer::C_MICROTUNE_PARAM + noteIndex));
+        for (int row = 0; row < 24; row++) {
+            int noteIdx = noteOrder[row];
+            bool blackKey = isBlack[noteIdx % 12];
+            float y = startY + row * rowH;
+
+            NoteRow noteRow;
+            noteRow.init(module, noteIdx, blackKey, y, W);
+            addChild(noteRow.toggle);
+            addChild(noteRow.slider);
+
+            // Octave separator line after C2 (row 11)
+            if (row == 11) {
+                auto* sep = new Widget();
+                sep->box.pos = Vec(2, y + rowH - 1);
+                sep->box.size = Vec(W - 4, 1);
+                addChild(sep);
+            }
         }
 
-        // White background for inputs/outputs
-        addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));
-
-        // Track 1 - positioned at Y=340
-        addInput(createInputCentered<PJ301MPort>(Vec(15, 340), module, Quantizer::PITCH_INPUT));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 340), module, Quantizer::PITCH_OUTPUT));
-        
-        // Track 2 - positioned at Y=358
-        addInput(createInputCentered<PJ301MPort>(Vec(15, 358), module, Quantizer::PITCH_INPUT_2));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 358), module, Quantizer::PITCH_OUTPUT_2));
-        
-        // Track 3 - positioned at Y=374
-        addInput(createInputCentered<PJ301MPort>(Vec(15, 374), module, Quantizer::PITCH_INPUT_3));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(45, 374), module, Quantizer::PITCH_OUTPUT_3));
+        // I/O area (Y: 330+) - unchanged
+        addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(W, 50)));
+        for (int i = 0; i < 3; i++) {
+            float y = 342 + i * 16;
+            addInput(createInputCentered<PJ301MPort>(Vec(15, y), module, Quantizer::PITCH_INPUT + i));
+            addOutput(createOutputCentered<PJ301MPort>(Vec(45, y), module, Quantizer::PITCH_OUTPUT + i));
+        }
     }
 
     void step() override {
-        Quantizer* module = dynamic_cast<Quantizer*>(this->module);
-        if (module) {
-            panelThemeHelper.step(module);
-        }
+        if (auto* m = dynamic_cast<Quantizer*>(module))
+            panelThemeHelper.step(m);
         ModuleWidget::step();
     }
 
     void appendContextMenu(ui::Menu* menu) override {
-        Quantizer* module = getModule<Quantizer>();
-        if (!module) return;
+        auto* m = getModule<Quantizer>();
+        if (!m) return;
 
         menu->addChild(new MenuSeparator);
 
-        // Scale Presets submenu
-        menu->addChild(createSubmenuItem("Scale Presets", "", [=](Menu* menu) {
-            std::string scaleNames[16] = {
-                "Chromatic",
-                "Major (Ionian)",
-                "Minor (Aeolian)",
-                "Pentatonic Major",
-                "Pentatonic Minor",
-                "Dorian",
-                "Phrygian",
-                "Lydian",
-                "Mixolydian",
-                "Locrian",
-                "Major Triad",
-                "Minor Triad",
-                "Blues",
-                "Arabic",
-                "Japanese",
-                "Whole Tone"
-            };
-
-            for (int i = 0; i < 16; i++) {
-                menu->addChild(createMenuItem(scaleNames[i], "", [=]() {
-                    module->applyScalePreset(i);
-                }));
-            }
+        // Scale Presets
+        const char* scaleNames[16] = {
+            "Chromatic", "Major", "Minor", "Penta Major", "Penta Minor",
+            "Dorian", "Phrygian", "Lydian", "Mixolydian", "Locrian",
+            "Major Triad", "Minor Triad", "Blues", "Arabic", "Japanese", "Whole Tone"
+        };
+        menu->addChild(createSubmenuItem("Scale Presets", "", [=](Menu* sub) {
+            for (int i = 0; i < 16; i++)
+                sub->addChild(createMenuItem(scaleNames[i], "", [=]() { m->applyScale(i); }));
         }));
 
-        // Microtune Presets submenu
-        menu->addChild(createSubmenuItem("Microtune Presets", "", [=](Menu* menu) {
-            std::string presetNames[10] = {
-                "Equal Temperament",
-                "Just Intonation",
-                "Pythagorean",
-                "Arabic Maqam",
-                "Indian Raga",
-                "Gamelan Pelog",
-                "Japanese Gagaku",
-                "Turkish Makam",
-                "Persian Dastgah",
-                "Quarter-tone"
+        // Microtune Presets
+        menu->addChild(createSubmenuItem("Microtune Presets", "", [=](Menu* sub) {
+            const char* names[] = {
+                "Equal Temperament", "Just Intonation", "Pythagorean", "Quarter-tone",
+                "Maqam Rast", "Maqam Bayati", "Maqam Hijaz", "Maqam Saba", "Maqam Nahawand", "Maqam Kurd",
+                "Makam Rast", "Makam Ussak", "Makam Hicaz", "Makam Segah",
+                "Dastgah Shur", "Dastgah Segah",
+                "Shruti", "Raga Bhairav", "Raga Yaman", "Raga Bhairavi",
+                "Gagaku", "In Scale", "Yo Scale", "Ryukyu",
+                "Slendro", "Pelog", "Thai 7-TET",
+                "Chinese Pentatonic"
             };
-
-            for (int i = 0; i < 10; i++) {
-                menu->addChild(createMenuItem(presetNames[i], "", [=]() {
-                    module->applyMicrotunePreset(i);
-                    module->currentPreset = i;
-                }));
+            int separators[] = {4, 10, 14, 16, 20, 24, 27};
+            int sepIdx = 0;
+            for (int i = 0; i < 28; i++) {
+                sub->addChild(createMenuItem(names[i], "", [=]() { m->applyPreset(i); m->currentPreset = i; }));
+                if (sepIdx < 7 && i == separators[sepIdx] - 1) {
+                    sub->addChild(new MenuSeparator);
+                    sepIdx++;
+                }
             }
+            sub->addChild(new MenuSeparator);
+            sub->addChild(createMenuLabel("Directional (Asc/Desc)"));
+            const char* dirNames[] = {"Turkish Rast ↑↓", "Arabic Hijaz ↑↓", "Miyako-bushi ↑↓"};
+            for (int i = 0; i < 3; i++)
+                sub->addChild(createMenuItem(dirNames[i], "", [=]() { m->applyDirectional(i); m->currentPreset = 100 + i; }));
         }));
 
-        addPanelThemeMenu(menu, module);
+        addPanelThemeMenu(menu, m);
     }
 };
 

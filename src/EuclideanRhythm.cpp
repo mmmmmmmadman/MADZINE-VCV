@@ -93,7 +93,7 @@ std::vector<bool> generateEuclideanRhythm(int length, int fill, int shift) {
 }
 
 struct EuclideanRhythm : Module {
-    int panelTheme = 0; // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         MANUAL_RESET_PARAM,
