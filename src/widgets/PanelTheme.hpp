@@ -93,15 +93,6 @@ inline void addPanelThemeMenu(ui::Menu* menu, TModule* module) {
         }
     };
 
-    // Auto option follows VCV's "Use dark panels" setting
-    ThemeItem* autoItem = createMenuItem<ThemeItem>("Auto (Follow VCV)");
-    autoItem->module = module;
-    autoItem->theme = -1;
-    autoItem->isAuto = true;
-    menu->addChild(autoItem);
-
-    menu->addChild(new ui::MenuSeparator);
-
     ThemeItem* sashimiItem = createMenuItem<ThemeItem>("Sashimi");
     sashimiItem->module = module;
     sashimiItem->theme = 4;  // New value for explicit Sashimi

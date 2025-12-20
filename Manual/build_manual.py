@@ -1051,10 +1051,10 @@ def build():
 
     html += html_foot
 
-    with open('madzine_modules_compact_v3.8.html', 'w', encoding='utf-8') as f:
+    with open('madzine_modules_compact_v4.0.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print("已生成: madzine_modules_compact_v3.8.html")
+    print("已生成: madzine_modules_compact_v4.0.html")
 
 if __name__ == '__main__':
     build()
