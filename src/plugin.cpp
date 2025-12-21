@@ -32,6 +32,8 @@ void init(Plugin* p) {
     p->addModel(modelEnvVCA6);
     p->addModel(modelWeiiiDocumenta);
     p->addModel(modelUniversalRhythm);
+    p->addModel(modelSongMode);
+    p->addModel(modelLaunchpad);
 #ifdef ARCH_MAC
     p->addModel(modelMultiverse);
 #endif

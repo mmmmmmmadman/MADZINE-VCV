@@ -169,10 +169,22 @@
       "tags": ["Sequencer", "Clock generator", "Drum"]
     },
     {
+      "slug": "SongMode",
+      "name": "SONG MODE",
+      "description": "8-input sequential switch with customizable playback order, per-input clock length, and learn mode",
+      "tags": ["Switch", "Sequencer", "Utility"]
+    },
+    {
       "slug": "Multiverse",
       "name": "Multiverse",
       "description": "4-channel analog style visual synth (macOS Apple Silicon only)",
       "tags": ["Visual", "Mixer"]
+    },
+    {
+      "slug": "Launchpad",
+      "name": "Launchpad",
+      "description": "8x8 grid CV/audio looper with session mode, per-cell recording, and send/return mixer",
+      "tags": ["Sampler", "Sequencer", "Recording", "Mixer"]
     }
   ]
 }

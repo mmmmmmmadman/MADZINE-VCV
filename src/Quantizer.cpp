@@ -555,11 +555,11 @@ struct QuantizerWidget : ModuleWidget {
         menu->addChild(createSubmenuItem("Microtune Presets", "", [=](Menu* sub) {
             const char* names[] = {
                 "Equal Temperament", "Just Intonation", "Pythagorean", "Quarter-tone",
-                "Maqam Rast", "Maqam Bayati", "Maqam Hijaz", "Maqam Saba", "Maqam Nahawand", "Maqam Kurd",
-                "Makam Rast", "Makam Ussak", "Makam Hicaz", "Makam Segah",
-                "Dastgah Shur", "Dastgah Segah",
-                "Shruti", "Raga Bhairav", "Raga Yaman", "Raga Bhairavi",
-                "Gagaku", "In Scale", "Yo Scale", "Ryukyu",
+                "Maqam Rast (2-Oct)", "Maqam Bayati (2-Oct)", "Maqam Hijaz (2-Oct)", "Maqam Saba (2-Oct)", "Maqam Nahawand (2-Oct)", "Maqam Kurd (2-Oct)",
+                "Makam Rast (2-Oct)", "Makam Ussak (2-Oct)", "Makam Hicaz (2-Oct)", "Makam Segah (2-Oct)",
+                "Dastgah Shur (2-Oct)", "Dastgah Segah (2-Oct)",
+                "Shruti (2-Oct)", "Raga Bhairav (2-Oct)", "Raga Yaman (2-Oct)", "Raga Bhairavi (2-Oct)",
+                "Gagaku (2-Oct)", "In Scale (2-Oct)", "Yo Scale (2-Oct)", "Ryukyu (2-Oct)",
                 "Slendro", "Pelog", "Thai 7-TET",
                 "Chinese Pentatonic"
             };
