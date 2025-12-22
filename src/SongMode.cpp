@@ -82,10 +82,21 @@ struct SequenceTextField : LedDisplayTextField {
             }
             // Draw cursor if focused
             if (APP->event->getSelectedWidget() == this) {
-                nvgBeginPath(args.vg);
-                nvgRect(args.vg, 4 + cursor * 6, 2, 1, box.size.y - 4);
-                nvgFillColor(args.vg, color);
-                nvgFill(args.vg);
+                std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+                if (font) {
+                    nvgFontFaceId(args.vg, font->handle);
+                    nvgFontSize(args.vg, 10.f);
+                    float cursorX = 4;
+                    if (cursor > 0 && cursor <= (int)text.length()) {
+                        float bounds[4];
+                        nvgTextBounds(args.vg, 4, box.size.y / 2, text.c_str(), text.c_str() + cursor, bounds);
+                        cursorX = bounds[2];
+                    }
+                    nvgBeginPath(args.vg);
+                    nvgRect(args.vg, cursorX, 2, 1, box.size.y - 4);
+                    nvgFillColor(args.vg, color);
+                    nvgFill(args.vg);
+                }
             }
         }
         // Don't call parent's drawLayer to prevent double text rendering

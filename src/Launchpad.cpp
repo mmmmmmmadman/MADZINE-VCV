@@ -11,6 +11,7 @@ namespace LaunchpadColors {
     static const NVGcolor PLAYING = nvgRGB(60, 130, 100);
     static const NVGcolor RECORDING = nvgRGB(160, 70, 60);
     static const NVGcolor QUEUED = nvgRGB(180, 150, 80);
+    static const NVGcolor STOP_QUEUED = nvgRGB(120, 90, 60);  // Darker, fading out
 
     // Waveform colors (brighter versions)
     static const NVGcolor WAVE_CONTENT = nvgRGB(180, 140, 100);
@@ -27,7 +28,8 @@ enum CellState {
     CELL_HAS_CONTENT,
     CELL_PLAYING,
     CELL_RECORDING,
-    CELL_QUEUED
+    CELL_QUEUED,
+    CELL_STOP_QUEUED  // Waiting for quantize boundary to stop
 };
 
 // Cell data structure
@@ -360,16 +362,43 @@ struct Launchpad : Module {
     }
 
     void triggerScene(int col) {
-        // Trigger cells in the target column
-        // Note: startPlaying already handles session mode (stops other cells in same row)
+        // Trigger cells in the target column (Ableton Live style)
+        // Scene acts as a "snapshot" - cells not in this scene get stopped
         for (int r = 0; r < 8; r++) {
             CellData& cell = cells[r][col];
             if (cell.state == CELL_HAS_CONTENT) {
+                // Scene cell has content: play it
                 int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
                 if (quantize == 0) {
+                    // Free mode: immediate start (startPlaying stops other cells)
                     startPlaying(r, col);
                 } else {
+                    // Quantize mode: queue this cell
+                    // Cancel any other QUEUED in this row (only one can be queued)
+                    for (int c = 0; c < 8; c++) {
+                        if (c != col && cells[r][c].state == CELL_QUEUED) {
+                            cells[r][c].state = CELL_HAS_CONTENT;
+                        }
+                    }
                     cell.state = CELL_QUEUED;
+                }
+            } else if (cell.state == CELL_EMPTY) {
+                // Scene cell is empty: stop any playing cells in this row
+                int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
+                for (int c = 0; c < 8; c++) {
+                    if (cells[r][c].state == CELL_PLAYING) {
+                        if (quantize == 0) {
+                            // Free mode: immediate stop
+                            cells[r][c].state = CELL_HAS_CONTENT;
+                            cells[r][c].playPosition = 0;
+                        } else {
+                            // Quantize mode: queue for stop
+                            cells[r][c].state = CELL_STOP_QUEUED;
+                        }
+                    } else if (cells[r][c].state == CELL_QUEUED) {
+                        // Cancel queued play
+                        cells[r][c].state = CELL_HAS_CONTENT;
+                    }
                 }
             }
         }
@@ -402,11 +431,15 @@ struct Launchpad : Module {
             // Check quantize triggers
             int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
             if (quantize > 0 && (clockCount % quantize) == 0) {
-                // Trigger queued cells
+                // Process queued cells
                 for (int r = 0; r < 8; r++) {
                     for (int c = 0; c < 8; c++) {
                         if (cells[r][c].state == CELL_QUEUED) {
                             startPlaying(r, c);
+                        } else if (cells[r][c].state == CELL_STOP_QUEUED) {
+                            // Stop at quantize boundary
+                            cells[r][c].state = CELL_HAS_CONTENT;
+                            cells[r][c].playPosition = 0;
                         }
                     }
                 }
@@ -451,7 +484,8 @@ struct Launchpad : Module {
             // Find playing cell in this row
             for (int c = 0; c < 8; c++) {
                 CellData& cell = cells[r][c];
-                if (cell.state == CELL_PLAYING && cell.recordedLength > 0) {
+                // STOP_QUEUED continues playing until quantize boundary
+                if ((cell.state == CELL_PLAYING || cell.state == CELL_STOP_QUEUED) && cell.recordedLength > 0) {
                     rowOutput = cell.buffer[cell.playPosition];
 
                     // Advance play position
@@ -618,6 +652,7 @@ void CellWidget::draw(const DrawArgs& args) {
         case CELL_PLAYING: bgColor = LaunchpadColors::PLAYING; break;
         case CELL_RECORDING: bgColor = LaunchpadColors::RECORDING; break;
         case CELL_QUEUED: bgColor = LaunchpadColors::QUEUED; break;
+        case CELL_STOP_QUEUED: bgColor = LaunchpadColors::STOP_QUEUED; break;
         default: bgColor = LaunchpadColors::EMPTY; break;
     }
 
@@ -643,7 +678,7 @@ void CellWidget::draw(const DrawArgs& args) {
     nvgFill(args.vg);
 
     // Draw waveform if has content
-    if (module && (state == CELL_HAS_CONTENT || state == CELL_PLAYING || state == CELL_RECORDING)) {
+    if (module && (state == CELL_HAS_CONTENT || state == CELL_PLAYING || state == CELL_RECORDING || state == CELL_QUEUED || state == CELL_STOP_QUEUED)) {
         drawWaveform(args, module->cells[row][col]);
     }
 
@@ -687,6 +722,7 @@ void CellWidget::drawWaveform(const DrawArgs& args, CellData& cell) {
     NVGcolor waveColor;
     switch (cell.state) {
         case CELL_PLAYING: waveColor = LaunchpadColors::WAVE_PLAYING; break;
+        case CELL_STOP_QUEUED: waveColor = LaunchpadColors::WAVE_PLAYING; break;  // Still playing
         case CELL_RECORDING: waveColor = LaunchpadColors::WAVE_RECORDING; break;
         default: waveColor = LaunchpadColors::WAVE_CONTENT; break;
     }
@@ -725,8 +761,8 @@ void CellWidget::drawWaveform(const DrawArgs& args, CellData& cell) {
         nvgFill(args.vg);
     }
 
-    // Draw playhead if playing
-    if (cell.state == CELL_PLAYING && cell.recordedLength > 0) {
+    // Draw playhead if playing (including STOP_QUEUED which continues until quantize)
+    if ((cell.state == CELL_PLAYING || cell.state == CELL_STOP_QUEUED) && cell.recordedLength > 0) {
         float playPos = (float)cell.playPosition / cell.recordedLength;
         float x = 4 + playPos * displayWidth;
 
