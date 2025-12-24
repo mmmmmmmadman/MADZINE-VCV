@@ -111,12 +111,6 @@ struct LaunchpadLabel : TransparentWidget {
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
         nvgFillColor(args.vg, color);
-
-        if (bold) {
-            float offset = 0.3f;
-            nvgText(args.vg, box.size.x / 2.f - offset, box.size.y / 2.f, text.c_str(), NULL);
-            nvgText(args.vg, box.size.x / 2.f + offset, box.size.y / 2.f, text.c_str(), NULL);
-        }
         nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
     }
 };
@@ -130,6 +124,11 @@ struct CellWidget : OpaqueWidget {
     bool pressed = false;
     static constexpr float HOLD_TIME = 0.5f;  // 500ms for clear
 
+    // Static drag state (shared across all cells)
+    static CellWidget* dragSource;
+    static bool dragCopyMode;  // Alt key held
+    static CellWidget* dropTarget;  // Current hover target
+
     CellWidget() {
         box.size = Vec(40, 40);
     }
@@ -137,10 +136,18 @@ struct CellWidget : OpaqueWidget {
     void onButton(const event::Button& e) override;
     void onDragStart(const event::DragStart& e) override;
     void onDragEnd(const event::DragEnd& e) override;
+    void onDragEnter(const event::DragEnter& e) override;
+    void onDragLeave(const event::DragLeave& e) override;
+    void onDragDrop(const event::DragDrop& e) override;
 
     void draw(const DrawArgs& args) override;
     void drawWaveform(const DrawArgs& args, CellData& cell);
 };
+
+// Static member initialization
+CellWidget* CellWidget::dragSource = nullptr;
+bool CellWidget::dragCopyMode = false;
+CellWidget* CellWidget::dropTarget = nullptr;
 
 struct Launchpad : Module {
     int panelTheme = -1;
@@ -349,16 +356,69 @@ struct Launchpad : Module {
     }
 
     void stopAll() {
-        // Stop all playing and queued cells
+        // Stop all playing and queued cells (respects quantize setting)
+        int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
                 CellData& cell = cells[r][c];
-                if (cell.state == CELL_PLAYING || cell.state == CELL_QUEUED) {
+                if (cell.state == CELL_PLAYING) {
+                    if (quantize == 0) {
+                        // Free mode: immediate stop
+                        cell.state = CELL_HAS_CONTENT;
+                        cell.playPosition = 0;
+                    } else {
+                        // Quantize mode: queue for stop at next boundary
+                        cell.state = CELL_STOP_QUEUED;
+                    }
+                } else if (cell.state == CELL_QUEUED) {
+                    // Queued cells can be cancelled immediately
                     cell.state = CELL_HAS_CONTENT;
                     cell.playPosition = 0;
                 }
             }
         }
+    }
+
+    void moveCell(int srcRow, int srcCol, int dstRow, int dstCol) {
+        if (srcRow == dstRow && srcCol == dstCol) return;
+        CellData& src = cells[srcRow][srcCol];
+        CellData& dst = cells[dstRow][dstCol];
+
+        // Stop playing if source is playing
+        if (src.state == CELL_PLAYING || src.state == CELL_STOP_QUEUED) {
+            src.state = CELL_HAS_CONTENT;
+            src.playPosition = 0;
+        }
+
+        // Move data to destination
+        dst.buffer = std::move(src.buffer);
+        dst.recordedLength = src.recordedLength;
+        dst.loopClocks = src.loopClocks;
+        dst.waveformCache = std::move(src.waveformCache);
+        dst.state = (dst.recordedLength > 0) ? CELL_HAS_CONTENT : CELL_EMPTY;
+        dst.playPosition = 0;
+
+        // Clear source
+        src.buffer.clear();
+        src.recordedLength = 0;
+        src.loopClocks = 0;
+        src.waveformCache.clear();
+        src.state = CELL_EMPTY;
+        src.playPosition = 0;
+    }
+
+    void copyCell(int srcRow, int srcCol, int dstRow, int dstCol) {
+        if (srcRow == dstRow && srcCol == dstCol) return;
+        CellData& src = cells[srcRow][srcCol];
+        CellData& dst = cells[dstRow][dstCol];
+
+        // Copy data to destination
+        dst.buffer = src.buffer;  // Copy, not move
+        dst.recordedLength = src.recordedLength;
+        dst.loopClocks = src.loopClocks;
+        dst.waveformCache = src.waveformCache;
+        dst.state = (dst.recordedLength > 0) ? CELL_HAS_CONTENT : CELL_EMPTY;
+        dst.playPosition = 0;
     }
 
     void triggerScene(int col) {
@@ -618,10 +678,24 @@ void CellWidget::onButton(const event::Button& e) {
 void CellWidget::onDragStart(const event::DragStart& e) {
     pressed = true;
     pressTime = 0.f;
+
+    // Start drag if cell has content
+    if (module && module->cells[row][col].state != CELL_EMPTY) {
+        dragSource = this;
+        dragCopyMode = (APP->window->getMods() & GLFW_MOD_ALT);
+    }
 }
 
 void CellWidget::onDragEnd(const event::DragEnd& e) {
-    if (pressed && module) {
+    // If we were dragging and dropped on a target
+    if (dragSource == this && dropTarget && dropTarget != this && module) {
+        if (dragCopyMode) {
+            module->copyCell(row, col, dropTarget->row, dropTarget->col);
+        } else {
+            module->moveCell(row, col, dropTarget->row, dropTarget->col);
+        }
+    } else if (pressed && module && dragSource == nullptr) {
+        // Normal click/hold behavior (only if not dragging)
         if (pressTime >= HOLD_TIME) {
             // Hold - clear
             module->onCellHold(row, col);
@@ -630,7 +704,32 @@ void CellWidget::onDragEnd(const event::DragEnd& e) {
             module->onCellClick(row, col);
         }
     }
+
+    // Reset drag state
+    dragSource = nullptr;
+    dropTarget = nullptr;
+    dragCopyMode = false;
     pressed = false;
+}
+
+void CellWidget::onDragEnter(const event::DragEnter& e) {
+    // Only accept if we're dragging from another cell
+    if (dragSource && dragSource != this) {
+        dropTarget = this;
+    }
+}
+
+void CellWidget::onDragLeave(const event::DragLeave& e) {
+    if (dropTarget == this) {
+        dropTarget = nullptr;
+    }
+}
+
+void CellWidget::onDragDrop(const event::DragDrop& e) {
+    // Handle drop (actual move/copy is done in onDragEnd of source)
+    if (dragSource && dragSource != this) {
+        dropTarget = this;
+    }
 }
 
 void CellWidget::draw(const DrawArgs& args) {
@@ -707,6 +806,36 @@ void CellWidget::draw(const DrawArgs& args) {
         nvgRoundedRect(args.vg, x, y, w, h, 3);
         nvgFillColor(args.vg, nvgRGBA(255, 255, 255, 30));
         nvgFill(args.vg);
+    }
+
+    // Drag visual feedback
+    if (dragSource == this) {
+        // Source cell: dashed border
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
+        nvgStrokeColor(args.vg, nvgRGB(255, 255, 0));  // Yellow
+        nvgStrokeWidth(args.vg, 2.0f);
+        nvgLineCap(args.vg, NVG_ROUND);
+        // Note: NanoVG doesn't support dashed lines directly, use solid
+        nvgStroke(args.vg);
+
+        // Copy mode indicator "+"
+        if (dragCopyMode) {
+            nvgFontSize(args.vg, 14);
+            nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+            nvgTextAlign(args.vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+            nvgFillColor(args.vg, nvgRGB(255, 255, 0));
+            nvgText(args.vg, 3, 1, "+", NULL);
+        }
+    }
+
+    if (dropTarget == this) {
+        // Drop target: highlighted border
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
+        nvgStrokeColor(args.vg, nvgRGB(0, 255, 128));  // Green
+        nvgStrokeWidth(args.vg, 3.0f);
+        nvgStroke(args.vg);
     }
 }
 
@@ -800,22 +929,21 @@ struct LaunchpadWidget : ModuleWidget {
         whitePanel->box.size = box.size;
         addChild(whitePanel);
 
-        // Title - doubled size
-        addChild(new LaunchpadLabel(Vec(0, 1), Vec(200, 30), "LAUNCHPAD", 24.f, nvgRGB(255, 200, 0), true));
-        addChild(new LaunchpadLabel(Vec(0, 22), Vec(200, 25), "MADZINE", 20.f, nvgRGB(255, 200, 0), false));
+        // Title labels (2x size compared to other modules)
+        NVGcolor titleColor = nvgRGB(255, 200, 0);  // Yellow
+        addChild(new LaunchpadLabel(Vec(0, 1), Vec(200, 30), "LAUNCHPAD", 24.f, titleColor, true));
+        addChild(new LaunchpadLabel(Vec(0, 26), Vec(200, 20), "MADZINE", 20.f, titleColor, false));
 
-        // Clock, Reset, Quantize - upper right, labels up 2px
-        addChild(new LaunchpadLabel(Vec(455, 26), Vec(50, 12), "Clock", 10.f, nvgRGB(255, 255, 255), true));
+        // Clock, Reset, Quantize - upper right (with labels)
+        addChild(new LaunchpadLabel(Vec(480 - 20, 28), Vec(40, 12), "CLK", 9.f));
         addInput(createInputCentered<PJ301MPort>(Vec(480, 50), module, Launchpad::CLOCK_INPUT));
-
-        addChild(new LaunchpadLabel(Vec(500, 26), Vec(50, 12), "Reset", 10.f, nvgRGB(255, 255, 255), true));
+        addChild(new LaunchpadLabel(Vec(525 - 20, 28), Vec(40, 12), "RST", 9.f));
         addInput(createInputCentered<PJ301MPort>(Vec(525, 50), module, Launchpad::RESET_INPUT));
-
-        addChild(new LaunchpadLabel(Vec(540, 26), Vec(60, 12), "Quantize", 10.f, nvgRGB(255, 255, 255), true));
+        addChild(new LaunchpadLabel(Vec(570 - 20, 28), Vec(40, 12), "QTZ", 9.f));
         addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(570, 50), module, Launchpad::QUANTIZE_PARAM));
 
-        // Stop All button (same Y as scene buttons, label up 7px total)
-        addChild(new LaunchpadLabel(Vec(2, 48), Vec(50, 12), "Stop All", 10.f, nvgRGB(255, 255, 255), true));
+        // Stop All button (with label)
+        addChild(new LaunchpadLabel(Vec(27 - 15, 48), Vec(30, 12), "STOP", 8.f));
         addParam(createParamCentered<VCVButton>(Vec(27, 70), module, Launchpad::STOP_ALL_PARAM));
 
         // Scene buttons (aligned with cells)
@@ -826,13 +954,12 @@ struct LaunchpadWidget : ModuleWidget {
             addParam(createParamCentered<VCVButton>(Vec(x, 70), module, Launchpad::SCENE_1_PARAM + i));
         }
 
-        // Column labels - Pan/Level moved left 3px total
-        addChild(new LaunchpadLabel(Vec(2, 82), Vec(30, 12), "IN", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new LaunchpadLabel(Vec(410, 79), Vec(45, 12), "Send A", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new LaunchpadLabel(Vec(448, 79), Vec(45, 12), "Send B", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new LaunchpadLabel(Vec(488, 79), Vec(35, 12), "Pan", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new LaunchpadLabel(Vec(521, 79), Vec(45, 12), "Level", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new LaunchpadLabel(Vec(557, 79), Vec(40, 12), "OUT", 10.f, nvgRGB(255, 255, 255), true));
+        // Column headers for row controls
+        addChild(new LaunchpadLabel(Vec(430 - 12, 82), Vec(24, 12), "S.A", 8.f));
+        addChild(new LaunchpadLabel(Vec(468 - 12, 82), Vec(24, 12), "S.B", 8.f));
+        addChild(new LaunchpadLabel(Vec(506 - 12, 82), Vec(24, 12), "PAN", 8.f));
+        addChild(new LaunchpadLabel(Vec(544 - 12, 82), Vec(24, 12), "LVL", 8.f));
+        addChild(new LaunchpadLabel(Vec(577 - 12, 82), Vec(24, 12), "OUT", 8.f));
 
         // 8 rows
         float rowStartY = 100;
@@ -866,39 +993,31 @@ struct LaunchpadWidget : ModuleWidget {
             addOutput(createOutputCentered<PJ301MPort>(Vec(577, y + 3), module, Launchpad::ROW_1_OUTPUT + r));
         }
 
-        // Bottom section (Y=330+)
+        // Bottom section (Y=330+) with labels (pink color)
+        NVGcolor pinkText = nvgRGB(232, 112, 112);  // Sashimi pink
+
         // Send A
-        addChild(new LaunchpadLabel(Vec(20, 332), Vec(60, 12), "Send A", 10.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(20, 370), Vec(30, 12), "L", 9.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(50, 370), Vec(30, 12), "R", 9.f, nvgRGB(255, 133, 133), true));
+        addChild(new LaunchpadLabel(Vec(50 - 30, 335), Vec(60, 12), "SEND A", 9.f, pinkText));
         addOutput(createOutputCentered<PJ301MPort>(Vec(35, 355), module, Launchpad::SEND_A_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(65, 355), module, Launchpad::SEND_A_R_OUTPUT));
 
         // Return A
-        addChild(new LaunchpadLabel(Vec(100, 332), Vec(60, 12), "Return A", 10.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(100, 370), Vec(30, 12), "L", 9.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(130, 370), Vec(30, 12), "R", 9.f, nvgRGB(255, 133, 133), true));
+        addChild(new LaunchpadLabel(Vec(130 - 30, 335), Vec(60, 12), "RTN A", 9.f, pinkText));
         addInput(createInputCentered<PJ301MPort>(Vec(115, 355), module, Launchpad::RETURN_A_L_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(145, 355), module, Launchpad::RETURN_A_R_INPUT));
 
         // Send B
-        addChild(new LaunchpadLabel(Vec(200, 332), Vec(60, 12), "Send B", 10.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(200, 370), Vec(30, 12), "L", 9.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(230, 370), Vec(30, 12), "R", 9.f, nvgRGB(255, 133, 133), true));
+        addChild(new LaunchpadLabel(Vec(230 - 30, 335), Vec(60, 12), "SEND B", 9.f, pinkText));
         addOutput(createOutputCentered<PJ301MPort>(Vec(215, 355), module, Launchpad::SEND_B_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(245, 355), module, Launchpad::SEND_B_R_OUTPUT));
 
         // Return B
-        addChild(new LaunchpadLabel(Vec(280, 332), Vec(60, 12), "Return B", 10.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(280, 370), Vec(30, 12), "L", 9.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(310, 370), Vec(30, 12), "R", 9.f, nvgRGB(255, 133, 133), true));
+        addChild(new LaunchpadLabel(Vec(310 - 30, 335), Vec(60, 12), "RTN B", 9.f, pinkText));
         addInput(createInputCentered<PJ301MPort>(Vec(295, 355), module, Launchpad::RETURN_B_L_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(325, 355), module, Launchpad::RETURN_B_R_INPUT));
 
         // Mix
-        addChild(new LaunchpadLabel(Vec(520, 332), Vec(60, 12), "Mix", 10.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(520, 370), Vec(30, 12), "L", 9.f, nvgRGB(255, 133, 133), true));
-        addChild(new LaunchpadLabel(Vec(550, 370), Vec(30, 12), "R", 9.f, nvgRGB(255, 133, 133), true));
+        addChild(new LaunchpadLabel(Vec(550 - 20, 335), Vec(40, 12), "MIX", 9.f, pinkText));
         addOutput(createOutputCentered<PJ301MPort>(Vec(535, 355), module, Launchpad::MIX_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(565, 355), module, Launchpad::MIX_R_OUTPUT));
     }
