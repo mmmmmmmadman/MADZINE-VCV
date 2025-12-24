@@ -96,13 +96,6 @@ struct URTextLabel : TransparentWidget {
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
         nvgFillColor(args.vg, color);
 
-        if (bold) {
-            float offset = 0.3f;
-            nvgText(args.vg, box.size.x / 2.f - offset, box.size.y / 2.f, text.c_str(), NULL);
-            nvgText(args.vg, box.size.x / 2.f + offset, box.size.y / 2.f, text.c_str(), NULL);
-            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f - offset, text.c_str(), NULL);
-            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f + offset, text.c_str(), NULL);
-        }
         nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
     }
 };
@@ -1727,7 +1720,12 @@ struct UniversalRhythm : Module {
                     int voiceBase = r * 2;
 
                     // Determine which pattern to use (fill or normal)
-                    int fillStep = fillActive ? (static_cast<int>(fillPatterns.patterns[0].length) - fillStepsRemaining) : step;
+                    // v2.3.7: Use per-role pattern length instead of patterns[0] to prevent index mismatch
+                    int fillPatternLen = static_cast<int>(fillPatterns.patterns[voiceBase].length);
+                    int fillStep = fillActive ? (fillPatternLen - fillStepsRemaining) : step;
+                    // Clamp fillStep to valid range to prevent negative or out-of-bounds access
+                    if (fillActive && fillStep < 0) fillStep = 0;
+                    if (fillActive && fillStep >= fillPatternLen) fillStep = fillPatternLen - 1;
                     int useStep = fillActive ? fillStep : step;
 
                     // Calculate timing delay from groove template + swing
@@ -1764,7 +1762,8 @@ struct UniversalRhythm : Module {
                         // Apply groove velocity modifier
                         vel *= groove.velMods[pos];
                         vel = std::clamp(vel, 0.0f, 1.0f);
-                        bool accent = primaryPattern.accents[useStep];
+                        // v2.3.7: Use safe index access to prevent array bounds crash
+                        bool accent = primaryPattern.accents[useStep % primaryPattern.length];
 
                         if (totalDelaySamples > 1.0f) {
                             // Positive delay: use delayed trigger
@@ -1787,7 +1786,8 @@ struct UniversalRhythm : Module {
                         // Apply groove velocity modifier
                         vel *= groove.velMods[pos];
                         vel = std::clamp(vel, 0.0f, 1.0f);
-                        bool accent = secondaryPattern.accents[useStep];
+                        // v2.3.7: Use safe index access to prevent array bounds crash
+                        bool accent = secondaryPattern.accents[useStep % secondaryPattern.length];
                         if (totalDelaySamples > 1.0f) {
                             delayedTriggers.push_back({totalDelaySamples, voiceBase + 1, vel, accent, r, isStrongBeat});
                         } else {
@@ -1980,13 +1980,6 @@ void URDynamicRoleTitle::draw(const DrawArgs &args) {
 
     // Draw main text with color
     nvgFillColor(args.vg, color);
-    if (bold) {
-        float offset = 0.3f;
-        nvgText(args.vg, box.size.x / 2.f - offset, box.size.y / 2.f, text.c_str(), NULL);
-        nvgText(args.vg, box.size.x / 2.f + offset, box.size.y / 2.f, text.c_str(), NULL);
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f - offset, text.c_str(), NULL);
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f + offset, text.c_str(), NULL);
-    }
     nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
 }
 
