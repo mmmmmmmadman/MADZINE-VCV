@@ -122,12 +122,14 @@ struct CellWidget : OpaqueWidget {
     int col = 0;
     float pressTime = 0.f;
     bool pressed = false;
+    // DEBUG flags
+    int debugFlags = 0;  // bit 0=button, 1=dragStart, 2=dragEnd, 3=dragDrop, 4=dragEnter
     static constexpr float HOLD_TIME = 0.5f;  // 500ms for clear
 
     // Static drag state (shared across all cells)
     static CellWidget* dragSource;
-    static bool dragCopyMode;  // Alt key held
-    static CellWidget* dropTarget;  // Current hover target
+    static bool dragCopyMode;
+    static Vec dragOffset;  // Track mouse offset from start
 
     CellWidget() {
         box.size = Vec(40, 40);
@@ -136,9 +138,7 @@ struct CellWidget : OpaqueWidget {
     void onButton(const event::Button& e) override;
     void onDragStart(const event::DragStart& e) override;
     void onDragEnd(const event::DragEnd& e) override;
-    void onDragEnter(const event::DragEnter& e) override;
-    void onDragLeave(const event::DragLeave& e) override;
-    void onDragDrop(const event::DragDrop& e) override;
+    void onDragMove(const event::DragMove& e) override;
 
     void draw(const DrawArgs& args) override;
     void drawWaveform(const DrawArgs& args, CellData& cell);
@@ -147,7 +147,7 @@ struct CellWidget : OpaqueWidget {
 // Static member initialization
 CellWidget* CellWidget::dragSource = nullptr;
 bool CellWidget::dragCopyMode = false;
-CellWidget* CellWidget::dropTarget = nullptr;
+Vec CellWidget::dragOffset = Vec(0, 0);
 
 struct Launchpad : Module {
     int panelTheme = -1;
@@ -668,74 +668,81 @@ struct Launchpad : Module {
 
 // CellWidget implementations
 void CellWidget::onButton(const event::Button& e) {
-    if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-        pressed = true;
-        pressTime = 0.f;
+    // Must consume left-click to enable drag system
+    if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_PRESS) {
+        debugFlags |= 1;  // DEBUG: bit 0
         e.consume(this);
     }
 }
 
 void CellWidget::onDragStart(const event::DragStart& e) {
+    if (e.button != GLFW_MOUSE_BUTTON_LEFT) return;
+
+    debugFlags |= 2;  // DEBUG: bit 1
     pressed = true;
     pressTime = 0.f;
+    dragSource = this;
+    dragOffset = Vec(0, 0);
+    dragCopyMode = (APP->window->getMods() & GLFW_MOD_SHIFT);
+}
 
-    // Start drag if cell has content
-    if (module && module->cells[row][col].state != CELL_EMPTY) {
-        dragSource = this;
-        dragCopyMode = (APP->window->getMods() & GLFW_MOD_ALT);
-    }
+void CellWidget::onDragMove(const event::DragMove& e) {
+    // Accumulate mouse movement
+    dragOffset = dragOffset.plus(e.mouseDelta);
 }
 
 void CellWidget::onDragEnd(const event::DragEnd& e) {
-    // If we were dragging and dropped on a target
-    if (dragSource == this && dropTarget && dropTarget != this && module) {
-        if (dragCopyMode) {
-            module->copyCell(row, col, dropTarget->row, dropTarget->col);
+    debugFlags |= 4;  // DEBUG: bit 2
+
+    if (!module) {
+        dragSource = nullptr;
+        pressed = false;
+        return;
+    }
+
+    // Calculate target cell based on drag offset
+    // Cell spacing from LaunchpadWidget: 44px horizontal, 28px vertical
+    const float cellSpacingX = 44.f;
+    const float cellSpacingY = 28.f;
+
+    int deltaCol = (int)std::round(dragOffset.x / cellSpacingX);
+    int deltaRow = (int)std::round(dragOffset.y / cellSpacingY);
+
+    int targetRow = row + deltaRow;
+    int targetCol = col + deltaCol;
+
+    // Check if we moved to a different valid cell
+    bool movedToOtherCell = (deltaRow != 0 || deltaCol != 0) &&
+                            targetRow >= 0 && targetRow < 8 &&
+                            targetCol >= 0 && targetCol < 8;
+
+    if (movedToOtherCell && module->cells[row][col].state != CELL_EMPTY) {
+        // Drag to another cell - move or copy
+        bool copyMode = (APP->window->getMods() & GLFW_MOD_SHIFT);
+        if (copyMode) {
+            module->copyCell(row, col, targetRow, targetCol);
         } else {
-            module->moveCell(row, col, dropTarget->row, dropTarget->col);
+            module->moveCell(row, col, targetRow, targetCol);
         }
-    } else if (pressed && module && dragSource == nullptr) {
-        // Normal click/hold behavior (only if not dragging)
+    } else {
+        // Click or hold on same cell
         if (pressTime >= HOLD_TIME) {
-            // Hold - clear
             module->onCellHold(row, col);
         } else {
-            // Click - toggle
             module->onCellClick(row, col);
         }
     }
 
-    // Reset drag state
+    // Reset state
     dragSource = nullptr;
-    dropTarget = nullptr;
     dragCopyMode = false;
     pressed = false;
 }
 
-void CellWidget::onDragEnter(const event::DragEnter& e) {
-    // Only accept if we're dragging from another cell
-    if (dragSource && dragSource != this) {
-        dropTarget = this;
-    }
-}
-
-void CellWidget::onDragLeave(const event::DragLeave& e) {
-    if (dropTarget == this) {
-        dropTarget = nullptr;
-    }
-}
-
-void CellWidget::onDragDrop(const event::DragDrop& e) {
-    // Handle drop (actual move/copy is done in onDragEnd of source)
-    if (dragSource && dragSource != this) {
-        dropTarget = this;
-    }
-}
-
 void CellWidget::draw(const DrawArgs& args) {
-    // Update press time
+    // Update press time (using frame time ~60fps)
     if (pressed) {
-        pressTime += APP->engine->getSampleTime() * 1000;  // Approximate
+        pressTime += 1.f / 60.f;  // Approximate frame time in seconds
     }
 
     // Get cell state
@@ -769,6 +776,34 @@ void CellWidget::draw(const DrawArgs& args) {
     nvgRoundedRect(args.vg, x, y, w, h, 3);
     nvgFillColor(args.vg, bgColor);
     nvgFill(args.vg);
+
+    // DEBUG: Show colored dots for each event
+    // Red=onButton, Yellow=onDragStart, Green=onDragEnd, Cyan=onDragDrop
+    if (debugFlags & 1) {  // onButton
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, 5, 5, 3);
+        nvgFillColor(args.vg, nvgRGB(255, 0, 0));
+        nvgFill(args.vg);
+    }
+    if (debugFlags & 2) {  // onDragStart
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, 12, 5, 3);
+        nvgFillColor(args.vg, nvgRGB(255, 255, 0));
+        nvgFill(args.vg);
+    }
+    if (debugFlags & 4) {  // onDragEnd
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, 19, 5, 3);
+        nvgFillColor(args.vg, nvgRGB(0, 255, 0));
+        nvgFill(args.vg);
+    }
+    if (debugFlags & 8) {  // onDragDrop
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, 26, 5, 3);
+        nvgFillColor(args.vg, nvgRGB(0, 255, 255));
+        nvgFill(args.vg);
+    }
+    debugFlags = 0;  // Reset after showing
 
     // Inner highlight (top-left)
     nvgBeginPath(args.vg);
@@ -809,33 +844,44 @@ void CellWidget::draw(const DrawArgs& args) {
     }
 
     // Drag visual feedback
-    if (dragSource == this) {
-        // Source cell: dashed border
-        nvgBeginPath(args.vg);
-        nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
-        nvgStrokeColor(args.vg, nvgRGB(255, 255, 0));  // Yellow
-        nvgStrokeWidth(args.vg, 2.0f);
-        nvgLineCap(args.vg, NVG_ROUND);
-        // Note: NanoVG doesn't support dashed lines directly, use solid
-        nvgStroke(args.vg);
+    if (dragSource && module) {
+        // Calculate target from dragOffset
+        const float cellSpacingX = 44.f;
+        const float cellSpacingY = 28.f;
+        int deltaCol = (int)std::round(dragOffset.x / cellSpacingX);
+        int deltaRow = (int)std::round(dragOffset.y / cellSpacingY);
+        int targetRow = dragSource->row + deltaRow;
+        int targetCol = dragSource->col + deltaCol;
 
-        // Copy mode indicator "+"
-        if (dragCopyMode) {
-            nvgFontSize(args.vg, 14);
-            nvgFontFaceId(args.vg, APP->window->uiFont->handle);
-            nvgTextAlign(args.vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-            nvgFillColor(args.vg, nvgRGB(255, 255, 0));
-            nvgText(args.vg, 3, 1, "+", NULL);
+        if (dragSource == this && module->cells[row][col].state != CELL_EMPTY) {
+            // Source cell: yellow border
+            nvgBeginPath(args.vg);
+            nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
+            nvgStrokeColor(args.vg, nvgRGB(255, 255, 0));  // Yellow
+            nvgStrokeWidth(args.vg, 2.0f);
+            nvgStroke(args.vg);
+
+            // Copy mode indicator "+" (check Shift in real-time)
+            if (APP->window->getMods() & GLFW_MOD_SHIFT) {
+                nvgFontSize(args.vg, 14);
+                nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+                nvgTextAlign(args.vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+                nvgFillColor(args.vg, nvgRGB(255, 255, 0));
+                nvgText(args.vg, 3, 1, "+", NULL);
+            }
         }
-    }
 
-    if (dropTarget == this) {
-        // Drop target: highlighted border
-        nvgBeginPath(args.vg);
-        nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
-        nvgStrokeColor(args.vg, nvgRGB(0, 255, 128));  // Green
-        nvgStrokeWidth(args.vg, 3.0f);
-        nvgStroke(args.vg);
+        // Drop target: green border (if this is the target cell and different from source)
+        if (row == targetRow && col == targetCol &&
+            (deltaRow != 0 || deltaCol != 0) &&
+            targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8 &&
+            dragSource->module->cells[dragSource->row][dragSource->col].state != CELL_EMPTY) {
+            nvgBeginPath(args.vg);
+            nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
+            nvgStrokeColor(args.vg, nvgRGB(0, 255, 128));  // Green
+            nvgStrokeWidth(args.vg, 3.0f);
+            nvgStroke(args.vg);
+        }
     }
 }
 
