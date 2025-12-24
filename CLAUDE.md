@@ -1,7 +1,7 @@
 # MADZINE VCV Rack 開發指南
 
-版本：2.3.6
-更新日期：2025-12-14
+版本：2.3.7
+更新日期：2025-12-24
 
 ---
 
@@ -212,4 +212,46 @@ print("已生成: madzine_modules_compact_vX.X.html")
 - 格式：`vMajor.Minor`（例：v3.8）
 - Minor 版本：每次內容修改時遞增
 - Major 版本：重大結構改變時遞增
+
+### UniversalRhythm 陣列越界崩潰問題（v2.3.7 修復）
+
+**問題描述**：VCV Rack 啟動後約 4 秒崩潰，錯誤類型為 `EXC_BAD_ACCESS (SIGBUS)` / `KERN_PROTECTION_FAILURE`。
+
+**崩潰堆疊**：
+```
+Thread 12 Crashed:
+0  plugin.dylib  UniversalRhythm::process(...) + 676
+1  plugin.dylib  UniversalRhythm::process(...) + 656
+2  libRack.dylib rack::engine::Module::doProcess(...) + 156
+```
+
+**根本原因**：
+1. **`accents[useStep]` 直接索引越界**：當 `fillActive = true` 時，`useStep` 可能超出 `accents` 向量的實際大小
+2. **`fillStep` 計算使用錯誤的 pattern 長度**：使用固定的 `fillPatterns.patterns[0].length` 而非當前 role 的 pattern 長度
+
+**錯誤程式碼**：
+```cpp
+// 問題 1：直接索引可能越界
+bool accent = primaryPattern.accents[useStep];
+
+// 問題 2：使用固定 patterns[0] 長度
+int fillStep = fillActive ? (static_cast<int>(fillPatterns.patterns[0].length) - fillStepsRemaining) : step;
+```
+
+**修復方案**：
+```cpp
+// 修復 1：使用安全索引
+bool accent = primaryPattern.accents[useStep % primaryPattern.length];
+
+// 修復 2：使用對應 role 的 pattern 長度 + 邊界檢查
+int fillPatternLen = static_cast<int>(fillPatterns.patterns[voiceBase].length);
+int fillStep = fillActive ? (fillPatternLen - fillStepsRemaining) : step;
+if (fillActive && fillStep < 0) fillStep = 0;
+if (fillActive && fillStep >= fillPatternLen) fillStep = fillPatternLen - 1;
+```
+
+**預防措施**：
+- 訪問 `std::vector` 時，若索引來自外部計算，務必使用 `% length` 或邊界檢查
+- 當有多個不同長度的 pattern 時，確保使用正確的 pattern 長度進行索引計算
+- Fill pattern 的長度可能與正常 pattern 不同，需特別注意
 
