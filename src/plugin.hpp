@@ -32,6 +32,9 @@ extern Model* modelWeiiiDocumenta;
 extern Model* modelUniversalRhythm;
 extern Model* modelSongMode;
 extern Model* modelLaunchpad;
+#ifdef ARCH_MAC
+extern Model* modelMultiverse;
+#endif
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

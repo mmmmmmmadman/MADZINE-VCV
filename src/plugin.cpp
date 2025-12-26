@@ -34,4 +34,7 @@ void init(Plugin* p) {
     p->addModel(modelUniversalRhythm);
     p->addModel(modelSongMode);
     p->addModel(modelLaunchpad);
+#ifdef ARCH_MAC
+    p->addModel(modelMultiverse);
+#endif
 }

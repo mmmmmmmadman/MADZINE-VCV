@@ -644,6 +644,44 @@ struct UniversalRhythm : Module {
     VCAEnvelope externalVCA[8];  // One VCA per voice for external audio gating
     float currentMix[4] = {0.0f, 0.0f, 0.0f, 0.0f};  // Current mix value per role (0=internal, 1=external)
 
+    // v2.3.7: 3-tier Articulation helper functions
+    // Tier 1 (0-33%): Subtle - Ghost notes only
+    // Tier 2 (33-66%): Moderate - Ghost + Accent
+    // Tier 3 (66-100%): Expressive - Ghost + Accent + Articulation
+    float getGhostAmount() {
+        float art = params[ARTICULATION_PARAM].getValue();
+        if (art <= 0.33f) {
+            // 0-33%: Ghost ramps from 0 to 100%
+            return art / 0.33f;
+        }
+        // 33-100%: Ghost stays at 100%
+        return 1.0f;
+    }
+
+    float getAccentAmount() {
+        float art = params[ARTICULATION_PARAM].getValue();
+        if (art <= 0.33f) {
+            // 0-33%: No accent
+            return 0.0f;
+        }
+        if (art <= 0.66f) {
+            // 33-66%: Accent ramps from 0 to 100%
+            return (art - 0.33f) / 0.33f;
+        }
+        // 66-100%: Accent stays at 100%
+        return 1.0f;
+    }
+
+    float getArticulationAmount() {
+        float art = params[ARTICULATION_PARAM].getValue();
+        if (art <= 0.66f) {
+            // 0-66%: No articulation effects
+            return 0.0f;
+        }
+        // 66-100%: Articulation ramps from 0 to 100%
+        return (art - 0.66f) / 0.34f;
+    }
+
     UniversalRhythm() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -959,8 +997,8 @@ struct UniversalRhythm : Module {
             patternGen.generateAccents(patterns.patterns[r * 2], roleType, style);
             patternGen.generateAccents(patterns.patterns[r * 2 + 1], roleType, style);
 
-            // Add extra accents based on ACCENT_PARAM (0=none, 1=all onsets become accents)
-            float accentAmount = params[ACCENT_PROB_PARAM].getValue();
+            // v2.3.7: Use 3-tier Articulation system for accent and ghost
+            float accentAmount = getAccentAmount();
             if (accentAmount > 0.01f) {
                 for (int i = 0; i < patterns.patterns[r * 2].length; i++) {
                     // Only add accents to existing onsets that aren't already accented
@@ -982,8 +1020,8 @@ struct UniversalRhythm : Module {
                 }
             }
 
-            // Add ghost notes based on GHOST_PARAM (all roles with role-specific multipliers)
-            float ghostAmount = params[GHOST_PARAM].getValue();
+            // v2.3.7: Use 3-tier Articulation system for ghost notes
+            float ghostAmount = getGhostAmount();
             if (ghostAmount > 0.01f) {
                 float roleMultiplier = (r == 2 || r == 3) ? 1.0f : 0.5f;  // More for Groove/Lead
                 patternGen.addGhostNotes(patterns.patterns[r * 2], style, ghostAmount * roleMultiplier);
@@ -1178,8 +1216,8 @@ struct UniversalRhythm : Module {
         patternGen.generateAccents(patterns.patterns[role * 2], roleType, style);
         patternGen.generateAccents(patterns.patterns[role * 2 + 1], roleType, style);
 
-        // Add extra accents based on ACCENT_PARAM (0=none, 1=all onsets become accents)
-        float accentAmount = params[ACCENT_PROB_PARAM].getValue();
+        // v2.3.7: Use 3-tier Articulation system for accent and ghost
+        float accentAmount = getAccentAmount();
         if (accentAmount > 0.01f) {
             for (int i = 0; i < patterns.patterns[role * 2].length; i++) {
                 if (patterns.patterns[role * 2].hasOnsetAt(i) && !patterns.patterns[role * 2].accents[i]) {
@@ -1199,8 +1237,8 @@ struct UniversalRhythm : Module {
             }
         }
 
-        // Add ghost notes based on GHOST_PARAM (now applies to all roles)
-        float ghostAmount = params[GHOST_PARAM].getValue();
+        // v2.3.7: Use 3-tier Articulation system for ghost notes
+        float ghostAmount = getGhostAmount();
         if (ghostAmount > 0.01f) {
             // Apply more ghost notes to Groove and Lead roles
             float roleMultiplier = (role == WorldRhythm::GROOVE || role == WorldRhythm::LEAD) ? 1.0f : 0.5f;
@@ -1267,8 +1305,8 @@ struct UniversalRhythm : Module {
     // Uses ArticulationProfiles to select articulation based on style, role, and amount
     void triggerWithArticulation(int voice, float velocity, bool accent, float sampleRate,
                                   int role = -1, bool isStrongBeat = false) {
-        // Get articulation amount from parameter (0 = no articulation, 1 = max)
-        float articulationAmount = params[ARTICULATION_PARAM].getValue();
+        // v2.3.7: Use 3-tier Articulation system (only active in tier 3: 66-100%)
+        float articulationAmount = getArticulationAmount();
 
         // Determine role from voice if not provided
         if (role < 0) {
@@ -1959,7 +1997,12 @@ void URDynamicRoleTitle::draw(const DrawArgs &args) {
 
     if (module) {
         int baseParam = roleIndex * 5;
-        int styleIndex = static_cast<int>(module->params[UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam].getValue());
+        float styleValue = module->params[UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam].getValue();
+        // v2.3.7: Also read CV input so color updates when CV changes
+        if (module->inputs[UniversalRhythm::TIMELINE_STYLE_CV_INPUT + roleIndex * 4].isConnected()) {
+            styleValue += module->inputs[UniversalRhythm::TIMELINE_STYLE_CV_INPUT + roleIndex * 4].getVoltage();
+        }
+        int styleIndex = static_cast<int>(styleValue);
         styleIndex = clamp(styleIndex, 0, 9);
         color = STYLE_COLORS[styleIndex];
     }
@@ -1989,7 +2032,12 @@ void URStyleNameDisplay::draw(const DrawArgs &args) {
 
     if (module) {
         int baseParam = roleIndex * 5;
-        int styleIndex = static_cast<int>(module->params[UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam].getValue());
+        float styleValue = module->params[UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam].getValue();
+        // v2.3.7: Also read CV input so text updates when CV changes
+        if (module->inputs[UniversalRhythm::TIMELINE_STYLE_CV_INPUT + roleIndex * 4].isConnected()) {
+            styleValue += module->inputs[UniversalRhythm::TIMELINE_STYLE_CV_INPUT + roleIndex * 4].getVoltage();
+        }
+        int styleIndex = static_cast<int>(styleValue);
         styleIndex = clamp(styleIndex, 0, 9);
         color = STYLE_COLORS[styleIndex];
         styleName = STYLE_NAMES[styleIndex];
@@ -2172,20 +2220,13 @@ struct UniversalRhythmWidget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(fillX, ctrlY + 5), module, UniversalRhythm::FILL_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(fillX + 25, ctrlY + 5), module, UniversalRhythm::FILL_INPUT));
 
-        // Articulation section
+        // v2.3.7: Articulation section (3-tier: Ghost → Accent → Articulation)
+        // Uses same style as SPREAD (WhiteKnob)
         float artX = fillX + 25 + 35;  // FILL CV input + 35
-        addChild(new URTextLabel(Vec(artX - 24, ctrlLabelY), Vec(48, 12), "Articulation", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ARTICULATION_PARAM));
+        addChild(new URTextLabel(Vec(artX - 24, ctrlLabelY), Vec(48, 12), "ARTICULATION", 7.f, nvgRGB(255, 255, 255), true));
+        addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ARTICULATION_PARAM));
 
-        artX += 33;
-        addChild(new URTextLabel(Vec(artX - 13, ctrlLabelY), Vec(26, 12), "GHOST", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::GHOST_PARAM));
-
-        artX += 33;
-        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "ACCENT", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ACCENT_PROB_PARAM));
-
-        artX += 43;  // +10px extra spacing before SPREAD
+        artX += 43;  // Spacing before SPREAD
         addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "SPREAD", 7.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::SPREAD_PARAM));
 
