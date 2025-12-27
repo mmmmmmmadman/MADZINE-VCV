@@ -45,6 +45,10 @@ struct CellData {
     std::vector<float> waveformCache;
     bool waveformDirty = true;
 
+    // Loop clocks string cache (avoid snprintf every frame)
+    std::string loopClocksStr;
+    int loopClocksCached = -1;
+
     CellData() {
         buffer.reserve(MAX_BUFFER_SIZE);
     }
@@ -58,6 +62,16 @@ struct CellData {
         recordPosition = 0;
         waveformCache.clear();
         waveformDirty = true;
+        loopClocksStr.clear();
+        loopClocksCached = -1;
+    }
+
+    const std::string& getLoopClocksStr() {
+        if (loopClocksCached != loopClocks) {
+            loopClocksStr = std::to_string(loopClocks);
+            loopClocksCached = loopClocks;
+        }
+        return loopClocksStr;
     }
 
     void updateWaveformCache(int displayWidth) {
@@ -122,14 +136,14 @@ struct CellWidget : OpaqueWidget {
     int col = 0;
     float pressTime = 0.f;
     bool pressed = false;
-    // DEBUG flags
-    int debugFlags = 0;  // bit 0=button, 1=dragStart, 2=dragEnd, 3=dragDrop, 4=dragEnter
     static constexpr float HOLD_TIME = 0.5f;  // 500ms for clear
 
     // Static drag state (shared across all cells)
     static CellWidget* dragSource;
     static bool dragCopyMode;
     static Vec dragOffset;  // Track mouse offset from start
+    static int targetRow;   // Pre-calculated drag target
+    static int targetCol;
 
     CellWidget() {
         box.size = Vec(40, 40);
@@ -148,6 +162,8 @@ struct CellWidget : OpaqueWidget {
 CellWidget* CellWidget::dragSource = nullptr;
 bool CellWidget::dragCopyMode = false;
 Vec CellWidget::dragOffset = Vec(0, 0);
+int CellWidget::targetRow = -1;
+int CellWidget::targetCol = -1;
 
 struct Launchpad : Module {
     int panelTheme = -1;
@@ -306,9 +322,19 @@ struct Launchpad : Module {
             // Stop recording
             stopRecording();
         } else if (cell.state == CELL_PLAYING) {
-            // Stop playing
-            cell.state = CELL_HAS_CONTENT;
-            cell.playPosition = 0;
+            // Stop playing (with quantize)
+            int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
+            if (quantize == 0) {
+                // Free mode: immediate stop
+                cell.state = CELL_HAS_CONTENT;
+                cell.playPosition = 0;
+            } else {
+                // Quantize mode: queue for stop at next boundary
+                cell.state = CELL_STOP_QUEUED;
+            }
+        } else if (cell.state == CELL_STOP_QUEUED) {
+            // Cancel stop queue - resume playing
+            cell.state = CELL_PLAYING;
         } else if (cell.state == CELL_HAS_CONTENT || cell.state == CELL_QUEUED) {
             // Start playing (with quantize)
             int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
@@ -725,7 +751,6 @@ struct Launchpad : Module {
 void CellWidget::onButton(const event::Button& e) {
     // Must consume left-click to enable drag system
     if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_PRESS) {
-        debugFlags |= 1;  // DEBUG: bit 0
         e.consume(this);
     }
 }
@@ -733,7 +758,6 @@ void CellWidget::onButton(const event::Button& e) {
 void CellWidget::onDragStart(const event::DragStart& e) {
     if (e.button != GLFW_MOUSE_BUTTON_LEFT) return;
 
-    debugFlags |= 2;  // DEBUG: bit 1
     pressed = true;
     pressTime = 0.f;
     dragSource = this;
@@ -744,30 +768,29 @@ void CellWidget::onDragStart(const event::DragStart& e) {
 void CellWidget::onDragMove(const event::DragMove& e) {
     // Accumulate mouse movement
     dragOffset = dragOffset.plus(e.mouseDelta);
+
+    // Pre-calculate target cell (only once per move, not per cell per frame)
+    if (dragSource) {
+        const float cellSpacingX = 44.f;
+        const float cellSpacingY = 28.f;
+        int deltaCol = (int)std::round(dragOffset.x / cellSpacingX);
+        int deltaRow = (int)std::round(dragOffset.y / cellSpacingY);
+        targetRow = clamp(dragSource->row + deltaRow, 0, 7);
+        targetCol = clamp(dragSource->col + deltaCol, 0, 7);
+    }
 }
 
 void CellWidget::onDragEnd(const event::DragEnd& e) {
-    debugFlags |= 4;  // DEBUG: bit 2
-
     if (!module) {
         dragSource = nullptr;
+        targetRow = -1;
+        targetCol = -1;
         pressed = false;
         return;
     }
 
-    // Calculate target cell based on drag offset
-    // Cell spacing from LaunchpadWidget: 44px horizontal, 28px vertical
-    const float cellSpacingX = 44.f;
-    const float cellSpacingY = 28.f;
-
-    int deltaCol = (int)std::round(dragOffset.x / cellSpacingX);
-    int deltaRow = (int)std::round(dragOffset.y / cellSpacingY);
-
-    int targetRow = row + deltaRow;
-    int targetCol = col + deltaCol;
-
-    // Check if we moved to a different valid cell
-    bool movedToOtherCell = (deltaRow != 0 || deltaCol != 0) &&
+    // Check if we moved to a different valid cell (use pre-calculated target)
+    bool movedToOtherCell = (targetRow != row || targetCol != col) &&
                             targetRow >= 0 && targetRow < 8 &&
                             targetCol >= 0 && targetCol < 8;
 
@@ -791,13 +814,15 @@ void CellWidget::onDragEnd(const event::DragEnd& e) {
     // Reset state
     dragSource = nullptr;
     dragCopyMode = false;
+    targetRow = -1;
+    targetCol = -1;
     pressed = false;
 }
 
 void CellWidget::draw(const DrawArgs& args) {
     // Update press time (using frame time ~60fps)
     if (pressed) {
-        pressTime += 1.f / 60.f;  // Approximate frame time in seconds
+        pressTime += 1.f / 60.f;
     }
 
     // Get cell state
@@ -817,7 +842,6 @@ void CellWidget::draw(const DrawArgs& args) {
         default: bgColor = LaunchpadColors::EMPTY; break;
     }
 
-    // Draw cell background with depth effect
     float x = 0, y = 0, w = box.size.x, h = box.size.y;
 
     // Outer shadow
@@ -832,55 +856,25 @@ void CellWidget::draw(const DrawArgs& args) {
     nvgFillColor(args.vg, bgColor);
     nvgFill(args.vg);
 
-    // DEBUG: Show colored dots for each event
-    // Red=onButton, Yellow=onDragStart, Green=onDragEnd, Cyan=onDragDrop
-    if (debugFlags & 1) {  // onButton
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, 5, 5, 3);
-        nvgFillColor(args.vg, nvgRGB(255, 0, 0));
-        nvgFill(args.vg);
-    }
-    if (debugFlags & 2) {  // onDragStart
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, 12, 5, 3);
-        nvgFillColor(args.vg, nvgRGB(255, 255, 0));
-        nvgFill(args.vg);
-    }
-    if (debugFlags & 4) {  // onDragEnd
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, 19, 5, 3);
-        nvgFillColor(args.vg, nvgRGB(0, 255, 0));
-        nvgFill(args.vg);
-    }
-    if (debugFlags & 8) {  // onDragDrop
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, 26, 5, 3);
-        nvgFillColor(args.vg, nvgRGB(0, 255, 255));
-        nvgFill(args.vg);
-    }
-    debugFlags = 0;  // Reset after showing
-
     // Inner highlight (top-left)
     nvgBeginPath(args.vg);
     nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h / 2, 2);
     nvgFillColor(args.vg, nvgRGBA(255, 255, 255, 15));
     nvgFill(args.vg);
 
-    // Draw waveform if has content
-    if (module && (state == CELL_HAS_CONTENT || state == CELL_PLAYING || state == CELL_RECORDING || state == CELL_QUEUED || state == CELL_STOP_QUEUED)) {
+    // Draw waveform only when playing (performance optimization)
+    if (module && (state == CELL_PLAYING || state == CELL_STOP_QUEUED)) {
         drawWaveform(args, module->cells[row][col]);
     }
 
-    // Draw loop length indicator
+    // Draw loop length indicator (using cached string)
     if (module && module->cells[row][col].loopClocks > 0) {
-        char buf[8];
-        snprintf(buf, sizeof(buf), "%d", module->cells[row][col].loopClocks);
-
+        const std::string& loopStr = module->cells[row][col].getLoopClocksStr();
         nvgFontSize(args.vg, 9);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
         nvgFillColor(args.vg, nvgRGBA(255, 255, 255, 180));
-        nvgText(args.vg, w - 3, h - 2, buf, NULL);
+        nvgText(args.vg, w - 3, h - 2, loopStr.c_str(), NULL);
     }
 
     // Border
@@ -898,25 +892,17 @@ void CellWidget::draw(const DrawArgs& args) {
         nvgFill(args.vg);
     }
 
-    // Drag visual feedback
+    // Drag visual feedback (use pre-calculated targetRow/targetCol)
     if (dragSource && module) {
-        // Calculate target from dragOffset
-        const float cellSpacingX = 44.f;
-        const float cellSpacingY = 28.f;
-        int deltaCol = (int)std::round(dragOffset.x / cellSpacingX);
-        int deltaRow = (int)std::round(dragOffset.y / cellSpacingY);
-        int targetRow = dragSource->row + deltaRow;
-        int targetCol = dragSource->col + deltaCol;
-
         if (dragSource == this && module->cells[row][col].state != CELL_EMPTY) {
             // Source cell: yellow border
             nvgBeginPath(args.vg);
             nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
-            nvgStrokeColor(args.vg, nvgRGB(255, 255, 0));  // Yellow
+            nvgStrokeColor(args.vg, nvgRGB(255, 255, 0));
             nvgStrokeWidth(args.vg, 2.0f);
             nvgStroke(args.vg);
 
-            // Copy mode indicator "+" (check Shift in real-time)
+            // Copy mode indicator "+"
             if (APP->window->getMods() & GLFW_MOD_SHIFT) {
                 nvgFontSize(args.vg, 14);
                 nvgFontFaceId(args.vg, APP->window->uiFont->handle);
@@ -926,14 +912,13 @@ void CellWidget::draw(const DrawArgs& args) {
             }
         }
 
-        // Drop target: green border (if this is the target cell and different from source)
+        // Drop target: green border (use pre-calculated target, simple comparison)
         if (row == targetRow && col == targetCol &&
-            (deltaRow != 0 || deltaCol != 0) &&
-            targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8 &&
+            !(dragSource->row == row && dragSource->col == col) &&
             dragSource->module->cells[dragSource->row][dragSource->col].state != CELL_EMPTY) {
             nvgBeginPath(args.vg);
             nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
-            nvgStrokeColor(args.vg, nvgRGB(0, 255, 128));  // Green
+            nvgStrokeColor(args.vg, nvgRGB(0, 255, 128));
             nvgStrokeWidth(args.vg, 3.0f);
             nvgStroke(args.vg);
         }
@@ -960,12 +945,19 @@ void CellWidget::drawWaveform(const DrawArgs& args, CellData& cell) {
     float centerY = box.size.y / 2;
     float maxHeight = box.size.y / 2 - 4;  // Leave 4px margin top/bottom
 
-    // Draw actual waveform as connected line (±10V scaling)
+    // Find max amplitude for auto-scaling
+    float maxAmp = 0.001f;  // Minimum to avoid division by zero
+    for (int i = 0; i < displayWidth; i++) {
+        float absVal = std::abs(cell.waveformCache[i]);
+        if (absVal > maxAmp) maxAmp = absVal;
+    }
+
+    // Draw actual waveform as connected line (auto-scaled)
     nvgBeginPath(args.vg);
     bool first = true;
     for (int i = 0; i < displayWidth; i++) {
         float voltage = cell.waveformCache[i];
-        float y = centerY - (voltage / 10.f) * maxHeight;  // ±10V scaling
+        float y = centerY - (voltage / maxAmp) * maxHeight;  // Auto-scaled
         y = clamp(y, 2.f, box.size.y - 2.f);
 
         float x = 4 + i;
@@ -1033,7 +1025,7 @@ struct LaunchpadWidget : ModuleWidget {
         // Title labels (2x size compared to other modules)
         NVGcolor titleColor = nvgRGB(255, 200, 0);  // Yellow
         addChild(new LaunchpadLabel(Vec(0, 1), Vec(200, 30), "LAUNCHPAD", 24.f, titleColor, true));
-        addChild(new LaunchpadLabel(Vec(0, 26), Vec(200, 20), "MADZINE", 20.f, titleColor, false));
+        addChild(new LaunchpadLabel(Vec(160, 9), Vec(100, 20), "MADZINE", 20.f, titleColor, false));
 
         // Clock, Reset, Quantize - upper right (with labels)
         addChild(new LaunchpadLabel(Vec(475 - 25, 25), Vec(50, 12), "Clock", 9.f));
