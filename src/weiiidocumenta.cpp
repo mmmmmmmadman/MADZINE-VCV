@@ -311,6 +311,15 @@ struct WeiiiDocumenta : Module {
     float sampleHoldNormalized = 0.5f; // S&H歸一化值(0-1)
     float sampleHoldCV = 0.0f;         // S&H CV輸出（±10V with AMT）
 
+    // CV 調變顯示用
+    float thresholdCvMod = 0.0f;
+    float scanCvMod = 0.0f;
+    float feedbackCvMod = 0.0f;
+    float speedCvMod = 0.0f;
+    float polyCvMod = 0.0f;
+    float shAmountCvMod = 0.0f;
+    float shRateCvMod = 0.0f;
+
     // ===== Parameter smoothing to prevent zipper noise =====
     struct SmoothedParam {
         float value = 0.f;
@@ -579,8 +588,12 @@ struct WeiiiDocumenta : Module {
         // Threshold with CV
         float thresholdValue = params[THRESHOLD_PARAM].getValue();
         if (inputs[THRESHOLD_CV_INPUT].isConnected()) {
-            float thresholdCv = inputs[THRESHOLD_CV_INPUT].getVoltage();
-            thresholdValue = clamp(thresholdValue + thresholdCv, 0.0f, 10.0f);
+            float cv = inputs[THRESHOLD_CV_INPUT].getVoltage();
+            float atten = params[THRESHOLD_CV_ATTEN_PARAM].getValue();
+            thresholdValue = clamp(thresholdValue + cv * atten, 0.0f, 10.0f);
+            thresholdCvMod = clamp(cv / 5.0f * atten, -1.0f, 1.0f);
+        } else {
+            thresholdCvMod = 0.0f;
         }
         smoothedThreshold.setTarget(thresholdValue);
 
@@ -589,9 +602,12 @@ struct WeiiiDocumenta : Module {
         // Feedback Amount with CV
         float feedbackValue = params[FEEDBACK_AMOUNT_PARAM].getValue();
         if (inputs[FEEDBACK_AMOUNT_CV_INPUT].isConnected()) {
-            float feedbackCv = inputs[FEEDBACK_AMOUNT_CV_INPUT].getVoltage() / 10.0f; // 0-10V -> 0-1
+            float cv = inputs[FEEDBACK_AMOUNT_CV_INPUT].getVoltage();
             float feedbackAtten = params[FEEDBACK_AMOUNT_CV_ATTEN_PARAM].getValue();
-            feedbackValue = clamp(feedbackValue + feedbackCv * feedbackAtten, 0.0f, 1.0f);
+            feedbackValue = clamp(feedbackValue + (cv / 10.0f) * feedbackAtten, 0.0f, 1.0f);
+            feedbackCvMod = clamp(cv / 5.0f * feedbackAtten, -1.0f, 1.0f);
+        } else {
+            feedbackCvMod = 0.0f;
         }
         smoothedFeedbackAmount.setTarget(feedbackValue);
 
@@ -636,8 +652,11 @@ struct WeiiiDocumenta : Module {
         // ===== Polyphonic voice management =====
         float polyValue = params[POLY_PARAM].getValue();
         if (inputs[POLY_CV_INPUT].isConnected()) {
-            float polyCv = inputs[POLY_CV_INPUT].getVoltage() / 10.0f * 7.0f; // 0-10V -> 0-7 additional voices
-            polyValue = clamp(polyValue + polyCv, 1.0f, 8.0f);
+            float polyCv = inputs[POLY_CV_INPUT].getVoltage();
+            polyValue = clamp(polyValue + polyCv / 10.0f * 7.0f, 1.0f, 8.0f); // 0-10V -> 0-7 additional voices
+            polyCvMod = clamp(polyCv / 5.0f, -1.0f, 1.0f);
+        } else {
+            polyCvMod = 0.0f;
         }
         int newNumVoices = (int)std::round(polyValue);
         newNumVoices = clamp(newNumVoices, 1, 8);
@@ -809,9 +828,12 @@ struct WeiiiDocumenta : Module {
 
             // 處理 SCAN CV 輸入
             if (inputs[SCAN_CV_INPUT].isConnected()) {
-                float cv = inputs[SCAN_CV_INPUT].getVoltage() / 10.0f;  // 0-10V -> 0-1
+                float cv = inputs[SCAN_CV_INPUT].getVoltage();
                 float atten = params[SCAN_CV_ATTEN_PARAM].getValue();
-                scanValue = clamp(scanValue + cv * atten, 0.0f, 1.0f);
+                scanValue = clamp(scanValue + (cv / 10.0f) * atten, 0.0f, 1.0f);
+                scanCvMod = clamp(cv / 5.0f * atten, -1.0f, 1.0f);
+            } else {
+                scanCvMod = 0.0f;
             }
 
             // 處理 S&H 內建調變 Scan
@@ -874,6 +896,9 @@ struct WeiiiDocumenta : Module {
                 if (inputs[SPEED_CV_INPUT].isConnected()) {
                     float speedCv = inputs[SPEED_CV_INPUT].getVoltage();
                     playbackSpeed = clamp(playbackSpeed + speedCv, -8.0f, 8.0f);
+                    speedCvMod = clamp(speedCv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    speedCvMod = 0.0f;
                 }
 
                 // 檢查是否超出範圍（支援正反向播放）
@@ -1119,6 +1144,9 @@ struct WeiiiDocumenta : Module {
             float rateCv = inputs[SH_RATE_CV_INPUT].getVoltage();  // 0-10V
             float rateAtten = params[SH_RATE_CV_ATTEN_PARAM].getValue();
             shRateLog = clamp(shRateLog + rateCv * rateAtten, std::log2(0.01f), std::log2(100.0f));
+            shRateCvMod = clamp(rateCv / 5.0f * rateAtten, -1.0f, 1.0f);
+        } else {
+            shRateCvMod = 0.0f;
         }
         float shRate = std::pow(2.f, shRateLog);  // Convert from log2 to Hz
 
@@ -1148,9 +1176,12 @@ struct WeiiiDocumenta : Module {
         // Get S&H Gain parameter with CV modulation (0-5x gain)
         float shGain = params[SH_AMOUNT_PARAM].getValue();
         if (inputs[SH_AMOUNT_CV_INPUT].isConnected()) {
-            float gainCv = inputs[SH_AMOUNT_CV_INPUT].getVoltage() * 0.5f;  // 0-10V -> 0-5x
+            float gainCv = inputs[SH_AMOUNT_CV_INPUT].getVoltage();
             float gainAtten = params[SH_AMOUNT_CV_ATTEN_PARAM].getValue();
-            shGain = clamp(shGain + gainCv * gainAtten, 0.0f, 5.0f);
+            shGain = clamp(shGain + gainCv * 0.5f * gainAtten, 0.0f, 5.0f);  // 0-10V -> 0-5x
+            shAmountCvMod = clamp(gainCv / 5.0f * gainAtten, -1.0f, 1.0f);
+        } else {
+            shAmountCvMod = 0.0f;
         }
 
         // Apply gain to bipolar output (±10V range)
@@ -2213,6 +2244,15 @@ struct WhiteBottomPanel : TransparentWidget {
 struct WeiiiDocumentaWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
 
+    // CV display knob pointers
+    madzine::widgets::BaseCustomKnob* thresholdKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* scanKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* feedbackKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* speedKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* polyKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* shAmountKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* shRateKnob = nullptr;
+
     WeiiiDocumentaWidget(WeiiiDocumenta* module) {
         setModule(module);
         panelThemeHelper.init(this, "12HP");
@@ -2295,20 +2335,23 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         // Row 1: THRSH / SCAN / FDBK (往下 Y+20)
         // THRESH (WhiteKnob - 主要參數)
         addChild(new EnhancedTextLabel(Vec(col1-15, 125), Vec(30, 10), "THRSH", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<WhiteKnob>(Vec(col1, 149), module, WeiiiDocumenta::THRESHOLD_PARAM));
+        thresholdKnob = createParamCentered<WhiteKnob>(Vec(col1, 149), module, WeiiiDocumenta::THRESHOLD_PARAM);
+        addParam(thresholdKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col1, 176), module, WeiiiDocumenta::THRESHOLD_CV_INPUT));
         addChild(new EnhancedTextLabel(Vec(col1-25, 188), Vec(50, 10), "min slice time", 5.f, nvgRGB(255, 255, 255), false));
         addParam(createParamCentered<Trimpot>(Vec(col1, 205), module, WeiiiDocumenta::THRESHOLD_CV_ATTEN_PARAM));
 
         // SCAN (GrayKnob - 手動切片瀏覽)
         addChild(new EnhancedTextLabel(Vec(col2-10, 125), Vec(20, 10), "SCAN", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(col2, 149), module, WeiiiDocumenta::SCAN_PARAM));
+        scanKnob = createParamCentered<MediumGrayKnob>(Vec(col2, 149), module, WeiiiDocumenta::SCAN_PARAM);
+        addParam(scanKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col2, 176), module, WeiiiDocumenta::SCAN_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col2, 199), module, WeiiiDocumenta::SCAN_CV_ATTEN_PARAM));
 
         // FEEDBACK (GrayKnob - 輔助參數)
         addChild(new EnhancedTextLabel(Vec(col3-10, 125), Vec(20, 10), "FDBK", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(col3, 149), module, WeiiiDocumenta::FEEDBACK_AMOUNT_PARAM));
+        feedbackKnob = createParamCentered<MediumGrayKnob>(Vec(col3, 149), module, WeiiiDocumenta::FEEDBACK_AMOUNT_PARAM);
+        addParam(feedbackKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col3, 176), module, WeiiiDocumenta::FEEDBACK_AMOUNT_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col3, 199), module, WeiiiDocumenta::FEEDBACK_AMOUNT_CV_ATTEN_PARAM));
 
@@ -2324,13 +2367,15 @@ struct WeiiiDocumentaWidget : ModuleWidget {
 
         // AMT (WhiteKnob - S&H 輸出大小)
         addChild(new EnhancedTextLabel(Vec(col2-10, 238), Vec(20, 10), "AMT", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<WhiteKnob>(Vec(col2, 262), module, WeiiiDocumenta::SH_AMOUNT_PARAM));
+        shAmountKnob = createParamCentered<WhiteKnob>(Vec(col2, 262), module, WeiiiDocumenta::SH_AMOUNT_PARAM);
+        addParam(shAmountKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col2, 290), module, WeiiiDocumenta::SH_AMOUNT_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col2, 313), module, WeiiiDocumenta::SH_AMOUNT_CV_ATTEN_PARAM));
 
         // RATE (GrayKnob - S&H 速度)
         addChild(new EnhancedTextLabel(Vec(col3-10, 238), Vec(20, 10), "RATE", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(col3, 260), module, WeiiiDocumenta::SH_RATE_PARAM));
+        shRateKnob = createParamCentered<MediumGrayKnob>(Vec(col3, 260), module, WeiiiDocumenta::SH_RATE_PARAM);
+        addParam(shRateKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col3, 290), module, WeiiiDocumenta::SH_RATE_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col3, 313), module, WeiiiDocumenta::SH_RATE_CV_ATTEN_PARAM));
 
@@ -2355,11 +2400,13 @@ struct WeiiiDocumentaWidget : ModuleWidget {
 
         // Speed 控制
         addChild(new EnhancedTextLabel(Vec(40, 332), Vec(30, 10), "SPEED", 6.f, nvgRGB(255, 133, 133), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(55, 354), module, WeiiiDocumenta::SPEED_PARAM));
+        speedKnob = createParamCentered<MediumGrayKnob>(Vec(55, 354), module, WeiiiDocumenta::SPEED_PARAM);
+        addParam(speedKnob);
 
         // Polyphonic 控制 (X=120 同 S&H Amount CV Input)
         addChild(new EnhancedTextLabel(Vec(100, 332), Vec(40, 10), "POLY", 6.f, nvgRGB(255, 133, 133), true));
-        addParam(createParamCentered<MediumGrayKnob>(Vec(120, 354), module, WeiiiDocumenta::POLY_PARAM));
+        polyKnob = createParamCentered<MediumGrayKnob>(Vec(120, 354), module, WeiiiDocumenta::POLY_PARAM);
+        addParam(polyKnob);
 
         // CV inputs 垂直排列在兩旋鈕中間 (X=88), Y對齊 I/L O/L (343) 和 I/R O/R (368)
         addInput(createInputCentered<PJ301MPort>(Vec(88, 343), module, WeiiiDocumenta::SPEED_CV_INPUT));
@@ -2378,6 +2425,23 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         WeiiiDocumenta* module = dynamic_cast<WeiiiDocumenta*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV display updates
+            auto updateKnob = [&](madzine::widgets::BaseCustomKnob* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(thresholdKnob, WeiiiDocumenta::THRESHOLD_CV_INPUT, module->thresholdCvMod);
+            updateKnob(scanKnob, WeiiiDocumenta::SCAN_CV_INPUT, module->scanCvMod);
+            updateKnob(feedbackKnob, WeiiiDocumenta::FEEDBACK_AMOUNT_CV_INPUT, module->feedbackCvMod);
+            updateKnob(speedKnob, WeiiiDocumenta::SPEED_CV_INPUT, module->speedCvMod);
+            updateKnob(polyKnob, WeiiiDocumenta::POLY_CV_INPUT, module->polyCvMod);
+            updateKnob(shAmountKnob, WeiiiDocumenta::SH_AMOUNT_CV_INPUT, module->shAmountCvMod);
+            updateKnob(shRateKnob, WeiiiDocumenta::SH_RATE_CV_INPUT, module->shRateCvMod);
         }
         ModuleWidget::step();
     }

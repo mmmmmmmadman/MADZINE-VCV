@@ -83,6 +83,10 @@ struct Quantizer : Module {
     bool hasDirectional = false;
     int currentPreset = 0;
 
+    // CV 調變顯示用
+    float scaleCvMod = 0.0f;
+    float offsetCvMod = 0.0f;
+
     // Note names for 2 octaves
     static constexpr const char* NOTE_NAMES[24] = {
         "C1", "C#1", "D1", "D#1", "E1", "F1", "F#1", "G1", "G#1", "A1", "A#1", "B1",
@@ -135,11 +139,21 @@ struct Quantizer : Module {
     void process(const ProcessArgs& args) override {
         bool playing[24] = {};
         float scale = params[SCALE_PARAM].getValue();
-        if (inputs[SCALE_CV_INPUT].isConnected())
-            scale += inputs[SCALE_CV_INPUT].getVoltage() * 0.2f;  // ±1V = ±0.2 scale
+        if (inputs[SCALE_CV_INPUT].isConnected()) {
+            float cv = inputs[SCALE_CV_INPUT].getVoltage();
+            scale += cv * 0.2f;  // ±1V = ±0.2 scale
+            scaleCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            scaleCvMod = 0.0f;
+        }
         float offset = params[OFFSET_PARAM].getValue();
-        if (inputs[OFFSET_CV_INPUT].isConnected())
-            offset += inputs[OFFSET_CV_INPUT].getVoltage();
+        if (inputs[OFFSET_CV_INPUT].isConnected()) {
+            float cv = inputs[OFFSET_CV_INPUT].getVoltage();
+            offset += cv;
+            offsetCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            offsetCvMod = 0.0f;
+        }
 
         for (int t = 0; t < 3; t++) {
             int ch = std::max(inputs[PITCH_INPUT + t].getChannels(), 1);
@@ -464,6 +478,8 @@ struct NoteRow : Widget {
 
 struct QuantizerWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    madzine::widgets::MediumGrayKnob* scaleKnob = nullptr;
+    madzine::widgets::MediumGrayKnob* offsetKnob = nullptr;
 
     QuantizerWidget(Quantizer* module) {
         setModule(module);
@@ -478,11 +494,13 @@ struct QuantizerWidget : ModuleWidget {
 
         // Knobs area with labels (using MediumGrayKnob like MADDY+)
         addChild(new EnhancedTextLabel(Vec(0, 32), Vec(30, 10), "Amount", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(15, 52), module, Quantizer::SCALE_PARAM));
+        scaleKnob = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(15, 52), module, Quantizer::SCALE_PARAM);
+        addParam(scaleKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(15, 76), module, Quantizer::SCALE_CV_INPUT));
 
         addChild(new EnhancedTextLabel(Vec(30, 32), Vec(30, 10), "Offset", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(45, 52), module, Quantizer::OFFSET_PARAM));
+        offsetKnob = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(45, 52), module, Quantizer::OFFSET_PARAM);
+        addParam(offsetKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(45, 76), module, Quantizer::OFFSET_CV_INPUT));
 
         // Note rows (Y: 88-328, 24 rows, ~10px each)
@@ -522,8 +540,21 @@ struct QuantizerWidget : ModuleWidget {
     }
 
     void step() override {
-        if (auto* m = dynamic_cast<Quantizer*>(module))
+        if (auto* m = dynamic_cast<Quantizer*>(module)) {
             panelThemeHelper.step(m);
+
+            // 更新 CV 調變顯示
+            auto updateKnob = [&](madzine::widgets::MediumGrayKnob* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = m->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(scaleKnob, Quantizer::SCALE_CV_INPUT, m->scaleCvMod);
+            updateKnob(offsetKnob, Quantizer::OFFSET_CV_INPUT, m->offsetCvMod);
+        }
         ModuleWidget::step();
     }
 

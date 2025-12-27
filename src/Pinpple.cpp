@@ -499,6 +499,11 @@ public:
 
     dsp::SchmittTrigger muteTrigger;
     bool muteState = false;
+
+    // CV 調變顯示用
+    float freqCvMod = 0.0f;
+    float resonanceCvMod = 0.0f;
+    float fmAmountCvMod = 0.0f;
     
     Pinpple() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -548,6 +553,9 @@ public:
         if (inputs[FREQ_CV_INPUT].isConnected()) {
             float freqCVAttenuation = params[FREQ_CV_ATTEN_PARAM].getValue();
             freqCV = inputs[FREQ_CV_INPUT].getVoltage() * freqCVAttenuation;
+            freqCvMod = clamp(freqCV / 5.0f, -1.0f, 1.0f);
+        } else {
+            freqCvMod = 0.0f;
         }
         float finalFreq = clamp(freqParam + freqCV * 0.1f + randomMod.freqOffset, 0.0f, 1.0f);
         
@@ -556,6 +564,9 @@ public:
         if (inputs[RESONANCE_CV_INPUT].isConnected()) {
             float resonanceCVAttenuation = params[RESONANCE_CV_ATTEN_PARAM].getValue();
             resonanceCV = inputs[RESONANCE_CV_INPUT].getVoltage() / 10.0f * resonanceCVAttenuation;
+            resonanceCvMod = clamp(inputs[RESONANCE_CV_INPUT].getVoltage() * resonanceCVAttenuation / 5.0f, -1.0f, 1.0f);
+        } else {
+            resonanceCvMod = 0.0f;
         }
         float finalResonance = clamp(resonanceParam + resonanceCV + randomMod.decayOffset, 0.0f, 1.0f);
         
@@ -565,6 +576,9 @@ public:
         if (inputs[FM_MOD_CV_INPUT].isConnected()) {
             float fmModCVAttenuation = params[FM_MOD_CV_ATTEN_PARAM].getValue();
             fmModCV = inputs[FM_MOD_CV_INPUT].getVoltage() / 10.0f * fmModCVAttenuation;
+            fmAmountCvMod = clamp(inputs[FM_MOD_CV_INPUT].getVoltage() * fmModCVAttenuation / 5.0f, -1.0f, 1.0f);
+        } else {
+            fmAmountCvMod = 0.0f;
         }
         
         float dynamicFMAmount = clamp(fmAmountParam + fmModCV, 0.0f, 1.0f);
@@ -729,6 +743,9 @@ struct WhiteBackgroundBox : Widget {
 
 struct PinppleWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    PinppleRandomizedKnob* freqKnob = nullptr;
+    PinppleRandomizedKnob* resonanceKnob = nullptr;
+    PinppleRandomizedKnob* fmAmountKnob = nullptr;
 
     PinppleWidget(Pinpple* module) {
         setModule(module);
@@ -746,19 +763,22 @@ struct PinppleWidget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX + 15, 40), module, Pinpple::VOLUME_PARAM));
         
         addChild(new EnhancedTextLabel(Vec(0, 50), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 84), module, Pinpple::FREQ_PARAM));
+        freqKnob = createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 84), module, Pinpple::FREQ_PARAM);
+        addParam(freqKnob);
         
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 108), module, Pinpple::FREQ_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 108), module, Pinpple::FREQ_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 123), Vec(box.size.x, 20), "DECAY", 12.f, nvgRGB(255, 255, 255), true));
-addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 155), module, Pinpple::RESONANCE_PARAM));
+        resonanceKnob = createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 155), module, Pinpple::RESONANCE_PARAM);
+        addParam(resonanceKnob);
 
 addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 179), module, Pinpple::RESONANCE_CV_ATTEN_PARAM));
 addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 179), module, Pinpple::RESONANCE_CV_INPUT));
         
         addChild(new EnhancedTextLabel(Vec(0, 194), Vec(box.size.x, 20), "FM AMT", 12.f, nvgRGB(255, 255, 255), true));
-addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, Pinpple::FM_AMOUNT_PARAM));
+        fmAmountKnob = createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, Pinpple::FM_AMOUNT_PARAM);
+        addParam(fmAmountKnob);
         
       
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 265), module, Pinpple::FM_INPUT));
@@ -815,6 +835,19 @@ addParam(createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, P
         Pinpple* module = dynamic_cast<Pinpple*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 CV 調變顯示
+            auto updateKnob = [&](PinppleRandomizedKnob* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(freqKnob, Pinpple::FREQ_CV_INPUT, module->freqCvMod);
+            updateKnob(resonanceKnob, Pinpple::RESONANCE_CV_INPUT, module->resonanceCvMod);
+            updateKnob(fmAmountKnob, Pinpple::FM_MOD_CV_INPUT, module->fmAmountCvMod);
         }
         ModuleWidget::step();
     }

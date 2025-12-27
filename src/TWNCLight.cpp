@@ -196,7 +196,11 @@ struct TWNCLight : Module {
     };
 
     dsp::SchmittTrigger clockTrigger;
-    
+
+    // CV 調變顯示用
+    float drumDecayCvMod = 0.0f;
+    float hatsDecayCvMod = 0.0f;
+
     float globalClockSeconds = 0.5f;
     float secondsSinceLastClock = -1.0f;
     int globalClockCount = 0;
@@ -519,8 +523,12 @@ struct TWNCLight : Module {
             if (i == 0) {
                 float decayParam = params[TRACK1_DECAY_PARAM].getValue();
                 if (inputs[DRUM_DECAY_CV_INPUT].isConnected()) {
-                    decayParam += inputs[DRUM_DECAY_CV_INPUT].getVoltage() / 10.0f;
+                    float cv = inputs[DRUM_DECAY_CV_INPUT].getVoltage();
+                    decayParam += cv / 10.0f;
                     decayParam = clamp(decayParam, 0.01f, 2.0f);
+                    drumDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    drumDecayCvMod = 0.0f;
                 }
                 float shapeParam = params[TRACK1_SHAPE_PARAM].getValue();
                 
@@ -537,8 +545,12 @@ struct TWNCLight : Module {
             } else {
                 float decayParam = params[TRACK2_DECAY_PARAM].getValue();
                 if (inputs[HATS_DECAY_CV_INPUT].isConnected()) {
-                    decayParam += inputs[HATS_DECAY_CV_INPUT].getVoltage() / 10.0f;
+                    float cv = inputs[HATS_DECAY_CV_INPUT].getVoltage();
+                    decayParam += cv / 10.0f;
                     decayParam = clamp(decayParam, 0.01f, 2.0f);
+                    hatsDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    hatsDecayCvMod = 0.0f;
                 }
                 float shapeParam = params[TRACK2_SHAPE_PARAM].getValue();
                 
@@ -554,6 +566,8 @@ struct TWNCLight : Module {
 
 struct TWNCLightWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    madzine::widgets::StandardBlackKnob26* drumDecayKnob = nullptr;
+    madzine::widgets::StandardBlackKnob26* hatsDecayKnob = nullptr;
 
     TWNCLightWidget(TWNCLight* module) {
         setModule(module);
@@ -586,7 +600,8 @@ struct TWNCLightWidget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, drumY + 69), module, TWNCLight::VCA_DECAY_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 84), Vec(20, 10), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, drumY + 105), module, TWNCLight::TRACK1_DECAY_PARAM));
+        drumDecayKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, drumY + 105), module, TWNCLight::TRACK1_DECAY_PARAM);
+        addParam(drumDecayKnob);
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 84), Vec(20, 10), "D.D", 5.f, nvgRGB(255, 133, 133), true));
         addInput(createInputCentered<PJ301MPort>(Vec(45, drumY + 105), module, TWNCLight::DRUM_DECAY_CV_INPUT));
@@ -604,7 +619,8 @@ struct TWNCLightWidget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(15, hatsY + 69), module, TWNCLight::TRACK2_DIVMULT_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 48), Vec(20, 10), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, hatsY + 69), module, TWNCLight::TRACK2_DECAY_PARAM));
+        hatsDecayKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, hatsY + 69), module, TWNCLight::TRACK2_DECAY_PARAM);
+        addParam(hatsDecayKnob);
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 84), Vec(20, 10), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, hatsY + 105), module, TWNCLight::TRACK2_SHAPE_PARAM));
@@ -624,6 +640,18 @@ struct TWNCLightWidget : ModuleWidget {
         TWNCLight* module = dynamic_cast<TWNCLight*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 CV 調變顯示
+            auto updateKnob = [&](madzine::widgets::StandardBlackKnob26* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(drumDecayKnob, TWNCLight::DRUM_DECAY_CV_INPUT, module->drumDecayCvMod);
+            updateKnob(hatsDecayKnob, TWNCLight::HATS_DECAY_CV_INPUT, module->hatsDecayCvMod);
         }
         ModuleWidget::step();
     }

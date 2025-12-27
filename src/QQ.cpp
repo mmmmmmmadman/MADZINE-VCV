@@ -55,6 +55,11 @@ struct QQ : Module {
 
     TrackState tracks[3];
 
+    // CV 調變顯示用
+    float track1DecayCvMod = 0.0f;
+    float track2DecayCvMod = 0.0f;
+    float track3DecayCvMod = 0.0f;
+
     bool retriggerEnabled = false;  // Retrigger option
     static constexpr int SCOPE_BUFFER_SIZE = 128;
     
@@ -183,6 +188,9 @@ struct QQ : Module {
                     float attenuation = params[TRACK1_DECAY_CV_ATTEN_PARAM].getValue();
                     decayTime += cv / 10.f * 2.f * attenuation; // CV range with attenuator
                     decayTime = clamp(decayTime, 0.01f, 2.f);
+                    track1DecayCvMod = clamp(cv / 5.0f * attenuation, -1.0f, 1.0f);
+                } else {
+                    track1DecayCvMod = 0.0f;
                 }
                 shapeParam = params[TRACK1_SHAPE_PARAM].getValue();
             } else if (i == 1) {
@@ -193,6 +201,9 @@ struct QQ : Module {
                     float attenuation = params[TRACK2_DECAY_CV_ATTEN_PARAM].getValue();
                     decayTime += cv / 10.f * 2.f * attenuation; // CV range with attenuator
                     decayTime = clamp(decayTime, 0.01f, 2.f);
+                    track2DecayCvMod = clamp(cv / 5.0f * attenuation, -1.0f, 1.0f);
+                } else {
+                    track2DecayCvMod = 0.0f;
                 }
                 shapeParam = params[TRACK2_SHAPE_PARAM].getValue();
             } else {
@@ -203,6 +214,9 @@ struct QQ : Module {
                     float attenuation = params[TRACK3_DECAY_CV_ATTEN_PARAM].getValue();
                     decayTime += cv / 10.f * 2.f * attenuation; // CV range with attenuator
                     decayTime = clamp(decayTime, 0.01f, 2.f);
+                    track3DecayCvMod = clamp(cv / 5.0f * attenuation, -1.0f, 1.0f);
+                } else {
+                    track3DecayCvMod = 0.0f;
                 }
                 shapeParam = params[TRACK3_SHAPE_PARAM].getValue();
             }
@@ -451,6 +465,9 @@ struct QQScopeDisplay : LedDisplay {
 
 struct QQWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    StandardBlackKnob* track1DecayKnob = nullptr;
+    StandardBlackKnob* track2DecayKnob = nullptr;
+    StandardBlackKnob* track3DecayKnob = nullptr;
 
     QQWidget(QQ* module) {
         setModule(module);
@@ -471,7 +488,8 @@ struct QQWidget : ModuleWidget {
         addChild(new CVConnectionLine(Vec(0, 0), Vec(box.size.x, 120), 1));
         
         addChild(new EnhancedTextLabel(Vec(5, 55), Vec(20, 20), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(15, 85), module, QQ::TRACK1_DECAY_TIME_PARAM));
+        track1DecayKnob = createParamCentered<StandardBlackKnob>(Vec(15, 85), module, QQ::TRACK1_DECAY_TIME_PARAM);
+        addParam(track1DecayKnob);
         
         // Track 1 Decay CV input (moved up 2px)
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 63), module, QQ::TRACK1_DECAY_CV_INPUT));
@@ -490,7 +508,8 @@ struct QQWidget : ModuleWidget {
         addChild(new CVConnectionLine(Vec(0, 0), Vec(box.size.x, 200), 2));
         
         addChild(new EnhancedTextLabel(Vec(5, 135), Vec(20, 20), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(15, 165), module, QQ::TRACK2_DECAY_TIME_PARAM));
+        track2DecayKnob = createParamCentered<StandardBlackKnob>(Vec(15, 165), module, QQ::TRACK2_DECAY_TIME_PARAM);
+        addParam(track2DecayKnob);
         
         // Track 2 Decay CV input
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 143), module, QQ::TRACK2_DECAY_CV_INPUT));
@@ -509,7 +528,8 @@ struct QQWidget : ModuleWidget {
         addChild(new CVConnectionLine(Vec(0, 0), Vec(box.size.x, 280), 3));
         
         addChild(new EnhancedTextLabel(Vec(5, 215), Vec(20, 20), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob>(Vec(15, 245), module, QQ::TRACK3_DECAY_TIME_PARAM));
+        track3DecayKnob = createParamCentered<StandardBlackKnob>(Vec(15, 245), module, QQ::TRACK3_DECAY_TIME_PARAM);
+        addParam(track3DecayKnob);
         
         // Track 3 Decay CV input
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 223), module, QQ::TRACK3_DECAY_CV_INPUT));
@@ -542,6 +562,19 @@ struct QQWidget : ModuleWidget {
         QQ* module = dynamic_cast<QQ*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV 調變顯示更新
+            auto updateKnob = [&](StandardBlackKnob* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(track1DecayKnob, QQ::TRACK1_DECAY_CV_INPUT, module->track1DecayCvMod);
+            updateKnob(track2DecayKnob, QQ::TRACK2_DECAY_CV_INPUT, module->track2DecayCvMod);
+            updateKnob(track3DecayKnob, QQ::TRACK3_DECAY_CV_INPUT, module->track3DecayCvMod);
         }
         ModuleWidget::step();
     }

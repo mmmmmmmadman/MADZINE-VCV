@@ -409,6 +409,12 @@ struct TWNC : Module {
     
     dsp::PulseGenerator track1FlashPulse;
     dsp::PulseGenerator track2FlashPulse;
+
+    // CV 調變顯示用
+    float drumFreqCvMod = 0.0f;
+    float drumDecayCvMod = 0.0f;
+    float hatsFreqCvMod = 0.0f;
+    float hatsDecayCvMod = 0.0f;
     
     OversampledSineVCO sineVCO;
     OversampledSineVCO sineVCO2;
@@ -733,8 +739,12 @@ struct TWNC : Module {
             if (i == 0) {
                 float decayParam = params[TRACK1_DECAY_PARAM].getValue();
                 if (inputs[DRUM_DECAY_CV_INPUT].isConnected()) {
-                    decayParam += inputs[DRUM_DECAY_CV_INPUT].getVoltage() / 10.0f;
+                    float cv = inputs[DRUM_DECAY_CV_INPUT].getVoltage();
+                    decayParam += cv / 10.0f;
                     decayParam = clamp(decayParam, 0.01f, 2.0f);
+                    drumDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    drumDecayCvMod = 0.0f;
                 }
                 float shapeParam = params[TRACK1_SHAPE_PARAM].getValue();
                 
@@ -757,7 +767,11 @@ struct TWNC : Module {
                 
                 float freqParam = params[TRACK1_FREQ_PARAM].getValue();
                 if (inputs[DRUM_FREQ_CV_INPUT].isConnected()) {
-                    freqParam += inputs[DRUM_FREQ_CV_INPUT].getVoltage();
+                    float cv = inputs[DRUM_FREQ_CV_INPUT].getVoltage();
+                    freqParam += cv;
+                    drumFreqCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    drumFreqCvMod = 0.0f;
                 }
                 freqParam = std::pow(2.0f, freqParam);
                 
@@ -784,8 +798,12 @@ struct TWNC : Module {
             } else {
                 float decayParam = params[TRACK2_DECAY_PARAM].getValue();
                 if (inputs[HATS_DECAY_CV_INPUT].isConnected()) {
-                    decayParam += inputs[HATS_DECAY_CV_INPUT].getVoltage() / 10.0f;
+                    float cv = inputs[HATS_DECAY_CV_INPUT].getVoltage();
+                    decayParam += cv / 10.0f;
                     decayParam = clamp(decayParam, 0.01f, 2.0f);
+                    hatsDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    hatsDecayCvMod = 0.0f;
                 }
                 float shapeParam = params[TRACK2_SHAPE_PARAM].getValue();
                 
@@ -809,7 +827,11 @@ struct TWNC : Module {
                 
                 float freqParam = params[TRACK2_FREQ_PARAM].getValue();
                 if (inputs[HATS_FREQ_CV_INPUT].isConnected()) {
-                    freqParam += inputs[HATS_FREQ_CV_INPUT].getVoltage();
+                    float cv = inputs[HATS_FREQ_CV_INPUT].getVoltage();
+                    freqParam += cv;
+                    hatsFreqCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                } else {
+                    hatsFreqCvMod = 0.0f;
                 }
                 freqParam = std::pow(2.0f, freqParam);
                 float audioOutput = sineVCO2.process(freqParam, noiseBlend);
@@ -834,6 +856,10 @@ struct TWNC : Module {
 
 struct TWNCWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    TechnoStandardBlackKnob30* drumFreqKnob = nullptr;
+    TechnoStandardBlackKnob30* drumDecayKnob = nullptr;
+    TechnoStandardBlackKnob30* hatsFreqKnob = nullptr;
+    TechnoStandardBlackKnob30* hatsDecayKnob = nullptr;
 
     TWNCWidget(TWNC* module) {
         setModule(module);
@@ -862,7 +888,8 @@ struct TWNCWidget : ModuleWidget {
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(20, track1Y + 44), module, TWNC::TRACK1_FILL_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 20), Vec(30, 10), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(60, track1Y + 43), module, TWNC::TRACK1_FREQ_PARAM));
+        drumFreqKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(60, track1Y + 43), module, TWNC::TRACK1_FREQ_PARAM);
+        addParam(drumFreqKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 20), Vec(30, 10), "FM", 7.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(100, track1Y + 44), module, TWNC::TRACK1_FM_AMT_PARAM));
@@ -877,7 +904,8 @@ struct TWNCWidget : ModuleWidget {
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(100, track1Y + 82), module, TWNC::VCA_DECAY_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 99), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(20, track1Y + 123), module, TWNC::TRACK1_DECAY_PARAM));
+        drumDecayKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(20, track1Y + 123), module, TWNC::TRACK1_DECAY_PARAM);
+        addParam(drumDecayKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 99), Vec(30, 10), "SHAPE", 6.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(60, track1Y + 123), module, TWNC::TRACK1_SHAPE_PARAM));
@@ -901,10 +929,12 @@ struct TWNCWidget : ModuleWidget {
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(105, track2Y + 38), module, TWNC::TRACK2_NOISE_FM_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(0, track2Y + 56), Vec(30, 10), "FREQ", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, track2Y + 80), module, TWNC::TRACK2_FREQ_PARAM));
-        
+        hatsFreqKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(15, track2Y + 80), module, TWNC::TRACK2_FREQ_PARAM);
+        addParam(hatsFreqKnob);
+
         addChild(new TechnoEnhancedTextLabel(Vec(30, track2Y + 56), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, track2Y + 80), module, TWNC::TRACK2_DECAY_PARAM));
+        hatsDecayKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, track2Y + 80), module, TWNC::TRACK2_DECAY_PARAM);
+        addParam(hatsDecayKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(60, track2Y + 56), Vec(30, 10), "SHAPE", 6.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(75, track2Y + 80), module, TWNC::TRACK2_SHAPE_PARAM));
@@ -945,6 +975,20 @@ struct TWNCWidget : ModuleWidget {
         TWNC* module = dynamic_cast<TWNC*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 CV 調變顯示
+            auto updateKnob = [&](TechnoStandardBlackKnob30* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(drumFreqKnob, TWNC::DRUM_FREQ_CV_INPUT, module->drumFreqCvMod);
+            updateKnob(drumDecayKnob, TWNC::DRUM_DECAY_CV_INPUT, module->drumDecayCvMod);
+            updateKnob(hatsFreqKnob, TWNC::HATS_FREQ_CV_INPUT, module->hatsFreqCvMod);
+            updateKnob(hatsDecayKnob, TWNC::HATS_DECAY_CV_INPUT, module->hatsDecayCvMod);
         }
         ModuleWidget::step();
     }

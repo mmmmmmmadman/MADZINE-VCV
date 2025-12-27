@@ -611,6 +611,11 @@ struct UniversalRhythm : Module {
     float lastRoleDecays[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     float lastSwing = 0.5f;
 
+    // CV display modulation values
+    // [role][cvType]: 0=Style, 1=Density, 2=Freq, 3=Decay
+    float roleCvMod[4][4] = {{0.0f}};
+    float restCvMod = 0.0f;
+
     // External audio VCA envelopes (per voice)
     struct VCAEnvelope {
         float amplitude = 0.0f;
@@ -1598,8 +1603,12 @@ struct UniversalRhythm : Module {
         float variation = params[VARIATION_PARAM].getValue();
         float restAmount = params[REST_PARAM].getValue();
         if (inputs[REST_CV_INPUT].isConnected()) {
-            restAmount += inputs[REST_CV_INPUT].getVoltage() * 0.1f;
+            float cv = inputs[REST_CV_INPUT].getVoltage();
+            restAmount += cv * 0.1f;
             restAmount = clamp(restAmount, 0.0f, 1.0f);
+            restCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            restCvMod = 0.0f;
         }
         // Note: Swing is read in regenerate functions, not here - changes don't trigger regeneration
 
@@ -1635,15 +1644,36 @@ struct UniversalRhythm : Module {
             float styleCV = 0.0f;
             if (inputs[TIMELINE_STYLE_CV_INPUT + r * 4].isConnected()) {
                 styleCV = inputs[TIMELINE_STYLE_CV_INPUT + r * 4].getVoltage();
+                roleCvMod[r][0] = clamp(styleCV / 5.0f, -1.0f, 1.0f);
+            } else {
+                roleCvMod[r][0] = 0.0f;
             }
             int styleIndex = static_cast<int>(params[TIMELINE_STYLE_PARAM + baseParam].getValue() + styleCV);
             styleIndex = clamp(styleIndex, 0, 9);
 
             float densityCV = 0.0f;
             if (inputs[TIMELINE_DENSITY_CV_INPUT + r * 4].isConnected()) {
-                densityCV = inputs[TIMELINE_DENSITY_CV_INPUT + r * 4].getVoltage() * 0.1f;
+                float cv = inputs[TIMELINE_DENSITY_CV_INPUT + r * 4].getVoltage();
+                densityCV = cv * 0.1f;
+                roleCvMod[r][1] = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else {
+                roleCvMod[r][1] = 0.0f;
             }
             float density = clamp(params[TIMELINE_DENSITY_PARAM + baseParam].getValue() + densityCV, 0.0f, 0.9f);
+
+            // Calculate FREQ and DECAY cvMod values
+            if (inputs[TIMELINE_FREQ_CV_INPUT + r * 4].isConnected()) {
+                float cv = inputs[TIMELINE_FREQ_CV_INPUT + r * 4].getVoltage();
+                roleCvMod[r][2] = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else {
+                roleCvMod[r][2] = 0.0f;
+            }
+            if (inputs[TIMELINE_DECAY_CV_INPUT + r * 4].isConnected()) {
+                float cv = inputs[TIMELINE_DECAY_CV_INPUT + r * 4].getVoltage();
+                roleCvMod[r][3] = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else {
+                roleCvMod[r][3] = 0.0f;
+            }
 
             int length = static_cast<int>(params[TIMELINE_LENGTH_PARAM + baseParam].getValue());
 
@@ -2155,6 +2185,11 @@ struct URPatternDisplay : TransparentWidget {
 struct UniversalRhythmWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
 
+    // CV display knob pointers
+    madzine::widgets::BaseCustomKnob* restKnob = nullptr;
+    // [role][cvType]: 0=Style, 1=Density, 2=Freq, 3=Decay
+    madzine::widgets::BaseCustomKnob* roleKnobs[4][4] = {{nullptr}};
+
     UniversalRhythmWidget(UniversalRhythm* module) {
         setModule(module);
         panelThemeHelper.init(this, "40HP");
@@ -2211,7 +2246,8 @@ struct UniversalRhythmWidget : ModuleWidget {
 
         globalX += globalSpacing;
         addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "REST", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::REST_PARAM));
+        restKnob = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::REST_PARAM);
+        addParam(restKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(globalX + 25, ctrlY + 5), module, UniversalRhythm::REST_CV_INPUT));
 
         // Fill section (REST CV input X + 35)
@@ -2268,15 +2304,17 @@ struct UniversalRhythmWidget : ModuleWidget {
 
             // Style (label above knob) - Y+6
             addChild(new URTextLabel(Vec(leftCol - 14, roleY + 8), Vec(30, 10), "STYLE", 7.f, white, true));
-            addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 8 + labelToKnob), module,
-                     UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam));
+            roleKnobs[role][0] = createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 8 + labelToKnob), module,
+                     UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam);
+            addParam(roleKnobs[role][0]);
             addInput(createInputCentered<PJ301MPort>(Vec(leftCol + 28, roleY + 8 + labelToKnob), module,
                      UniversalRhythm::TIMELINE_STYLE_CV_INPUT + role * 4));
 
             // Density (label above knob) - Y+3
             addChild(new URTextLabel(Vec(leftCol - 14, roleY + 5 + knobVSpacing), Vec(30, 10), "DENSITY", 7.f, white, true));
-            addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 5 + knobVSpacing + labelToKnob), module,
-                     UniversalRhythm::TIMELINE_DENSITY_PARAM + baseParam));
+            roleKnobs[role][1] = createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 5 + knobVSpacing + labelToKnob), module,
+                     UniversalRhythm::TIMELINE_DENSITY_PARAM + baseParam);
+            addParam(roleKnobs[role][1]);
             addInput(createInputCentered<PJ301MPort>(Vec(leftCol + 28, roleY + 5 + knobVSpacing + labelToKnob), module,
                      UniversalRhythm::TIMELINE_DENSITY_CV_INPUT + role * 4));
 
@@ -2290,15 +2328,17 @@ struct UniversalRhythmWidget : ModuleWidget {
 
             // Freq (label above knob) - Y+6
             addChild(new URTextLabel(Vec(rightCol - 14, roleY + 8), Vec(30, 10), "FREQ", 7.f, white, true));
-            addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, roleY + 8 + labelToKnob), module,
-                     UniversalRhythm::TIMELINE_FREQ_PARAM + baseParam));
+            roleKnobs[role][2] = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, roleY + 8 + labelToKnob), module,
+                     UniversalRhythm::TIMELINE_FREQ_PARAM + baseParam);
+            addParam(roleKnobs[role][2]);
             addInput(createInputCentered<PJ301MPort>(Vec(rightCol + 28, roleY + 8 + labelToKnob), module,
                      UniversalRhythm::TIMELINE_FREQ_CV_INPUT + role * 4));
 
             // Decay (label above knob) - Y+3
             addChild(new URTextLabel(Vec(rightCol - 14, roleY + 5 + knobVSpacing), Vec(30, 10), "DECAY", 7.f, white, true));
-            addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, roleY + 5 + knobVSpacing + labelToKnob), module,
-                     UniversalRhythm::TIMELINE_DECAY_PARAM + baseParam));
+            roleKnobs[role][3] = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, roleY + 5 + knobVSpacing + labelToKnob), module,
+                     UniversalRhythm::TIMELINE_DECAY_PARAM + baseParam);
+            addParam(roleKnobs[role][3]);
             addInput(createInputCentered<PJ301MPort>(Vec(rightCol + 28, roleY + 5 + knobVSpacing + labelToKnob), module,
                      UniversalRhythm::TIMELINE_DECAY_CV_INPUT + role * 4));
 
@@ -2389,6 +2429,26 @@ struct UniversalRhythmWidget : ModuleWidget {
         UniversalRhythm* module = dynamic_cast<UniversalRhythm*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV display updates
+            auto updateKnob = [&](madzine::widgets::BaseCustomKnob* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            // REST knob
+            updateKnob(restKnob, UniversalRhythm::REST_CV_INPUT, module->restCvMod);
+
+            // Role knobs (4 roles × 4 CVs)
+            for (int r = 0; r < 4; r++) {
+                updateKnob(roleKnobs[r][0], UniversalRhythm::TIMELINE_STYLE_CV_INPUT + r * 4, module->roleCvMod[r][0]);
+                updateKnob(roleKnobs[r][1], UniversalRhythm::TIMELINE_DENSITY_CV_INPUT + r * 4, module->roleCvMod[r][1]);
+                updateKnob(roleKnobs[r][2], UniversalRhythm::TIMELINE_FREQ_CV_INPUT + r * 4, module->roleCvMod[r][2]);
+                updateKnob(roleKnobs[r][3], UniversalRhythm::TIMELINE_DECAY_CV_INPUT + r * 4, module->roleCvMod[r][3]);
+            }
         }
         ModuleWidget::step();
     }

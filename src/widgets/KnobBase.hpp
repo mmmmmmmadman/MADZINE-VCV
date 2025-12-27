@@ -23,6 +23,13 @@ protected:
     // 雙擊歸零功能開關
     bool enableDoubleClickReset = true;
 
+    // CV 調變顯示屬性
+    float cvModulation = 0.0f;                              // -1.0 ~ +1.0 正規化調變量
+    bool modulationEnabled = false;                          // 是否啟用調變顯示
+    NVGcolor modPositiveColor = KnobColors::MOD_POSITIVE;   // 正向調變顏色
+    NVGcolor modNegativeColor = KnobColors::MOD_NEGATIVE;   // 負向調變顏色
+    float modIndicatorWidth = 1.5f;                          // 副指示器線寬
+
 public:
     BaseCustomKnob() : app::Knob() {
         // 預設使用標準尺寸
@@ -49,6 +56,42 @@ public:
         float angle = rescale(normalizedValue, 0.0f, 1.0f,
                             KnobAngles::MIN_ANGLE, KnobAngles::MAX_ANGLE);
         return angle;
+    }
+
+    // ========================================
+    // CV 調變顯示 API
+    // ========================================
+
+    /**
+     * 設定 CV 調變量（模組每幀呼叫）
+     * @param normalizedMod 正規化調變量 -1.0 ~ +1.0
+     */
+    void setModulation(float normalizedMod) {
+        cvModulation = clamp(normalizedMod, -1.0f, 1.0f);
+    }
+
+    /**
+     * 啟用/停用調變顯示
+     */
+    void setModulationEnabled(bool enabled) {
+        modulationEnabled = enabled;
+    }
+
+    /**
+     * 檢查調變顯示是否啟用
+     */
+    bool isModulationEnabled() const {
+        return modulationEnabled;
+    }
+
+    /**
+     * 取得調變後的實際角度
+     */
+    float getModulatedAngle() {
+        float baseAngle = getDisplayAngle();
+        float modRange = KnobAngles::MAX_ANGLE - KnobAngles::MIN_ANGLE;
+        float modAngle = baseAngle + cvModulation * modRange * 0.5f;
+        return clamp(modAngle, KnobAngles::MIN_ANGLE, KnobAngles::MAX_ANGLE);
     }
 
     /**
@@ -99,14 +142,52 @@ public:
     }
 
     /**
+     * 繪製 CV 調變副指示器
+     * 顯示調變後的實際值位置
+     */
+    virtual void drawModulationIndicator(const DrawArgs& args, float radius, float modAngle) {
+        if (!modulationEnabled || cvModulation == 0.0f) return;
+
+        float indicatorLength = radius - indicatorMargin - 1.0f;  // 比主指示器稍短
+        float lineX = radius + indicatorLength * std::sin(modAngle);
+        float lineY = radius - indicatorLength * std::cos(modAngle);
+
+        // 選擇顏色：正向調變=青色，負向調變=橙色
+        NVGcolor modColor = (cvModulation > 0.0f) ? modPositiveColor : modNegativeColor;
+
+        // 副指示線
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, radius, radius);
+        nvgLineTo(args.vg, lineX, lineY);
+        nvgStrokeWidth(args.vg, modIndicatorWidth);
+        nvgStrokeColor(args.vg, modColor);
+        nvgStroke(args.vg);
+
+        // 副指示點
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, lineX, lineY, 1.5f);
+        nvgFillColor(args.vg, modColor);
+        nvgFill(args.vg);
+    }
+
+    /**
      * 主要繪製函數
      */
     void draw(const DrawArgs& args) override {
         float radius = box.size.x / 2.0f;
-        float angle = getDisplayAngle();
+        float baseAngle = getDisplayAngle();
 
+        // 1. 繪製旋鈕本體
         drawKnob(args, radius);
-        drawIndicator(args, radius, angle);
+
+        // 2. 繪製 CV 調變副指示器（在下層）
+        if (modulationEnabled && cvModulation != 0.0f) {
+            float modAngle = getModulatedAngle();
+            drawModulationIndicator(args, radius, modAngle);
+        }
+
+        // 3. 繪製主指示器（在上層）
+        drawIndicator(args, radius, baseAngle);
     }
 
     /**

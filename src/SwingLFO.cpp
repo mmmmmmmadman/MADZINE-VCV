@@ -42,6 +42,12 @@ struct SwingLFO : Module {
     float secondPhase = 0.0f;
     float prevResetTrigger = 0.0f;
 
+    // CV 調變顯示用
+    float freqCvMod = 0.0f;
+    float swingCvMod = 0.0f;
+    float shapeCvMod = 0.0f;
+    float mixCvMod = 0.0f;
+
     SwingLFO() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -110,32 +116,44 @@ struct SwingLFO : Module {
         float freqCV = 0.0f;
         if (inputs[FREQ_CV_INPUT].isConnected()) {
             freqCV = inputs[FREQ_CV_INPUT].getVoltage() * freqCVAttenuation;
+            freqCvMod = clamp(freqCV / 5.0f, -1.0f, 1.0f);
+        } else {
+            freqCvMod = 0.0f;
         }
         float freq = std::pow(2.0f, freqParam + freqCV) * 1.0f;
-        
+
         float swingParam = params[SWING_PARAM].getValue();
         float swingCV = 0.0f;
         if (inputs[SWING_CV_INPUT].isConnected()) {
             float swingCVAttenuation = params[SWING_CV_ATTEN_PARAM].getValue();
             swingCV = inputs[SWING_CV_INPUT].getVoltage() / 10.0f * swingCVAttenuation;
+            swingCvMod = clamp(swingCV * 2.0f, -1.0f, 1.0f);
+        } else {
+            swingCvMod = 0.0f;
         }
         float swing = swingParam + swingCV;
         swing = clamp(swing, 0.0f, 1.0f);
-        
+
         float shapeParam = params[SHAPE_PARAM].getValue();
         float shapeCV = 0.0f;
         if (inputs[SHAPE_CV_INPUT].isConnected()) {
             float shapeCVAttenuation = params[SHAPE_CV_ATTEN_PARAM].getValue();
             shapeCV = inputs[SHAPE_CV_INPUT].getVoltage() / 10.0f * shapeCVAttenuation;
+            shapeCvMod = clamp(shapeCV * 2.0f, -1.0f, 1.0f);
+        } else {
+            shapeCvMod = 0.0f;
         }
         float shape = shapeParam + shapeCV;
         shape = clamp(shape, 0.0f, 1.0f);
-        
+
         float mixParam = params[MIX_PARAM].getValue();
         float mixCV = 0.0f;
         if (inputs[MIX_CV_INPUT].isConnected()) {
             float mixCVAttenuation = params[MIX_CV_ATTEN_PARAM].getValue();
             mixCV = inputs[MIX_CV_INPUT].getVoltage() / 10.0f * mixCVAttenuation;
+            mixCvMod = clamp(mixCV * 2.0f, -1.0f, 1.0f);
+        } else {
+            mixCvMod = 0.0f;
         }
         float mix = mixParam + mixCV;
         mix = clamp(mix, 0.0f, 1.0f);
@@ -228,6 +246,10 @@ struct WhiteBackgroundBox : Widget {
 
 struct SwingLFOWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    madzine::widgets::StandardBlackKnob26* freqKnob = nullptr;
+    madzine::widgets::StandardBlackKnob26* swingKnob = nullptr;
+    madzine::widgets::StandardBlackKnob26* shapeKnob = nullptr;
+    madzine::widgets::StandardBlackKnob26* mixKnob = nullptr;
 
     SwingLFOWidget(SwingLFO* module) {
         setModule(module);
@@ -241,7 +263,8 @@ struct SwingLFOWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         addChild(new EnhancedTextLabel(Vec(0, 26), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM));
+        freqKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM);
+        addParam(freqKnob);
         
         addChild(new EnhancedTextLabel(Vec(5, 40), Vec(20, 20), "RST", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX - 15, 65), module, SwingLFO::RESET_INPUT));
@@ -250,19 +273,22 @@ struct SwingLFOWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 89), module, SwingLFO::FREQ_CV_INPUT));
 
         addChild(new EnhancedTextLabel(Vec(0, 105), Vec(box.size.x, 20), "SWING", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM));
+        swingKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM);
+        addParam(swingKnob);
 
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 166), module, SwingLFO::SWING_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 166), module, SwingLFO::SWING_CV_INPUT));
 
         addChild(new EnhancedTextLabel(Vec(0, 182), Vec(box.size.x, 20), "SHAPE", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM));
+        shapeKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM);
+        addParam(shapeKnob);
 
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 244), module, SwingLFO::SHAPE_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 244), module, SwingLFO::SHAPE_CV_INPUT));
 
         addChild(new EnhancedTextLabel(Vec(0, 257), Vec(box.size.x, 20), "MIX", 12.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM));
+        mixKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM);
+        addParam(mixKnob);
 
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 317), module, SwingLFO::MIX_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 317), module, SwingLFO::MIX_CV_INPUT));
@@ -280,6 +306,28 @@ struct SwingLFOWidget : ModuleWidget {
         SwingLFO* module = dynamic_cast<SwingLFO*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 CV 調變顯示
+            if (freqKnob) {
+                bool connected = module->inputs[SwingLFO::FREQ_CV_INPUT].isConnected();
+                freqKnob->setModulationEnabled(connected);
+                if (connected) freqKnob->setModulation(module->freqCvMod);
+            }
+            if (swingKnob) {
+                bool connected = module->inputs[SwingLFO::SWING_CV_INPUT].isConnected();
+                swingKnob->setModulationEnabled(connected);
+                if (connected) swingKnob->setModulation(module->swingCvMod);
+            }
+            if (shapeKnob) {
+                bool connected = module->inputs[SwingLFO::SHAPE_CV_INPUT].isConnected();
+                shapeKnob->setModulationEnabled(connected);
+                if (connected) shapeKnob->setModulation(module->shapeCvMod);
+            }
+            if (mixKnob) {
+                bool connected = module->inputs[SwingLFO::MIX_CV_INPUT].isConnected();
+                mixKnob->setModulationEnabled(connected);
+                if (connected) mixKnob->setModulation(module->mixCvMod);
+            }
         }
         ModuleWidget::step();
     }

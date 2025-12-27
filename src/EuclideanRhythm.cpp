@@ -259,6 +259,9 @@ struct EuclideanRhythm : Module {
     };
     TrackState tracks[3];
 
+    // CV 調變顯示用 [track][param: 0=Length, 1=Fill, 2=Shift]
+    float cvMod[3][3] = {{0.0f}};
+
     struct ChainedSequence {
         int currentTrackIndex = 0;
         std::vector<int> trackIndices;
@@ -479,16 +482,24 @@ struct EuclideanRhythm : Module {
             float lengthParam = params[TRACK1_LENGTH_PARAM + i * 7].getValue();
             float lengthCV = 0.0f;
             if (inputs[TRACK1_LENGTH_CV_INPUT + i * 3].isConnected()) {
+                float cv = inputs[TRACK1_LENGTH_CV_INPUT + i * 3].getVoltage();
                 float lengthCVAtten = params[TRACK1_LENGTH_CV_ATTEN_PARAM + i * 7].getValue();
-                lengthCV = inputs[TRACK1_LENGTH_CV_INPUT + i * 3].getVoltage() * lengthCVAtten;
+                lengthCV = cv * lengthCVAtten;
+                cvMod[i][0] = clamp(cv / 5.0f * lengthCVAtten, -1.0f, 1.0f);
+            } else {
+                cvMod[i][0] = 0.0f;
             }
             track.length = (int)std::round(clamp(lengthParam + lengthCV, 1.0f, 32.0f));
 
             float fillParam = params[TRACK1_FILL_PARAM + i * 7].getValue();
             float fillCV = 0.0f;
             if (inputs[TRACK1_FILL_CV_INPUT + i * 3].isConnected()) {
+                float cv = inputs[TRACK1_FILL_CV_INPUT + i * 3].getVoltage();
                 float fillCVAtten = params[TRACK1_FILL_CV_ATTEN_PARAM + i * 7].getValue();
-                fillCV = inputs[TRACK1_FILL_CV_INPUT + i * 3].getVoltage() * fillCVAtten * 10.0f;
+                fillCV = cv * fillCVAtten * 10.0f;
+                cvMod[i][1] = clamp(cv / 5.0f * fillCVAtten, -1.0f, 1.0f);
+            } else {
+                cvMod[i][1] = 0.0f;
             }
             float fillPercentage = clamp(fillParam + fillCV, 0.0f, 100.0f);
             track.fill = (int)std::round((fillPercentage / 100.0f) * track.length);
@@ -496,8 +507,12 @@ struct EuclideanRhythm : Module {
             float shiftParam = params[TRACK1_SHIFT_PARAM + i * 7].getValue();
             float shiftCV = 0.0f;
             if (inputs[TRACK1_SHIFT_CV_INPUT + i * 3].isConnected()) {
+                float cv = inputs[TRACK1_SHIFT_CV_INPUT + i * 3].getVoltage();
                 float shiftCVAtten = params[TRACK1_SHIFT_CV_ATTEN_PARAM + i * 7].getValue();
-                shiftCV = inputs[TRACK1_SHIFT_CV_INPUT + i * 3].getVoltage() * shiftCVAtten;
+                shiftCV = cv * shiftCVAtten;
+                cvMod[i][2] = clamp(cv / 5.0f * shiftCVAtten, -1.0f, 1.0f);
+            } else {
+                cvMod[i][2] = 0.0f;
             }
             track.shift = (int)std::round(clamp(shiftParam + shiftCV, 0.0f, (float)track.length - 1.0f));
 
@@ -568,6 +583,8 @@ struct EuclideanRhythm : Module {
 
 struct EuclideanRhythmWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    // [track][param: 0=Length, 1=Fill, 2=Shift]
+    madzine::widgets::BaseCustomKnob* knobs[3][3] = {{nullptr}};
 
     EuclideanRhythmWidget(EuclideanRhythm* module) {
         setModule(module);
@@ -593,19 +610,22 @@ struct EuclideanRhythmWidget : ModuleWidget {
             float x = 1;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "LEN", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 7));
+            knobs[i][0] = createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 7);
+            addParam(knobs[i][0]);
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_LENGTH_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_LENGTH_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "FILL", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 7));
+            knobs[i][1] = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 7);
+            addParam(knobs[i][1]);
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_FILL_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_FILL_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
             addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "SHFT", 7.f, nvgRGB(200, 200, 200), true));
-            addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 7));
+            knobs[i][2] = createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 7);
+            addParam(knobs[i][2]);
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_SHIFT_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_SHIFT_CV_ATTEN_PARAM + i * 7));
             x += 30;
@@ -658,6 +678,21 @@ struct EuclideanRhythmWidget : ModuleWidget {
         EuclideanRhythm* module = dynamic_cast<EuclideanRhythm*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV 調變顯示更新
+            for (int track = 0; track < 3; track++) {
+                for (int param = 0; param < 3; param++) {
+                    if (knobs[track][param]) {
+                        // param: 0=Length, 1=Fill, 2=Shift
+                        int inputId = EuclideanRhythm::TRACK1_LENGTH_CV_INPUT + track * 3 + param;
+                        bool connected = module->inputs[inputId].isConnected();
+                        knobs[track][param]->setModulationEnabled(connected);
+                        if (connected) {
+                            knobs[track][param]->setModulation(module->cvMod[track][param]);
+                        }
+                    }
+                }
+            }
         }
         ModuleWidget::step();
     }

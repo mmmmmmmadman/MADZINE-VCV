@@ -371,6 +371,15 @@ struct NIGOQ : Module {
     // Panel theme
     int panelTheme = -1; // -1 = Auto (follow VCV)
 
+    // CV display modulation values
+    float modWaveCvMod = 0.0f;
+    float fmAmtCvMod = 0.0f;
+    float foldAmtCvMod = 0.0f;
+    float amAmtCvMod = 0.0f;
+    float harmonicsCvMod = 0.0f;
+    float orderCvMod = 0.0f;
+    float lpfCutoffCvMod = 0.0f;
+
     // Oscillators
     float modPhase = 0.f;
     float finalPhase = 0.f;
@@ -1222,8 +1231,12 @@ struct NIGOQ : Module {
 
         // Apply wave CV if connected
         if (inputs[MOD_WAVE_CV].isConnected()) {
-            float waveCV = inputs[MOD_WAVE_CV].getVoltage() / 10.f; // Normalize 0-10V to 0-1
+            float cv = inputs[MOD_WAVE_CV].getVoltage();
+            float waveCV = cv / 10.f; // Normalize 0-10V to 0-1
             waveMorph = clamp(waveMorph + waveCV, 0.f, 1.f);
+            modWaveCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            modWaveCvMod = 0.0f;
         }
 
         //  ===== BLOCK-BASED OVERSAMPLE PROCESSING (Surge XT style) =====
@@ -1268,44 +1281,64 @@ struct NIGOQ : Module {
         // Internal FM amount
         float fmModAmount = smoothedFmAmt.process();
         if (inputs[FM_AMT_CV].isConnected()) {
+            float cv = inputs[FM_AMT_CV].getVoltage();
             float fmAttenuation = params[FM_AMT_ATTEN].getValue();
-            float fmCV = inputs[FM_AMT_CV].getVoltage() / 10.f;
+            float fmCV = cv / 10.f;
             fmModAmount += fmCV * fmAttenuation;
             fmModAmount = clamp(fmModAmount, 0.f, 1.f);
+            fmAmtCvMod = clamp(cv / 5.0f * fmAttenuation, -1.0f, 1.0f);
+        } else {
+            fmAmtCvMod = 0.0f;
         }
 
         // Get fold amount
         float foldAmount = smoothedHarmonics.process();
         if (inputs[HARMONICS_CV].isConnected()) {
-            float foldCV = inputs[HARMONICS_CV].getVoltage() / 10.f;
+            float cv = inputs[HARMONICS_CV].getVoltage();
+            float foldCV = cv / 10.f;
             foldAmount += foldCV;
             foldAmount = clamp(foldAmount, 0.f, 1.f);
+            harmonicsCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            harmonicsCvMod = 0.0f;
         }
 
         // TM amount
         float tmAmount = smoothedFoldAmt.process();
         if (inputs[FOLD_AMT_CV].isConnected()) {
+            float cv = inputs[FOLD_AMT_CV].getVoltage();
             float tmAttenuation = params[FOLD_AMT_ATTEN].getValue();
-            float tmCV = inputs[FOLD_AMT_CV].getVoltage() / 10.f;
+            float tmCV = cv / 10.f;
             tmAmount += tmCV * tmAttenuation;
             tmAmount = clamp(tmAmount, 0.f, 1.f);
+            foldAmtCvMod = clamp(cv / 5.0f * tmAttenuation, -1.0f, 1.0f);
+        } else {
+            foldAmtCvMod = 0.0f;
         }
 
         // Rectify amount
         float rectifyAmount = smoothedOrder.process();
         if (inputs[ORDER_CV].isConnected()) {
-            float rectifyCV = inputs[ORDER_CV].getVoltage() / 10.f;
+            float cv = inputs[ORDER_CV].getVoltage();
+            float rectifyCV = cv / 10.f;
             rectifyAmount += rectifyCV;
             rectifyAmount = clamp(rectifyAmount, 0.f, 1.f);
+            orderCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            orderCvMod = 0.0f;
         }
 
         // RECT modulation amount
         float rectModAmount = smoothedSymAmt.process();
         if (inputs[AM_AMT_CV].isConnected()) {
+            float cv = inputs[AM_AMT_CV].getVoltage();
             float rectModAttenuation = params[AM_AMT_ATTEN].getValue();
-            float rectModCV = inputs[AM_AMT_CV].getVoltage() / 10.f;
+            float rectModCV = cv / 10.f;
             rectModAmount += rectModCV * rectModAttenuation;
             rectModAmount = clamp(rectModAmount, 0.f, 1.f);
+            amAmtCvMod = clamp(cv / 5.0f * rectModAttenuation, -1.0f, 1.0f);
+        } else {
+            amAmtCvMod = 0.0f;
         }
 
         // LPF cutoff
@@ -1315,9 +1348,13 @@ struct NIGOQ : Module {
         float lpfCutoff = kLpfCutoffMin * std::pow(kLpfCutoffMax / kLpfCutoffMin, lpfCutoffParam);
 
         if (inputs[LPF_CUTOFF_CV].isConnected()) {
-            float lpfCV = inputs[LPF_CUTOFF_CV].getVoltage() / 10.f;
+            float cv = inputs[LPF_CUTOFF_CV].getVoltage();
+            float lpfCV = cv / 10.f;
             float cvAmount = lpfCV * 2.f - 1.f;
             lpfCutoff *= std::pow(2.f, cvAmount * 2.f);
+            lpfCutoffCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            lpfCutoffCvMod = 0.0f;
         }
 
         lpfCutoff = clamp(lpfCutoff, 20.f, args.sampleRate * oversampleRate / 2.f * 0.49f);
@@ -1586,6 +1623,15 @@ struct ClickableLight : ParamWidget {
 struct NIGOQWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
 
+    // CV display knob pointers
+    madzine::widgets::BaseCustomKnob* modWaveKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* fmAmtKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* foldAmtKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* amAmtKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* lpfCutoffKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* orderKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* harmonicsKnob = nullptr;
+
     NIGOQWidget(NIGOQ* module) {
         setModule(module);
         panelThemeHelper.init(this, "12HP");
@@ -1627,12 +1673,16 @@ struct NIGOQWidget : ModuleWidget {
         // Custom ParamQuantities are now configured in NIGOQ constructor via configParam<>
 
         // Standard black knobs (same as PPaTTTerning)
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 130), module, NIGOQ::LPF_CUTOFF));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 175), module, NIGOQ::ORDER));
-        addParam(createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 220), module, NIGOQ::HARMONICS));
+        lpfCutoffKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 130), module, NIGOQ::LPF_CUTOFF);
+        addParam(lpfCutoffKnob);
+        orderKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 175), module, NIGOQ::ORDER);
+        addParam(orderKnob);
+        harmonicsKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 220), module, NIGOQ::HARMONICS);
+        addParam(harmonicsKnob);
 
         // Multiverse-style knobs for MOD WAVE and CV attenuators (26×26px, 深灰+白色內圈+粉紅指示器)
-        addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(20, 55), module, NIGOQ::MOD_WAVE));
+        modWaveKnob = createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(20, 55), module, NIGOQ::MOD_WAVE);
+        addParam(modWaveKnob);
         addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(55, 130), module, NIGOQ::FM_AMT_ATTEN));
         addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(55, 220), module, NIGOQ::FOLD_AMT_ATTEN));
         addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(55, 175), module, NIGOQ::AM_AMT_ATTEN));
@@ -1643,9 +1693,12 @@ struct NIGOQWidget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::SmallGrayKnob>(Vec(165, 90), module, NIGOQ::DECAY));
 
         // MediumGrayKnob for modulation amounts and BASS - like MADDY FILL knobs (26×26px)
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(90, 130), module, NIGOQ::FM_AMT));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(90, 220), module, NIGOQ::FOLD_AMT));
-        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(90, 175), module, NIGOQ::AM_AMT));
+        fmAmtKnob = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(90, 130), module, NIGOQ::FM_AMT);
+        addParam(fmAmtKnob);
+        foldAmtKnob = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(90, 220), module, NIGOQ::FOLD_AMT);
+        addParam(foldAmtKnob);
+        amAmtKnob = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(90, 175), module, NIGOQ::AM_AMT);
+        addParam(amAmtKnob);
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(165, 265), module, NIGOQ::BASS));
 
         // Switch
@@ -1725,6 +1778,23 @@ struct NIGOQWidget : ModuleWidget {
         NIGOQ* module = dynamic_cast<NIGOQ*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV display updates
+            auto updateKnob = [&](madzine::widgets::BaseCustomKnob* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(modWaveKnob, NIGOQ::MOD_WAVE_CV, module->modWaveCvMod);
+            updateKnob(fmAmtKnob, NIGOQ::FM_AMT_CV, module->fmAmtCvMod);
+            updateKnob(foldAmtKnob, NIGOQ::FOLD_AMT_CV, module->foldAmtCvMod);
+            updateKnob(amAmtKnob, NIGOQ::AM_AMT_CV, module->amAmtCvMod);
+            updateKnob(lpfCutoffKnob, NIGOQ::LPF_CUTOFF_CV, module->lpfCutoffCvMod);
+            updateKnob(orderKnob, NIGOQ::ORDER_CV, module->orderCvMod);
+            updateKnob(harmonicsKnob, NIGOQ::HARMONICS_CV, module->harmonicsCvMod);
         }
         ModuleWidget::step();
     }

@@ -467,6 +467,17 @@ struct EllenRipley : rack::engine::Module {
     bool delayChaosMod = false;
     bool grainChaosMod = false;
     bool reverbChaosMod = false;
+
+    // CV 調變顯示用
+    float delayTimeLCvMod = 0.0f;
+    float delayTimeRCvMod = 0.0f;
+    float delayFeedbackCvMod = 0.0f;
+    float grainSizeCvMod = 0.0f;
+    float grainDensityCvMod = 0.0f;
+    float grainPositionCvMod = 0.0f;
+    float reverbRoomSizeCvMod = 0.0f;
+    float reverbDampingCvMod = 0.0f;
+    float reverbDecayCvMod = 0.0f;
     
     EllenRipley() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -635,6 +646,9 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[DELAY_TIME_L_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[DELAY_TIME_L_CV_INPUT], c);
                 delayTimeL += cv * 0.2f;
+                if (c == 0) delayTimeLCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                delayTimeLCvMod = 0.0f;
             }
             if (delayChaosMod) {
                 delayTimeL += chaosOutput * 0.1f;
@@ -645,6 +659,9 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[DELAY_TIME_R_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[DELAY_TIME_R_CV_INPUT], c);
                 delayTimeR += cv * 0.2f;
+                if (c == 0) delayTimeRCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                delayTimeRCvMod = 0.0f;
             }
             if (delayChaosMod) {
                 delayTimeR += chaosOutput * 0.1f;
@@ -655,6 +672,9 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[DELAY_FEEDBACK_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[DELAY_FEEDBACK_CV_INPUT], c);
                 feedback += cv * 0.1f;
+                if (c == 0) delayFeedbackCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                delayFeedbackCvMod = 0.0f;
             }
             if (delayChaosMod) {
                 feedback += chaosOutput * 0.1f;
@@ -675,37 +695,61 @@ struct EllenRipley : rack::engine::Module {
 
             float grainSize = params[GRAIN_SIZE_PARAM].getValue();
             if (inputs[GRAIN_SIZE_CV_INPUT].isConnected()) {
-                grainSize += getCVInput(inputs[GRAIN_SIZE_CV_INPUT], c) * 0.1f;
+                float cv = getCVInput(inputs[GRAIN_SIZE_CV_INPUT], c);
+                grainSize += cv * 0.1f;
+                if (c == 0) grainSizeCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                grainSizeCvMod = 0.0f;
             }
             grainSize = clamp(grainSize, 0.0f, 1.0f);
 
             float grainDensity = params[GRAIN_DENSITY_PARAM].getValue();
             if (inputs[GRAIN_DENSITY_CV_INPUT].isConnected()) {
-                grainDensity += getCVInput(inputs[GRAIN_DENSITY_CV_INPUT], c) * 0.1f;
+                float cv = getCVInput(inputs[GRAIN_DENSITY_CV_INPUT], c);
+                grainDensity += cv * 0.1f;
+                if (c == 0) grainDensityCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                grainDensityCvMod = 0.0f;
             }
             grainDensity = clamp(grainDensity, 0.0f, 1.0f);
 
             float grainPosition = params[GRAIN_POSITION_PARAM].getValue();
             if (inputs[GRAIN_POSITION_CV_INPUT].isConnected()) {
-                grainPosition += getCVInput(inputs[GRAIN_POSITION_CV_INPUT], c) * 0.1f;
+                float cv = getCVInput(inputs[GRAIN_POSITION_CV_INPUT], c);
+                grainPosition += cv * 0.1f;
+                if (c == 0) grainPositionCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                grainPositionCvMod = 0.0f;
             }
             grainPosition = clamp(grainPosition, 0.0f, 1.0f);
 
             float reverbRoomSize = params[REVERB_ROOM_SIZE_PARAM].getValue();
             if (inputs[REVERB_ROOM_SIZE_CV_INPUT].isConnected()) {
-                reverbRoomSize += getCVInput(inputs[REVERB_ROOM_SIZE_CV_INPUT], c) * 0.1f;
+                float cv = getCVInput(inputs[REVERB_ROOM_SIZE_CV_INPUT], c);
+                reverbRoomSize += cv * 0.1f;
+                if (c == 0) reverbRoomSizeCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                reverbRoomSizeCvMod = 0.0f;
             }
             reverbRoomSize = clamp(reverbRoomSize, 0.0f, 1.0f);
 
             float reverbDamping = params[REVERB_DAMPING_PARAM].getValue();
             if (inputs[REVERB_DAMPING_CV_INPUT].isConnected()) {
-                reverbDamping += getCVInput(inputs[REVERB_DAMPING_CV_INPUT], c) * 0.1f;
+                float cv = getCVInput(inputs[REVERB_DAMPING_CV_INPUT], c);
+                reverbDamping += cv * 0.1f;
+                if (c == 0) reverbDampingCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                reverbDampingCvMod = 0.0f;
             }
             reverbDamping = clamp(reverbDamping, 0.0f, 1.0f);
 
             float reverbDecay = params[REVERB_DECAY_PARAM].getValue();
             if (inputs[REVERB_DECAY_CV_INPUT].isConnected()) {
-                reverbDecay += getCVInput(inputs[REVERB_DECAY_CV_INPUT], c) * 0.1f;
+                float cv = getCVInput(inputs[REVERB_DECAY_CV_INPUT], c);
+                reverbDecay += cv * 0.1f;
+                if (c == 0) reverbDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else if (c == 0) {
+                reverbDecayCvMod = 0.0f;
             }
             reverbDecay = clamp(reverbDecay, 0.0f, 1.0f);
 
@@ -778,6 +822,15 @@ struct EllenRipley : rack::engine::Module {
 
 struct EllenRipleyWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    StandardBlackKnob26* delayTimeLKnob = nullptr;
+    StandardBlackKnob26* delayTimeRKnob = nullptr;
+    StandardBlackKnob26* delayFeedbackKnob = nullptr;
+    StandardBlackKnob26* grainSizeKnob = nullptr;
+    StandardBlackKnob26* grainDensityKnob = nullptr;
+    StandardBlackKnob26* grainPositionKnob = nullptr;
+    StandardBlackKnob26* reverbRoomSizeKnob = nullptr;
+    StandardBlackKnob26* reverbDampingKnob = nullptr;
+    StandardBlackKnob26* reverbDecayKnob = nullptr;
 
     EllenRipleyWidget(EllenRipley* module) {
         setModule(module);
@@ -794,17 +847,20 @@ struct EllenRipleyWidget : ModuleWidget {
         float x = 1;
         
         addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "TIME L", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_TIME_L_PARAM));
+        delayTimeLKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_TIME_L_PARAM);
+        addParam(delayTimeLKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, delayY + 47), module, EllenRipley::DELAY_TIME_L_CV_INPUT));
         x += 31;
-        
+
         addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "TIME R", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_TIME_R_PARAM));
+        delayTimeRKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_TIME_R_PARAM);
+        addParam(delayTimeRKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, delayY + 47), module, EllenRipley::DELAY_TIME_R_CV_INPUT));
         x += 31;
-        
+
         addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "FDBK", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_FEEDBACK_PARAM));
+        delayFeedbackKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_FEEDBACK_PARAM);
+        addParam(delayFeedbackKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, delayY + 47), module, EllenRipley::DELAY_FEEDBACK_CV_INPUT));
         x += 30;
         
@@ -817,17 +873,20 @@ struct EllenRipleyWidget : ModuleWidget {
         x = 1;
         
         addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "SIZE", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_SIZE_PARAM));
+        grainSizeKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_SIZE_PARAM);
+        addParam(grainSizeKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, grainY + 47), module, EllenRipley::GRAIN_SIZE_CV_INPUT));
         x += 31;
-        
+
         addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "BREAK", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_DENSITY_PARAM));
+        grainDensityKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_DENSITY_PARAM);
+        addParam(grainDensityKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, grainY + 47), module, EllenRipley::GRAIN_DENSITY_CV_INPUT));
         x += 31;
-        
+
         addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "SHIFT", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_POSITION_PARAM));
+        grainPositionKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_POSITION_PARAM);
+        addParam(grainPositionKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, grainY + 47), module, EllenRipley::GRAIN_POSITION_CV_INPUT));
         x += 30;
         
@@ -840,17 +899,20 @@ struct EllenRipleyWidget : ModuleWidget {
         x = 1;
         
         addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "ROOM", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_ROOM_SIZE_PARAM));
+        reverbRoomSizeKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_ROOM_SIZE_PARAM);
+        addParam(reverbRoomSizeKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, reverbY + 47), module, EllenRipley::REVERB_ROOM_SIZE_CV_INPUT));
         x += 31;
-        
+
         addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "TONE", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_DAMPING_PARAM));
+        reverbDampingKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_DAMPING_PARAM);
+        addParam(reverbDampingKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, reverbY + 47), module, EllenRipley::REVERB_DAMPING_CV_INPUT));
         x += 31;
-        
+
         addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "DECAY", 7.f, nvgRGB(200, 200, 200), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_DECAY_PARAM));
+        reverbDecayKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_DECAY_PARAM);
+        addParam(reverbDecayKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, reverbY + 47), module, EllenRipley::REVERB_DECAY_CV_INPUT));
         x += 30;
         
@@ -900,6 +962,25 @@ struct EllenRipleyWidget : ModuleWidget {
         EllenRipley* module = dynamic_cast<EllenRipley*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 CV 調變顯示
+            auto updateKnob = [&](StandardBlackKnob26* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(delayTimeLKnob, EllenRipley::DELAY_TIME_L_CV_INPUT, module->delayTimeLCvMod);
+            updateKnob(delayTimeRKnob, EllenRipley::DELAY_TIME_R_CV_INPUT, module->delayTimeRCvMod);
+            updateKnob(delayFeedbackKnob, EllenRipley::DELAY_FEEDBACK_CV_INPUT, module->delayFeedbackCvMod);
+            updateKnob(grainSizeKnob, EllenRipley::GRAIN_SIZE_CV_INPUT, module->grainSizeCvMod);
+            updateKnob(grainDensityKnob, EllenRipley::GRAIN_DENSITY_CV_INPUT, module->grainDensityCvMod);
+            updateKnob(grainPositionKnob, EllenRipley::GRAIN_POSITION_CV_INPUT, module->grainPositionCvMod);
+            updateKnob(reverbRoomSizeKnob, EllenRipley::REVERB_ROOM_SIZE_CV_INPUT, module->reverbRoomSizeCvMod);
+            updateKnob(reverbDampingKnob, EllenRipley::REVERB_DAMPING_CV_INPUT, module->reverbDampingCvMod);
+            updateKnob(reverbDecayKnob, EllenRipley::REVERB_DECAY_CV_INPUT, module->reverbDecayCvMod);
         }
         ModuleWidget::step();
     }

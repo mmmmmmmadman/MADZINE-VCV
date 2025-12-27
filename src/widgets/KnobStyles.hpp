@@ -14,6 +14,10 @@ namespace KnobColors {
     const NVGcolor GRAY_BASE = nvgRGB(128, 128, 128);
     const NVGcolor PINK_BASE = nvgRGB(255, 192, 203);
     const NVGcolor TECHNO_GREEN = nvgRGB(0, 255, 100);
+
+    // CV 調變指示器顏色
+    const NVGcolor MOD_POSITIVE = nvgRGBA(0, 200, 255, 150);   // 青色半透明（正向調變）
+    const NVGcolor MOD_NEGATIVE = nvgRGBA(255, 150, 0, 150);   // 橙色半透明（負向調變）
 }
 
 // 尺寸定義

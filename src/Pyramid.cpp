@@ -58,6 +58,12 @@ struct Pyramid : Module {
     dsp::TBiquadFilter<> filter1;
     dsp::TBiquadFilter<> filter2;
 
+    // CV 調變顯示用
+    float xCvMod = 0.0f;
+    float yCvMod = 0.0f;
+    float zCvMod = 0.0f;
+    float filterCvMod = 0.0f;
+
     bool sendPreLevel = false;
     int lastFilterMode = 0;
     float lastFilterValue = 0.f;
@@ -176,21 +182,37 @@ struct Pyramid : Module {
         float send = params[SEND_PARAM].getValue();
         
         if (inputs[X_CV_INPUT].isConnected()) {
-            x += inputs[X_CV_INPUT].getVoltage() * 0.2f;
+            float cv = inputs[X_CV_INPUT].getVoltage();
+            x += cv * 0.2f;
             x = clamp(x, -1.f, 1.f);
+            xCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            xCvMod = 0.0f;
         }
         if (inputs[Y_CV_INPUT].isConnected()) {
-            y += inputs[Y_CV_INPUT].getVoltage() * 0.2f;
+            float cv = inputs[Y_CV_INPUT].getVoltage();
+            y += cv * 0.2f;
             y = clamp(y, -1.f, 1.f);
+            yCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            yCvMod = 0.0f;
         }
         if (inputs[Z_CV_INPUT].isConnected()) {
-            z += inputs[Z_CV_INPUT].getVoltage() * 0.2f;
+            float cv = inputs[Z_CV_INPUT].getVoltage();
+            z += cv * 0.2f;
             z = clamp(z, -1.f, 1.f);
+            zCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            zCvMod = 0.0f;
         }
-        
+
         if (inputs[FILTER_CV_INPUT].isConnected()) {
-            filter += inputs[FILTER_CV_INPUT].getVoltage() * 0.2f;
+            float cv = inputs[FILTER_CV_INPUT].getVoltage();
+            filter += cv * 0.2f;
             filter = clamp(filter, -1.f, 1.f);
+            filterCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            filterCvMod = 0.0f;
         }
 
         float filterSmooth = 0.002f;
@@ -548,6 +570,10 @@ struct Pyramid3DDisplay : LedDisplay {
 
 struct PyramidWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    StandardBlackKnob26* xKnob = nullptr;
+    StandardBlackKnob26* yKnob = nullptr;
+    StandardBlackKnob26* zKnob = nullptr;
+    StandardBlackKnob26* filterKnob = nullptr;
 
     PyramidWidget(Pyramid* module) {
         setModule(module);
@@ -572,13 +598,16 @@ struct PyramidWidget : ModuleWidget {
         addChild(display3D);
 
         addChild(new TechnoEnhancedTextLabel(Vec(7, 220), Vec(50, 10), "X", 32.f, nvgRGB(160, 160, 160), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 240), module, Pyramid::X_PARAM));
+        xKnob = createParamCentered<StandardBlackKnob26>(Vec(17, 240), module, Pyramid::X_PARAM);
+        addParam(xKnob);
 
         addChild(new TechnoEnhancedTextLabel(Vec(7, 255), Vec(50, 10), "Y", 32.f, nvgRGB(160, 160, 160), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 275), module, Pyramid::Y_PARAM));
+        yKnob = createParamCentered<StandardBlackKnob26>(Vec(17, 275), module, Pyramid::Y_PARAM);
+        addParam(yKnob);
 
         addChild(new TechnoEnhancedTextLabel(Vec(7, 290), Vec(50, 10), "Z", 32.f, nvgRGB(160, 160, 160), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(17, 310), module, Pyramid::Z_PARAM));
+        zKnob = createParamCentered<StandardBlackKnob26>(Vec(17, 310), module, Pyramid::Z_PARAM);
+        addParam(zKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(75-15, 220), Vec(30, 10), "SEND", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(75, 242), module, Pyramid::SEND_PARAM));
@@ -589,7 +618,8 @@ struct PyramidWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(102, 270), module, Pyramid::RETURN_R_INPUT));
 
         addChild(new TechnoEnhancedTextLabel(Vec(65, 290), Vec(50, 10), "FILTER", 8.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(75, 312), module, Pyramid::FILTER_PARAM));
+        filterKnob = createParamCentered<StandardBlackKnob26>(Vec(75, 312), module, Pyramid::FILTER_PARAM);
+        addParam(filterKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(102, 312), module, Pyramid::FILTER_CV_INPUT));
 
         addInput(createInputCentered<PJ301MPort>(Vec(44, 240), module, Pyramid::X_CV_INPUT));
@@ -614,6 +644,20 @@ struct PyramidWidget : ModuleWidget {
         Pyramid* module = dynamic_cast<Pyramid*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV 調變顯示更新
+            auto updateKnob = [&](StandardBlackKnob26* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(xKnob, Pyramid::X_CV_INPUT, module->xCvMod);
+            updateKnob(yKnob, Pyramid::Y_CV_INPUT, module->yCvMod);
+            updateKnob(zKnob, Pyramid::Z_CV_INPUT, module->zCvMod);
+            updateKnob(filterKnob, Pyramid::FILTER_CV_INPUT, module->filterCvMod);
         }
         ModuleWidget::step();
     }

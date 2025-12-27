@@ -188,6 +188,13 @@ struct TWNC2 : Module {
     BasicSineVCO snareVCO;
     BasicBandpassFilter snareNoiseFilter;
     BasicBandpassFilter hatsFilter;
+
+    // CV 調變顯示用
+    float kickFreqCvMod = 0.0f;
+    float kickFmCvMod = 0.0f;
+    float kickPunchCvMod = 0.0f;
+    float snareNoiseMixCvMod = 0.0f;
+    float hatsDecayCvMod = 0.0f;
     
     struct HatsOscillator {
         float phases[6] = {0.0f};
@@ -318,21 +325,33 @@ struct TWNC2 : Module {
         float kickVolumeParam = params[KICK_VOLUME_PARAM].getValue();
         float kickPunchAmount = params[KICK_PUNCH_PARAM].getValue();
         if (inputs[KICK_PUNCH_CV_INPUT].isConnected()) {
-            kickPunchAmount += inputs[KICK_PUNCH_CV_INPUT].getVoltage() / 10.0f;
+            float cv = inputs[KICK_PUNCH_CV_INPUT].getVoltage();
+            kickPunchAmount += cv / 10.0f;
             kickPunchAmount = clamp(kickPunchAmount, 0.0f, 1.0f);
+            kickPunchCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            kickPunchCvMod = 0.0f;
         }
-        
+
         float kickFmAmount = params[KICK_FM_AMT_PARAM].getValue() * 20.0f;
         if (inputs[KICK_FM_CV_INPUT].isConnected()) {
-            kickFmAmount += (inputs[KICK_FM_CV_INPUT].getVoltage() / 10.0f) * 20.0f;
+            float cv = inputs[KICK_FM_CV_INPUT].getVoltage();
+            kickFmAmount += (cv / 10.0f) * 20.0f;
             kickFmAmount = clamp(kickFmAmount, 0.0f, 20.0f);
+            kickFmCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            kickFmCvMod = 0.0f;
         }
-        
+
         float kickFreqParam = std::pow(2.0f, params[KICK_FREQ_PARAM].getValue());
         if (inputs[KICK_FREQ_CV_INPUT].isConnected()) {
-            float freqCV = params[KICK_FREQ_PARAM].getValue() + inputs[KICK_FREQ_CV_INPUT].getVoltage();
+            float cv = inputs[KICK_FREQ_CV_INPUT].getVoltage();
+            float freqCV = params[KICK_FREQ_PARAM].getValue() + cv;
             kickFreqParam = std::pow(2.0f, freqCV);
             kickFreqParam = clamp(kickFreqParam, std::pow(2.0f, std::log2(24.0f)), std::pow(2.0f, std::log2(500.0f)));
+            kickFreqCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            kickFreqCvMod = 0.0f;
         }
         
         float kickFmCV = kickEnvCV * kickEnvCV;
@@ -349,8 +368,12 @@ struct TWNC2 : Module {
         float snareNoiseTone = params[SNARE_NOISE_TONE_PARAM].getValue();
         float snareNoiseMix = params[SNARE_NOISE_MIX_PARAM].getValue();
         if (inputs[SNARE_NOISE_MIX_CV_INPUT].isConnected()) {
-            snareNoiseMix += inputs[SNARE_NOISE_MIX_CV_INPUT].getVoltage() / 10.0f;
+            float cv = inputs[SNARE_NOISE_MIX_CV_INPUT].getVoltage();
+            snareNoiseMix += cv / 10.0f;
             snareNoiseMix = clamp(snareNoiseMix, 0.0f, 1.0f);
+            snareNoiseMixCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            snareNoiseMixCvMod = 0.0f;
         }
         
         float snareBaseFreq = std::pow(2.0f, params[SNARE_FREQ_PARAM].getValue());
@@ -394,8 +417,12 @@ struct TWNC2 : Module {
         float hatsSpread = 20.0f;
         float hatsDecay = params[HATS_DECAY_PARAM].getValue();
         if (inputs[HATS_DECAY_CV_INPUT].isConnected()) {
-            hatsDecay += inputs[HATS_DECAY_CV_INPUT].getVoltage() / 10.0f;
+            float cv = inputs[HATS_DECAY_CV_INPUT].getVoltage();
+            hatsDecay += cv / 10.0f;
             hatsDecay = clamp(hatsDecay, 0.0f, 1.0f);
+            hatsDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            hatsDecayCvMod = 0.0f;
         }
         
         float hatsBaseFreq = 1000.0f + (hatsTone * 4500.0f);
@@ -438,6 +465,11 @@ struct TWNC2 : Module {
 
 struct TWNC2Widget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    madzine::widgets::TechnoStandardBlackKnob30* kickFreqKnob = nullptr;
+    madzine::widgets::TechnoStandardBlackKnob30* kickFmKnob = nullptr;
+    madzine::widgets::TechnoStandardBlackKnob30* kickPunchKnob = nullptr;
+    madzine::widgets::TechnoStandardBlackKnob30* snareNoiseMixKnob = nullptr;
+    madzine::widgets::TechnoStandardBlackKnob30* hatsDecayKnob = nullptr;
 
     TWNC2Widget(TWNC2* module) {
         setModule(module);
@@ -462,13 +494,16 @@ struct TWNC2Widget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(100, track1Y + 34), module, TWNC2::KICK_ACCENT_INPUT));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 48), Vec(30, 10), "TUNE", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track1Y + 71), module, TWNC2::KICK_FREQ_PARAM));
-        
+        kickFreqKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track1Y + 71), module, TWNC2::KICK_FREQ_PARAM);
+        addParam(kickFreqKnob);
+
         addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 48), Vec(30, 10), "FM", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track1Y + 71), module, TWNC2::KICK_FM_AMT_PARAM));
-        
+        kickFmKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track1Y + 71), module, TWNC2::KICK_FM_AMT_PARAM);
+        addParam(kickFmKnob);
+
         addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 48), Vec(30, 10), "PUNCH", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track1Y + 71), module, TWNC2::KICK_PUNCH_PARAM));
+        kickPunchKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track1Y + 71), module, TWNC2::KICK_PUNCH_PARAM);
+        addParam(kickPunchKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 85), Vec(30, 10), "CV", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(20, track1Y + 108), module, TWNC2::KICK_FREQ_CV_INPUT));
@@ -495,7 +530,8 @@ struct TWNC2Widget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track2Y + 71), module, TWNC2::SNARE_FREQ_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 48), Vec(30, 10), "N.MIX", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_PARAM));
+        snareNoiseMixKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_PARAM);
+        addParam(snareNoiseMixKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 48), Vec(30, 10), "N.MIX", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(100, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_CV_INPUT));
@@ -513,7 +549,8 @@ struct TWNC2Widget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track3Y + 34), module, TWNC2::HATS_TONE_PARAM));
         
         addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 48), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track3Y + 71), module, TWNC2::HATS_DECAY_PARAM));
+        hatsDecayKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track3Y + 71), module, TWNC2::HATS_DECAY_PARAM);
+        addParam(hatsDecayKnob);
         
         addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 48), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track3Y + 71), module, TWNC2::HATS_DECAY_CV_INPUT));
@@ -546,6 +583,21 @@ struct TWNC2Widget : ModuleWidget {
         TWNC2* module = dynamic_cast<TWNC2*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 CV 調變顯示
+            auto updateKnob = [&](madzine::widgets::TechnoStandardBlackKnob30* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(kickFreqKnob, TWNC2::KICK_FREQ_CV_INPUT, module->kickFreqCvMod);
+            updateKnob(kickFmKnob, TWNC2::KICK_FM_CV_INPUT, module->kickFmCvMod);
+            updateKnob(kickPunchKnob, TWNC2::KICK_PUNCH_CV_INPUT, module->kickPunchCvMod);
+            updateKnob(snareNoiseMixKnob, TWNC2::SNARE_NOISE_MIX_CV_INPUT, module->snareNoiseMixCvMod);
+            updateKnob(hatsDecayKnob, TWNC2::HATS_DECAY_CV_INPUT, module->hatsDecayCvMod);
         }
         ModuleWidget::step();
     }

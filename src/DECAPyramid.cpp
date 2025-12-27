@@ -58,6 +58,9 @@ struct DECAPyramid : Module {
 
     dsp::TBiquadFilter<> filter1[8];
     dsp::TBiquadFilter<> filter2[8];
+
+    // CV 調變顯示用 [track][axis: 0=X, 1=Y, 2=Z]
+    float cvMod[8][3] = {{0.0f}};
     dsp::TBiquadFilter<> rtnAFilter1, rtnAFilter2;
     dsp::TBiquadFilter<> rtnBFilter1, rtnBFilter2;
     dsp::VuMeter2 vuMeterPre[8];
@@ -267,16 +270,28 @@ struct DECAPyramid : Module {
             float sendB = params[SENDB_PARAM_1 + track * 7].getValue();
             
             if (inputs[X_CV_INPUT_1 + track * 4].isConnected()) {
-                x += inputs[X_CV_INPUT_1 + track * 4].getVoltage() * 0.2f;
+                float cv = inputs[X_CV_INPUT_1 + track * 4].getVoltage();
+                x += cv * 0.2f;
                 x = clamp(x, -1.f, 1.f);
+                cvMod[track][0] = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else {
+                cvMod[track][0] = 0.0f;
             }
             if (inputs[Y_CV_INPUT_1 + track * 4].isConnected()) {
-                y += inputs[Y_CV_INPUT_1 + track * 4].getVoltage() * 0.2f;
+                float cv = inputs[Y_CV_INPUT_1 + track * 4].getVoltage();
+                y += cv * 0.2f;
                 y = clamp(y, -1.f, 1.f);
+                cvMod[track][1] = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else {
+                cvMod[track][1] = 0.0f;
             }
             if (inputs[Z_CV_INPUT_1 + track * 4].isConnected()) {
-                z += inputs[Z_CV_INPUT_1 + track * 4].getVoltage() * 0.2f;
+                float cv = inputs[Z_CV_INPUT_1 + track * 4].getVoltage();
+                z += cv * 0.2f;
                 z = clamp(z, -1.f, 1.f);
+                cvMod[track][2] = clamp(cv / 5.0f, -1.0f, 1.0f);
+            } else {
+                cvMod[track][2] = 0.0f;
             }
             
             outputs[INSERT_SEND_1 + track].setVoltage(audioIn);
@@ -738,6 +753,8 @@ struct DECAPyramid3DDisplay : LedDisplay {
 
 struct DECAPyramidWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    // [track][axis: 0=X, 1=Y, 2=Z]
+    StandardBlackKnob26* xyzKnobs[8][3] = {{nullptr}};
 
     DECAPyramidWidget(DECAPyramid* module) {
         setModule(module);
@@ -780,7 +797,9 @@ struct DECAPyramidWidget : ModuleWidget {
                 if (j == 0) {
                     addInput(createInputCentered<PJ301MPort>(Vec(baseX, trackY[j] + inputOffsets[j]), module, trackInputs[j] + i * 4));
                 } else {
-                    addParam(createParamCentered<StandardBlackKnob26>(Vec(baseX, trackY[j] + 10), module, trackParams[j] + i * 7));
+                    StandardBlackKnob26* knob = createParamCentered<StandardBlackKnob26>(Vec(baseX, trackY[j] + 10), module, trackParams[j] + i * 7);
+                    xyzKnobs[i][j - 1] = knob;  // j-1: 1->0(X), 2->1(Y), 3->2(Z)
+                    addParam(knob);
                     addInput(createInputCentered<PJ301MPort>(Vec(baseX, trackY[j] + inputOffsets[j]), module, trackInputs[j] + i * 4));
                 }
             }
@@ -922,7 +941,25 @@ struct DECAPyramidWidget : ModuleWidget {
     
     void step() override {
         DECAPyramid* module = getModule<DECAPyramid>();
-        panelThemeHelper.step(module);
+        if (module) {
+            panelThemeHelper.step(module);
+
+            // CV 調變顯示更新
+            for (int track = 0; track < 8; track++) {
+                for (int axis = 0; axis < 3; axis++) {
+                    StandardBlackKnob26* knob = xyzKnobs[track][axis];
+                    if (knob) {
+                        // axis: 0=X, 1=Y, 2=Z
+                        int inputId = DECAPyramid::X_CV_INPUT_1 + axis + track * 4;
+                        bool connected = module->inputs[inputId].isConnected();
+                        knob->setModulationEnabled(connected);
+                        if (connected) {
+                            knob->setModulation(module->cvMod[track][axis]);
+                        }
+                    }
+                }
+            }
+        }
         ModuleWidget::step();
     }
     

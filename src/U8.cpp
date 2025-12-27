@@ -134,6 +134,9 @@ struct U8 : Module {
     bool muteState = false;
     dsp::SchmittTrigger muteTrigger;
 
+    // CV 調變顯示用
+    float levelCvModulation = 0.0f;
+
     U8() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -214,6 +217,15 @@ struct U8 : Module {
         float levelParam = params[LEVEL_PARAM].getValue();
         float duckAmount = params[DUCK_LEVEL_PARAM].getValue();
 
+        // 計算 CV 調變量供 Widget 顯示
+        if (inputs[LEVEL_CV_INPUT].isConnected()) {
+            // ±5V = 滿範圍，所以除以 5 而非 10
+            float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
+            levelCvModulation = cvNorm;
+        } else {
+            levelCvModulation = 0.0f;
+        }
+
         // Process left output channels
         for (int c = 0; c < outputLeftChannels; c++) {
             float leftInput = (c < leftChannels) ? inputs[LEFT_INPUT].getPolyVoltage(c) : 0.0f;
@@ -227,12 +239,14 @@ struct U8 : Module {
             }
             float sidechainCV = clamp(1.0f - (duckCV * duckAmount * 3.0f), 0.0f, 1.0f);
 
-            // Apply level control
+            // Apply level control (±5V = 滿範圍)
             float level = levelParam;
             if (inputs[LEVEL_CV_INPUT].isConnected()) {
                 int levelChan = (c < levelCvChannels) ? c : 0;
-                float cvLevel = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 10.0f, 0.0f, 1.0f);
-                level = levelParam * cvLevel;
+                float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 5.0f, -1.0f, 1.0f);
+                // CV 直接加到旋鈕值上（以 1.0 為單位）
+                level = levelParam + cvNorm;
+                level = clamp(level, 0.0f, 2.0f);
             }
 
             leftInput *= level * sidechainCV;
@@ -273,12 +287,14 @@ struct U8 : Module {
             }
             float sidechainCV = clamp(1.0f - (duckCV * duckAmount * 3.0f), 0.0f, 1.0f);
 
-            // Apply level control
+            // Apply level control (±5V = 滿範圍)
             float level = levelParam;
             if (inputs[LEVEL_CV_INPUT].isConnected()) {
                 int levelChan = (c < levelCvChannels) ? c : 0;
-                float cvLevel = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 10.0f, 0.0f, 1.0f);
-                level = levelParam * cvLevel;
+                float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 5.0f, -1.0f, 1.0f);
+                // CV 直接加到旋鈕值上（以 1.0 為單位）
+                level = levelParam + cvNorm;
+                level = clamp(level, 0.0f, 2.0f);
             }
 
             rightInput *= level * sidechainCV;
@@ -310,6 +326,7 @@ struct U8 : Module {
 
 struct U8Widget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    TechnoStandardBlackKnob* levelKnob = nullptr;
 
     U8Widget(U8* module) {
         setModule(module);
@@ -326,7 +343,8 @@ struct U8Widget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(0, 28), Vec(box.size.x, 16), "INPUT", 8.f, nvgRGB(255, 255, 255), true));
 
         addChild(new TechnoEnhancedTextLabel(Vec(-5, 89), Vec(box.size.x + 10, 10), "LEVEL", 10.5f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(box.size.x / 2, 123), module, U8::LEVEL_PARAM));
+        levelKnob = createParamCentered<TechnoStandardBlackKnob>(Vec(box.size.x / 2, 123), module, U8::LEVEL_PARAM);
+        addParam(levelKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(box.size.x / 2, 161), module, U8::LEVEL_CV_INPUT));
 
         addChild(new TechnoEnhancedTextLabel(Vec(-5, 182), Vec(box.size.x + 10, 10), "DUCK", 10.5f, nvgRGB(255, 255, 255), true));
@@ -353,6 +371,15 @@ struct U8Widget : ModuleWidget {
         U8* module = dynamic_cast<U8*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 更新 Level 旋鈕的 CV 調變顯示
+            if (levelKnob) {
+                bool cvConnected = module->inputs[U8::LEVEL_CV_INPUT].isConnected();
+                levelKnob->setModulationEnabled(cvConnected);
+                if (cvConnected) {
+                    levelKnob->setModulation(module->levelCvModulation);
+                }
+            }
         }
         ModuleWidget::step();
     }

@@ -261,7 +261,14 @@ struct KIMO : Module {
     };
 
     dsp::SchmittTrigger clockTrigger;
-    
+
+    // CV 調變顯示用
+    float fillCvMod = 0.0f;
+    float tuneCvMod = 0.0f;
+    float fmCvMod = 0.0f;
+    float punchCvMod = 0.0f;
+    float decayCvMod = 0.0f;
+
     float globalClockSeconds = 0.5f;
     float secondsSinceLastClock = -1.0f;
     static constexpr int GLOBAL_LENGTH = 16;
@@ -422,7 +429,11 @@ struct KIMO : Module {
 
         float fillParam = params[FILL_PARAM].getValue();
         if (inputs[FILL_CV_INPUT].isConnected()) {
-            fillParam += inputs[FILL_CV_INPUT].getVoltage() * 10.0f;
+            float cv = inputs[FILL_CV_INPUT].getVoltage();
+            fillParam += cv * 10.0f;
+            fillCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            fillCvMod = 0.0f;
         }
         float fillPercentage = clamp(fillParam, 0.0f, 100.0f);
         track.fill = (int)std::round((fillPercentage / 100.0f) * track.length);
@@ -437,8 +448,12 @@ struct KIMO : Module {
         
         float decayParam = std::exp(params[DECAY_PARAM].getValue());
         if (inputs[DECAY_CV_INPUT].isConnected()) {
-            decayParam += inputs[DECAY_CV_INPUT].getVoltage() / 10.0f;
+            float cv = inputs[DECAY_CV_INPUT].getVoltage();
+            decayParam += cv / 10.0f;
             decayParam = clamp(decayParam, 0.01f, 2.0f);
+            decayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            decayCvMod = 0.0f;
         }
         float shapeParam = params[SHAPE_PARAM].getValue();
         
@@ -447,21 +462,33 @@ struct KIMO : Module {
         
         float fmAmount = params[FM_PARAM].getValue();
         if (inputs[FM_CV_INPUT].isConnected()) {
-            fmAmount += inputs[FM_CV_INPUT].getVoltage() / 10.0f;
+            float cv = inputs[FM_CV_INPUT].getVoltage();
+            fmAmount += cv / 10.0f;
             fmAmount = clamp(fmAmount, 0.0f, 1.0f);
+            fmCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            fmCvMod = 0.0f;
         }
-        
+
         float freqParam = std::pow(2.0f, params[TUNE_PARAM].getValue());
         if (inputs[TUNE_CV_INPUT].isConnected()) {
-            float freqCV = params[TUNE_PARAM].getValue() + inputs[TUNE_CV_INPUT].getVoltage();
+            float cv = inputs[TUNE_CV_INPUT].getVoltage();
+            float freqCV = params[TUNE_PARAM].getValue() + cv;
             freqParam = std::pow(2.0f, freqCV);
             freqParam = clamp(freqParam, std::pow(2.0f, std::log2(24.0f)), std::pow(2.0f, std::log2(500.0f)));
+            tuneCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            tuneCvMod = 0.0f;
         }
-        
+
         float punchAmount = params[PUNCH_PARAM].getValue();
         if (inputs[PUNCH_CV_INPUT].isConnected()) {
-            punchAmount += inputs[PUNCH_CV_INPUT].getVoltage() / 10.0f;
+            float cv = inputs[PUNCH_CV_INPUT].getVoltage();
+            punchAmount += cv / 10.0f;
             punchAmount = clamp(punchAmount, 0.0f, 1.0f);
+            punchCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+        } else {
+            punchCvMod = 0.0f;
         }
         
         float envelopeFM = envelopeOutput * fmAmount * 20.0f;
@@ -484,6 +511,11 @@ struct KIMO : Module {
 
 struct KIMOWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
+    TechnoStandardBlackKnob30* fillKnob = nullptr;
+    TechnoStandardBlackKnob30* tuneKnob = nullptr;
+    TechnoStandardBlackKnob30* fmKnob = nullptr;
+    TechnoStandardBlackKnob30* punchKnob = nullptr;
+    TechnoStandardBlackKnob30* decayKnob = nullptr;
 
     KIMOWidget(KIMO* module) {
         setModule(module);
@@ -500,7 +532,8 @@ struct KIMOWidget : ModuleWidget {
         addChild(new TechnoEnhancedTextLabel(Vec(5, 38), Vec(20, 15), "CLK", 6.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 63), module, KIMO::CLK_INPUT));
         addChild(new TechnoEnhancedTextLabel(Vec(35, 38), Vec(20, 15), "FILL", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 63), module, KIMO::FILL_PARAM));
+        fillKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 63), module, KIMO::FILL_PARAM);
+        addParam(fillKnob);
 
         // ACCENT (78 -> 80)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 80), Vec(20, 15), "ACCENT", 5.f, nvgRGB(255, 255, 255), true));
@@ -512,19 +545,23 @@ struct KIMOWidget : ModuleWidget {
 
         // TUNE (118 -> 122)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 122), Vec(20, 15), "TUNE", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 147), module, KIMO::TUNE_PARAM));
+        tuneKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 147), module, KIMO::TUNE_PARAM);
+        addParam(tuneKnob);
 
         // FM (118 -> 122)
         addChild(new TechnoEnhancedTextLabel(Vec(35, 122), Vec(20, 15), "FM", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 147), module, KIMO::FM_PARAM));
+        fmKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 147), module, KIMO::FM_PARAM);
+        addParam(fmKnob);
 
         // PUNCH (158 -> 164)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 164), Vec(20, 15), "PUNCH", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 189), module, KIMO::PUNCH_PARAM));
+        punchKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 189), module, KIMO::PUNCH_PARAM);
+        addParam(punchKnob);
 
         // DECAY (158 -> 164)
         addChild(new TechnoEnhancedTextLabel(Vec(35, 164), Vec(20, 15), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 189), module, KIMO::DECAY_PARAM));
+        decayKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 189), module, KIMO::DECAY_PARAM);
+        addParam(decayKnob);
 
         // SHAPE (198 -> 206)
         addChild(new TechnoEnhancedTextLabel(Vec(5, 206), Vec(20, 15), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
@@ -570,6 +607,21 @@ struct KIMOWidget : ModuleWidget {
         KIMO* module = dynamic_cast<KIMO*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV 調變顯示更新
+            auto updateKnob = [&](TechnoStandardBlackKnob30* knob, int inputId, float cvMod) {
+                if (knob) {
+                    bool connected = module->inputs[inputId].isConnected();
+                    knob->setModulationEnabled(connected);
+                    if (connected) knob->setModulation(cvMod);
+                }
+            };
+
+            updateKnob(fillKnob, KIMO::FILL_CV_INPUT, module->fillCvMod);
+            updateKnob(tuneKnob, KIMO::TUNE_CV_INPUT, module->tuneCvMod);
+            updateKnob(fmKnob, KIMO::FM_CV_INPUT, module->fmCvMod);
+            updateKnob(punchKnob, KIMO::PUNCH_CV_INPUT, module->punchCvMod);
+            updateKnob(decayKnob, KIMO::DECAY_CV_INPUT, module->decayCvMod);
         }
         ModuleWidget::step();
     }

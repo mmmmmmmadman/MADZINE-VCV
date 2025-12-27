@@ -656,6 +656,11 @@ struct MADDYPlus : Module {
     dsp::PulseGenerator clockPulse;
     float prevSwingPulse = 0.0f;  // For detecting rising edge
 
+    // CV display modulation values
+    float clockCvMod = 0.0f;
+    float ch2CvdCvMod = 0.0f;
+    float ch3CvdCvMod = 0.0f;
+
     struct TrackState {
         int divMultValue = 0;
         int division = 1;
@@ -1522,6 +1527,9 @@ json_t* dataToJson() override {
             float cvVoltage = inputs[CLOCK_CV_INPUT].getVoltage();
             float attenuation = params[CLOCK_CV_ATTEN_PARAM].getValue();
             clockCVMod = cvVoltage * attenuation;
+            clockCvMod = clamp(cvVoltage / 5.0f * attenuation, -1.0f, 1.0f);
+        } else {
+            clockCvMod = 0.0f;
         }
 
         float freq = std::pow(2.0f, freqParam + clockCVMod) * 1.0f;
@@ -1726,9 +1734,12 @@ json_t* dataToJson() override {
 
         if (!inputs[CH2_CV_INPUT].isConnected()) {
             ch2DelayTimeMs = ch2KnobValue * 1000.0f;
+            ch2CvdCvMod = 0.0f;
         } else {
-            float ch2CvdCV = clamp(inputs[CH2_CV_INPUT].getVoltage(), 0.0f, 10.0f);
+            float cv = inputs[CH2_CV_INPUT].getVoltage();
+            float ch2CvdCV = clamp(cv, 0.0f, 10.0f);
             ch2DelayTimeMs = (ch2CvdCV / 10.0f) * ch2KnobValue * 1000.0f;
+            ch2CvdCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
         }
 
         if (ch2DelayTimeMs <= 0.001f) {
@@ -1810,9 +1821,12 @@ json_t* dataToJson() override {
 
         if (!inputs[CH3_CV_INPUT].isConnected()) {
             ch3DelayTimeMs = ch3KnobValue * 1000.0f;
+            ch3CvdCvMod = 0.0f;
         } else {
-            float ch3CvdCV = clamp(inputs[CH3_CV_INPUT].getVoltage(), 0.0f, 10.0f);
+            float cv = inputs[CH3_CV_INPUT].getVoltage();
+            float ch3CvdCV = clamp(cv, 0.0f, 10.0f);
             ch3DelayTimeMs = (ch3CvdCV / 10.0f) * ch3KnobValue * 1000.0f;
+            ch3CvdCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
         }
 
         if (ch3DelayTimeMs <= 0.001f) {
@@ -2018,6 +2032,11 @@ struct Ch3ClockSourceParamQuantity : ParamQuantity {
 struct MADDYPlusWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
 
+    // CV display knob pointers
+    madzine::widgets::BaseCustomKnob* freqKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* ch2CvdKnob = nullptr;
+    madzine::widgets::BaseCustomKnob* ch3CvdKnob = nullptr;
+
     MADDYPlusWidget(MADDYPlus* module) {
         setModule(module);
         panelThemeHelper.init(this, "12HP");
@@ -2043,7 +2062,8 @@ resetButton->module = module;
         addParam(resetButton);
 
         addChild(new MADDYPlusEnhancedTextLabel(Vec(86, 28), Vec(25, 15), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(98, 52), module, MADDYPlus::FREQ_PARAM));
+        freqKnob = createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(98, 52), module, MADDYPlus::FREQ_PARAM);
+        addParam(freqKnob);
 
         // Original DECAY position
         addChild(new MADDYPlusEnhancedTextLabel(Vec(8, 61), Vec(25, 15), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
@@ -2135,7 +2155,8 @@ resetButton->module = module;
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(ch2OffsetX + 45, 70), module, MADDYPlus::CH2_DENSITY_PARAM));
 
         addChild(new MADDYPlusEnhancedTextLabel(Vec(ch2OffsetX + 3, 115), Vec(25, 10), "CVD", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(ch2OffsetX + 15, 140), module, MADDYPlus::CH2_CVD_ATTEN_PARAM));
+        ch2CvdKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(ch2OffsetX + 15, 140), module, MADDYPlus::CH2_CVD_ATTEN_PARAM);
+        addParam(ch2CvdKnob);
 
         addChild(new MADDYPlusEnhancedTextLabel(Vec(ch2OffsetX + 33, 92), Vec(25, 10), "DELAY", 6.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::MADDYPlusSnapKnob>(Vec(ch2OffsetX + 45, 115), module, MADDYPlus::CH2_STEP_DELAY_PARAM));
@@ -2154,7 +2175,8 @@ resetButton->module = module;
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(ch2OffsetX + 45, 217), module, MADDYPlus::CH3_DENSITY_PARAM));
 
         addChild(new MADDYPlusEnhancedTextLabel(Vec(ch2OffsetX + 3, 262), Vec(25, 10), "CVD", 6.f, nvgRGB(255, 255, 255), true));
-        addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(ch2OffsetX + 15, 287), module, MADDYPlus::CH3_CVD_ATTEN_PARAM));
+        ch3CvdKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(ch2OffsetX + 15, 287), module, MADDYPlus::CH3_CVD_ATTEN_PARAM);
+        addParam(ch3CvdKnob);
 
         addChild(new MADDYPlusEnhancedTextLabel(Vec(ch2OffsetX + 33, 244), Vec(25, 10), "DELAY", 6.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::MADDYPlusSnapKnob>(Vec(ch2OffsetX + 45, 267), module, MADDYPlus::CH3_STEP_DELAY_PARAM));
@@ -2294,6 +2316,27 @@ resetButton->module = module;
         MADDYPlus* module = dynamic_cast<MADDYPlus*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // CV display update for FREQ knob
+            if (freqKnob) {
+                bool connected = module->inputs[MADDYPlus::CLOCK_CV_INPUT].isConnected();
+                freqKnob->setModulationEnabled(connected);
+                if (connected) freqKnob->setModulation(module->clockCvMod);
+            }
+
+            // CV display update for CH2 CVD knob
+            if (ch2CvdKnob) {
+                bool connected = module->inputs[MADDYPlus::CH2_CV_INPUT].isConnected();
+                ch2CvdKnob->setModulationEnabled(connected);
+                if (connected) ch2CvdKnob->setModulation(module->ch2CvdCvMod);
+            }
+
+            // CV display update for CH3 CVD knob
+            if (ch3CvdKnob) {
+                bool connected = module->inputs[MADDYPlus::CH3_CV_INPUT].isConnected();
+                ch3CvdKnob->setModulationEnabled(connected);
+                if (connected) ch3CvdKnob->setModulation(module->ch3CvdCvMod);
+            }
         }
         ModuleWidget::step();
     }
