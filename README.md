@@ -1,6 +1,6 @@
 # MADZINE Modules for VCV Rack
 
-**Version 2.3.6**
+**Version 2.3.7**
 
 A collection of creative modules for VCV Rack, focusing on rhythm generation, mixing, and experimental sound design.
 
@@ -34,9 +34,6 @@ A collection of creative modules for VCV Rack, focusing on rhythm generation, mi
 - **Pyramid** (8 HP) - 3D panning router
 - **DECAPyramid** (40 HP) - 8-track 3D panning router with send/return
 
-### Experimental
-- **Multiverse** (8 HP) - 4-channel analog style visual synth (macOS Apple Silicon only)
-
 ### Utility
 - **AD Generator** (8 HP) - Attack Decay envelope generator
 - **Pinpple** (4 HP) - Ping filter hihat synthesizer with dynamic FM modulation
@@ -55,6 +52,12 @@ Available in the [VCV Rack Library](https://library.vcvrack.com/?brand=MADZINE)
 ## Manual
 
 See `Manual/madzine_modules_compact.html` for the interactive module manual.
+
+## v2.3.7 Changelog
+
+- **CV Modulation Display**: All knobs with CV inputs now show a secondary indicator ring when CV is connected (cyan for positive, orange for negative modulation)
+- Fixed UniversalRhythm array bounds crash issue
+- Various bug fixes and improvements
 
 ## v2.3.6 Changelog
 
