@@ -173,6 +173,11 @@ struct Launchpad : Module {
     enum InputId {
         CLOCK_INPUT,
         RESET_INPUT,
+        // Scene trigger inputs
+        SCENE_1_TRIG_INPUT, SCENE_2_TRIG_INPUT, SCENE_3_TRIG_INPUT, SCENE_4_TRIG_INPUT,
+        SCENE_5_TRIG_INPUT, SCENE_6_TRIG_INPUT, SCENE_7_TRIG_INPUT, SCENE_8_TRIG_INPUT,
+        // Stop all trigger input
+        STOP_ALL_TRIG_INPUT,
         // Row inputs
         ROW_1_INPUT, ROW_2_INPUT, ROW_3_INPUT, ROW_4_INPUT,
         ROW_5_INPUT, ROW_6_INPUT, ROW_7_INPUT, ROW_8_INPUT,
@@ -204,12 +209,18 @@ struct Launchpad : Module {
     // Clock tracking
     dsp::SchmittTrigger clockTrigger;
     dsp::SchmittTrigger resetTrigger;
-    dsp::SchmittTrigger sceneTriggers[8];
-    dsp::SchmittTrigger stopAllTrigger;
+    dsp::SchmittTrigger sceneTriggers[8];        // For button params
+    dsp::SchmittTrigger sceneInputTriggers[8];   // For input jacks
+    dsp::SchmittTrigger stopAllTrigger;          // For button param
+    dsp::SchmittTrigger stopAllInputTrigger;     // For input jack
     int clockCount = 0;
     int samplesPerClock = 0;
     int samplesSinceLastClock = 0;
     float lastClockTime = 0.f;
+
+    // Queued actions for quantize timing
+    bool queuedScenes[8] = {false};
+    bool queuedStopAll = false;
 
     // Recording state
     int recordingRow = -1;
@@ -246,6 +257,10 @@ struct Launchpad : Module {
         configInput(CLOCK_INPUT, "Clock");
         configInput(RESET_INPUT, "Reset");
         for (int i = 0; i < 8; i++) {
+            configInput(SCENE_1_TRIG_INPUT + i, string::f("Scene %d Trigger", i + 1));
+        }
+        configInput(STOP_ALL_TRIG_INPUT, "Stop All Trigger");
+        for (int i = 0; i < 8; i++) {
             configInput(ROW_1_INPUT + i, string::f("Row %d", i + 1));
         }
         configInput(RETURN_A_L_INPUT, "Return A Left");
@@ -274,6 +289,10 @@ struct Launchpad : Module {
         clockCount = 0;
         recordingRow = -1;
         recordingCol = -1;
+        for (int i = 0; i < 8; i++) {
+            queuedScenes[i] = false;
+        }
+        queuedStopAll = false;
     }
 
     // Cell interaction
@@ -503,19 +522,55 @@ struct Launchpad : Module {
                         }
                     }
                 }
+
+                // Process queued scene triggers at quantize boundary
+                for (int i = 0; i < 8; i++) {
+                    if (queuedScenes[i]) {
+                        triggerScene(i);
+                        queuedScenes[i] = false;
+                    }
+                }
+
+                // Process queued stop all at quantize boundary
+                if (queuedStopAll) {
+                    stopAll();
+                    queuedStopAll = false;
+                }
             }
         }
         samplesSinceLastClock++;
 
-        // Process stop all
+        // Process stop all button (immediate or queue based on quantize)
         if (stopAllTrigger.process(params[STOP_ALL_PARAM].getValue())) {
             stopAll();
         }
 
-        // Process scene triggers
+        // Process stop all input trigger (respects quantize)
+        if (stopAllInputTrigger.process(inputs[STOP_ALL_TRIG_INPUT].getVoltage(), 0.1f, 1.f)) {
+            int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
+            if (quantize == 0) {
+                stopAll();
+            } else {
+                queuedStopAll = true;
+            }
+        }
+
+        // Process scene button triggers (immediate)
         for (int i = 0; i < 8; i++) {
             if (sceneTriggers[i].process(params[SCENE_1_PARAM + i].getValue())) {
                 triggerScene(i);
+            }
+        }
+
+        // Process scene input triggers (respects quantize)
+        for (int i = 0; i < 8; i++) {
+            if (sceneInputTriggers[i].process(inputs[SCENE_1_TRIG_INPUT + i].getVoltage(), 0.1f, 1.f)) {
+                int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
+                if (quantize == 0) {
+                    triggerScene(i);
+                } else {
+                    queuedScenes[i] = true;
+                }
             }
         }
 
@@ -981,31 +1036,33 @@ struct LaunchpadWidget : ModuleWidget {
         addChild(new LaunchpadLabel(Vec(0, 26), Vec(200, 20), "MADZINE", 20.f, titleColor, false));
 
         // Clock, Reset, Quantize - upper right (with labels)
-        addChild(new LaunchpadLabel(Vec(480 - 20, 28), Vec(40, 12), "CLK", 9.f));
-        addInput(createInputCentered<PJ301MPort>(Vec(480, 50), module, Launchpad::CLOCK_INPUT));
-        addChild(new LaunchpadLabel(Vec(525 - 20, 28), Vec(40, 12), "RST", 9.f));
-        addInput(createInputCentered<PJ301MPort>(Vec(525, 50), module, Launchpad::RESET_INPUT));
-        addChild(new LaunchpadLabel(Vec(570 - 20, 28), Vec(40, 12), "QTZ", 9.f));
-        addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(570, 50), module, Launchpad::QUANTIZE_PARAM));
+        addChild(new LaunchpadLabel(Vec(475 - 25, 25), Vec(50, 12), "Clock", 9.f));
+        addInput(createInputCentered<PJ301MPort>(Vec(475, 50), module, Launchpad::CLOCK_INPUT));
+        addChild(new LaunchpadLabel(Vec(520 - 25, 25), Vec(50, 12), "Reset", 9.f));
+        addInput(createInputCentered<PJ301MPort>(Vec(520, 50), module, Launchpad::RESET_INPUT));
+        addChild(new LaunchpadLabel(Vec(565 - 30, 25), Vec(60, 12), "Quantize", 9.f));
+        addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(565, 50), module, Launchpad::QUANTIZE_PARAM));
 
-        // Stop All button (with label)
-        addChild(new LaunchpadLabel(Vec(27 - 15, 48), Vec(30, 12), "STOP", 8.f));
-        addParam(createParamCentered<VCVButton>(Vec(27, 70), module, Launchpad::STOP_ALL_PARAM));
-
-        // Scene buttons (aligned with cells)
+        // Scene trigger inputs (above scene buttons)
         float cellStartX = 70;
         float cellSpacing = 44;
         for (int i = 0; i < 8; i++) {
             float x = cellStartX + i * cellSpacing;
-            addParam(createParamCentered<VCVButton>(Vec(x, 70), module, Launchpad::SCENE_1_PARAM + i));
+            addInput(createInputCentered<PJ301MPort>(Vec(x, 48), module, Launchpad::SCENE_1_TRIG_INPUT + i));
         }
 
-        // Column headers for row controls
-        addChild(new LaunchpadLabel(Vec(430 - 12, 82), Vec(24, 12), "S.A", 8.f));
-        addChild(new LaunchpadLabel(Vec(468 - 12, 82), Vec(24, 12), "S.B", 8.f));
-        addChild(new LaunchpadLabel(Vec(506 - 12, 82), Vec(24, 12), "PAN", 8.f));
-        addChild(new LaunchpadLabel(Vec(544 - 12, 82), Vec(24, 12), "LVL", 8.f));
-        addChild(new LaunchpadLabel(Vec(577 - 12, 82), Vec(24, 12), "OUT", 8.f));
+        // Scene buttons (aligned with cells)
+        for (int i = 0; i < 8; i++) {
+            float x = cellStartX + i * cellSpacing;
+            addParam(createParamCentered<VCVButton>(Vec(x, 75), module, Launchpad::SCENE_1_PARAM + i));
+        }
+
+        // Column headers for row controls (X = knob center - labelWidth/2)
+        addChild(new LaunchpadLabel(Vec(430 - 18, 79), Vec(36, 12), "Send A", 7.f));   // knob at 430
+        addChild(new LaunchpadLabel(Vec(468 - 18, 79), Vec(36, 12), "Send B", 7.f));   // knob at 468
+        addChild(new LaunchpadLabel(Vec(506 - 12, 79), Vec(24, 12), "Pan", 8.f));      // knob at 506
+        addChild(new LaunchpadLabel(Vec(544 - 15, 79), Vec(30, 12), "Level", 7.f));    // knob at 544
+        addChild(new LaunchpadLabel(Vec(577 - 12, 79), Vec(24, 12), "Out", 8.f));      // port at 577
 
         // 8 rows
         float rowStartY = 100;
@@ -1042,28 +1099,33 @@ struct LaunchpadWidget : ModuleWidget {
         // Bottom section (Y=330+) with labels (pink color)
         NVGcolor pinkText = nvgRGB(232, 112, 112);  // Sashimi pink
 
+        // Stop All (left side of bottom panel)
+        addChild(new LaunchpadLabel(Vec(30 - 20, 332), Vec(40, 12), "Stop All", 8.f, pinkText));
+        addInput(createInputCentered<PJ301MPort>(Vec(20, 355), module, Launchpad::STOP_ALL_TRIG_INPUT));
+        addParam(createParamCentered<TL1105>(Vec(45, 355), module, Launchpad::STOP_ALL_PARAM));
+
         // Send A
-        addChild(new LaunchpadLabel(Vec(50 - 30, 335), Vec(60, 12), "SEND A", 9.f, pinkText));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(35, 355), module, Launchpad::SEND_A_L_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(65, 355), module, Launchpad::SEND_A_R_OUTPUT));
+        addChild(new LaunchpadLabel(Vec(95 - 30, 332), Vec(60, 12), "Send A", 9.f, pinkText));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(80, 355), module, Launchpad::SEND_A_L_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(110, 355), module, Launchpad::SEND_A_R_OUTPUT));
 
         // Return A
-        addChild(new LaunchpadLabel(Vec(130 - 30, 335), Vec(60, 12), "RTN A", 9.f, pinkText));
-        addInput(createInputCentered<PJ301MPort>(Vec(115, 355), module, Launchpad::RETURN_A_L_INPUT));
-        addInput(createInputCentered<PJ301MPort>(Vec(145, 355), module, Launchpad::RETURN_A_R_INPUT));
+        addChild(new LaunchpadLabel(Vec(170 - 35, 332), Vec(70, 12), "Return A", 9.f, pinkText));
+        addInput(createInputCentered<PJ301MPort>(Vec(155, 355), module, Launchpad::RETURN_A_L_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(185, 355), module, Launchpad::RETURN_A_R_INPUT));
 
         // Send B
-        addChild(new LaunchpadLabel(Vec(230 - 30, 335), Vec(60, 12), "SEND B", 9.f, pinkText));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(215, 355), module, Launchpad::SEND_B_L_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(245, 355), module, Launchpad::SEND_B_R_OUTPUT));
+        addChild(new LaunchpadLabel(Vec(260 - 30, 332), Vec(60, 12), "Send B", 9.f, pinkText));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(245, 355), module, Launchpad::SEND_B_L_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(275, 355), module, Launchpad::SEND_B_R_OUTPUT));
 
         // Return B
-        addChild(new LaunchpadLabel(Vec(310 - 30, 335), Vec(60, 12), "RTN B", 9.f, pinkText));
-        addInput(createInputCentered<PJ301MPort>(Vec(295, 355), module, Launchpad::RETURN_B_L_INPUT));
-        addInput(createInputCentered<PJ301MPort>(Vec(325, 355), module, Launchpad::RETURN_B_R_INPUT));
+        addChild(new LaunchpadLabel(Vec(345 - 35, 332), Vec(70, 12), "Return B", 9.f, pinkText));
+        addInput(createInputCentered<PJ301MPort>(Vec(330, 355), module, Launchpad::RETURN_B_L_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(360, 355), module, Launchpad::RETURN_B_R_INPUT));
 
         // Mix
-        addChild(new LaunchpadLabel(Vec(550 - 20, 335), Vec(40, 12), "MIX", 9.f, pinkText));
+        addChild(new LaunchpadLabel(Vec(550 - 20, 332), Vec(40, 12), "Mix", 9.f, pinkText));
         addOutput(createOutputCentered<PJ301MPort>(Vec(535, 355), module, Launchpad::MIX_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(565, 355), module, Launchpad::MIX_R_OUTPUT));
     }
