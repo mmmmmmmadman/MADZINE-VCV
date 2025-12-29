@@ -185,7 +185,7 @@ struct Pyramid : Module {
             float cv = inputs[X_CV_INPUT].getVoltage();
             x += cv * 0.2f;
             x = clamp(x, -1.f, 1.f);
-            xCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            xCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             xCvMod = 0.0f;
         }
@@ -193,7 +193,7 @@ struct Pyramid : Module {
             float cv = inputs[Y_CV_INPUT].getVoltage();
             y += cv * 0.2f;
             y = clamp(y, -1.f, 1.f);
-            yCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            yCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             yCvMod = 0.0f;
         }
@@ -201,7 +201,7 @@ struct Pyramid : Module {
             float cv = inputs[Z_CV_INPUT].getVoltage();
             z += cv * 0.2f;
             z = clamp(z, -1.f, 1.f);
-            zCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            zCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             zCvMod = 0.0f;
         }
@@ -210,7 +210,7 @@ struct Pyramid : Module {
             float cv = inputs[FILTER_CV_INPUT].getVoltage();
             filter += cv * 0.2f;
             filter = clamp(filter, -1.f, 1.f);
-            filterCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            filterCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             filterCvMod = 0.0f;
         }

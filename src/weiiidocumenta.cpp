@@ -591,7 +591,7 @@ struct WeiiiDocumenta : Module {
             float cv = inputs[THRESHOLD_CV_INPUT].getVoltage();
             float atten = params[THRESHOLD_CV_ATTEN_PARAM].getValue();
             thresholdValue = clamp(thresholdValue + cv * atten, 0.0f, 10.0f);
-            thresholdCvMod = clamp(cv / 5.0f * atten, -1.0f, 1.0f);
+            thresholdCvMod = clamp(cv / 10.0f * atten, -1.0f, 1.0f);
         } else {
             thresholdCvMod = 0.0f;
         }
@@ -605,7 +605,7 @@ struct WeiiiDocumenta : Module {
             float cv = inputs[FEEDBACK_AMOUNT_CV_INPUT].getVoltage();
             float feedbackAtten = params[FEEDBACK_AMOUNT_CV_ATTEN_PARAM].getValue();
             feedbackValue = clamp(feedbackValue + (cv / 10.0f) * feedbackAtten, 0.0f, 1.0f);
-            feedbackCvMod = clamp(cv / 5.0f * feedbackAtten, -1.0f, 1.0f);
+            feedbackCvMod = clamp(cv / 10.0f * feedbackAtten, -1.0f, 1.0f);
         } else {
             feedbackCvMod = 0.0f;
         }
@@ -654,7 +654,7 @@ struct WeiiiDocumenta : Module {
         if (inputs[POLY_CV_INPUT].isConnected()) {
             float polyCv = inputs[POLY_CV_INPUT].getVoltage();
             polyValue = clamp(polyValue + polyCv / 10.0f * 7.0f, 1.0f, 8.0f); // 0-10V -> 0-7 additional voices
-            polyCvMod = clamp(polyCv / 5.0f, -1.0f, 1.0f);
+            polyCvMod = clamp(polyCv / 10.0f, -1.0f, 1.0f);
         } else {
             polyCvMod = 0.0f;
         }
@@ -831,7 +831,7 @@ struct WeiiiDocumenta : Module {
                 float cv = inputs[SCAN_CV_INPUT].getVoltage();
                 float atten = params[SCAN_CV_ATTEN_PARAM].getValue();
                 scanValue = clamp(scanValue + (cv / 10.0f) * atten, 0.0f, 1.0f);
-                scanCvMod = clamp(cv / 5.0f * atten, -1.0f, 1.0f);
+                scanCvMod = clamp(cv / 10.0f * atten, -1.0f, 1.0f);
             } else {
                 scanCvMod = 0.0f;
             }
@@ -896,7 +896,7 @@ struct WeiiiDocumenta : Module {
                 if (inputs[SPEED_CV_INPUT].isConnected()) {
                     float speedCv = inputs[SPEED_CV_INPUT].getVoltage();
                     playbackSpeed = clamp(playbackSpeed + speedCv, -8.0f, 8.0f);
-                    speedCvMod = clamp(speedCv / 5.0f, -1.0f, 1.0f);
+                    speedCvMod = clamp(speedCv / 10.0f, -1.0f, 1.0f);
                 } else {
                     speedCvMod = 0.0f;
                 }
@@ -1144,7 +1144,7 @@ struct WeiiiDocumenta : Module {
             float rateCv = inputs[SH_RATE_CV_INPUT].getVoltage();  // 0-10V
             float rateAtten = params[SH_RATE_CV_ATTEN_PARAM].getValue();
             shRateLog = clamp(shRateLog + rateCv * rateAtten, std::log2(0.01f), std::log2(100.0f));
-            shRateCvMod = clamp(rateCv / 5.0f * rateAtten, -1.0f, 1.0f);
+            shRateCvMod = clamp(rateCv / 10.0f * rateAtten, -1.0f, 1.0f);
         } else {
             shRateCvMod = 0.0f;
         }
@@ -1179,7 +1179,7 @@ struct WeiiiDocumenta : Module {
             float gainCv = inputs[SH_AMOUNT_CV_INPUT].getVoltage();
             float gainAtten = params[SH_AMOUNT_CV_ATTEN_PARAM].getValue();
             shGain = clamp(shGain + gainCv * 0.5f * gainAtten, 0.0f, 5.0f);  // 0-10V -> 0-5x
-            shAmountCvMod = clamp(gainCv / 5.0f * gainAtten, -1.0f, 1.0f);
+            shAmountCvMod = clamp(gainCv / 10.0f * gainAtten, -1.0f, 1.0f);
         } else {
             shAmountCvMod = 0.0f;
         }

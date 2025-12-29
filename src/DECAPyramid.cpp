@@ -273,7 +273,7 @@ struct DECAPyramid : Module {
                 float cv = inputs[X_CV_INPUT_1 + track * 4].getVoltage();
                 x += cv * 0.2f;
                 x = clamp(x, -1.f, 1.f);
-                cvMod[track][0] = clamp(cv / 5.0f, -1.0f, 1.0f);
+                cvMod[track][0] = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else {
                 cvMod[track][0] = 0.0f;
             }
@@ -281,7 +281,7 @@ struct DECAPyramid : Module {
                 float cv = inputs[Y_CV_INPUT_1 + track * 4].getVoltage();
                 y += cv * 0.2f;
                 y = clamp(y, -1.f, 1.f);
-                cvMod[track][1] = clamp(cv / 5.0f, -1.0f, 1.0f);
+                cvMod[track][1] = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else {
                 cvMod[track][1] = 0.0f;
             }
@@ -289,7 +289,7 @@ struct DECAPyramid : Module {
                 float cv = inputs[Z_CV_INPUT_1 + track * 4].getVoltage();
                 z += cv * 0.2f;
                 z = clamp(z, -1.f, 1.f);
-                cvMod[track][2] = clamp(cv / 5.0f, -1.0f, 1.0f);
+                cvMod[track][2] = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else {
                 cvMod[track][2] = 0.0f;
             }

@@ -328,7 +328,7 @@ struct TWNC2 : Module {
             float cv = inputs[KICK_PUNCH_CV_INPUT].getVoltage();
             kickPunchAmount += cv / 10.0f;
             kickPunchAmount = clamp(kickPunchAmount, 0.0f, 1.0f);
-            kickPunchCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            kickPunchCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             kickPunchCvMod = 0.0f;
         }
@@ -338,7 +338,7 @@ struct TWNC2 : Module {
             float cv = inputs[KICK_FM_CV_INPUT].getVoltage();
             kickFmAmount += (cv / 10.0f) * 20.0f;
             kickFmAmount = clamp(kickFmAmount, 0.0f, 20.0f);
-            kickFmCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            kickFmCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             kickFmCvMod = 0.0f;
         }
@@ -349,7 +349,7 @@ struct TWNC2 : Module {
             float freqCV = params[KICK_FREQ_PARAM].getValue() + cv;
             kickFreqParam = std::pow(2.0f, freqCV);
             kickFreqParam = clamp(kickFreqParam, std::pow(2.0f, std::log2(24.0f)), std::pow(2.0f, std::log2(500.0f)));
-            kickFreqCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            kickFreqCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             kickFreqCvMod = 0.0f;
         }
@@ -371,7 +371,7 @@ struct TWNC2 : Module {
             float cv = inputs[SNARE_NOISE_MIX_CV_INPUT].getVoltage();
             snareNoiseMix += cv / 10.0f;
             snareNoiseMix = clamp(snareNoiseMix, 0.0f, 1.0f);
-            snareNoiseMixCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            snareNoiseMixCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             snareNoiseMixCvMod = 0.0f;
         }
@@ -420,7 +420,7 @@ struct TWNC2 : Module {
             float cv = inputs[HATS_DECAY_CV_INPUT].getVoltage();
             hatsDecay += cv / 10.0f;
             hatsDecay = clamp(hatsDecay, 0.0f, 1.0f);
-            hatsDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            hatsDecayCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             hatsDecayCvMod = 0.0f;
         }

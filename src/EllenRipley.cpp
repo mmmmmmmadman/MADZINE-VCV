@@ -646,7 +646,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[DELAY_TIME_L_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[DELAY_TIME_L_CV_INPUT], c);
                 delayTimeL += cv * 0.2f;
-                if (c == 0) delayTimeLCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) delayTimeLCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 delayTimeLCvMod = 0.0f;
             }
@@ -659,7 +659,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[DELAY_TIME_R_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[DELAY_TIME_R_CV_INPUT], c);
                 delayTimeR += cv * 0.2f;
-                if (c == 0) delayTimeRCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) delayTimeRCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 delayTimeRCvMod = 0.0f;
             }
@@ -672,7 +672,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[DELAY_FEEDBACK_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[DELAY_FEEDBACK_CV_INPUT], c);
                 feedback += cv * 0.1f;
-                if (c == 0) delayFeedbackCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) delayFeedbackCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 delayFeedbackCvMod = 0.0f;
             }
@@ -697,7 +697,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[GRAIN_SIZE_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[GRAIN_SIZE_CV_INPUT], c);
                 grainSize += cv * 0.1f;
-                if (c == 0) grainSizeCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) grainSizeCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 grainSizeCvMod = 0.0f;
             }
@@ -707,7 +707,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[GRAIN_DENSITY_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[GRAIN_DENSITY_CV_INPUT], c);
                 grainDensity += cv * 0.1f;
-                if (c == 0) grainDensityCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) grainDensityCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 grainDensityCvMod = 0.0f;
             }
@@ -717,7 +717,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[GRAIN_POSITION_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[GRAIN_POSITION_CV_INPUT], c);
                 grainPosition += cv * 0.1f;
-                if (c == 0) grainPositionCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) grainPositionCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 grainPositionCvMod = 0.0f;
             }
@@ -727,7 +727,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[REVERB_ROOM_SIZE_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[REVERB_ROOM_SIZE_CV_INPUT], c);
                 reverbRoomSize += cv * 0.1f;
-                if (c == 0) reverbRoomSizeCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) reverbRoomSizeCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 reverbRoomSizeCvMod = 0.0f;
             }
@@ -737,7 +737,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[REVERB_DAMPING_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[REVERB_DAMPING_CV_INPUT], c);
                 reverbDamping += cv * 0.1f;
-                if (c == 0) reverbDampingCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) reverbDampingCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 reverbDampingCvMod = 0.0f;
             }
@@ -747,7 +747,7 @@ struct EllenRipley : rack::engine::Module {
             if (inputs[REVERB_DECAY_CV_INPUT].isConnected()) {
                 float cv = getCVInput(inputs[REVERB_DECAY_CV_INPUT], c);
                 reverbDecay += cv * 0.1f;
-                if (c == 0) reverbDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                if (c == 0) reverbDecayCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else if (c == 0) {
                 reverbDecayCvMod = 0.0f;
             }

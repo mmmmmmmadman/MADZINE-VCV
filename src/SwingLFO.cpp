@@ -116,7 +116,7 @@ struct SwingLFO : Module {
         float freqCV = 0.0f;
         if (inputs[FREQ_CV_INPUT].isConnected()) {
             freqCV = inputs[FREQ_CV_INPUT].getVoltage() * freqCVAttenuation;
-            freqCvMod = clamp(freqCV / 5.0f, -1.0f, 1.0f);
+            freqCvMod = clamp(freqCV / 10.0f, -1.0f, 1.0f);
         } else {
             freqCvMod = 0.0f;
         }

@@ -553,7 +553,7 @@ public:
         if (inputs[FREQ_CV_INPUT].isConnected()) {
             float freqCVAttenuation = params[FREQ_CV_ATTEN_PARAM].getValue();
             freqCV = inputs[FREQ_CV_INPUT].getVoltage() * freqCVAttenuation;
-            freqCvMod = clamp(freqCV / 5.0f, -1.0f, 1.0f);
+            freqCvMod = clamp(freqCV / 10.0f, -1.0f, 1.0f);
         } else {
             freqCvMod = 0.0f;
         }
@@ -564,7 +564,7 @@ public:
         if (inputs[RESONANCE_CV_INPUT].isConnected()) {
             float resonanceCVAttenuation = params[RESONANCE_CV_ATTEN_PARAM].getValue();
             resonanceCV = inputs[RESONANCE_CV_INPUT].getVoltage() / 10.0f * resonanceCVAttenuation;
-            resonanceCvMod = clamp(inputs[RESONANCE_CV_INPUT].getVoltage() * resonanceCVAttenuation / 5.0f, -1.0f, 1.0f);
+            resonanceCvMod = clamp(inputs[RESONANCE_CV_INPUT].getVoltage() * resonanceCVAttenuation / 10.0f, -1.0f, 1.0f);
         } else {
             resonanceCvMod = 0.0f;
         }
@@ -576,7 +576,7 @@ public:
         if (inputs[FM_MOD_CV_INPUT].isConnected()) {
             float fmModCVAttenuation = params[FM_MOD_CV_ATTEN_PARAM].getValue();
             fmModCV = inputs[FM_MOD_CV_INPUT].getVoltage() / 10.0f * fmModCVAttenuation;
-            fmAmountCvMod = clamp(inputs[FM_MOD_CV_INPUT].getVoltage() * fmModCVAttenuation / 5.0f, -1.0f, 1.0f);
+            fmAmountCvMod = clamp(inputs[FM_MOD_CV_INPUT].getVoltage() * fmModCVAttenuation / 10.0f, -1.0f, 1.0f);
         } else {
             fmAmountCvMod = 0.0f;
         }

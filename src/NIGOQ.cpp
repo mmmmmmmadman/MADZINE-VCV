@@ -1234,7 +1234,7 @@ struct NIGOQ : Module {
             float cv = inputs[MOD_WAVE_CV].getVoltage();
             float waveCV = cv / 10.f; // Normalize 0-10V to 0-1
             waveMorph = clamp(waveMorph + waveCV, 0.f, 1.f);
-            modWaveCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            modWaveCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             modWaveCvMod = 0.0f;
         }
@@ -1286,7 +1286,7 @@ struct NIGOQ : Module {
             float fmCV = cv / 10.f;
             fmModAmount += fmCV * fmAttenuation;
             fmModAmount = clamp(fmModAmount, 0.f, 1.f);
-            fmAmtCvMod = clamp(cv / 5.0f * fmAttenuation, -1.0f, 1.0f);
+            fmAmtCvMod = clamp(cv / 10.0f * fmAttenuation, -1.0f, 1.0f);
         } else {
             fmAmtCvMod = 0.0f;
         }
@@ -1298,7 +1298,7 @@ struct NIGOQ : Module {
             float foldCV = cv / 10.f;
             foldAmount += foldCV;
             foldAmount = clamp(foldAmount, 0.f, 1.f);
-            harmonicsCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            harmonicsCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             harmonicsCvMod = 0.0f;
         }
@@ -1311,7 +1311,7 @@ struct NIGOQ : Module {
             float tmCV = cv / 10.f;
             tmAmount += tmCV * tmAttenuation;
             tmAmount = clamp(tmAmount, 0.f, 1.f);
-            foldAmtCvMod = clamp(cv / 5.0f * tmAttenuation, -1.0f, 1.0f);
+            foldAmtCvMod = clamp(cv / 10.0f * tmAttenuation, -1.0f, 1.0f);
         } else {
             foldAmtCvMod = 0.0f;
         }
@@ -1323,7 +1323,7 @@ struct NIGOQ : Module {
             float rectifyCV = cv / 10.f;
             rectifyAmount += rectifyCV;
             rectifyAmount = clamp(rectifyAmount, 0.f, 1.f);
-            orderCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            orderCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             orderCvMod = 0.0f;
         }
@@ -1336,7 +1336,7 @@ struct NIGOQ : Module {
             float rectModCV = cv / 10.f;
             rectModAmount += rectModCV * rectModAttenuation;
             rectModAmount = clamp(rectModAmount, 0.f, 1.f);
-            amAmtCvMod = clamp(cv / 5.0f * rectModAttenuation, -1.0f, 1.0f);
+            amAmtCvMod = clamp(cv / 10.0f * rectModAttenuation, -1.0f, 1.0f);
         } else {
             amAmtCvMod = 0.0f;
         }
@@ -1352,7 +1352,7 @@ struct NIGOQ : Module {
             float lpfCV = cv / 10.f;
             float cvAmount = lpfCV * 2.f - 1.f;
             lpfCutoff *= std::pow(2.f, cvAmount * 2.f);
-            lpfCutoffCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            lpfCutoffCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             lpfCutoffCvMod = 0.0f;
         }

@@ -742,7 +742,7 @@ struct TWNC : Module {
                     float cv = inputs[DRUM_DECAY_CV_INPUT].getVoltage();
                     decayParam += cv / 10.0f;
                     decayParam = clamp(decayParam, 0.01f, 2.0f);
-                    drumDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                    drumDecayCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
                 } else {
                     drumDecayCvMod = 0.0f;
                 }
@@ -769,7 +769,7 @@ struct TWNC : Module {
                 if (inputs[DRUM_FREQ_CV_INPUT].isConnected()) {
                     float cv = inputs[DRUM_FREQ_CV_INPUT].getVoltage();
                     freqParam += cv;
-                    drumFreqCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                    drumFreqCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
                 } else {
                     drumFreqCvMod = 0.0f;
                 }
@@ -801,7 +801,7 @@ struct TWNC : Module {
                     float cv = inputs[HATS_DECAY_CV_INPUT].getVoltage();
                     decayParam += cv / 10.0f;
                     decayParam = clamp(decayParam, 0.01f, 2.0f);
-                    hatsDecayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                    hatsDecayCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
                 } else {
                     hatsDecayCvMod = 0.0f;
                 }
@@ -829,7 +829,7 @@ struct TWNC : Module {
                 if (inputs[HATS_FREQ_CV_INPUT].isConnected()) {
                     float cv = inputs[HATS_FREQ_CV_INPUT].getVoltage();
                     freqParam += cv;
-                    hatsFreqCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+                    hatsFreqCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
                 } else {
                     hatsFreqCvMod = 0.0f;
                 }

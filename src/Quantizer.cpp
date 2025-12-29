@@ -142,7 +142,7 @@ struct Quantizer : Module {
         if (inputs[SCALE_CV_INPUT].isConnected()) {
             float cv = inputs[SCALE_CV_INPUT].getVoltage();
             scale += cv * 0.2f;  // ±1V = ±0.2 scale
-            scaleCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            scaleCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             scaleCvMod = 0.0f;
         }
@@ -150,7 +150,7 @@ struct Quantizer : Module {
         if (inputs[OFFSET_CV_INPUT].isConnected()) {
             float cv = inputs[OFFSET_CV_INPUT].getVoltage();
             offset += cv;
-            offsetCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            offsetCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             offsetCvMod = 0.0f;
         }

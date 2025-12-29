@@ -90,7 +90,7 @@ public:
     float getModulatedAngle() {
         float baseAngle = getDisplayAngle();
         float modRange = KnobAngles::MAX_ANGLE - KnobAngles::MIN_ANGLE;
-        float modAngle = baseAngle + cvModulation * modRange * 0.5f;
+        float modAngle = baseAngle + cvModulation * modRange;
         return clamp(modAngle, KnobAngles::MIN_ANGLE, KnobAngles::MAX_ANGLE);
     }
 

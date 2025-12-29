@@ -1606,7 +1606,7 @@ struct UniversalRhythm : Module {
             float cv = inputs[REST_CV_INPUT].getVoltage();
             restAmount += cv * 0.1f;
             restAmount = clamp(restAmount, 0.0f, 1.0f);
-            restCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            restCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             restCvMod = 0.0f;
         }
@@ -1644,7 +1644,7 @@ struct UniversalRhythm : Module {
             float styleCV = 0.0f;
             if (inputs[TIMELINE_STYLE_CV_INPUT + r * 4].isConnected()) {
                 styleCV = inputs[TIMELINE_STYLE_CV_INPUT + r * 4].getVoltage();
-                roleCvMod[r][0] = clamp(styleCV / 5.0f, -1.0f, 1.0f);
+                roleCvMod[r][0] = clamp(styleCV / 10.0f, -1.0f, 1.0f);
             } else {
                 roleCvMod[r][0] = 0.0f;
             }
@@ -1655,7 +1655,7 @@ struct UniversalRhythm : Module {
             if (inputs[TIMELINE_DENSITY_CV_INPUT + r * 4].isConnected()) {
                 float cv = inputs[TIMELINE_DENSITY_CV_INPUT + r * 4].getVoltage();
                 densityCV = cv * 0.1f;
-                roleCvMod[r][1] = clamp(cv / 5.0f, -1.0f, 1.0f);
+                roleCvMod[r][1] = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else {
                 roleCvMod[r][1] = 0.0f;
             }
@@ -1664,13 +1664,13 @@ struct UniversalRhythm : Module {
             // Calculate FREQ and DECAY cvMod values
             if (inputs[TIMELINE_FREQ_CV_INPUT + r * 4].isConnected()) {
                 float cv = inputs[TIMELINE_FREQ_CV_INPUT + r * 4].getVoltage();
-                roleCvMod[r][2] = clamp(cv / 5.0f, -1.0f, 1.0f);
+                roleCvMod[r][2] = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else {
                 roleCvMod[r][2] = 0.0f;
             }
             if (inputs[TIMELINE_DECAY_CV_INPUT + r * 4].isConnected()) {
                 float cv = inputs[TIMELINE_DECAY_CV_INPUT + r * 4].getVoltage();
-                roleCvMod[r][3] = clamp(cv / 5.0f, -1.0f, 1.0f);
+                roleCvMod[r][3] = clamp(cv / 10.0f, -1.0f, 1.0f);
             } else {
                 roleCvMod[r][3] = 0.0f;
             }

@@ -188,7 +188,7 @@ struct QQ : Module {
                     float attenuation = params[TRACK1_DECAY_CV_ATTEN_PARAM].getValue();
                     decayTime += cv / 10.f * 2.f * attenuation; // CV range with attenuator
                     decayTime = clamp(decayTime, 0.01f, 2.f);
-                    track1DecayCvMod = clamp(cv / 5.0f * attenuation, -1.0f, 1.0f);
+                    track1DecayCvMod = clamp(cv / 10.0f * attenuation, -1.0f, 1.0f);
                 } else {
                     track1DecayCvMod = 0.0f;
                 }
@@ -201,7 +201,7 @@ struct QQ : Module {
                     float attenuation = params[TRACK2_DECAY_CV_ATTEN_PARAM].getValue();
                     decayTime += cv / 10.f * 2.f * attenuation; // CV range with attenuator
                     decayTime = clamp(decayTime, 0.01f, 2.f);
-                    track2DecayCvMod = clamp(cv / 5.0f * attenuation, -1.0f, 1.0f);
+                    track2DecayCvMod = clamp(cv / 10.0f * attenuation, -1.0f, 1.0f);
                 } else {
                     track2DecayCvMod = 0.0f;
                 }
@@ -214,7 +214,7 @@ struct QQ : Module {
                     float attenuation = params[TRACK3_DECAY_CV_ATTEN_PARAM].getValue();
                     decayTime += cv / 10.f * 2.f * attenuation; // CV range with attenuator
                     decayTime = clamp(decayTime, 0.01f, 2.f);
-                    track3DecayCvMod = clamp(cv / 5.0f * attenuation, -1.0f, 1.0f);
+                    track3DecayCvMod = clamp(cv / 10.0f * attenuation, -1.0f, 1.0f);
                 } else {
                     track3DecayCvMod = 0.0f;
                 }

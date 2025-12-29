@@ -431,7 +431,7 @@ struct KIMO : Module {
         if (inputs[FILL_CV_INPUT].isConnected()) {
             float cv = inputs[FILL_CV_INPUT].getVoltage();
             fillParam += cv * 10.0f;
-            fillCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            fillCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             fillCvMod = 0.0f;
         }
@@ -451,7 +451,7 @@ struct KIMO : Module {
             float cv = inputs[DECAY_CV_INPUT].getVoltage();
             decayParam += cv / 10.0f;
             decayParam = clamp(decayParam, 0.01f, 2.0f);
-            decayCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            decayCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             decayCvMod = 0.0f;
         }
@@ -465,7 +465,7 @@ struct KIMO : Module {
             float cv = inputs[FM_CV_INPUT].getVoltage();
             fmAmount += cv / 10.0f;
             fmAmount = clamp(fmAmount, 0.0f, 1.0f);
-            fmCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            fmCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             fmCvMod = 0.0f;
         }
@@ -476,7 +476,7 @@ struct KIMO : Module {
             float freqCV = params[TUNE_PARAM].getValue() + cv;
             freqParam = std::pow(2.0f, freqCV);
             freqParam = clamp(freqParam, std::pow(2.0f, std::log2(24.0f)), std::pow(2.0f, std::log2(500.0f)));
-            tuneCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            tuneCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             tuneCvMod = 0.0f;
         }
@@ -486,7 +486,7 @@ struct KIMO : Module {
             float cv = inputs[PUNCH_CV_INPUT].getVoltage();
             punchAmount += cv / 10.0f;
             punchAmount = clamp(punchAmount, 0.0f, 1.0f);
-            punchCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            punchCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         } else {
             punchCvMod = 0.0f;
         }

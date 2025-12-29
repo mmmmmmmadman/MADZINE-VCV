@@ -220,7 +220,7 @@ struct U8 : Module {
         // 計算 CV 調變量供 Widget 顯示
         if (inputs[LEVEL_CV_INPUT].isConnected()) {
             // ±5V = 滿範圍，所以除以 5 而非 10
-            float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
+            float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getVoltage() / 10.0f, -1.0f, 1.0f);
             levelCvModulation = cvNorm;
         } else {
             levelCvModulation = 0.0f;
@@ -243,7 +243,7 @@ struct U8 : Module {
             float level = levelParam;
             if (inputs[LEVEL_CV_INPUT].isConnected()) {
                 int levelChan = (c < levelCvChannels) ? c : 0;
-                float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 5.0f, -1.0f, 1.0f);
+                float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 10.0f, -1.0f, 1.0f);
                 // CV 直接加到旋鈕值上（以 1.0 為單位）
                 level = levelParam + cvNorm;
                 level = clamp(level, 0.0f, 2.0f);
@@ -291,7 +291,7 @@ struct U8 : Module {
             float level = levelParam;
             if (inputs[LEVEL_CV_INPUT].isConnected()) {
                 int levelChan = (c < levelCvChannels) ? c : 0;
-                float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 5.0f, -1.0f, 1.0f);
+                float cvNorm = clamp(inputs[LEVEL_CV_INPUT].getPolyVoltage(levelChan) / 10.0f, -1.0f, 1.0f);
                 // CV 直接加到旋鈕值上（以 1.0 為單位）
                 level = levelParam + cvNorm;
                 level = clamp(level, 0.0f, 2.0f);

@@ -1527,7 +1527,7 @@ json_t* dataToJson() override {
             float cvVoltage = inputs[CLOCK_CV_INPUT].getVoltage();
             float attenuation = params[CLOCK_CV_ATTEN_PARAM].getValue();
             clockCVMod = cvVoltage * attenuation;
-            clockCvMod = clamp(cvVoltage / 5.0f * attenuation, -1.0f, 1.0f);
+            clockCvMod = clamp(cvVoltage / 10.0f * attenuation, -1.0f, 1.0f);
         } else {
             clockCvMod = 0.0f;
         }
@@ -1739,7 +1739,7 @@ json_t* dataToJson() override {
             float cv = inputs[CH2_CV_INPUT].getVoltage();
             float ch2CvdCV = clamp(cv, 0.0f, 10.0f);
             ch2DelayTimeMs = (ch2CvdCV / 10.0f) * ch2KnobValue * 1000.0f;
-            ch2CvdCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            ch2CvdCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         }
 
         if (ch2DelayTimeMs <= 0.001f) {
@@ -1826,7 +1826,7 @@ json_t* dataToJson() override {
             float cv = inputs[CH3_CV_INPUT].getVoltage();
             float ch3CvdCV = clamp(cv, 0.0f, 10.0f);
             ch3DelayTimeMs = (ch3CvdCV / 10.0f) * ch3KnobValue * 1000.0f;
-            ch3CvdCvMod = clamp(cv / 5.0f, -1.0f, 1.0f);
+            ch3CvdCvMod = clamp(cv / 10.0f, -1.0f, 1.0f);
         }
 
         if (ch3DelayTimeMs <= 0.001f) {
