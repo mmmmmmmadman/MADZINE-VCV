@@ -12,6 +12,7 @@ namespace LaunchpadColors {
     static const NVGcolor RECORDING = nvgRGB(160, 70, 60);
     static const NVGcolor QUEUED = nvgRGB(180, 150, 80);
     static const NVGcolor STOP_QUEUED = nvgRGB(120, 90, 60);  // Darker, fading out
+    static const NVGcolor RECORD_QUEUED = nvgRGB(180, 100, 80);  // Waiting to record
 
     // Waveform colors (brighter versions)
     static const NVGcolor WAVE_CONTENT = nvgRGB(180, 140, 100);
@@ -29,8 +30,12 @@ enum CellState {
     CELL_PLAYING,
     CELL_RECORDING,
     CELL_QUEUED,
-    CELL_STOP_QUEUED  // Waiting for quantize boundary to stop
+    CELL_STOP_QUEUED,       // Waiting for quantize boundary to stop
+    CELL_RECORD_QUEUED      // Waiting for quantize boundary to start recording
 };
+
+// Fade duration in samples (2ms at 48kHz)
+static const int FADE_SAMPLES = 96;
 
 // Cell data structure
 struct CellData {
@@ -40,6 +45,12 @@ struct CellData {
     CellState state = CELL_EMPTY;
     int playPosition = 0;
     int recordPosition = 0;
+
+    // Fade envelope state
+    float fadeGain = 0.0f;       // Current fade gain (0.0 to 1.0)
+    bool fadingIn = false;       // Currently fading in
+    bool fadingOut = false;      // Currently fading out
+    int fadeSamples = 0;         // Samples remaining in fade
 
     // Waveform cache for display (downsampled)
     std::vector<float> waveformCache;
@@ -60,10 +71,55 @@ struct CellData {
         state = CELL_EMPTY;
         playPosition = 0;
         recordPosition = 0;
+        fadeGain = 0.0f;
+        fadingIn = false;
+        fadingOut = false;
+        fadeSamples = 0;
         waveformCache.clear();
         waveformDirty = true;
         loopClocksStr.clear();
         loopClocksCached = -1;
+    }
+
+    // Start fade in
+    void startFadeIn() {
+        fadingIn = true;
+        fadingOut = false;
+        fadeSamples = FADE_SAMPLES;
+        fadeGain = 0.0f;
+    }
+
+    // Start fade out
+    void startFadeOut() {
+        fadingIn = false;
+        fadingOut = true;
+        fadeSamples = FADE_SAMPLES;
+        // fadeGain keeps current value
+    }
+
+    // Process fade and return current gain
+    float processFade() {
+        if (fadingIn) {
+            fadeGain += 1.0f / FADE_SAMPLES;
+            fadeSamples--;
+            if (fadeSamples <= 0 || fadeGain >= 1.0f) {
+                fadeGain = 1.0f;
+                fadingIn = false;
+            }
+        } else if (fadingOut) {
+            fadeGain -= 1.0f / FADE_SAMPLES;
+            fadeSamples--;
+            if (fadeSamples <= 0 || fadeGain <= 0.0f) {
+                fadeGain = 0.0f;
+                fadingOut = false;
+            }
+        }
+        return fadeGain;
+    }
+
+    // Check if fade out is complete
+    bool isFadeOutComplete() const {
+        return !fadingOut && fadeGain <= 0.0f;
     }
 
     const std::string& getLoopClocksStr() {
@@ -237,11 +293,20 @@ struct Launchpad : Module {
     // Queued actions for quantize timing
     bool queuedScenes[8] = {false};
     bool queuedStopAll = false;
+    bool queuedRecordStop = false;  // Queue recording stop for quantize
 
     // Recording state
     int recordingRow = -1;
     int recordingCol = -1;
     int recordStartClock = 0;
+
+    // Pending fade-out stops (cells that need to complete fade before fully stopping)
+    struct PendingStop {
+        int row = -1;
+        int col = -1;
+        bool active = false;
+    };
+    PendingStop pendingStops[64];  // Max 8x8 cells
 
     // Quantize values: 0=Free, 1=1, 2=8, 3=16, 4=32, 5=64
     const int quantizeValues[6] = {0, 1, 8, 16, 32, 64};
@@ -309,6 +374,10 @@ struct Launchpad : Module {
             queuedScenes[i] = false;
         }
         queuedStopAll = false;
+        queuedRecordStop = false;
+        for (int i = 0; i < 64; i++) {
+            pendingStops[i].active = false;
+        }
     }
 
     // Cell interaction
@@ -316,18 +385,33 @@ struct Launchpad : Module {
         CellData& cell = cells[row][col];
 
         if (cell.state == CELL_EMPTY) {
-            // Start recording
-            startRecording(row, col);
+            // Start recording (with quantize)
+            int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
+            if (quantize == 0) {
+                startRecording(row, col);
+            } else {
+                // Queue for next quantize boundary
+                cell.state = CELL_RECORD_QUEUED;
+            }
+        } else if (cell.state == CELL_RECORD_QUEUED) {
+            // Cancel queued recording
+            cell.state = CELL_EMPTY;
         } else if (cell.state == CELL_RECORDING) {
-            // Stop recording
-            stopRecording();
+            // Stop recording (with quantize)
+            int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
+            if (quantize == 0) {
+                stopRecording();
+            } else {
+                // Queue for next quantize boundary
+                queuedRecordStop = true;
+            }
         } else if (cell.state == CELL_PLAYING) {
             // Stop playing (with quantize)
             int quantize = quantizeValues[(int)params[QUANTIZE_PARAM].getValue()];
             if (quantize == 0) {
-                // Free mode: immediate stop
-                cell.state = CELL_HAS_CONTENT;
-                cell.playPosition = 0;
+                // Free mode: start fade out, then stop
+                cell.startFadeOut();
+                addPendingStop(row, col);
             } else {
                 // Quantize mode: queue for stop at next boundary
                 cell.state = CELL_STOP_QUEUED;
@@ -344,6 +428,33 @@ struct Launchpad : Module {
             } else {
                 // Queue for next quantize boundary
                 cell.state = CELL_QUEUED;
+            }
+        }
+    }
+
+    // Add a cell to pending stop list (waiting for fade out to complete)
+    void addPendingStop(int row, int col) {
+        for (int i = 0; i < 64; i++) {
+            if (!pendingStops[i].active) {
+                pendingStops[i].row = row;
+                pendingStops[i].col = col;
+                pendingStops[i].active = true;
+                return;
+            }
+        }
+    }
+
+    // Process pending stops (call each sample)
+    void processPendingStops() {
+        for (int i = 0; i < 64; i++) {
+            if (pendingStops[i].active) {
+                CellData& cell = cells[pendingStops[i].row][pendingStops[i].col];
+                if (cell.isFadeOutComplete()) {
+                    cell.state = CELL_HAS_CONTENT;
+                    cell.playPosition = 0;
+                    cell.fadeGain = 0.0f;
+                    pendingStops[i].active = false;
+                }
             }
         }
     }
@@ -387,17 +498,24 @@ struct Launchpad : Module {
     }
 
     void startPlaying(int row, int col) {
-        // Session mode: stop other cells in the same row
+        // Session mode: stop other cells in the same row (with fade out)
         for (int c = 0; c < 8; c++) {
-            if (c != col && (cells[row][c].state == CELL_PLAYING || cells[row][c].state == CELL_QUEUED)) {
-                cells[row][c].state = CELL_HAS_CONTENT;
-                cells[row][c].playPosition = 0;
+            if (c != col && (cells[row][c].state == CELL_PLAYING || cells[row][c].state == CELL_QUEUED || cells[row][c].state == CELL_STOP_QUEUED)) {
+                if (cells[row][c].state == CELL_PLAYING || cells[row][c].state == CELL_STOP_QUEUED) {
+                    // Start fade out for currently playing cell
+                    cells[row][c].startFadeOut();
+                    addPendingStop(row, c);
+                } else {
+                    cells[row][c].state = CELL_HAS_CONTENT;
+                    cells[row][c].playPosition = 0;
+                }
             }
         }
 
         CellData& cell = cells[row][col];
         cell.state = CELL_PLAYING;
         cell.playPosition = 0;
+        cell.startFadeIn();  // Start with fade in
     }
 
     void stopAll() {
@@ -408,9 +526,9 @@ struct Launchpad : Module {
                 CellData& cell = cells[r][c];
                 if (cell.state == CELL_PLAYING) {
                     if (quantize == 0) {
-                        // Free mode: immediate stop
-                        cell.state = CELL_HAS_CONTENT;
-                        cell.playPosition = 0;
+                        // Free mode: fade out then stop
+                        cell.startFadeOut();
+                        addPendingStop(r, c);
                     } else {
                         // Quantize mode: queue for stop at next boundary
                         cell.state = CELL_STOP_QUEUED;
@@ -422,6 +540,13 @@ struct Launchpad : Module {
                 }
             }
         }
+    }
+
+    // Stop cell at quantize boundary (with fade)
+    void stopCellAtQuantize(int row, int col) {
+        CellData& cell = cells[row][col];
+        cell.startFadeOut();
+        addPendingStop(row, col);
     }
 
     void moveCell(int srcRow, int srcCol, int dstRow, int dstCol) {
@@ -542,11 +667,19 @@ struct Launchpad : Module {
                         if (cells[r][c].state == CELL_QUEUED) {
                             startPlaying(r, c);
                         } else if (cells[r][c].state == CELL_STOP_QUEUED) {
-                            // Stop at quantize boundary
-                            cells[r][c].state = CELL_HAS_CONTENT;
-                            cells[r][c].playPosition = 0;
+                            // Stop at quantize boundary with fade
+                            stopCellAtQuantize(r, c);
+                        } else if (cells[r][c].state == CELL_RECORD_QUEUED) {
+                            // Start recording at quantize boundary
+                            startRecording(r, c);
                         }
                     }
+                }
+
+                // Process queued record stop at quantize boundary
+                if (queuedRecordStop && recordingRow >= 0) {
+                    stopRecording();
+                    queuedRecordStop = false;
                 }
 
                 // Process queued scene triggers at quantize boundary
@@ -614,6 +747,9 @@ struct Launchpad : Module {
             }
         }
 
+        // Process pending fade-out stops
+        processPendingStops();
+
         // Mixing
         float mixL = 0.f, mixR = 0.f;
         float sendAL = 0.f, sendAR = 0.f;
@@ -627,12 +763,34 @@ struct Launchpad : Module {
                 CellData& cell = cells[r][c];
                 // STOP_QUEUED continues playing until quantize boundary
                 if ((cell.state == CELL_PLAYING || cell.state == CELL_STOP_QUEUED) && cell.recordedLength > 0) {
-                    rowOutput = cell.buffer[cell.playPosition];
+                    // Get sample with loop crossfade
+                    float sample = cell.buffer[cell.playPosition];
+
+                    // Apply crossfade at loop boundaries
+                    int samplesFromEnd = cell.recordedLength - cell.playPosition;
+                    if (samplesFromEnd <= FADE_SAMPLES && cell.recordedLength > FADE_SAMPLES * 2) {
+                        // Approaching end: crossfade with beginning
+                        float fadeOut = (float)samplesFromEnd / FADE_SAMPLES;
+                        float fadeIn = 1.0f - fadeOut;
+                        int crossfadePos = FADE_SAMPLES - samplesFromEnd;
+                        if (crossfadePos >= 0 && crossfadePos < cell.recordedLength) {
+                            sample = sample * fadeOut + cell.buffer[crossfadePos] * fadeIn;
+                        }
+                    }
+
+                    // Apply fade envelope (for start/stop fades)
+                    float fadeGain = cell.processFade();
+                    rowOutput = sample * fadeGain;
 
                     // Advance play position
                     cell.playPosition++;
                     if (cell.playPosition >= cell.recordedLength) {
-                        cell.playPosition = 0;  // Loop
+                        // Loop - skip samples already played during crossfade
+                        if (cell.recordedLength > FADE_SAMPLES * 2) {
+                            cell.playPosition = FADE_SAMPLES;
+                        } else {
+                            cell.playPosition = 0;
+                        }
                     }
                     break;  // Session mode: only one cell per row
                 }
@@ -839,6 +997,7 @@ void CellWidget::draw(const DrawArgs& args) {
         case CELL_RECORDING: bgColor = LaunchpadColors::RECORDING; break;
         case CELL_QUEUED: bgColor = LaunchpadColors::QUEUED; break;
         case CELL_STOP_QUEUED: bgColor = LaunchpadColors::STOP_QUEUED; break;
+        case CELL_RECORD_QUEUED: bgColor = LaunchpadColors::RECORD_QUEUED; break;
         default: bgColor = LaunchpadColors::EMPTY; break;
     }
 
