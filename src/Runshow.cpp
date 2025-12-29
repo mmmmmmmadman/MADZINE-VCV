@@ -54,6 +54,7 @@ struct Runshow : Module {
         BAR_2_PARAM,            // 第2小節控制
         BAR_3_PARAM,            // 第3小節控制
         BAR_4_PARAM,            // 第4小節控制
+        TIMER_5MIN_MAX_PARAM,   // 5分鐘 bar 的最大分鐘數 (1-60)
         PARAMS_LEN
     };
     enum InputId {
@@ -189,6 +190,8 @@ struct Runshow : Module {
         configParam(BAR_2_PARAM, 1.f, 16.f, 16.f, "Bar 2 Length", " clocks");
         configParam(BAR_3_PARAM, 1.f, 16.f, 16.f, "Bar 3 Length", " clocks");
         configParam(BAR_4_PARAM, 1.f, 16.f, 16.f, "Bar 4 Length", " clocks");
+        configParam(TIMER_5MIN_MAX_PARAM, 1.f, 60.f, 5.f, "Timer Max", " min");
+        paramQuantities[TIMER_5MIN_MAX_PARAM]->snapEnabled = true;
 
         configInput(CLOCK_INPUT, "Clock");
         configInput(RESET_INPUT, "Reset");
@@ -564,9 +567,98 @@ struct TimeCodeDisplay : LedDisplay {
 // Six Vertical Progress Bars Widget (LedDisplay-based for Meta Module compatibility)
 struct FourProgressBars : LedDisplay {
     Runshow* module;
+    std::string maxMinLabel = "5m";
+
+    // Drag state for max line
+    bool isDragging = false;
+    float dragStartValue = 0.f;
+    Vec lastClickPos = Vec(0, 0);
+
+    // Bar layout constants
+    static constexpr float BAR_WIDTH = 20.f;
+    static constexpr float BAR_SPACING = 4.f;
+    static constexpr int NUM_BARS = 6;
 
     FourProgressBars() {
         box.size = Vec(150, 200);  // Wider to accommodate 6 bars
+    }
+
+    float getFirstBarX() const {
+        float totalWidth = NUM_BARS * BAR_WIDTH + (NUM_BARS - 1) * BAR_SPACING;
+        return (box.size.x - totalWidth) / 2.f;
+    }
+
+    float getMaxLineY() const {
+        if (!module) return box.size.y * 0.5f;
+        float maxMinutes = module->params[Runshow::TIMER_5MIN_MAX_PARAM].getValue();
+        float normalizedPos = maxMinutes / 60.f;  // 0 to 1
+        return box.size.y * (1.f - normalizedPos);
+    }
+
+    bool isInMaxLineArea(Vec pos) const {
+        float lineY = getMaxLineY();
+        float firstBarX = getFirstBarX();
+        // Check if mouse is within the first bar's x range and near the line
+        return pos.x >= firstBarX && pos.x <= firstBarX + BAR_WIDTH &&
+               pos.y >= lineY - 8 && pos.y <= lineY + 8;
+    }
+
+    void step() override {
+        LedDisplay::step();
+
+        // Update label
+        if (module) {
+            int mins = (int)module->params[Runshow::TIMER_5MIN_MAX_PARAM].getValue();
+            maxMinLabel = std::to_string(mins) + "m";
+        }
+    }
+
+    void onButton(const event::Button& e) override {
+        if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_PRESS) {
+            lastClickPos = e.pos;
+            if (isInMaxLineArea(e.pos)) {
+                isDragging = true;
+                if (module) {
+                    dragStartValue = module->params[Runshow::TIMER_5MIN_MAX_PARAM].getValue();
+                }
+                e.consume(this);
+                return;
+            }
+        }
+        LedDisplay::onButton(e);
+    }
+
+    void onDragStart(const event::DragStart& e) override {
+        if (isDragging && module) {
+            dragStartValue = module->params[Runshow::TIMER_5MIN_MAX_PARAM].getValue();
+        }
+        LedDisplay::onDragStart(e);
+    }
+
+    void onDragMove(const event::DragMove& e) override {
+        if (isDragging && module) {
+            // Moving up = increase max, moving down = decrease max
+            float delta = -e.mouseDelta.y * 0.25f;  // Slower drag speed
+            float newValue = clamp(dragStartValue + delta, 1.f, 60.f);
+            dragStartValue = newValue;
+            module->params[Runshow::TIMER_5MIN_MAX_PARAM].setValue(std::round(newValue));
+        }
+        LedDisplay::onDragMove(e);
+    }
+
+    void onDragEnd(const event::DragEnd& e) override {
+        isDragging = false;
+        LedDisplay::onDragEnd(e);
+    }
+
+    void onDoubleClick(const event::DoubleClick& e) override {
+        // Reset to default on double click in max line area
+        if (isInMaxLineArea(lastClickPos) && module) {
+            module->params[Runshow::TIMER_5MIN_MAX_PARAM].setValue(5.f);  // Reset to default
+            e.consume(this);
+            return;
+        }
+        LedDisplay::onDoubleClick(e);
     }
 
     void drawLayer(const DrawArgs& args, int layer) override {
@@ -579,6 +671,9 @@ struct FourProgressBars : LedDisplay {
         nvgFill(args.vg);
 
         if (!module) return;
+
+        // Get max minutes for first bar
+        float maxMinutes = module->params[Runshow::TIMER_5MIN_MAX_PARAM].getValue();
 
         // Calculate current position in 4-bar cycle
         int currentStep = module->clockCount % 64;  // 64 steps total (16 per bar)
@@ -605,10 +700,9 @@ struct FourProgressBars : LedDisplay {
             float fillHeight = 0;
 
             if (i == 0) {
-                // First bar: 5-minute timer (30 minutes total)
+                // First bar: timer with adjustable max (1-60 minutes)
                 float totalMinutes = module->elapsedSeconds / 60.0f;
-                float fiveMinuteBlocks = totalMinutes / 5.0f;
-                fillHeight = box.size.y * std::min(fiveMinuteBlocks / 6.0f, 1.0f);
+                fillHeight = box.size.y * std::min(totalMinutes / maxMinutes, 1.0f);
             } else if (i == 1) {
                 // Second bar: 1-minute timer (15 minutes total)
                 float totalMinutes = module->elapsedSeconds / 60.0f;
@@ -767,19 +861,31 @@ struct FourProgressBars : LedDisplay {
             nvgFontFaceId(args.vg, APP->window->uiFont->handle);
             nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
             nvgFillColor(args.vg, nvgRGB(255, 255, 255));  // White text
-            char barLabel[6];
             if (i == 0) {
-                // Label first bar as "5m" (5 minute intervals)
-                snprintf(barLabel, 6, "5m");
+                // Label first bar with dynamic max minutes
+                nvgText(args.vg, x + barWidth/2, box.size.y + 2, maxMinLabel.c_str(), NULL);
             } else if (i == 1) {
                 // Label second bar as "1m" (1 minute intervals)
-                snprintf(barLabel, 6, "1m");
+                nvgText(args.vg, x + barWidth/2, box.size.y + 2, "1m", NULL);
             } else {
                 // Label bars 2-5 as 1-4
+                char barLabel[6];
                 snprintf(barLabel, 6, "%d", i - 1);
+                nvgText(args.vg, x + barWidth/2, box.size.y + 2, barLabel, NULL);
             }
-            nvgText(args.vg, x + barWidth/2, box.size.y + 2, barLabel, NULL);
         }
+
+        // Draw draggable max line on first bar
+        float firstBarX = startX;  // Use local variable from for loop
+        float lineY = box.size.y * (1.f - maxMinutes / 60.f);
+
+        // Draw horizontal line - yellow
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, firstBarX, lineY);
+        nvgLineTo(args.vg, firstBarX + barWidth, lineY);
+        nvgStrokeColor(args.vg, nvgRGB(255, 255, 0));  // Yellow
+        nvgStrokeWidth(args.vg, 2.f);
+        nvgStroke(args.vg);
     }
 };
 
@@ -849,8 +955,8 @@ struct RunshowWidget : ModuleWidget {
         addChild(progressBars);
 
         // 6個控制旋鈕 (Y: 343) - 對應 6 條垂直進度條的控制
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(15, 343), module, Runshow::TIMER_30MIN_PARAM));                   // 30分鐘計時器控制
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(46, 343), module, Runshow::TIMER_15MIN_PARAM));                   // 波形形狀控制
+        addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(15, 343), module, Runshow::TIMER_30MIN_PARAM));      // Pulse Width (like MADDY+ Fill)
+        addParam(createParamCentered<madzine::widgets::MADDYPlusSnapKnob>(Vec(46, 343), module, Runshow::TIMER_15MIN_PARAM));   // Waveform (like MADDY+ D/M, snap)
         addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(76, 343), module, Runshow::BAR_1_PARAM));                 // 第1小節控制 (snap)
         addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(107, 343), module, Runshow::BAR_2_PARAM));                // 第2小節控制 (snap)
         addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(137, 343), module, Runshow::BAR_3_PARAM));                // 第3小節控制 (snap)
