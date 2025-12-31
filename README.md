@@ -51,7 +51,7 @@ Available in the [VCV Rack Library](https://library.vcvrack.com/?brand=MADZINE)
 
 ## Manual
 
-See `Manual/madzine_modules_compact.html` for the interactive module manual.
+See [https://linktr.ee/madzine](https://linktr.ee/madzine) for the interactive module manual.
 
 ## v2.3.6 Changelog
 
