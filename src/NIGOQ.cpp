@@ -1680,7 +1680,7 @@ struct NIGOQWidget : ModuleWidget {
         harmonicsKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 220), module, NIGOQ::HARMONICS);
         addParam(harmonicsKnob);
 
-        // Multiverse-style knobs for MOD WAVE and CV attenuators (26×26px, 深灰+白色內圈+粉紅指示器)
+        // SmallWhiteKnob for MOD WAVE and CV attenuators (26×26px, 深灰+白色內圈+粉紅指示器)
         modWaveKnob = createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(20, 55), module, NIGOQ::MOD_WAVE);
         addParam(modWaveKnob);
         addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(55, 130), module, NIGOQ::FM_AMT_ATTEN));

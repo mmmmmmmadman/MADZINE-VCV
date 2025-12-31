@@ -259,8 +259,8 @@ struct TechnoSnapKnob30 : BaseSnapKnob {
 // ============================================================================
 
 /**
- * SmallWhiteKnob - Multiverse 專用小型旋鈕
- * 使用模組: Multiverse
+ * SmallWhiteKnob - 小型白色旋鈕
+ * 使用模組: NIGOQ
  * 尺寸: 26×26px
  * 特色: 深灰外圈 + 白色內圈 + 粉紅色指示器
  */
@@ -347,7 +347,7 @@ struct WhiteKnob : BaseCustomKnob {
 
 /**
  * MediumGrayKnob - 中型灰色旋鈕
- * 使用模組: MADDY, MADDYPlus, Multiverse
+ * 使用模組: MADDY, MADDYPlus
  */
 struct MediumGrayKnob : BaseCustomKnob {
     MediumGrayKnob() {
