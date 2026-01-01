@@ -161,6 +161,11 @@ struct YAMANOTE : Module {
 
     static constexpr int MAX_POLY = 16;
 
+    // Expander 輸出資料（供右側 YAMANOTE 模組讀取）
+    float expanderOutputL[MAX_POLY] = {0};
+    float expanderOutputR[MAX_POLY] = {0};
+    int expanderOutputChannels = 0;
+
     YAMANOTE() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -319,6 +324,13 @@ struct YAMANOTE : Module {
             outputs[MIX_L_OUTPUT].setVoltage(mixL, c);
             outputs[MIX_R_OUTPUT].setVoltage(mixR, c);
         }
+
+        // 儲存 output 給右側 YAMANOTE 模組
+        expanderOutputChannels = maxChannels;
+        for (int c = 0; c < maxChannels; c++) {
+            expanderOutputL[c] = outputs[MIX_L_OUTPUT].getVoltage(c);
+            expanderOutputR[c] = outputs[MIX_R_OUTPUT].getVoltage(c);
+        }
     }
 
     void processBypass(const ProcessArgs& args) override {
@@ -342,7 +354,25 @@ struct YAMANOTE : Module {
 struct YAMANOTEWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
 
+    // 自動 chain cable 追蹤
+    int64_t autoChainLeftCableId = -1;
+    int64_t autoChainRightCableId = -1;
+    Module* lastRightExpander = nullptr;
+
+    // 自動 CH input cable 追蹤（最多 8 個 U8，每個有 L/R）
+    static constexpr int MAX_U8_COUNT = 8;
+    int64_t autoInputCableIds[MAX_U8_COUNT][2];
+    Module* lastLeftU8s[MAX_U8_COUNT] = {nullptr};
+    int64_t lastU8InputSourceIds[MAX_U8_COUNT][2];
+
     YAMANOTEWidget(YAMANOTE* module) {
+        // 初始化陣列為 -1
+        for (int i = 0; i < MAX_U8_COUNT; i++) {
+            autoInputCableIds[i][0] = -1;
+            autoInputCableIds[i][1] = -1;
+            lastU8InputSourceIds[i][0] = -1;
+            lastU8InputSourceIds[i][1] = -1;
+        }
         setModule(module);
         panelThemeHelper.init(this, "8HP");
 
@@ -400,6 +430,238 @@ struct YAMANOTEWidget : ModuleWidget {
         YAMANOTE* module = dynamic_cast<YAMANOTE*>(this->module);
         if (module) {
             panelThemeHelper.step(module);
+
+            // 自動 cable 創建/刪除
+            Module* rightModule = module->rightExpander.module;
+            bool rightIsYamanote = rightModule && rightModule->model == modelYAMANOTE;
+            bool rightIsU8 = rightModule && rightModule->model == modelU8;
+
+            if (rightModule != lastRightExpander) {
+                // Expander 改變了，清理舊的自動 cable
+                if (autoChainLeftCableId >= 0) {
+                    app::CableWidget* cw = APP->scene->rack->getCable(autoChainLeftCableId);
+                    if (cw) {
+                        APP->scene->rack->removeCable(cw);
+                        delete cw;
+                    }
+                    autoChainLeftCableId = -1;
+                }
+                if (autoChainRightCableId >= 0) {
+                    app::CableWidget* cw = APP->scene->rack->getCable(autoChainRightCableId);
+                    if (cw) {
+                        APP->scene->rack->removeCable(cw);
+                        delete cw;
+                    }
+                    autoChainRightCableId = -1;
+                }
+
+                lastRightExpander = rightModule;
+
+                // 如果右側是 YAMANOTE，創建新的自動 cable
+                if (rightIsYamanote) {
+                    bool leftInputConnected = rightModule->inputs[YAMANOTE::CHAIN_L_INPUT].isConnected();
+                    bool rightInputConnected = rightModule->inputs[YAMANOTE::CHAIN_R_INPUT].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = YAMANOTE::MIX_L_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = YAMANOTE::CHAIN_L_INPUT;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#80C342"); // YAMANOTE 綠色
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = YAMANOTE::MIX_R_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = YAMANOTE::CHAIN_R_INPUT;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#80C342"); // YAMANOTE 綠色
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
+                // 如果右側是 U8，創建新的自動 cable
+                else if (rightIsU8) {
+                    // U8 的 chain input IDs
+                    const int U8_CHAIN_LEFT = 5;  // CHAIN_LEFT_INPUT
+                    const int U8_CHAIN_RIGHT = 6; // CHAIN_RIGHT_INPUT
+
+                    bool leftInputConnected = rightModule->inputs[U8_CHAIN_LEFT].isConnected();
+                    bool rightInputConnected = rightModule->inputs[U8_CHAIN_RIGHT].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = YAMANOTE::MIX_L_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = U8_CHAIN_LEFT;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#80C342"); // YAMANOTE 綠色
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = YAMANOTE::MIX_R_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = U8_CHAIN_RIGHT;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#80C342"); // YAMANOTE 綠色
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
+            }
+
+            // 驗證自動 cable 是否仍然有效（可能被用戶刪除）
+            if (autoChainLeftCableId >= 0 && !APP->engine->getCable(autoChainLeftCableId)) {
+                autoChainLeftCableId = -1;
+            }
+            if (autoChainRightCableId >= 0 && !APP->engine->getCable(autoChainRightCableId)) {
+                autoChainRightCableId = -1;
+            }
+
+            // === 自動 CH Input Cable 功能 ===
+            // 向左遍歷找到所有 U8，將其輸入源連接到對應的 CH
+
+            // U8 的 input port IDs
+            const int U8_LEFT_INPUT = 0;
+            const int U8_RIGHT_INPUT = 1;
+
+            // 收集左側所有 U8 模組（從最近到最遠）
+            Module* leftU8s[MAX_U8_COUNT] = {nullptr};
+            int u8Count = 0;
+            Module* currentModule = module->leftExpander.module;
+            while (currentModule && u8Count < MAX_U8_COUNT) {
+                if (currentModule->model == modelU8) {
+                    leftU8s[u8Count++] = currentModule;
+                    currentModule = currentModule->leftExpander.module;
+                } else {
+                    break; // 遇到非 U8 模組就停止
+                }
+            }
+
+            // 對每個 U8 處理自動 CH input cable
+            for (int i = 0; i < MAX_U8_COUNT; i++) {
+                Module* u8Module = leftU8s[i];
+                int chIndex = u8Count - 1 - i; // 最左邊的 U8 對應 CH1，最右邊對應 CHn
+
+                // 如果這個位置沒有 U8，清理舊的 cable
+                if (!u8Module) {
+                    for (int lr = 0; lr < 2; lr++) {
+                        if (autoInputCableIds[i][lr] >= 0) {
+                            app::CableWidget* cw = APP->scene->rack->getCable(autoInputCableIds[i][lr]);
+                            if (cw) {
+                                APP->scene->rack->removeCable(cw);
+                                delete cw;
+                            }
+                            autoInputCableIds[i][lr] = -1;
+                        }
+                    }
+                    lastLeftU8s[i] = nullptr;
+                    lastU8InputSourceIds[i][0] = -1;
+                    lastU8InputSourceIds[i][1] = -1;
+                    continue;
+                }
+
+                // 獲取 U8 的 ModuleWidget
+                app::ModuleWidget* u8Widget = APP->scene->rack->getModule(u8Module->id);
+                if (!u8Widget) continue;
+
+                // 處理 L 和 R 兩個通道
+                for (int lr = 0; lr < 2; lr++) {
+                    int u8InputId = (lr == 0) ? U8_LEFT_INPUT : U8_RIGHT_INPUT;
+                    int yamanoteChId = (lr == 0) ? (YAMANOTE::CH1_L_INPUT + chIndex * 2) : (YAMANOTE::CH1_R_INPUT + chIndex * 2);
+
+                    // 確保 CH index 在範圍內
+                    if (chIndex < 0 || chIndex >= 8) continue;
+
+                    // 找到 U8 輸入 port 的 PortWidget
+                    app::PortWidget* u8Port = nullptr;
+                    for (app::PortWidget* pw : u8Widget->getInputs()) {
+                        if (pw->portId == u8InputId) {
+                            u8Port = pw;
+                            break;
+                        }
+                    }
+                    if (!u8Port) continue;
+
+                    // 獲取連接到 U8 輸入的 cables
+                    std::vector<app::CableWidget*> cables = APP->scene->rack->getCompleteCablesOnPort(u8Port);
+
+                    int64_t currentSourceId = -1;
+                    Module* sourceModule = nullptr;
+                    int sourceOutputId = -1;
+
+                    if (!cables.empty()) {
+                        // 取第一個 cable 的源頭
+                        app::CableWidget* sourceCable = cables[0];
+                        if (sourceCable->cable) {
+                            sourceModule = sourceCable->cable->outputModule;
+                            sourceOutputId = sourceCable->cable->outputId;
+                            currentSourceId = sourceCable->cable->id;
+                        }
+                    }
+
+                    // 檢查源頭是否改變
+                    if (currentSourceId != lastU8InputSourceIds[i][lr]) {
+                        // 源頭改變了，刪除舊的自動 cable
+                        if (autoInputCableIds[i][lr] >= 0) {
+                            app::CableWidget* oldCw = APP->scene->rack->getCable(autoInputCableIds[i][lr]);
+                            if (oldCw) {
+                                APP->scene->rack->removeCable(oldCw);
+                                delete oldCw;
+                            }
+                            autoInputCableIds[i][lr] = -1;
+                        }
+
+                        lastU8InputSourceIds[i][lr] = currentSourceId;
+
+                        // 如果有新的源頭，創建新的自動 cable
+                        if (sourceModule && !module->inputs[yamanoteChId].isConnected()) {
+                            Cable* newCable = new Cable;
+                            newCable->outputModule = sourceModule;
+                            newCable->outputId = sourceOutputId;
+                            newCable->inputModule = module;
+                            newCable->inputId = yamanoteChId;
+                            APP->engine->addCable(newCable);
+                            autoInputCableIds[i][lr] = newCable->id;
+
+                            app::CableWidget* cw = new app::CableWidget;
+                            cw->setCable(newCable);
+                            cw->color = color::fromHexString("#FFCC00"); // U8 黃色
+                            APP->scene->rack->addCable(cw);
+                        }
+                    }
+
+                    // 驗證自動 cable 是否仍然有效
+                    if (autoInputCableIds[i][lr] >= 0 && !APP->engine->getCable(autoInputCableIds[i][lr])) {
+                        autoInputCableIds[i][lr] = -1;
+                    }
+                }
+
+                lastLeftU8s[i] = u8Module;
+            }
         }
         ModuleWidget::step();
     }

@@ -137,6 +137,12 @@ struct U8 : Module {
     // CV 調變顯示用
     float levelCvModulation = 0.0f;
 
+    // Expander 輸出資料（供右側 U8 模組讀取）
+    float expanderOutputL[MAX_POLY] = {0};
+    float expanderOutputR[MAX_POLY] = {0};
+    int expanderOutputLChannels = 0;
+    int expanderOutputRChannels = 0;
+
     U8() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -305,6 +311,16 @@ struct U8 : Module {
 
             outputs[RIGHT_OUTPUT].setVoltage(rightInput + chainRightInput, c);
         }
+
+        // 儲存 output 給右側 U8 模組
+        expanderOutputLChannels = outputLeftChannels;
+        expanderOutputRChannels = outputRightChannels;
+        for (int c = 0; c < outputLeftChannels; c++) {
+            expanderOutputL[c] = outputs[LEFT_OUTPUT].getVoltage(c);
+        }
+        for (int c = 0; c < outputRightChannels; c++) {
+            expanderOutputR[c] = outputs[RIGHT_OUTPUT].getVoltage(c);
+        }
     }
 
     void processBypass(const ProcessArgs& args) override {
@@ -327,6 +343,11 @@ struct U8 : Module {
 struct U8Widget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
     TechnoStandardBlackKnob* levelKnob = nullptr;
+
+    // 自動 cable 追蹤
+    int64_t autoChainLeftCableId = -1;
+    int64_t autoChainRightCableId = -1;
+    Module* lastRightExpander = nullptr;
 
     U8Widget(U8* module) {
         setModule(module);
@@ -379,6 +400,117 @@ struct U8Widget : ModuleWidget {
                 if (cvConnected) {
                     levelKnob->setModulation(module->levelCvModulation);
                 }
+            }
+
+            // 自動 cable 創建/刪除
+            Module* rightModule = module->rightExpander.module;
+            bool rightIsU8 = rightModule && rightModule->model == modelU8;
+            bool rightIsYamanote = rightModule && rightModule->model == modelYAMANOTE;
+
+            if (rightModule != lastRightExpander) {
+                // Expander 改變了，清理舊的自動 cable
+                if (autoChainLeftCableId >= 0) {
+                    app::CableWidget* cw = APP->scene->rack->getCable(autoChainLeftCableId);
+                    if (cw) {
+                        APP->scene->rack->removeCable(cw);
+                        delete cw;
+                    }
+                    autoChainLeftCableId = -1;
+                }
+                if (autoChainRightCableId >= 0) {
+                    app::CableWidget* cw = APP->scene->rack->getCable(autoChainRightCableId);
+                    if (cw) {
+                        APP->scene->rack->removeCable(cw);
+                        delete cw;
+                    }
+                    autoChainRightCableId = -1;
+                }
+
+                lastRightExpander = rightModule;
+
+                // 如果右側是 U8，創建新的自動 cable
+                if (rightIsU8) {
+                    // 檢查右側的 chain input 是否已經有連接
+                    bool leftInputConnected = rightModule->inputs[U8::CHAIN_LEFT_INPUT].isConnected();
+                    bool rightInputConnected = rightModule->inputs[U8::CHAIN_RIGHT_INPUT].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = U8::LEFT_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = U8::CHAIN_LEFT_INPUT;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = U8::RIGHT_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = U8::CHAIN_RIGHT_INPUT;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
+                // 如果右側是 YAMANOTE，創建新的自動 cable
+                else if (rightIsYamanote) {
+                    // YAMANOTE 的 chain input IDs
+                    const int YAMANOTE_CHAIN_L = 16; // CHAIN_L_INPUT
+                    const int YAMANOTE_CHAIN_R = 17; // CHAIN_R_INPUT
+
+                    bool leftInputConnected = rightModule->inputs[YAMANOTE_CHAIN_L].isConnected();
+                    bool rightInputConnected = rightModule->inputs[YAMANOTE_CHAIN_R].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = U8::LEFT_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = YAMANOTE_CHAIN_L;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = U8::RIGHT_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = YAMANOTE_CHAIN_R;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
+            }
+
+            // 驗證自動 cable 是否仍然有效（可能被用戶刪除）
+            if (autoChainLeftCableId >= 0 && !APP->engine->getCable(autoChainLeftCableId)) {
+                autoChainLeftCableId = -1;
+            }
+            if (autoChainRightCableId >= 0 && !APP->engine->getCable(autoChainRightCableId)) {
+                autoChainRightCableId = -1;
             }
         }
         ModuleWidget::step();
