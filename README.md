@@ -1,6 +1,6 @@
 # MADZINE Modules for VCV Rack
 
-**Version 2.3.6**
+**Version 2.3.8**
 
 A collection of creative modules for VCV Rack, focusing on rhythm generation, mixing, and experimental sound design.
 
@@ -24,8 +24,8 @@ A collection of creative modules for VCV Rack, focusing on rhythm generation, mi
 - **PPaTTTerning** (8 HP) - Pattern-based CV sequencer with style and density control
 
 ### Mixer System
-- **U8** (4 HP) - Channel processor with gain/saturation, duck control and mute
-- **YAMANOTE** (8 HP) - Channel processor with chain, send/return function
+- **U8** (4 HP) - Channel processor with gain/saturation, duck control, mute, and auto-patch
+- **YAMANOTE** (8 HP) - 8-channel mixer with chain, send/return, and auto-patch
 - **Env VCA 6** (12 HP) - 6-channel envelope VCA processor with AD generators
 
 ### Pyramid
@@ -53,8 +53,15 @@ Available in the [VCV Rack Library](https://library.vcvrack.com/?brand=MADZINE)
 
 See [https://linktr.ee/madzine](https://linktr.ee/madzine) for the interactive module manual.
 
-## v2.3.6 Changelog
+## Changelog
 
+### v2.3.8
+- **Auto-Patch Feature**: U8 and YAMANOTE modules now automatically connect when placed adjacent
+  - Chain outputs auto-connect to chain inputs with visible cables
+  - Cable colors match the train colors on modules (U8: yellow, YAMANOTE: green)
+  - Auto CH Input: When audio connects to U8's input, it automatically connects to YAMANOTE's corresponding channel (leftmost U8 → CH1, second U8 → CH2, etc.)
+
+### v2.3.6
 - Replaced 20+ individual PDF manuals with unified interactive HTML manual
 - Reorganized module categories for better navigation
 - Added new panel themes (Sashimi, Wine, Boring, ToiletPaper)
