@@ -97,7 +97,8 @@ struct SequenceTextField : LedDisplayTextField {
 };
 
 struct SongMode : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV)
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
 
     enum ParamId {
         LENGTH_1_PARAM,
@@ -289,6 +290,7 @@ struct SongMode : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         json_object_set_new(rootJ, "sequenceText", json_string(sequenceText.c_str()));
         return rootJ;
     }
@@ -297,6 +299,10 @@ struct SongMode : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
         json_t* seqJ = json_object_get(rootJ, "sequenceText");
         if (seqJ) {
@@ -477,7 +483,7 @@ struct SongModeWidget : ModuleWidget {
 
     SongModeWidget(SongMode* module) {
         setModule(module);
-        panelThemeHelper.init(this, "8HP");
+        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

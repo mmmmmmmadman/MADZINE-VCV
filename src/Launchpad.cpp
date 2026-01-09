@@ -223,6 +223,7 @@ int CellWidget::targetCol = -1;
 
 struct Launchpad : Module {
     int panelTheme = -1;
+    float panelContrast = panelContrastDefault;
 
     enum ParamId {
         QUANTIZE_PARAM,
@@ -842,6 +843,7 @@ struct Launchpad : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
 
         // Save cell data
         json_t* cellsJ = json_array();
@@ -873,6 +875,10 @@ struct Launchpad : Module {
     void dataFromJson(json_t* rootJ) override {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) panelTheme = json_integer_value(themeJ);
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
+        }
 
         json_t* cellsJ = json_object_get(rootJ, "cells");
         if (cellsJ) {
@@ -1172,7 +1178,7 @@ struct LaunchpadWidget : ModuleWidget {
 
     LaunchpadWidget(Launchpad* module) {
         setModule(module);
-        panelThemeHelper.init(this, "40HP");
+        panelThemeHelper.init(this, "40HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(40 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

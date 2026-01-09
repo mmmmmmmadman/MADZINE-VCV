@@ -32,6 +32,9 @@ extern Model* modelWeiiiDocumenta;
 extern Model* modelUniversalRhythm;
 extern Model* modelSongMode;
 extern Model* modelLaunchpad;
+extern Model* modelRunner;
+extern Model* modelFacehugger;
+extern Model* modelOvomorph;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

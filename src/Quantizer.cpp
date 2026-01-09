@@ -60,7 +60,8 @@ struct Quantizer;
 // ============================================================================
 
 struct Quantizer : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV)
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
 
     enum ParamIds {
         SCALE_PARAM, OFFSET_PARAM,
@@ -483,7 +484,7 @@ struct QuantizerWidget : ModuleWidget {
 
     QuantizerWidget(Quantizer* module) {
         setModule(module);
-        panelThemeHelper.init(this, "4HP");
+        panelThemeHelper.init(this, "4HP", module ? &module->panelContrast : nullptr);
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         float W = box.size.x;

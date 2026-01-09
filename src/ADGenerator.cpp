@@ -242,7 +242,8 @@ struct HouseWidget : Widget {
 };
 
 struct ADGenerator : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         ATK_ALL_PARAM,
@@ -589,6 +590,7 @@ struct ADGenerator : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         json_object_set_new(rootJ, "autoRouteEnabled", json_boolean(autoRouteEnabled));
         
         json_t* bpfEnabledJ = json_array();
@@ -616,6 +618,10 @@ struct ADGenerator : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
 
         json_t* autoRouteJ = json_object_get(rootJ, "autoRouteEnabled");
@@ -716,7 +722,7 @@ struct ADGeneratorWidget : ModuleWidget {
 
     ADGeneratorWidget(ADGenerator* module) {
         setModule(module);
-        panelThemeHelper.init(this, "8HP");
+        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

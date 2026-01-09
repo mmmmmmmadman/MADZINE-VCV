@@ -98,7 +98,8 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct U8 : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         LEVEL_PARAM,
@@ -136,6 +137,10 @@ struct U8 : Module {
 
     // CV 調變顯示用
     float levelCvModulation = 0.0f;
+
+    // VU Meter 電平值（dB，範圍 -60 到 +6）
+    float vuLevelL = -60.0f;
+    float vuLevelR = -60.0f;
 
     // Expander 輸出資料（供右側 U8 模組讀取）
     float expanderOutputL[MAX_POLY] = {0};
@@ -175,6 +180,7 @@ struct U8 : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         return rootJ;
     }
 
@@ -182,6 +188,10 @@ struct U8 : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
     }
 
@@ -321,6 +331,39 @@ struct U8 : Module {
         for (int c = 0; c < outputRightChannels; c++) {
             expanderOutputR[c] = outputs[RIGHT_OUTPUT].getVoltage(c);
         }
+
+        // 計算 VU Meter 電平（從輸入取得，pre-level, pre-mute，不含 chain）
+        float peakL = 0.0f, peakR = 0.0f;
+        for (int c = 0; c < leftChannels; c++) {
+            peakL = std::max(peakL, std::abs(inputs[LEFT_INPUT].getPolyVoltage(c)));
+        }
+        for (int c = 0; c < rightChannels; c++) {
+            peakR = std::max(peakR, std::abs(inputs[RIGHT_INPUT].getPolyVoltage(c)));
+        }
+        // 如果只有 L 輸入，R 也顯示 L 的電平（因為會自動 delay 到 R）
+        if (inputs[LEFT_INPUT].isConnected() && !inputs[RIGHT_INPUT].isConnected()) {
+            peakR = peakL;
+        }
+
+        // 轉換為 dB（以 5V 為 0dB 參考）
+        float dbL = (peakL > 0.0001f) ? 20.0f * log10f(peakL / 5.0f) : -60.0f;
+        float dbR = (peakR > 0.0001f) ? 20.0f * log10f(peakR / 5.0f) : -60.0f;
+
+        // 平滑 VU 電平（快上慢下）
+        float attackCoeff = 1.0f - expf(-1.0f / (0.005f * args.sampleRate)); // 5ms attack
+        float releaseCoeff = 1.0f - expf(-1.0f / (0.3f * args.sampleRate));   // 300ms release
+
+        if (dbL > vuLevelL) {
+            vuLevelL += (dbL - vuLevelL) * attackCoeff;
+        } else {
+            vuLevelL += (dbL - vuLevelL) * releaseCoeff;
+        }
+
+        if (dbR > vuLevelR) {
+            vuLevelR += (dbR - vuLevelR) * attackCoeff;
+        } else {
+            vuLevelR += (dbR - vuLevelR) * releaseCoeff;
+        }
     }
 
     void processBypass(const ProcessArgs& args) override {
@@ -340,9 +383,72 @@ struct U8 : Module {
     }
 };
 
+// 橫向 VU Meter（連續條狀風格）
+struct HorizontalVUMeter : TransparentWidget {
+    U8* module = nullptr;
+    bool isLeft = true; // true = L, false = R
+
+    static constexpr float MIN_DB = -36.0f;
+    static constexpr float MAX_DB = 6.0f;
+
+    HorizontalVUMeter(Vec pos, Vec size, bool isLeft) {
+        box.pos = pos;
+        box.size = size;
+        this->isLeft = isLeft;
+    }
+
+    void draw(const DrawArgs &args) override {
+        float level = -60.0f;
+        if (module) {
+            level = isLeft ? module->vuLevelL : module->vuLevelR;
+        }
+
+        // 將 dB 值映射到 0-1 範圍
+        float normalizedLevel = (level - MIN_DB) / (MAX_DB - MIN_DB);
+        normalizedLevel = clamp(normalizedLevel, 0.0f, 1.0f);
+
+        // 計算紅色閾值（0dB 以上）
+        float redThreshold = (0.0f - MIN_DB) / (MAX_DB - MIN_DB);     // ~0.86
+
+        float barWidth = box.size.x * normalizedLevel;
+        float barHeight = box.size.y;
+
+        // 繪製背景（暗淡色）
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, barHeight);
+        nvgFillColor(args.vg, nvgRGBA(40, 40, 40, 255));
+        nvgFill(args.vg);
+
+        if (normalizedLevel > 0.0f) {
+            // 使用漸層繪製連續條
+            NVGpaint gradient = nvgLinearGradient(args.vg,
+                0, 0, box.size.x, 0,
+                nvgRGB(80, 180, 80),   // 綠色起點
+                nvgRGB(255, 50, 50));  // 紅色終點
+
+            // 繪製填充條
+            nvgBeginPath(args.vg);
+            nvgRect(args.vg, 0, 0, barWidth, barHeight);
+            nvgFillPaint(args.vg, gradient);
+            nvgFill(args.vg);
+
+            // 如果超過紅色閾值，繪製紅色高亮
+            if (normalizedLevel > redThreshold) {
+                float redStart = box.size.x * redThreshold;
+                nvgBeginPath(args.vg);
+                nvgRect(args.vg, redStart, 0, barWidth - redStart, barHeight);
+                nvgFillColor(args.vg, nvgRGB(255, 50, 50));
+                nvgFill(args.vg);
+            }
+        }
+    }
+};
+
 struct U8Widget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
     TechnoStandardBlackKnob* levelKnob = nullptr;
+    HorizontalVUMeter* vuMeterL = nullptr;
+    HorizontalVUMeter* vuMeterR = nullptr;
 
     // 自動 cable 追蹤
     int64_t autoChainLeftCableId = -1;
@@ -351,7 +457,7 @@ struct U8Widget : ModuleWidget {
 
     U8Widget(U8* module) {
         setModule(module);
-        panelThemeHelper.init(this, "4HP");
+        panelThemeHelper.init(this, "4HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -378,6 +484,15 @@ struct U8Widget : ModuleWidget {
 
         addInput(createInputCentered<PJ301MPort>(Vec(15, 59), module, U8::LEFT_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(box.size.x - 15, 59), module, U8::RIGHT_INPUT));
+
+        // 雙通道 VU Meter（Input 下方、LEVEL 標籤上方）
+        vuMeterL = new HorizontalVUMeter(Vec(4, 71), Vec(box.size.x - 8, 5), true);
+        vuMeterL->module = module;
+        addChild(vuMeterL);
+
+        vuMeterR = new HorizontalVUMeter(Vec(4, 79), Vec(box.size.x - 8, 5), false);
+        vuMeterR->module = module;
+        addChild(vuMeterR);
 
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 60)));
 

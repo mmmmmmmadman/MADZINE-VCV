@@ -34,4 +34,7 @@ void init(Plugin* p) {
     p->addModel(modelUniversalRhythm);
     p->addModel(modelSongMode);
     p->addModel(modelLaunchpad);
+    p->addModel(modelRunner);
+    p->addModel(modelFacehugger);
+    p->addModel(modelOvomorph);
 }

@@ -27,7 +27,8 @@ struct DensityParamQuantity : ParamQuantity {
 };
 
 struct PPaTTTerning : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         K1_PARAM, K2_PARAM, K3_PARAM, K4_PARAM, K5_PARAM,
@@ -138,6 +139,7 @@ struct PPaTTTerning : Module {
         json_object_set_new(rootJ, "track2Delay", json_integer(track2Delay));
         json_object_set_new(rootJ, "styleMode", json_integer(styleMode));
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
 
         // Save custom pattern
         json_t* customPatternJ = json_array();
@@ -153,6 +155,10 @@ struct PPaTTTerning : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
 
         json_t* t2 = json_object_get(rootJ, "track2Delay");
@@ -449,7 +455,7 @@ struct PPaTTTerningWidget : ModuleWidget {
 
     PPaTTTerningWidget(PPaTTTerning* module) {
         setModule(module);
-        panelThemeHelper.init(this, "8HP");
+        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         float centerX = box.size.x / 2;
         

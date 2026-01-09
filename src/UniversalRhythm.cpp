@@ -390,7 +390,8 @@ struct MultiVoicePatterns {
 // ============================================================================
 
 struct UniversalRhythm : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV)
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
 
     enum ParamId {
         // Per-role parameters (4 roles x 5 params: Style, Density, Length, Freq, Decay)
@@ -2003,6 +2004,7 @@ struct UniversalRhythm : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         json_object_set_new(rootJ, "currentBar", json_integer(currentBar));
         json_object_set_new(rootJ, "ppqn", json_integer(ppqn));
         return rootJ;
@@ -2011,6 +2013,10 @@ struct UniversalRhythm : Module {
     void dataFromJson(json_t* rootJ) override {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) panelTheme = json_integer_value(themeJ);
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
+        }
         json_t* barJ = json_object_get(rootJ, "currentBar");
         if (barJ) currentBar = json_integer_value(barJ);
         json_t* ppqnJ = json_object_get(rootJ, "ppqn");
@@ -2192,7 +2198,7 @@ struct UniversalRhythmWidget : ModuleWidget {
 
     UniversalRhythmWidget(UniversalRhythm* module) {
         setModule(module);
-        panelThemeHelper.init(this, "40HP");
+        panelThemeHelper.init(this, "40HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(40 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

@@ -100,7 +100,8 @@ struct WhiteBackgroundBox : Widget {
 };
 
 struct YAMANOTE : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         CH1_SEND_A_PARAM,
@@ -195,6 +196,7 @@ struct YAMANOTE : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         return rootJ;
     }
 
@@ -202,6 +204,10 @@ struct YAMANOTE : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
     }
 
@@ -374,7 +380,7 @@ struct YAMANOTEWidget : ModuleWidget {
             lastU8InputSourceIds[i][1] = -1;
         }
         setModule(module);
-        panelThemeHelper.init(this, "8HP");
+        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
@@ -612,6 +618,7 @@ struct YAMANOTEWidget : ModuleWidget {
                     int64_t currentSourceId = -1;
                     Module* sourceModule = nullptr;
                     int sourceOutputId = -1;
+                    NVGcolor sourceColor = color::fromHexString("#FFCC00"); // 預設黃色
 
                     if (!cables.empty()) {
                         // 取第一個 cable 的源頭
@@ -620,6 +627,7 @@ struct YAMANOTEWidget : ModuleWidget {
                             sourceModule = sourceCable->cable->outputModule;
                             sourceOutputId = sourceCable->cable->outputId;
                             currentSourceId = sourceCable->cable->id;
+                            sourceColor = sourceCable->color; // 取得來源 cable 的顏色
                         }
                     }
 
@@ -649,7 +657,7 @@ struct YAMANOTEWidget : ModuleWidget {
 
                             app::CableWidget* cw = new app::CableWidget;
                             cw->setCable(newCable);
-                            cw->color = color::fromHexString("#FFCC00"); // U8 黃色
+                            cw->color = sourceColor; // 使用來源 cable 的顏色
                             APP->scene->rack->addCable(cw);
                         }
                     }

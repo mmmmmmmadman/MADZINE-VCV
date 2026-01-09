@@ -585,7 +585,8 @@ std::vector<bool> generateMADDYPlusEuclideanRhythm(int length, int fill, int shi
 }
 
 struct MADDYPlus : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         FREQ_PARAM,
@@ -1434,6 +1435,7 @@ struct MADDYPlus : Module {
 json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         json_object_set_new(rootJ, "modeValue", json_integer(modeValue));
         json_object_set_new(rootJ, "clockSourceValue", json_integer(clockSourceValue));
 
@@ -1465,6 +1467,10 @@ json_t* dataToJson() override {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
 
      json_t* modeJ = json_object_get(rootJ, "modeValue");
@@ -2039,7 +2045,7 @@ struct MADDYPlusWidget : ModuleWidget {
 
     MADDYPlusWidget(MADDYPlus* module) {
         setModule(module);
-        panelThemeHelper.init(this, "12HP");
+        panelThemeHelper.init(this, "12HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

@@ -369,7 +369,8 @@ struct NIGOQ : Module {
     VisualDisplay* visualDisplay = nullptr;
 
     // Panel theme
-    int panelTheme = -1; // -1 = Auto (follow VCV)
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
 
     // CV display modulation values
     float modWaveCvMod = 0.0f;
@@ -932,6 +933,7 @@ struct NIGOQ : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         json_object_set_new(rootJ, "oversampleRate", json_integer(oversampleRate));
         json_object_set_new(rootJ, "attackTime", json_real(attackTime));
         // Save randomization settings
@@ -946,6 +948,10 @@ struct NIGOQ : Module {
     void dataFromJson(json_t* rootJ) override {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) panelTheme = json_integer_value(themeJ);
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
+        }
 
         json_t* oversampleRateJ = json_object_get(rootJ, "oversampleRate");
         if (oversampleRateJ) {
@@ -1634,7 +1640,7 @@ struct NIGOQWidget : ModuleWidget {
 
     NIGOQWidget(NIGOQ* module) {
         setModule(module);
-        panelThemeHelper.init(this, "12HP");
+        panelThemeHelper.init(this, "12HP", module ? &module->panelContrast : nullptr);
 
 
         // Title labels
@@ -1680,7 +1686,7 @@ struct NIGOQWidget : ModuleWidget {
         harmonicsKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(125, 220), module, NIGOQ::HARMONICS);
         addParam(harmonicsKnob);
 
-        // SmallWhiteKnob for MOD WAVE and CV attenuators (26×26px, 深灰+白色內圈+粉紅指示器)
+        // Multiverse-style knobs for MOD WAVE and CV attenuators (26×26px, 深灰+白色內圈+粉紅指示器)
         modWaveKnob = createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(20, 55), module, NIGOQ::MOD_WAVE);
         addParam(modWaveKnob);
         addParam(createParamCentered<madzine::widgets::SmallWhiteKnob>(Vec(55, 130), module, NIGOQ::FM_AMT_ATTEN));

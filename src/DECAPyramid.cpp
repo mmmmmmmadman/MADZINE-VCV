@@ -68,6 +68,7 @@ struct DECAPyramid : Module {
 
     bool sendPreLevel = false;
     int panelTheme = 1;
+    float panelContrast = panelContrastDefault;
     int lastRtnAFilterMode = 0;
     int lastRtnBFilterMode = 0;
     float lastRtnAFilterValue = 0.f;
@@ -371,12 +372,15 @@ struct DECAPyramid : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         return rootJ;
     }
 
     void dataFromJson(json_t* rootJ) override {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) panelTheme = json_integer_value(themeJ);
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) panelContrast = json_real_value(contrastJ);
     }
 };
 
@@ -758,7 +762,7 @@ struct DECAPyramidWidget : ModuleWidget {
 
     DECAPyramidWidget(DECAPyramid* module) {
         setModule(module);
-        panelThemeHelper.init(this, "40HP");
+        panelThemeHelper.init(this, "40HP", module ? &module->panelContrast : nullptr);
         
         box.size = Vec(40 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

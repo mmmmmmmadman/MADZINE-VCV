@@ -43,7 +43,8 @@ struct WaveformParamQuantity : ParamQuantity {
 };
 
 struct Runshow : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         RESET_PARAM,
@@ -468,6 +469,7 @@ struct Runshow : Module {
         json_object_set_new(rootJ, "sixteenth_notes", json_integer(sixteenth_notes));
         json_object_set_new(rootJ, "elapsedSeconds", json_real(elapsedSeconds));
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         return rootJ;
     }
 
@@ -503,6 +505,10 @@ struct Runshow : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
     }
 };
@@ -915,7 +921,7 @@ struct RunshowWidget : ModuleWidget {
 
     RunshowWidget(Runshow* module) {
         setModule(module);
-        panelThemeHelper.init(this, "12HP");
+        panelThemeHelper.init(this, "12HP", module ? &module->panelContrast : nullptr);
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // Screws removed for cleaner look

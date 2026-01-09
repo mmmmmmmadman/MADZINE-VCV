@@ -142,7 +142,8 @@ struct BasicSineVCO {
 };
 
 struct TWNC2 : Module {
-    int panelTheme = -1; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
+    int panelTheme = -1;
+    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
 
     enum ParamId {
         KICK_VOLUME_PARAM,
@@ -306,6 +307,7 @@ struct TWNC2 : Module {
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         return rootJ;
     }
 
@@ -313,6 +315,10 @@ struct TWNC2 : Module {
         json_t* themeJ = json_object_get(rootJ, "panelTheme");
         if (themeJ) {
             panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
         }
     }
 
@@ -473,7 +479,7 @@ struct TWNC2Widget : ModuleWidget {
 
     TWNC2Widget(TWNC2* module) {
         setModule(module);
-        panelThemeHelper.init(this, "8HP");
+        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
