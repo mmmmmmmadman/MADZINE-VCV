@@ -1,6 +1,43 @@
 #include "plugin.hpp"
 #include "widgets/Knobs.hpp"
 #include "widgets/PanelTheme.hpp"
+#include <cmath>
+
+// Biquad Peak EQ Filter (Audio EQ Cookbook)
+struct BiquadPeakEQ {
+    float b0 = 1.f, b1 = 0.f, b2 = 0.f;
+    float a1 = 0.f, a2 = 0.f;
+    float z1 = 0.f, z2 = 0.f;
+
+    void setParams(float sampleRate, float freq, float gainDb, float Q = 1.41f) {
+        float A = std::pow(10.f, gainDb / 40.f);
+        float w0 = 2.f * M_PI * freq / sampleRate;
+        float cosw0 = std::cos(w0);
+        float sinw0 = std::sin(w0);
+        float alpha = sinw0 / (2.f * Q);
+
+        float a0 = 1.f + alpha / A;
+        b0 = (1.f + alpha * A) / a0;
+        b1 = (-2.f * cosw0) / a0;
+        b2 = (1.f - alpha * A) / a0;
+        a1 = b1;  // = -2*cos(w0) / a0
+        a2 = (1.f - alpha / A) / a0;
+    }
+
+    float process(float in) {
+        float out = b0 * in + b1 * z1 + b2 * z2 - a1 * z1 - a2 * z2;
+        // Direct Form II Transposed
+        float w = in - a1 * z1 - a2 * z2;
+        out = b0 * w + b1 * z1 + b2 * z2;
+        z2 = z1;
+        z1 = w;
+        return out;
+    }
+
+    void reset() {
+        z1 = z2 = 0.f;
+    }
+};
 
 // 深藍色標題背景（U8 官方色 #004F7C）
 struct AlexTitleBox : Widget {
@@ -61,6 +98,9 @@ struct AlexTextLabel : TransparentWidget {
 };
 
 static const int ALEX_TRACKS = 4;
+static const int ALEX_EQ_BANDS = 8;
+static const float ALEX_EQ_FREQS[ALEX_EQ_BANDS] = {63.f, 125.f, 250.f, 500.f, 1000.f, 2000.f, 4000.f, 8000.f};
+static const char* ALEX_EQ_LABELS[ALEX_EQ_BANDS] = {"63", "125", "250", "500", "1K", "2K", "4K", "8K"};
 
 // Exclusive Solo Button for ALEX：長按 = exclusive（取消其他所有 solo）
 template <typename TLight>
@@ -150,6 +190,7 @@ struct ALEXANDERPLATZ : Module {
         ENUMS(DUCK_PARAM, ALEX_TRACKS),
         ENUMS(MUTE_PARAM, ALEX_TRACKS),
         ENUMS(SOLO_PARAM, ALEX_TRACKS),
+        ENUMS(EQ_PARAM, ALEX_EQ_BANDS),
         PARAMS_LEN
     };
     enum InputId {
@@ -184,6 +225,12 @@ struct ALEXANDERPLATZ : Module {
     float vuLevelL[ALEX_TRACKS] = {-60.0f};
     float vuLevelR[ALEX_TRACKS] = {-60.0f};
 
+    // EQ filters (per poly channel, stereo)
+    BiquadPeakEQ eqFiltersL[MAX_POLY][ALEX_EQ_BANDS];
+    BiquadPeakEQ eqFiltersR[MAX_POLY][ALEX_EQ_BANDS];
+    float lastEqGains[ALEX_EQ_BANDS] = {0.f};
+    float lastSampleRate = 0.f;
+
     ALEXANDERPLATZ() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -206,6 +253,11 @@ struct ALEXANDERPLATZ : Module {
         configInput(CHAIN_RIGHT_INPUT, "Chain Right");
         configOutput(LEFT_OUTPUT, "Mix Left");
         configOutput(RIGHT_OUTPUT, "Mix Right");
+
+        // EQ parameters
+        for (int b = 0; b < ALEX_EQ_BANDS; b++) {
+            configParam(EQ_PARAM + b, -12.f, 12.f, 0.f, string::f("Master EQ %s Hz", ALEX_EQ_LABELS[b]), " dB");
+        }
     }
 
     json_t* dataToJson() override {
@@ -354,9 +406,34 @@ struct ALEXANDERPLATZ : Module {
             mixL += inputs[CHAIN_LEFT_INPUT].getPolyVoltage(c);
             mixR += inputs[CHAIN_RIGHT_INPUT].getPolyVoltage(c);
 
+            // Apply EQ
+            for (int b = 0; b < ALEX_EQ_BANDS; b++) {
+                mixL = eqFiltersL[c][b].process(mixL);
+                mixR = eqFiltersR[c][b].process(mixR);
+            }
+
             // 防爆音：限制輸出在 ±10V
             outputs[LEFT_OUTPUT].setVoltage(clamp(mixL, -10.f, 10.f), c);
             outputs[RIGHT_OUTPUT].setVoltage(clamp(mixR, -10.f, 10.f), c);
+        }
+
+        // Update EQ filter coefficients when params change
+        bool needsUpdate = (args.sampleRate != lastSampleRate);
+        for (int b = 0; b < ALEX_EQ_BANDS; b++) {
+            float gain = params[EQ_PARAM + b].getValue();
+            if (gain != lastEqGains[b]) {
+                needsUpdate = true;
+                lastEqGains[b] = gain;
+            }
+        }
+        if (needsUpdate) {
+            lastSampleRate = args.sampleRate;
+            for (int c = 0; c < MAX_POLY; c++) {
+                for (int b = 0; b < ALEX_EQ_BANDS; b++) {
+                    eqFiltersL[c][b].setParams(args.sampleRate, ALEX_EQ_FREQS[b], lastEqGains[b]);
+                    eqFiltersR[c][b].setParams(args.sampleRate, ALEX_EQ_FREQS[b], lastEqGains[b]);
+                }
+            }
         }
     }
 };
@@ -403,6 +480,115 @@ struct AlexVUMeter : TransparentWidget {
                 nvgFill(args.vg);
             }
         }
+    }
+};
+
+// EQ Fader - 穩重深沉風格
+struct AlexEQFader : app::SliderKnob {
+    static constexpr float FADER_WIDTH = 12.f;
+    static constexpr float FADER_HEIGHT = 44.f;
+    static constexpr float HANDLE_HEIGHT = 10.f;
+    static constexpr float TRACK_WIDTH = 4.f;
+
+    AlexEQFader() {
+        box.size = Vec(FADER_WIDTH, FADER_HEIGHT);
+        speed = 0.8f;
+    }
+
+    void draw(const DrawArgs& args) override {
+        // 軌道背景（深色金屬質感）
+        float trackX = (box.size.x - TRACK_WIDTH) / 2.f;
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, trackX, 2, TRACK_WIDTH, box.size.y - 4, 1.5f);
+        // 深色漸層背景
+        NVGpaint trackBg = nvgLinearGradient(args.vg, trackX, 0, trackX + TRACK_WIDTH, 0,
+            nvgRGB(25, 30, 35), nvgRGB(45, 50, 55));
+        nvgFillPaint(args.vg, trackBg);
+        nvgFill(args.vg);
+
+        // 軌道內陷邊框
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, trackX, 2, TRACK_WIDTH, box.size.y - 4, 1.5f);
+        nvgStrokeColor(args.vg, nvgRGBA(0, 0, 0, 180));
+        nvgStrokeWidth(args.vg, 1.f);
+        nvgStroke(args.vg);
+
+        // 中心線（0dB 標記）
+        float centerY = box.size.y / 2.f;
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, trackX - 1, centerY);
+        nvgLineTo(args.vg, trackX + TRACK_WIDTH + 1, centerY);
+        nvgStrokeColor(args.vg, nvgRGBA(100, 120, 140, 200));
+        nvgStrokeWidth(args.vg, 1.f);
+        nvgStroke(args.vg);
+
+        // 計算 handle 位置
+        float value = 0.5f;
+        if (getParamQuantity()) {
+            value = getParamQuantity()->getScaledValue();
+        }
+        float handleY = (1.f - value) * (box.size.y - HANDLE_HEIGHT);
+
+        // Handle（深色金屬旋鈕風格）
+        float handleX = 1.f;
+        float handleW = box.size.x - 2.f;
+
+        // Handle 陰影
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, handleX, handleY + 1, handleW, HANDLE_HEIGHT, 2.f);
+        nvgFillColor(args.vg, nvgRGBA(0, 0, 0, 100));
+        nvgFill(args.vg);
+
+        // Handle 本體漸層（深色金屬）
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, handleX, handleY, handleW, HANDLE_HEIGHT, 2.f);
+        NVGpaint handleGrad = nvgLinearGradient(args.vg, handleX, handleY, handleX, handleY + HANDLE_HEIGHT,
+            nvgRGB(80, 85, 95), nvgRGB(40, 45, 55));
+        nvgFillPaint(args.vg, handleGrad);
+        nvgFill(args.vg);
+
+        // Handle 高光邊
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, handleX + 2, handleY + 1);
+        nvgLineTo(args.vg, handleX + handleW - 2, handleY + 1);
+        nvgStrokeColor(args.vg, nvgRGBA(120, 130, 140, 150));
+        nvgStrokeWidth(args.vg, 1.f);
+        nvgStroke(args.vg);
+
+        // Handle 中心凹槽
+        float grooveY = handleY + HANDLE_HEIGHT / 2.f;
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, handleX + 3, grooveY);
+        nvgLineTo(args.vg, handleX + handleW - 3, grooveY);
+        nvgStrokeColor(args.vg, nvgRGBA(0, 0, 0, 120));
+        nvgStrokeWidth(args.vg, 1.5f);
+        nvgStroke(args.vg);
+
+        // Handle 邊框
+        nvgBeginPath(args.vg);
+        nvgRoundedRect(args.vg, handleX, handleY, handleW, HANDLE_HEIGHT, 2.f);
+        nvgStrokeColor(args.vg, nvgRGBA(30, 35, 40, 255));
+        nvgStrokeWidth(args.vg, 1.f);
+        nvgStroke(args.vg);
+    }
+};
+
+// EQ 頻率標籤
+struct AlexEQLabel : TransparentWidget {
+    std::string text;
+
+    AlexEQLabel(Vec pos, const std::string& t) {
+        box.pos = pos;
+        box.size = Vec(18, 10);
+        text = t;
+    }
+
+    void draw(const DrawArgs& args) override {
+        nvgFontSize(args.vg, 7.f);
+        nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+        nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        nvgFillColor(args.vg, nvgRGB(60, 70, 80));
+        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
     }
 };
 
@@ -489,6 +675,19 @@ struct ALEXANDERPLATZWidget : ModuleWidget {
         // Mix 輸出（右側）
         addOutput(createOutputCentered<PJ301MPort>(Vec(box.size.x - 15, 343), module, ALEXANDERPLATZ::LEFT_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(box.size.x - 15, 368), module, ALEXANDERPLATZ::RIGHT_OUTPUT));
+
+        // EQ Faders（8-band）
+        float eqStartX = 38.f;  // Chain 輸入右側
+        float eqEndX = box.size.x - 38.f;  // Mix 輸出左側
+        float eqSpacing = (eqEndX - eqStartX) / (ALEX_EQ_BANDS - 1);
+
+        for (int b = 0; b < ALEX_EQ_BANDS; b++) {
+            float x = eqStartX + b * eqSpacing;
+            // Fader
+            addParam(createParamCentered<AlexEQFader>(Vec(x, 355), module, ALEXANDERPLATZ::EQ_PARAM + b));
+            // 頻率標籤
+            addChild(new AlexEQLabel(Vec(x - 9, 378), ALEX_EQ_LABELS[b]));
+        }
     }
 
     void step() override {

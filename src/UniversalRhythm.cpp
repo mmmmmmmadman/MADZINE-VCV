@@ -591,6 +591,13 @@ struct UniversalRhythm : Module {
     int ppqn = 4;
     int ppqnCounter = 0;  // Counter for clock division
 
+    // Random Exclusive: roles excluded from cmd+R randomization
+    // 0=Timeline, 1=Foundation, 2=Groove, 3=Lead
+    bool randomExclude[4] = {false, false, false, false};
+
+    // Cache of role params for restoring after randomize (5 params per role)
+    float cachedRoleParams[4][5] = {{0}};
+
     // Flam/Drag delayed trigger support
     struct DelayedTrigger {
         float samplesRemaining = 0;
@@ -1600,6 +1607,14 @@ struct UniversalRhythm : Module {
             }
         }
 
+        // Cache role params for Random Exclusive feature (restore after randomize)
+        for (int role = 0; role < 4; role++) {
+            int baseParam = role * 5;
+            for (int p = 0; p < 5; p++) {
+                cachedRoleParams[role][p] = params[TIMELINE_STYLE_PARAM + baseParam + p].getValue();
+            }
+        }
+
         // Check each role for parameter changes
         float variation = params[VARIATION_PARAM].getValue();
         float restAmount = params[REST_PARAM].getValue();
@@ -2007,6 +2022,53 @@ struct UniversalRhythm : Module {
         json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
         json_object_set_new(rootJ, "currentBar", json_integer(currentBar));
         json_object_set_new(rootJ, "ppqn", json_integer(ppqn));
+
+        // Save randomExclude settings
+        json_t* excludeJ = json_array();
+        for (int i = 0; i < 4; i++) {
+            json_array_append_new(excludeJ, json_boolean(randomExclude[i]));
+        }
+        json_object_set_new(rootJ, "randomExclude", excludeJ);
+
+        // Save patterns for undo support
+        json_t* patternsJ = json_array();
+        for (int i = 0; i < 8; i++) {
+            json_t* patternJ = json_object();
+            json_object_set_new(patternJ, "length", json_integer(patterns.patterns[i].length));
+
+            json_t* velocitiesJ = json_array();
+            for (int j = 0; j < patterns.patterns[i].length; j++) {
+                json_array_append_new(velocitiesJ, json_real(patterns.patterns[i].velocities[j]));
+            }
+            json_object_set_new(patternJ, "velocities", velocitiesJ);
+
+            json_t* accentsJ = json_array();
+            for (int j = 0; j < patterns.patterns[i].length; j++) {
+                json_array_append_new(accentsJ, json_boolean(patterns.patterns[i].accents[j]));
+            }
+            json_object_set_new(patternJ, "accents", accentsJ);
+
+            json_array_append_new(patternsJ, patternJ);
+        }
+        json_object_set_new(rootJ, "patterns", patternsJ);
+
+        // Save change detection state to prevent regeneration on undo
+        json_t* lastStylesJ = json_array();
+        json_t* lastDensitiesJ = json_array();
+        json_t* lastLengthsJ = json_array();
+        json_t* roleLengthsJ = json_array();
+        for (int i = 0; i < 4; i++) {
+            json_array_append_new(lastStylesJ, json_integer(lastStyles[i]));
+            json_array_append_new(lastDensitiesJ, json_real(lastDensities[i]));
+            json_array_append_new(lastLengthsJ, json_integer(lastLengths[i]));
+            json_array_append_new(roleLengthsJ, json_integer(roleLengths[i]));
+        }
+        json_object_set_new(rootJ, "lastStyles", lastStylesJ);
+        json_object_set_new(rootJ, "lastDensities", lastDensitiesJ);
+        json_object_set_new(rootJ, "lastLengths", lastLengthsJ);
+        json_object_set_new(rootJ, "roleLengths", roleLengthsJ);
+        json_object_set_new(rootJ, "lastVariation", json_real(lastVariation));
+
         return rootJ;
     }
 
@@ -2021,6 +2083,126 @@ struct UniversalRhythm : Module {
         if (barJ) currentBar = json_integer_value(barJ);
         json_t* ppqnJ = json_object_get(rootJ, "ppqn");
         if (ppqnJ) ppqn = json_integer_value(ppqnJ);
+
+        // Load randomExclude settings
+        json_t* excludeJ = json_object_get(rootJ, "randomExclude");
+        if (excludeJ && json_is_array(excludeJ)) {
+            for (int i = 0; i < 4 && i < (int)json_array_size(excludeJ); i++) {
+                randomExclude[i] = json_boolean_value(json_array_get(excludeJ, i));
+            }
+        }
+
+        // Load patterns for undo support
+        json_t* patternsJ = json_object_get(rootJ, "patterns");
+        if (patternsJ && json_is_array(patternsJ)) {
+            for (int i = 0; i < 8 && i < (int)json_array_size(patternsJ); i++) {
+                json_t* patternJ = json_array_get(patternsJ, i);
+                if (!patternJ) continue;
+
+                json_t* lengthJ = json_object_get(patternJ, "length");
+                int length = lengthJ ? json_integer_value(lengthJ) : 16;
+                patterns.patterns[i] = WorldRhythm::Pattern(length);
+
+                json_t* velocitiesJ = json_object_get(patternJ, "velocities");
+                if (velocitiesJ && json_is_array(velocitiesJ)) {
+                    for (int j = 0; j < length && j < (int)json_array_size(velocitiesJ); j++) {
+                        patterns.patterns[i].velocities[j] = json_real_value(json_array_get(velocitiesJ, j));
+                    }
+                }
+
+                json_t* accentsJ = json_object_get(patternJ, "accents");
+                if (accentsJ && json_is_array(accentsJ)) {
+                    for (int j = 0; j < length && j < (int)json_array_size(accentsJ); j++) {
+                        patterns.patterns[i].accents[j] = json_boolean_value(json_array_get(accentsJ, j));
+                    }
+                }
+
+                // Update roleLengths to match loaded patterns
+                int role = i / 2;
+                if (role < 4) {
+                    roleLengths[role] = length;
+                }
+            }
+            // Copy to originalPatterns as well
+            originalPatterns = patterns;
+        }
+
+        // Restore change detection state to prevent regeneration on undo
+        // Must be outside the patterns block so it always runs
+        json_t* lastStylesJ = json_object_get(rootJ, "lastStyles");
+        json_t* lastDensitiesJ = json_object_get(rootJ, "lastDensities");
+        json_t* lastLengthsJ = json_object_get(rootJ, "lastLengths");
+        json_t* lastVariationJ = json_object_get(rootJ, "lastVariation");
+
+        if (lastStylesJ && json_is_array(lastStylesJ)) {
+            for (int i = 0; i < 4 && i < (int)json_array_size(lastStylesJ); i++) {
+                lastStyles[i] = json_integer_value(json_array_get(lastStylesJ, i));
+            }
+        }
+        if (lastDensitiesJ && json_is_array(lastDensitiesJ)) {
+            for (int i = 0; i < 4 && i < (int)json_array_size(lastDensitiesJ); i++) {
+                lastDensities[i] = json_real_value(json_array_get(lastDensitiesJ, i));
+            }
+        }
+        if (lastLengthsJ && json_is_array(lastLengthsJ)) {
+            for (int i = 0; i < 4 && i < (int)json_array_size(lastLengthsJ); i++) {
+                lastLengths[i] = json_integer_value(json_array_get(lastLengthsJ, i));
+            }
+        }
+        if (lastVariationJ) {
+            lastVariation = json_real_value(lastVariationJ);
+        }
+
+        // Restore roleLengths
+        json_t* roleLengthsJ = json_object_get(rootJ, "roleLengths");
+        if (roleLengthsJ && json_is_array(roleLengthsJ)) {
+            for (int i = 0; i < 4 && i < (int)json_array_size(roleLengthsJ); i++) {
+                roleLengths[i] = json_integer_value(json_array_get(roleLengthsJ, i));
+            }
+        }
+    }
+
+    // onRandomize is called AFTER VCV has already randomized all params
+    // We use cachedRoleParams (updated every process() call) to restore excluded roles
+    void onRandomize(const RandomizeEvent& e) override {
+        // Save excluded roles' patterns (params already randomized by VCV)
+        WorldRhythm::Pattern savedPatterns[8];
+        int savedLastStyles[4];
+        float savedLastDensities[4];
+        int savedLastLengths[4];
+
+        for (int role = 0; role < 4; role++) {
+            if (randomExclude[role]) {
+                // Save patterns
+                savedPatterns[role * 2] = patterns.patterns[role * 2];
+                savedPatterns[role * 2 + 1] = patterns.patterns[role * 2 + 1];
+                savedLastStyles[role] = lastStyles[role];
+                savedLastDensities[role] = lastDensities[role];
+                savedLastLengths[role] = lastLengths[role];
+
+                // Restore params from cache (captured before VCV randomized them)
+                int baseParam = role * 5;
+                for (int p = 0; p < 5; p++) {
+                    params[TIMELINE_STYLE_PARAM + baseParam + p].setValue(cachedRoleParams[role][p]);
+                }
+            }
+        }
+
+        // Regenerate patterns with current params
+        regenerateAllPatternsInterlocked();
+
+        // Restore excluded roles' patterns
+        for (int role = 0; role < 4; role++) {
+            if (randomExclude[role]) {
+                patterns.patterns[role * 2] = savedPatterns[role * 2];
+                patterns.patterns[role * 2 + 1] = savedPatterns[role * 2 + 1];
+                originalPatterns.patterns[role * 2] = savedPatterns[role * 2];
+                originalPatterns.patterns[role * 2 + 1] = savedPatterns[role * 2 + 1];
+                lastStyles[role] = savedLastStyles[role];
+                lastDensities[role] = savedLastDensities[role];
+                lastLengths[role] = savedLastLengths[role];
+            }
+        }
     }
 };
 
@@ -2480,6 +2662,19 @@ struct UniversalRhythmWidget : ModuleWidget {
                     [=]() { return module->ppqn == 4; },
                     [=]() { module->ppqn = 4; }
                 ));
+            }
+        ));
+
+        // Random Exclusive menu - roles excluded from Cmd+R randomization
+        menu->addChild(createSubmenuItem("Random Exclusive", "",
+            [=](Menu* menu) {
+                const char* roleNames[4] = {"Timeline", "Foundation", "Groove", "Lead"};
+                for (int i = 0; i < 4; i++) {
+                    menu->addChild(createCheckMenuItem(roleNames[i], "",
+                        [=]() { return module->randomExclude[i]; },
+                        [=]() { module->randomExclude[i] = !module->randomExclude[i]; }
+                    ));
+                }
             }
         ));
 
