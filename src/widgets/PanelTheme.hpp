@@ -10,7 +10,7 @@
 //  3 = Wine (wine red)
 
 // Panel contrast constants (like Impromptu)
-static constexpr float panelContrastDefault = 220.0f;
+static constexpr float panelContrastDefault = 255.0f;
 static constexpr float panelContrastMin = 160.0f;
 static constexpr float panelContrastMax = 255.0f;
 

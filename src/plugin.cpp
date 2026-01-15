@@ -37,4 +37,6 @@ void init(Plugin* p) {
     p->addModel(modelRunner);
     p->addModel(modelFacehugger);
     p->addModel(modelOvomorph);
+    p->addModel(modelALEXANDERPLATZ);
+    p->addModel(modelSHINJUKU);
 }

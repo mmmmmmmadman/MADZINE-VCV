@@ -97,6 +97,80 @@ struct WhiteBackgroundBox : Widget {
     }
 };
 
+// Exclusive Solo Button：長按 = exclusive（取消其他所有 solo）
+template <typename TLight>
+struct ExclusiveSoloButton : VCVLightLatch<TLight> {
+    float pressTime = 0.f;
+    bool pressing = false;
+    bool exclusiveTriggered = false; // 防止重複觸發
+    static constexpr float LONG_PRESS_TIME = 0.4f; // 400ms
+
+    void onDragStart(const event::DragStart& e) override {
+        pressTime = 0.f;
+        pressing = true;
+        exclusiveTriggered = false;
+        VCVLightLatch<TLight>::onDragStart(e);
+    }
+
+    void onDragEnd(const event::DragEnd& e) override {
+        pressing = false;
+        VCVLightLatch<TLight>::onDragEnd(e);
+    }
+
+    void step() override {
+        VCVLightLatch<TLight>::step();
+        if (pressing) {
+            pressTime += APP->window->getLastFrameDuration();
+            // 達到閾值時立即觸發 exclusive solo
+            if (pressTime >= LONG_PRESS_TIME && !exclusiveTriggered) {
+                exclusiveTriggered = true;
+                Module* module = this->module;
+                if (module) {
+                    // 取消整個 chain 中其他所有 solo
+                    // 往左追蹤
+                    Module* mod = module->leftExpander.module;
+                    while (mod) {
+                        if (mod->model == modelU8) {
+                            mod->params[3].setValue(0.f); // U8::SOLO_PARAM
+                        } else if (mod->model == modelALEXANDERPLATZ) {
+                            for (int t = 0; t < 4; t++) {
+                                mod->params[12 + t].setValue(0.f); // ALEX::SOLO_PARAM + t
+                            }
+                        } else if (mod->model == modelSHINJUKU) {
+                            for (int t = 0; t < 8; t++) {
+                                mod->params[24 + t].setValue(0.f); // SHINJUKU::SOLO_PARAM + t
+                            }
+                        } else {
+                            break;
+                        }
+                        mod = mod->leftExpander.module;
+                    }
+                    // 往右追蹤
+                    mod = module->rightExpander.module;
+                    while (mod) {
+                        if (mod->model == modelU8) {
+                            mod->params[3].setValue(0.f);
+                        } else if (mod->model == modelALEXANDERPLATZ) {
+                            for (int t = 0; t < 4; t++) {
+                                mod->params[12 + t].setValue(0.f);
+                            }
+                        } else if (mod->model == modelSHINJUKU) {
+                            for (int t = 0; t < 8; t++) {
+                                mod->params[24 + t].setValue(0.f);
+                            }
+                        } else {
+                            break;
+                        }
+                        mod = mod->rightExpander.module;
+                    }
+                    // 確保自己是 solo 狀態
+                    this->getParamQuantity()->setValue(1.f);
+                }
+            }
+        }
+    }
+};
+
 struct U8 : Module {
     int panelTheme = -1;
     float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV) // 0 = Sashimi, 1 = Boring
@@ -105,6 +179,7 @@ struct U8 : Module {
         LEVEL_PARAM,
         DUCK_LEVEL_PARAM,
         MUTE_PARAM,
+        SOLO_PARAM,
         PARAMS_LEN
     };
     enum InputId {
@@ -113,6 +188,7 @@ struct U8 : Module {
         DUCK_INPUT,
         LEVEL_CV_INPUT,
         MUTE_TRIG_INPUT,
+        SOLO_TRIG_INPUT,
         CHAIN_LEFT_INPUT,
         CHAIN_RIGHT_INPUT,
         INPUTS_LEN
@@ -124,6 +200,7 @@ struct U8 : Module {
     };
     enum LightId {
         MUTE_LIGHT,
+        SOLO_LIGHT,
         LIGHTS_LEN
     };
 
@@ -134,6 +211,8 @@ struct U8 : Module {
 
     bool muteState = false;
     dsp::SchmittTrigger muteTrigger;
+    bool soloState = false;
+    dsp::SchmittTrigger soloTrigger;
 
     // CV 調變顯示用
     float levelCvModulation = 0.0f;
@@ -154,12 +233,15 @@ struct U8 : Module {
         configParam(LEVEL_PARAM, 0.0f, 2.0f, 1.0f, "Level");
         configParam(DUCK_LEVEL_PARAM, 0.0f, 1.0f, 0.0f, "Duck Level");
         configSwitch(MUTE_PARAM, 0.0f, 1.0f, 0.0f, "Mute", {"Unmuted", "Muted"});
+        configSwitch(SOLO_PARAM, 0.0f, 1.0f, 0.0f, "Solo", {"Off", "Solo"});
+        getParamQuantity(SOLO_PARAM)->description = "Hold for exclusive";
 
         configInput(LEFT_INPUT, "Left Audio");
         configInput(RIGHT_INPUT, "Right Audio");
         configInput(DUCK_INPUT, "Duck Signal");
         configInput(LEVEL_CV_INPUT, "Level CV");
         configInput(MUTE_TRIG_INPUT, "Mute Trigger");
+        configInput(SOLO_TRIG_INPUT, "Solo Trigger");
         configInput(CHAIN_LEFT_INPUT, "Chain Left");
         configInput(CHAIN_RIGHT_INPUT, "Chain Right");
 
@@ -167,6 +249,7 @@ struct U8 : Module {
         configOutput(RIGHT_OUTPUT, "Right Audio");
 
         configLight(MUTE_LIGHT, "Mute Indicator");
+        configLight(SOLO_LIGHT, "Solo Indicator");
 
         // Initialize delay buffers
         for (int c = 0; c < MAX_POLY; c++) {
@@ -204,8 +287,67 @@ struct U8 : Module {
             }
         }
 
+        // Handle solo trigger (monophonic)
+        if (inputs[SOLO_TRIG_INPUT].isConnected()) {
+            if (soloTrigger.process(inputs[SOLO_TRIG_INPUT].getVoltage())) {
+                soloState = !soloState;
+                params[SOLO_PARAM].setValue(soloState ? 1.0f : 0.0f);
+            }
+        }
+
         bool muted = params[MUTE_PARAM].getValue() > 0.5f;
-        lights[MUTE_LIGHT].setBrightness(muted ? 1.0f : 0.0f);
+        bool soloed = params[SOLO_PARAM].getValue() > 0.5f;
+
+        // 跨模組 Solo 邏輯：檢查整個 chain 是否有任何軌道被 solo
+        bool chainHasSolo = soloed;
+
+        // 往左追蹤（使用硬編碼索引：U8 SOLO=3, ALEX SOLO=12+t, SHINJUKU SOLO=24+t）
+        Module* mod = leftExpander.module;
+        while (mod && !chainHasSolo) {
+            if (mod->model == modelU8) {
+                if (mod->params[3].getValue() > 0.5f) chainHasSolo = true; // SOLO_PARAM
+            } else if (mod->model == modelALEXANDERPLATZ) {
+                for (int t = 0; t < 4 && !chainHasSolo; t++) {
+                    if (mod->params[12 + t].getValue() > 0.5f) chainHasSolo = true; // ALEX::SOLO_PARAM + t
+                }
+            } else if (mod->model == modelSHINJUKU) {
+                for (int t = 0; t < 8 && !chainHasSolo; t++) {
+                    if (mod->params[24 + t].getValue() > 0.5f) chainHasSolo = true; // SHINJUKU::SOLO_PARAM + t
+                }
+            } else {
+                break; // 遇到非 mixer 模組停止
+            }
+            mod = mod->leftExpander.module;
+        }
+
+        // 往右追蹤
+        mod = rightExpander.module;
+        while (mod && !chainHasSolo) {
+            if (mod->model == modelU8) {
+                if (mod->params[3].getValue() > 0.5f) chainHasSolo = true;
+            } else if (mod->model == modelALEXANDERPLATZ) {
+                for (int t = 0; t < 4 && !chainHasSolo; t++) {
+                    if (mod->params[12 + t].getValue() > 0.5f) chainHasSolo = true;
+                }
+            } else if (mod->model == modelSHINJUKU) {
+                for (int t = 0; t < 8 && !chainHasSolo; t++) {
+                    if (mod->params[24 + t].getValue() > 0.5f) chainHasSolo = true;
+                }
+            } else {
+                break;
+            }
+            mod = mod->rightExpander.module;
+        }
+
+        // 如果 chain 有 solo 但自己沒有 solo，則視為 muted
+        bool soloMuted = chainHasSolo && !soloed;
+        if (soloMuted) {
+            muted = true;
+        }
+
+        // 燈號：mute 燈在被 solo 靜音時也要亮起
+        lights[MUTE_LIGHT].setBrightness((params[MUTE_PARAM].getValue() > 0.5f || soloMuted) ? 1.0f : 0.0f);
+        lights[SOLO_LIGHT].setBrightness(soloed ? 1.0f : 0.0f);
 
         // Get polyphonic channel counts
         int leftChannels = inputs[LEFT_INPUT].getChannels();
@@ -271,7 +413,8 @@ struct U8 : Module {
                 leftInput = 0.0f;
             }
 
-            outputs[LEFT_OUTPUT].setVoltage(leftInput + chainLeftInput, c);
+            // 防爆音：限制輸出在 ±10V
+            outputs[LEFT_OUTPUT].setVoltage(clamp(leftInput + chainLeftInput, -10.f, 10.f), c);
         }
 
         // Process right output channels
@@ -319,7 +462,8 @@ struct U8 : Module {
                 rightInput = 0.0f;
             }
 
-            outputs[RIGHT_OUTPUT].setVoltage(rightInput + chainRightInput, c);
+            // 防爆音：限制輸出在 ±10V
+            outputs[RIGHT_OUTPUT].setVoltage(clamp(rightInput + chainRightInput, -10.f, 10.f), c);
         }
 
         // 儲存 output 給右側 U8 模組
@@ -374,11 +518,11 @@ struct U8 : Module {
         outputs[RIGHT_OUTPUT].setChannels(chainRightChannels);
 
         for (int c = 0; c < chainLeftChannels; c++) {
-            outputs[LEFT_OUTPUT].setVoltage(inputs[CHAIN_LEFT_INPUT].getPolyVoltage(c), c);
+            outputs[LEFT_OUTPUT].setVoltage(clamp(inputs[CHAIN_LEFT_INPUT].getPolyVoltage(c), -10.f, 10.f), c);
         }
 
         for (int c = 0; c < chainRightChannels; c++) {
-            outputs[RIGHT_OUTPUT].setVoltage(inputs[CHAIN_RIGHT_INPUT].getPolyVoltage(c), c);
+            outputs[RIGHT_OUTPUT].setVoltage(clamp(inputs[CHAIN_RIGHT_INPUT].getPolyVoltage(c), -10.f, 10.f), c);
         }
     }
 };
@@ -478,9 +622,12 @@ struct U8Widget : ModuleWidget {
         addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(box.size.x / 2, 216), module, U8::DUCK_LEVEL_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(box.size.x / 2, 254), module, U8::DUCK_INPUT));
 
-        addChild(new TechnoEnhancedTextLabel(Vec(-5, 270), Vec(box.size.x + 10, 10), "MUTE", 10.5f, nvgRGB(255, 255, 255), true));
-        addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<RedLight>>>(Vec(box.size.x / 2, 292), module, U8::MUTE_PARAM, U8::MUTE_LIGHT));
-        addInput(createInputCentered<PJ301MPort>(Vec(box.size.x / 2, 316), module, U8::MUTE_TRIG_INPUT));
+        // Mute/Solo（與 Input L/R 對齊）
+        addChild(new TechnoEnhancedTextLabel(Vec(-5, 270), Vec(box.size.x + 10, 10), "MUTE SOLO", 10.5f, nvgRGB(255, 255, 255), true));
+        addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<RedLight>>>(Vec(15, 292), module, U8::MUTE_PARAM, U8::MUTE_LIGHT));
+        addParam(createLightParamCentered<ExclusiveSoloButton<MediumSimpleLight<GreenLight>>>(Vec(box.size.x - 15, 292), module, U8::SOLO_PARAM, U8::SOLO_LIGHT));
+        addInput(createInputCentered<PJ301MPort>(Vec(15, 316), module, U8::MUTE_TRIG_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(box.size.x - 15, 316), module, U8::SOLO_TRIG_INPUT));
 
         addInput(createInputCentered<PJ301MPort>(Vec(15, 59), module, U8::LEFT_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(box.size.x - 15, 59), module, U8::RIGHT_INPUT));
@@ -517,115 +664,68 @@ struct U8Widget : ModuleWidget {
                 }
             }
 
-            // 自動 cable 創建/刪除
-            Module* rightModule = module->rightExpander.module;
-            bool rightIsU8 = rightModule && rightModule->model == modelU8;
-            bool rightIsYamanote = rightModule && rightModule->model == modelYAMANOTE;
-
-            if (rightModule != lastRightExpander) {
-                // Expander 改變了，清理舊的自動 cable
-                if (autoChainLeftCableId >= 0) {
-                    app::CableWidget* cw = APP->scene->rack->getCable(autoChainLeftCableId);
-                    if (cw) {
-                        APP->scene->rack->removeCable(cw);
-                        delete cw;
-                    }
-                    autoChainLeftCableId = -1;
-                }
-                if (autoChainRightCableId >= 0) {
-                    app::CableWidget* cw = APP->scene->rack->getCable(autoChainRightCableId);
-                    if (cw) {
-                        APP->scene->rack->removeCable(cw);
-                        delete cw;
-                    }
-                    autoChainRightCableId = -1;
-                }
-
-                lastRightExpander = rightModule;
-
-                // 如果右側是 U8，創建新的自動 cable
-                if (rightIsU8) {
-                    // 檢查右側的 chain input 是否已經有連接
-                    bool leftInputConnected = rightModule->inputs[U8::CHAIN_LEFT_INPUT].isConnected();
-                    bool rightInputConnected = rightModule->inputs[U8::CHAIN_RIGHT_INPUT].isConnected();
-
-                    if (!leftInputConnected) {
-                        Cable* cableL = new Cable;
-                        cableL->outputModule = module;
-                        cableL->outputId = U8::LEFT_OUTPUT;
-                        cableL->inputModule = rightModule;
-                        cableL->inputId = U8::CHAIN_LEFT_INPUT;
-                        APP->engine->addCable(cableL);
-                        autoChainLeftCableId = cableL->id;
-
-                        app::CableWidget* cw = new app::CableWidget;
-                        cw->setCable(cableL);
-                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
-                        APP->scene->rack->addCable(cw);
-                    }
-
-                    if (!rightInputConnected) {
-                        Cable* cableR = new Cable;
-                        cableR->outputModule = module;
-                        cableR->outputId = U8::RIGHT_OUTPUT;
-                        cableR->inputModule = rightModule;
-                        cableR->inputId = U8::CHAIN_RIGHT_INPUT;
-                        APP->engine->addCable(cableR);
-                        autoChainRightCableId = cableR->id;
-
-                        app::CableWidget* cw = new app::CableWidget;
-                        cw->setCable(cableR);
-                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
-                        APP->scene->rack->addCable(cw);
-                    }
-                }
-                // 如果右側是 YAMANOTE，創建新的自動 cable
-                else if (rightIsYamanote) {
-                    // YAMANOTE 的 chain input IDs
-                    const int YAMANOTE_CHAIN_L = 16; // CHAIN_L_INPUT
-                    const int YAMANOTE_CHAIN_R = 17; // CHAIN_R_INPUT
-
-                    bool leftInputConnected = rightModule->inputs[YAMANOTE_CHAIN_L].isConnected();
-                    bool rightInputConnected = rightModule->inputs[YAMANOTE_CHAIN_R].isConnected();
-
-                    if (!leftInputConnected) {
-                        Cable* cableL = new Cable;
-                        cableL->outputModule = module;
-                        cableL->outputId = U8::LEFT_OUTPUT;
-                        cableL->inputModule = rightModule;
-                        cableL->inputId = YAMANOTE_CHAIN_L;
-                        APP->engine->addCable(cableL);
-                        autoChainLeftCableId = cableL->id;
-
-                        app::CableWidget* cw = new app::CableWidget;
-                        cw->setCable(cableL);
-                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
-                        APP->scene->rack->addCable(cw);
-                    }
-
-                    if (!rightInputConnected) {
-                        Cable* cableR = new Cable;
-                        cableR->outputModule = module;
-                        cableR->outputId = U8::RIGHT_OUTPUT;
-                        cableR->inputModule = rightModule;
-                        cableR->inputId = YAMANOTE_CHAIN_R;
-                        APP->engine->addCable(cableR);
-                        autoChainRightCableId = cableR->id;
-
-                        app::CableWidget* cw = new app::CableWidget;
-                        cw->setCable(cableR);
-                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
-                        APP->scene->rack->addCable(cw);
-                    }
-                }
-            }
-
+            // 自動 cable 創建（模組移開後保持連接，用戶可手動刪除）
             // 驗證自動 cable 是否仍然有效（可能被用戶刪除）
             if (autoChainLeftCableId >= 0 && !APP->engine->getCable(autoChainLeftCableId)) {
                 autoChainLeftCableId = -1;
             }
             if (autoChainRightCableId >= 0 && !APP->engine->getCable(autoChainRightCableId)) {
                 autoChainRightCableId = -1;
+            }
+
+            // 只在相鄰且尚未建立自動 cable 時創建
+            Module* rightModule = module->rightExpander.module;
+            if (rightModule && autoChainLeftCableId < 0 && autoChainRightCableId < 0) {
+                int targetChainL = -1, targetChainR = -1;
+
+                if (rightModule->model == modelU8) {
+                    targetChainL = U8::CHAIN_LEFT_INPUT;
+                    targetChainR = U8::CHAIN_RIGHT_INPUT;
+                } else if (rightModule->model == modelYAMANOTE) {
+                    targetChainL = 16; // YAMANOTE::CHAIN_L_INPUT
+                    targetChainR = 17; // YAMANOTE::CHAIN_R_INPUT
+                } else if (rightModule->model == modelALEXANDERPLATZ) {
+                    targetChainL = 4 * 6;     // ALEX_TRACKS * 6
+                    targetChainR = 4 * 6 + 1;
+                } else if (rightModule->model == modelSHINJUKU) {
+                    targetChainL = 8 * 6;     // SHINJUKU_TRACKS * 6
+                    targetChainR = 8 * 6 + 1;
+                }
+
+                if (targetChainL >= 0) {
+                    bool leftInputConnected = rightModule->inputs[targetChainL].isConnected();
+                    bool rightInputConnected = rightModule->inputs[targetChainR].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = U8::LEFT_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = targetChainL;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = U8::RIGHT_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = targetChainR;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#FFCC00"); // U8 黃色列車
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
             }
         }
         ModuleWidget::step();

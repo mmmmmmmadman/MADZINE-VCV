@@ -197,6 +197,18 @@
       "name": "Ovomorph",
       "description": "Chaos-modulated stereo reverb with room and decay control, derived from Ellen Ripley",
       "tags": ["Effect", "Reverb"]
+    },
+    {
+      "slug": "ALEXANDERPLATZ",
+      "name": "ALEXANDERPLATZ",
+      "description": "4-track mixer with level, duck and mute controls, Berlin U8 themed",
+      "tags": ["Mixer", "Utility"]
+    },
+    {
+      "slug": "SHINJUKU",
+      "name": "SHINJUKU",
+      "description": "8-track mixer with level, duck and mute controls, Tokyo Marunouchi themed",
+      "tags": ["Mixer", "Utility"]
     }
   ]
 }

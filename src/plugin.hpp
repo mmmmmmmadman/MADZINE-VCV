@@ -35,6 +35,8 @@ extern Model* modelLaunchpad;
 extern Model* modelRunner;
 extern Model* modelFacehugger;
 extern Model* modelOvomorph;
+extern Model* modelALEXANDERPLATZ;
+extern Model* modelSHINJUKU;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

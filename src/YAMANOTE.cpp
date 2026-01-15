@@ -306,6 +306,12 @@ struct YAMANOTE : Module {
             float totalSendBL = sendBL + leftSendBL;
             float totalSendBR = sendBR + leftSendBR;
 
+            // 防爆音：限制輸出在 ±10V
+            totalSendAL = clamp(totalSendAL, -10.f, 10.f);
+            totalSendAR = clamp(totalSendAR, -10.f, 10.f);
+            totalSendBL = clamp(totalSendBL, -10.f, 10.f);
+            totalSendBR = clamp(totalSendBR, -10.f, 10.f);
+
             outputs[SEND_A_L_OUTPUT].setVoltage(totalSendAL, c);
             outputs[SEND_A_R_OUTPUT].setVoltage(totalSendAR, c);
             outputs[SEND_B_L_OUTPUT].setVoltage(totalSendBL, c);
@@ -358,9 +364,9 @@ struct YAMANOTE : Module {
                 chainR = inputs[CHAIN_R_INPUT].getPolyVoltage(useChan);
             }
 
-            // Mix outputs
-            mixL = returnAL + returnBL + chainL;
-            mixR = returnAR + returnBR + chainR;
+            // Mix outputs（防爆音：限制在 ±10V）
+            mixL = clamp(returnAL + returnBL + chainL, -10.f, 10.f);
+            mixR = clamp(returnAR + returnBR + chainR, -10.f, 10.f);
 
             outputs[MIX_L_OUTPUT].setVoltage(mixL, c);
             outputs[MIX_R_OUTPUT].setVoltage(mixR, c);
@@ -504,6 +510,8 @@ struct YAMANOTEWidget : ModuleWidget {
             Module* rightModule = module->rightExpander.module;
             bool rightIsYamanote = rightModule && rightModule->model == modelYAMANOTE;
             bool rightIsU8 = rightModule && rightModule->model == modelU8;
+            bool rightIsAlex = rightModule && rightModule->model == modelALEXANDERPLATZ;
+            bool rightIsShinjuku = rightModule && rightModule->model == modelSHINJUKU;
 
             // Send/Return port 隱藏/顯示邏輯
             // 當右側有 YAMANOTE 時，隱藏自己的 Send/Return（因為信號會從右側累積輸出）
@@ -577,9 +585,8 @@ struct YAMANOTEWidget : ModuleWidget {
                 }
                 // 如果右側是 U8，創建新的自動 cable
                 else if (rightIsU8) {
-                    // U8 的 chain input IDs
-                    const int U8_CHAIN_LEFT = 5;  // CHAIN_LEFT_INPUT
-                    const int U8_CHAIN_RIGHT = 6; // CHAIN_RIGHT_INPUT
+                    const int U8_CHAIN_LEFT = 5;
+                    const int U8_CHAIN_RIGHT = 6;
 
                     bool leftInputConnected = rightModule->inputs[U8_CHAIN_LEFT].isConnected();
                     bool rightInputConnected = rightModule->inputs[U8_CHAIN_RIGHT].isConnected();
@@ -595,7 +602,7 @@ struct YAMANOTEWidget : ModuleWidget {
 
                         app::CableWidget* cw = new app::CableWidget;
                         cw->setCable(cableL);
-                        cw->color = color::fromHexString("#80C342"); // YAMANOTE 綠色
+                        cw->color = color::fromHexString("#80C342");
                         APP->scene->rack->addCable(cw);
                     }
 
@@ -610,7 +617,83 @@ struct YAMANOTEWidget : ModuleWidget {
 
                         app::CableWidget* cw = new app::CableWidget;
                         cw->setCable(cableR);
-                        cw->color = color::fromHexString("#80C342"); // YAMANOTE 綠色
+                        cw->color = color::fromHexString("#80C342");
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
+                // 如果右側是 ALEXANDERPLATZ
+                else if (rightIsAlex) {
+                    const int ALEX_CHAIN_LEFT = 4 * 5;  // ALEX_TRACKS * 5
+                    const int ALEX_CHAIN_RIGHT = 4 * 5 + 1;
+
+                    bool leftInputConnected = rightModule->inputs[ALEX_CHAIN_LEFT].isConnected();
+                    bool rightInputConnected = rightModule->inputs[ALEX_CHAIN_RIGHT].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = YAMANOTE::MIX_L_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = ALEX_CHAIN_LEFT;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#80C342");
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = YAMANOTE::MIX_R_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = ALEX_CHAIN_RIGHT;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#80C342");
+                        APP->scene->rack->addCable(cw);
+                    }
+                }
+                // 如果右側是 SHINJUKU
+                else if (rightIsShinjuku) {
+                    const int SHINJUKU_CHAIN_LEFT = 8 * 5;  // SHINJUKU_TRACKS * 5
+                    const int SHINJUKU_CHAIN_RIGHT = 8 * 5 + 1;
+
+                    bool leftInputConnected = rightModule->inputs[SHINJUKU_CHAIN_LEFT].isConnected();
+                    bool rightInputConnected = rightModule->inputs[SHINJUKU_CHAIN_RIGHT].isConnected();
+
+                    if (!leftInputConnected) {
+                        Cable* cableL = new Cable;
+                        cableL->outputModule = module;
+                        cableL->outputId = YAMANOTE::MIX_L_OUTPUT;
+                        cableL->inputModule = rightModule;
+                        cableL->inputId = SHINJUKU_CHAIN_LEFT;
+                        APP->engine->addCable(cableL);
+                        autoChainLeftCableId = cableL->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableL);
+                        cw->color = color::fromHexString("#80C342");
+                        APP->scene->rack->addCable(cw);
+                    }
+
+                    if (!rightInputConnected) {
+                        Cable* cableR = new Cable;
+                        cableR->outputModule = module;
+                        cableR->outputId = YAMANOTE::MIX_R_OUTPUT;
+                        cableR->inputModule = rightModule;
+                        cableR->inputId = SHINJUKU_CHAIN_RIGHT;
+                        APP->engine->addCable(cableR);
+                        autoChainRightCableId = cableR->id;
+
+                        app::CableWidget* cw = new app::CableWidget;
+                        cw->setCable(cableR);
+                        cw->color = color::fromHexString("#80C342");
                         APP->scene->rack->addCable(cw);
                     }
                 }
@@ -625,19 +708,33 @@ struct YAMANOTEWidget : ModuleWidget {
             }
 
             // === 自動 CH Input Cable 功能 ===
-            // 透過 Chain Cable 追蹤 U8，支援多個 YAMANOTE 串接
-            // 邏輯：先追蹤到 chain 最前面，收集所有 U8，再根據 offset 分配
+            // 透過 Chain Cable 追蹤 U8/ALEX/SHINJUKU，支援多個 YAMANOTE 串接
+            // 邏輯：先追蹤到 chain 最前面，收集所有 channels，再根據 offset 分配
 
-            // U8 的 port IDs
+            // Port IDs
             const int U8_LEFT_INPUT = 0;
             const int U8_RIGHT_INPUT = 1;
             const int U8_CHAIN_LEFT = 5;
+            const int ALEX_TRACKS = 4;
+            const int ALEX_CHAIN_LEFT = ALEX_TRACKS * 5;
+            const int SHINJUKU_TRACKS = 8;
+            const int SHINJUKU_CHAIN_LEFT = SHINJUKU_TRACKS * 5;
 
-            // 收集整個 chain 的所有 U8（從右到左，會穿過其他 YAMANOTE）
-            static constexpr int MAX_TOTAL_U8 = 64;  // 整個 chain 最多 64 個 U8
-            Module* allU8s[MAX_TOTAL_U8] = {nullptr};
-            int totalU8Count = 0;
-            int yamanotesBefore = 0;  // 在自己之前遇到的 YAMANOTE 數量
+            // Channel 資料結構（支援 U8/ALEX/SHINJUKU 的每個 track）
+            struct TrackedChannel {
+                Module* module = nullptr;
+                int leftInputId = 0;
+                int rightInputId = 0;
+            };
+
+            // 收集 chain 的所有 channels
+            // 只有「連續的 YAMANOTE」才視為同一個大 mixer
+            // 一旦遇到 U8/ALEX/SHINJUKU，之後再遇到 YAMANOTE 就停止
+            static constexpr int MAX_TOTAL_CHANNELS = 128;
+            TrackedChannel allChannels[MAX_TOTAL_CHANNELS];
+            int totalChannelCount = 0;
+            int yamanotesBefore = 0;  // 連續 YAMANOTE 數量（用於計算 offset）
+            bool foundNonYamanote = false;  // 是否已經遇到過 U8/ALEX/SHINJUKU
 
             // 找到 CHAIN_L_INPUT 的 cable 來源，開始追蹤
             app::ModuleWidget* thisWidget = APP->scene->rack->getModule(module->id);
@@ -655,11 +752,15 @@ struct YAMANOTEWidget : ModuleWidget {
                     if (!chainCables.empty() && chainCables[0]->cable) {
                         Module* currentMod = chainCables[0]->cable->outputModule;
 
-                        // 追蹤整個 chain，穿過其他 YAMANOTE
-                        while (currentMod && totalU8Count < MAX_TOTAL_U8) {
+                        // 追蹤 chain
+                        while (currentMod && totalChannelCount < MAX_TOTAL_CHANNELS) {
                             if (currentMod->model == modelU8) {
-                                // 是 U8，記錄並繼續追蹤
-                                allU8s[totalU8Count++] = currentMod;
+                                foundNonYamanote = true;
+                                // 是 U8，記錄 1 個 channel 並繼續追蹤
+                                allChannels[totalChannelCount].module = currentMod;
+                                allChannels[totalChannelCount].leftInputId = U8_LEFT_INPUT;
+                                allChannels[totalChannelCount].rightInputId = U8_RIGHT_INPUT;
+                                totalChannelCount++;
 
                                 // 找到這個 U8 的 CHAIN_LEFT 輸入，繼續追蹤
                                 app::ModuleWidget* u8Widget = APP->scene->rack->getModule(currentMod->id);
@@ -681,10 +782,14 @@ struct YAMANOTEWidget : ModuleWidget {
                                 currentMod = u8ChainCables[0]->cable->outputModule;
                             }
                             else if (currentMod->model == modelYAMANOTE) {
-                                // 遇到另一個 YAMANOTE，記錄並穿過它繼續追蹤
+                                // 遇到另一個 YAMANOTE
+                                if (foundNonYamanote) {
+                                    // 已經遇到過 U8/ALEX/SHINJUKU，這是另一個獨立的 mixer，停止
+                                    break;
+                                }
+                                // 還沒遇到 U8/ALEX/SHINJUKU，這是連續的 YAMANOTE（同一個大 mixer）
                                 yamanotesBefore++;
 
-                                // 找到這個 YAMANOTE 的 CHAIN_L_INPUT，繼續追蹤
                                 app::ModuleWidget* yamWidget = APP->scene->rack->getModule(currentMod->id);
                                 if (!yamWidget) break;
 
@@ -703,31 +808,89 @@ struct YAMANOTEWidget : ModuleWidget {
 
                                 currentMod = yamChainCables[0]->cable->outputModule;
                             }
+                            else if (currentMod->model == modelALEXANDERPLATZ) {
+                                foundNonYamanote = true;
+                                // 遇到 ALEXANDERPLATZ，記錄 4 個 channels 並繼續追蹤
+                                // ALEX InputId: LEFT_INPUT(0-3), RIGHT_INPUT(4-7)
+                                // 從右到左加入（Track 3 → Track 0），讓最左邊的 track 最後加入
+                                for (int t = ALEX_TRACKS - 1; t >= 0 && totalChannelCount < MAX_TOTAL_CHANNELS; t--) {
+                                    allChannels[totalChannelCount].module = currentMod;
+                                    allChannels[totalChannelCount].leftInputId = t;  // LEFT_INPUT + t
+                                    allChannels[totalChannelCount].rightInputId = ALEX_TRACKS + t;  // RIGHT_INPUT + t
+                                    totalChannelCount++;
+                                }
+
+                                app::ModuleWidget* alexWidget = APP->scene->rack->getModule(currentMod->id);
+                                if (!alexWidget) break;
+
+                                app::PortWidget* alexChainPort = nullptr;
+                                for (app::PortWidget* pw : alexWidget->getInputs()) {
+                                    if (pw->portId == ALEX_CHAIN_LEFT) {
+                                        alexChainPort = pw;
+                                        break;
+                                    }
+                                }
+
+                                if (!alexChainPort) break;
+
+                                std::vector<app::CableWidget*> alexChainCables = APP->scene->rack->getCompleteCablesOnPort(alexChainPort);
+                                if (alexChainCables.empty() || !alexChainCables[0]->cable) break;
+
+                                currentMod = alexChainCables[0]->cable->outputModule;
+                            }
+                            else if (currentMod->model == modelSHINJUKU) {
+                                foundNonYamanote = true;
+                                // 遇到 SHINJUKU，記錄 8 個 channels 並繼續追蹤
+                                // SHINJUKU InputId: LEFT_INPUT(0-7), RIGHT_INPUT(8-15)
+                                // 從右到左加入（Track 7 → Track 0），讓最左邊的 track 最後加入
+                                for (int t = SHINJUKU_TRACKS - 1; t >= 0 && totalChannelCount < MAX_TOTAL_CHANNELS; t--) {
+                                    allChannels[totalChannelCount].module = currentMod;
+                                    allChannels[totalChannelCount].leftInputId = t;  // LEFT_INPUT + t
+                                    allChannels[totalChannelCount].rightInputId = SHINJUKU_TRACKS + t;  // RIGHT_INPUT + t
+                                    totalChannelCount++;
+                                }
+
+                                app::ModuleWidget* shinjukuWidget = APP->scene->rack->getModule(currentMod->id);
+                                if (!shinjukuWidget) break;
+
+                                app::PortWidget* shinjukuChainPort = nullptr;
+                                for (app::PortWidget* pw : shinjukuWidget->getInputs()) {
+                                    if (pw->portId == SHINJUKU_CHAIN_LEFT) {
+                                        shinjukuChainPort = pw;
+                                        break;
+                                    }
+                                }
+
+                                if (!shinjukuChainPort) break;
+
+                                std::vector<app::CableWidget*> shinjukuChainCables = APP->scene->rack->getCompleteCablesOnPort(shinjukuChainPort);
+                                if (shinjukuChainCables.empty() || !shinjukuChainCables[0]->cable) break;
+
+                                currentMod = shinjukuChainCables[0]->cable->outputModule;
+                            }
                             else {
-                                break;  // 遇到非 U8 非 YAMANOTE，停止追蹤
+                                break;  // 遇到非 U8/YAMANOTE/ALEX/SHINJUKU，停止追蹤
                             }
                         }
                     }
                 }
             }
 
-            // 計算此 YAMANOTE 負責的 U8 範圍
-            // allU8s[0] 是最近的（最右邊），allU8s[totalU8Count-1] 是最遠的（最左邊）
-            // 每個 YAMANOTE 負責 8 個 U8
-            int myOffset = yamanotesBefore * 8;  // 前面的 YAMANOTE 已處理的數量
-
-            // 更新自己處理的 U8 總數（供右側 YAMANOTE 讀取）
-            int myU8Count = std::min(8, std::max(0, totalU8Count - myOffset));
-            module->totalU8HandledByThis = myOffset + myU8Count;
+            // 多個 YAMANOTE 串接時視為一個大 mixer
+            // allChannels[0] = 最近的（最右邊），allChannels[totalChannelCount-1] = 最遠的（最左邊）
+            // 左邊的 YAMANOTE 處理 CH1-8（最左邊的 channels）
+            // 右邊的 YAMANOTE 處理 CH9-16（接下來的 channels）
+            int myOffset = yamanotesBefore * 8;  // 前面的 YAMANOTE 已經處理的 channel 數量
 
             // 對每個 CH 處理自動 input cable
             for (int ch = 0; ch < 8; ch++) {
-                // 計算對應的 allU8s index（CH1 對應最左邊的 U8）
-                int u8Index = totalU8Count - 1 - myOffset - ch;
-                Module* u8Module = (u8Index >= 0 && u8Index < totalU8Count) ? allU8s[u8Index] : nullptr;
+                // CH1 對應此 YAMANOTE 負責範圍內最左邊的 channel
+                // channelIndex = (最左邊的 index) - offset - ch
+                int channelIndex = totalChannelCount - 1 - myOffset - ch;
+                TrackedChannel* trackedCh = (channelIndex >= 0 && channelIndex < totalChannelCount) ? &allChannels[channelIndex] : nullptr;
 
-                // 如果這個 CH 沒有對應的 U8，清理舊的 cable
-                if (!u8Module) {
+                // 如果這個 CH 沒有對應的 channel，清理舊的 cable
+                if (!trackedCh || !trackedCh->module) {
                     if (lastLeftU8s[ch] != nullptr) {
                         for (int lr = 0; lr < 2; lr++) {
                             if (autoInputCableIds[ch][lr] >= 0) {
@@ -746,38 +909,40 @@ struct YAMANOTEWidget : ModuleWidget {
                     continue;
                 }
 
-                // 獲取 U8 的 ModuleWidget
-                app::ModuleWidget* u8Widget = APP->scene->rack->getModule(u8Module->id);
-                if (!u8Widget) continue;
+                Module* sourceModule = trackedCh->module;
+
+                // 獲取來源模組的 ModuleWidget
+                app::ModuleWidget* sourceWidget = APP->scene->rack->getModule(sourceModule->id);
+                if (!sourceWidget) continue;
 
                 // 處理 L 和 R 兩個通道
                 for (int lr = 0; lr < 2; lr++) {
-                    int u8InputId = (lr == 0) ? U8_LEFT_INPUT : U8_RIGHT_INPUT;
+                    int sourceInputId = (lr == 0) ? trackedCh->leftInputId : trackedCh->rightInputId;
                     int yamanoteChId = (lr == 0) ? (YAMANOTE::CH1_L_INPUT + ch * 2) : (YAMANOTE::CH1_R_INPUT + ch * 2);
 
-                    // 找到 U8 輸入 port 的 PortWidget
-                    app::PortWidget* u8Port = nullptr;
-                    for (app::PortWidget* pw : u8Widget->getInputs()) {
-                        if (pw->portId == u8InputId) {
-                            u8Port = pw;
+                    // 找到來源模組輸入 port 的 PortWidget
+                    app::PortWidget* sourcePort = nullptr;
+                    for (app::PortWidget* pw : sourceWidget->getInputs()) {
+                        if (pw->portId == sourceInputId) {
+                            sourcePort = pw;
                             break;
                         }
                     }
-                    if (!u8Port) continue;
+                    if (!sourcePort) continue;
 
-                    // 獲取連接到 U8 輸入的 cables
-                    std::vector<app::CableWidget*> cables = APP->scene->rack->getCompleteCablesOnPort(u8Port);
+                    // 獲取連接到來源模組輸入的 cables
+                    std::vector<app::CableWidget*> cables = APP->scene->rack->getCompleteCablesOnPort(sourcePort);
 
                     int64_t currentSourceId = -1;
-                    Module* sourceModule = nullptr;
-                    int sourceOutputId = -1;
+                    Module* cableSourceModule = nullptr;
+                    int cableSourceOutputId = -1;
                     NVGcolor sourceColor = color::fromHexString("#FFCC00");
 
                     if (!cables.empty()) {
                         app::CableWidget* sourceCable = cables[0];
                         if (sourceCable->cable) {
-                            sourceModule = sourceCable->cable->outputModule;
-                            sourceOutputId = sourceCable->cable->outputId;
+                            cableSourceModule = sourceCable->cable->outputModule;
+                            cableSourceOutputId = sourceCable->cable->outputId;
                             currentSourceId = sourceCable->cable->id;
                             sourceColor = sourceCable->color;
                         }
@@ -798,10 +963,10 @@ struct YAMANOTEWidget : ModuleWidget {
                         lastU8InputSourceIds[ch][lr] = currentSourceId;
 
                         // 如果有新的源頭且 CH 未被佔用，創建新的自動 cable
-                        if (sourceModule && !module->inputs[yamanoteChId].isConnected()) {
+                        if (cableSourceModule && !module->inputs[yamanoteChId].isConnected()) {
                             Cable* newCable = new Cable;
-                            newCable->outputModule = sourceModule;
-                            newCable->outputId = sourceOutputId;
+                            newCable->outputModule = cableSourceModule;
+                            newCable->outputId = cableSourceOutputId;
                             newCable->inputModule = module;
                             newCable->inputId = yamanoteChId;
                             APP->engine->addCable(newCable);
@@ -820,7 +985,7 @@ struct YAMANOTEWidget : ModuleWidget {
                     }
                 }
 
-                lastLeftU8s[ch] = u8Module;
+                lastLeftU8s[ch] = sourceModule;
             }
         }
         ModuleWidget::step();
