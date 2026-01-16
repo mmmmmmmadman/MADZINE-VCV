@@ -71,7 +71,7 @@ CATEGORIES = {
             "zh": "混音、Routing 與訊號處理工具。",
             "ja": "ミキシング、ルーティング、シグナル処理ツール。"
         },
-        "modules": ["u8", "yamanote", "ellen_ripley", "env_vca_6", "runner", "facehugger", "ovomorph"]
+        "modules": ["u8", "yamanote", "alexanderplatz", "shinjuku", "ellen_ripley", "env_vca_6", "runner", "facehugger", "ovomorph"]
     },
     "pyramid": {
         "name": {
@@ -1051,10 +1051,10 @@ def build():
 
     html += html_foot
 
-    with open('madzine_modules_compact_v4.2.html', 'w', encoding='utf-8') as f:
+    with open('madzine_modules_compact_v4.3.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print("已生成: madzine_modules_compact_v4.2.html")
+    print("已生成: madzine_modules_compact_v4.3.html")
 
 if __name__ == '__main__':
     build()
