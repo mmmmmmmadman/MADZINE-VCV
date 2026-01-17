@@ -685,10 +685,10 @@ struct U8Widget : ModuleWidget {
                     targetChainL = 16; // YAMANOTE::CHAIN_L_INPUT
                     targetChainR = 17; // YAMANOTE::CHAIN_R_INPUT
                 } else if (rightModule->model == modelALEXANDERPLATZ) {
-                    targetChainL = 4 * 6;     // ALEX_TRACKS * 6
+                    targetChainL = 4 * 6;     // ALEX_TRACKS * 6 (6 input types per track)
                     targetChainR = 4 * 6 + 1;
                 } else if (rightModule->model == modelSHINJUKU) {
-                    targetChainL = 8 * 6;     // SHINJUKU_TRACKS * 6
+                    targetChainL = 8 * 6;     // SHINJUKU_TRACKS * 6 (6 input types per track)
                     targetChainR = 8 * 6 + 1;
                 }
 

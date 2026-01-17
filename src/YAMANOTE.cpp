@@ -585,8 +585,8 @@ struct YAMANOTEWidget : ModuleWidget {
                 }
                 // 如果右側是 U8，創建新的自動 cable
                 else if (rightIsU8) {
-                    const int U8_CHAIN_LEFT = 5;
-                    const int U8_CHAIN_RIGHT = 6;
+                    const int U8_CHAIN_LEFT = 6;   // U8::CHAIN_LEFT_INPUT
+                    const int U8_CHAIN_RIGHT = 7;  // U8::CHAIN_RIGHT_INPUT
 
                     bool leftInputConnected = rightModule->inputs[U8_CHAIN_LEFT].isConnected();
                     bool rightInputConnected = rightModule->inputs[U8_CHAIN_RIGHT].isConnected();
@@ -623,8 +623,8 @@ struct YAMANOTEWidget : ModuleWidget {
                 }
                 // 如果右側是 ALEXANDERPLATZ
                 else if (rightIsAlex) {
-                    const int ALEX_CHAIN_LEFT = 4 * 5;  // ALEX_TRACKS * 5
-                    const int ALEX_CHAIN_RIGHT = 4 * 5 + 1;
+                    const int ALEX_CHAIN_LEFT = 4 * 6;  // ALEX_TRACKS * 6 (6 input types per track)
+                    const int ALEX_CHAIN_RIGHT = 4 * 6 + 1;
 
                     bool leftInputConnected = rightModule->inputs[ALEX_CHAIN_LEFT].isConnected();
                     bool rightInputConnected = rightModule->inputs[ALEX_CHAIN_RIGHT].isConnected();
@@ -661,8 +661,8 @@ struct YAMANOTEWidget : ModuleWidget {
                 }
                 // 如果右側是 SHINJUKU
                 else if (rightIsShinjuku) {
-                    const int SHINJUKU_CHAIN_LEFT = 8 * 5;  // SHINJUKU_TRACKS * 5
-                    const int SHINJUKU_CHAIN_RIGHT = 8 * 5 + 1;
+                    const int SHINJUKU_CHAIN_LEFT = 8 * 6;  // SHINJUKU_TRACKS * 6 (6 input types per track)
+                    const int SHINJUKU_CHAIN_RIGHT = 8 * 6 + 1;
 
                     bool leftInputConnected = rightModule->inputs[SHINJUKU_CHAIN_LEFT].isConnected();
                     bool rightInputConnected = rightModule->inputs[SHINJUKU_CHAIN_RIGHT].isConnected();
@@ -714,11 +714,11 @@ struct YAMANOTEWidget : ModuleWidget {
             // Port IDs
             const int U8_LEFT_INPUT = 0;
             const int U8_RIGHT_INPUT = 1;
-            const int U8_CHAIN_LEFT = 5;
+            const int U8_CHAIN_LEFT = 6;  // U8::CHAIN_LEFT_INPUT
             const int ALEX_TRACKS = 4;
-            const int ALEX_CHAIN_LEFT = ALEX_TRACKS * 5;
+            const int ALEX_CHAIN_LEFT = ALEX_TRACKS * 6;  // 6 input types per track
             const int SHINJUKU_TRACKS = 8;
-            const int SHINJUKU_CHAIN_LEFT = SHINJUKU_TRACKS * 5;
+            const int SHINJUKU_CHAIN_LEFT = SHINJUKU_TRACKS * 6;  // 6 input types per track
 
             // Channel 資料結構（支援 U8/ALEX/SHINJUKU 的每個 track）
             struct TrackedChannel {
