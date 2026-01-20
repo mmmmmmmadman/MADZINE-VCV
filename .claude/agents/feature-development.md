@@ -144,6 +144,55 @@ void process(const ProcessArgs& args) {
 }
 ```
 
+#### MADZINE Envelope 曲線函數 (重要)
+MADZINE 的 Envelope 模組 (ADGenerator, MADDYPlus, UniversalRhythm 等) 使用統一的 applyCurve 函數來產生可調曲率的 envelope 曲線。
+
+**正確公式：**
+```cpp
+float applyCurve(float x, float curvature) {
+    x = clamp(x, 0.0f, 1.0f);
+    if (curvature == 0.0f) return x;  // 線性
+
+    float k = curvature;
+    float abs_x = std::abs(x);
+    float denominator = k - 2.0f * k * abs_x + 1.0f;
+
+    if (std::abs(denominator) < 1e-6f) return x;
+
+    return (x - k * x) / denominator;  // 重要：不是 x / denominator
+}
+```
+
+**使用方式：**
+```cpp
+// ATTACK 階段：從 0 上升到 1
+float t = phaseTime / attackTime;
+output = applyCurve(t, curve);
+
+// DECAY 階段：從 1 下降到 0
+float t = phaseTime / decayTime;
+output = 1.0f - applyCurve(t, curve);
+```
+
+**曲率參數：**
+- `curvature > 0`: 凸型曲線（快起慢收）
+- `curvature = 0`: 線性
+- `curvature < 0`: 凹型曲線（慢起快收，適合打擊樂）
+- 典型範圍：`-0.8` 到 `0.8`
+
+**關鍵特性：**
+- `applyCurve(0, any) = 0`
+- `applyCurve(1, any) = 1`（保證 envelope 能完整 decay 到 0）
+
+**常見錯誤：**
+```cpp
+// 錯誤：會導致 envelope 無法 decay 到 0
+return x / denominator;
+
+// 正確：
+return (x - k * x) / denominator;
+```
+
 #### Clock Divider
 ```cpp
 int counter = 0;

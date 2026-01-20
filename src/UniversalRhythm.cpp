@@ -657,6 +657,79 @@ struct UniversalRhythm : Module {
     VCAEnvelope externalVCA[8];  // One VCA per voice for external audio gating
     float currentMix[4] = {0.0f, 0.0f, 0.0f, 0.0f};  // Current mix value per role (0=internal, 1=external)
 
+    // Velocity Envelope for CV output (MADDY+ style AD envelope)
+    struct VelocityEnvelope {
+        enum Phase { IDLE, ATTACK, DECAY };
+        Phase phase = IDLE;
+        float output = 0.0f;
+        float phaseTime = 0.0f;
+        float peakVoltage = 0.0f;  // Set by velocity (0-10V)
+        float attackTime = 0.0003f;  // Fixed 0.3ms attack
+        float currentDecayTime = 1.0f;
+        float curve = -0.95f;  // Fixed curve for percussion-style fast decay
+
+        float applyCurve(float x, float curvature) {
+            x = clamp(x, 0.0f, 1.0f);
+            if (curvature == 0.0f) return x;
+            float k = curvature;
+            float abs_x = std::abs(x);
+            float denominator = k - 2.0f * k * abs_x + 1.0f;
+            if (std::abs(denominator) < 1e-6f) return x;
+            return (x - k * x) / denominator;
+        }
+
+        void trigger(float decayParam, float sampleRate, float velocity) {
+            // decayParam: 0-1 range (converted from UniversalRhythm's 0.2-2.0)
+            // velocity: 0-1 range
+            peakVoltage = velocity * 8.0f;
+            phase = ATTACK;
+            phaseTime = 0.0f;
+
+            // Decay time calculation (curve is fixed at -0.8)
+            float sqrtDecay = std::pow(decayParam, 0.33f);
+            float mappedDecay = rescale(sqrtDecay, 0.0f, 1.0f, 0.0f, 0.8f);
+            currentDecayTime = std::pow(10.0f, (mappedDecay - 0.8f) * 5.0f);
+            currentDecayTime = std::max(0.01f, currentDecayTime);
+        }
+
+        float process(float sampleTime) {
+            switch (phase) {
+                case IDLE:
+                    output = 0.0f;
+                    break;
+
+                case ATTACK:
+                    phaseTime += sampleTime;
+                    if (phaseTime >= attackTime) {
+                        phase = DECAY;
+                        phaseTime = 0.0f;
+                        output = 1.0f;
+                    } else {
+                        float t = phaseTime / attackTime;
+                        output = applyCurve(t, curve);
+                    }
+                    break;
+
+                case DECAY:
+                    phaseTime += sampleTime;
+                    if (phaseTime >= currentDecayTime) {
+                        output = 0.0f;
+                        phase = IDLE;
+                        phaseTime = 0.0f;
+                    } else {
+                        float t = phaseTime / currentDecayTime;
+                        output = 1.0f - applyCurve(t, curve);
+                    }
+                    break;
+            }
+
+            output = clamp(output, 0.0f, 1.0f);
+            return output * peakVoltage;
+        }
+    };
+
+    VelocityEnvelope velocityEnv[8];  // One envelope per voice for Velocity CV output
+
     // v2.3.7: 3-tier Articulation helper functions
     // Tier 1 (0-33%): Subtle - Ghost notes only
     // Tier 2 (33-66%): Moderate - Ghost + Accent
@@ -1330,11 +1403,20 @@ struct UniversalRhythm : Module {
         int baseParam = role * 5;  // 5 params per role
         int currentStyle = static_cast<int>(params[TIMELINE_STYLE_PARAM + baseParam].getValue());
 
+        // Pre-calculate decay param for velocity envelope (convert 0.2-2.0 to 0-1)
+        float decayMult = params[TIMELINE_DECAY_PARAM + baseParam].getValue();
+        if (inputs[TIMELINE_DECAY_CV_INPUT + role * 4].isConnected()) {
+            decayMult += inputs[TIMELINE_DECAY_CV_INPUT + role * 4].getVoltage() * 0.18f;
+            decayMult = clamp(decayMult, 0.2f, 2.0f);
+        }
+        float decayParam = (decayMult - 0.2f) / 1.8f;  // Convert to 0-1 range
+
         // Select articulation using profile system
         WorldRhythm::ArticulationType art = WorldRhythm::selectArticulation(
             currentStyle, role, articulationAmount, accent, isStrongBeat);
 
         float finalVel = velocity;
+        bool triggerEnvHere = true;  // Flag: trigger envelope in this function (not in scheduleExpandedHit)
 
         switch (art) {
             case WorldRhythm::ArticulationType::GHOST:
@@ -1361,6 +1443,7 @@ struct UniversalRhythm : Module {
                 // Use ArticulationEngine for proper flam generation
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateFlam(velocity);
                 scheduleExpandedHit(voice, hit, accent, sampleRate, role);
+                triggerEnvHere = false;  // Envelope triggered in scheduleExpandedHit
                 break;
             }
 
@@ -1368,6 +1451,7 @@ struct UniversalRhythm : Module {
                 // Use ArticulationEngine for proper drag generation
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateDrag(velocity);
                 scheduleExpandedHit(voice, hit, accent, sampleRate, role);
+                triggerEnvHere = false;
                 break;
             }
 
@@ -1376,6 +1460,7 @@ struct UniversalRhythm : Module {
                 // Duration of 0.032s gives 4 bounces at default 15ms interval
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateBuzz(velocity, 0.032f, 4);
                 scheduleExpandedHit(voice, hit, accent, sampleRate, role);
+                triggerEnvHere = false;
                 break;
             }
 
@@ -1383,6 +1468,7 @@ struct UniversalRhythm : Module {
                 // Use ArticulationEngine for proper ruff generation
                 WorldRhythm::ExpandedHit hit = articulationEngine.generateRuff(velocity);
                 scheduleExpandedHit(voice, hit, accent, sampleRate, role);
+                triggerEnvHere = false;
                 break;
             }
 
@@ -1398,6 +1484,11 @@ struct UniversalRhythm : Module {
         if (accent && art != WorldRhythm::ArticulationType::GHOST) {
             accentPulses[voice].trigger(0.001f);
         }
+
+        // Trigger velocity envelope (for non-articulation cases)
+        if (triggerEnvHere) {
+            velocityEnv[voice].trigger(decayParam, sampleRate, finalVel);
+        }
     }
 
     // Helper: Schedule ExpandedHit notes as DelayedTriggers
@@ -1410,6 +1501,7 @@ struct UniversalRhythm : Module {
             decayMult = clamp(decayMult, 0.2f, 2.0f);
         }
         float vcaDecayMs = 200.0f * decayMult;
+        float decayParam = (decayMult - 0.2f) / 1.8f;  // Convert to 0-1 for velocity envelope
 
         for (size_t i = 0; i < hit.notes.size(); i++) {
             const WorldRhythm::ExpandedNote& note = hit.notes[i];
@@ -1426,6 +1518,8 @@ struct UniversalRhythm : Module {
                 currentAccents[voice] = note.isAccent && accent;
                 // Trigger VCA for external audio
                 externalVCA[voice].trigger(vcaDecayMs, sampleRate, note.velocity);
+                // Trigger velocity envelope (only for first/main note)
+                velocityEnv[voice].trigger(decayParam, sampleRate, note.velocity);
                 if (note.isAccent && accent) {
                     accentPulses[voice].trigger(0.001f);
                 }
@@ -2009,8 +2103,8 @@ struct UniversalRhythm : Module {
             }
             outputs[VOICE1_CV_OUTPUT + i].setVoltage(pitchCV);
 
-            // Velocity CV: 0-10V
-            outputs[VOICE1_ACCENT_OUTPUT + i].setVoltage(currentVelocities[i] * 10.0f);
+            // Velocity Envelope CV: 0-10V (MADDY+ style AD envelope)
+            outputs[VOICE1_ACCENT_OUTPUT + i].setVoltage(velocityEnv[i].process(args.sampleTime));
 
             lights[VOICE1_LIGHT + i].setBrightness(gate ? 1.0f : 0.0f);
         }
