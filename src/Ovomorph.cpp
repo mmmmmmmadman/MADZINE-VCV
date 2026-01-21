@@ -110,8 +110,8 @@ struct OvomorphParamLabel : TransparentWidget {
 };
 
 struct Ovomorph : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault;
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamIds {
         ROOM_PARAM,

@@ -378,8 +378,8 @@ struct NIGOQ : Module {
     VisualDisplay* visualDisplay = nullptr;
 
     // Panel theme
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast; // -1 = Auto (follow VCV)
 
     // CV display modulation values
     float modWaveCvMod = 0.0f;

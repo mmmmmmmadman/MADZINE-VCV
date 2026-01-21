@@ -209,9 +209,69 @@ inline void addPanelThemeMenu(ui::Menu* menu, TModule* module) {
     wineItem->theme = 3;
     menu->addChild(wineItem);
 
+    // Theme save options
+    if (module) {
+        menu->addChild(new ui::MenuSeparator);
+
+        // Save theme as default
+        struct SaveThemeDefaultItem : ui::MenuItem {
+            TModule* mod;
+            void onAction(const event::Action& e) override {
+                if (mod) {
+                    madzineDefaultTheme = mod->panelTheme;
+                    madzineSaveSettings();
+                }
+            }
+        };
+        SaveThemeDefaultItem* saveThemeItem = createMenuItem<SaveThemeDefaultItem>("Save theme as default");
+        saveThemeItem->mod = module;
+        menu->addChild(saveThemeItem);
+
+        // Apply theme to all MADZINE modules
+        struct ApplyThemeAllItem : ui::MenuItem {
+            TModule* mod;
+            void onAction(const event::Action& e) override {
+                if (mod) {
+                    madzineApplyThemeToAll(mod->panelTheme);
+                }
+            }
+        };
+        ApplyThemeAllItem* applyThemeItem = createMenuItem<ApplyThemeAllItem>("Apply theme to all MADZINE modules");
+        applyThemeItem->mod = module;
+        menu->addChild(applyThemeItem);
+    }
+
     // Panel contrast slider (below theme selection)
     if (module) {
         menu->addChild(new ui::MenuSeparator);
+        menu->addChild(createMenuLabel("Panel Contrast"));
         menu->addChild(new PanelContrastSlider(&module->panelContrast));
+
+        // Save contrast as default
+        struct SaveContrastDefaultItem : ui::MenuItem {
+            TModule* mod;
+            void onAction(const event::Action& e) override {
+                if (mod) {
+                    madzineDefaultContrast = mod->panelContrast;
+                    madzineSaveSettings();
+                }
+            }
+        };
+        SaveContrastDefaultItem* saveContrastItem = createMenuItem<SaveContrastDefaultItem>("Save contrast as default");
+        saveContrastItem->mod = module;
+        menu->addChild(saveContrastItem);
+
+        // Apply contrast to all MADZINE modules
+        struct ApplyContrastAllItem : ui::MenuItem {
+            TModule* mod;
+            void onAction(const event::Action& e) override {
+                if (mod) {
+                    madzineApplyContrastToAll(mod->panelContrast);
+                }
+            }
+        };
+        ApplyContrastAllItem* applyContrastItem = createMenuItem<ApplyContrastAllItem>("Apply contrast to all MADZINE modules");
+        applyContrastItem->mod = module;
+        menu->addChild(applyContrastItem);
     }
 }

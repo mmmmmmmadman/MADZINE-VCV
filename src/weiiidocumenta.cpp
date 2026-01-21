@@ -160,8 +160,8 @@ struct PolyParamQuantity : ParamQuantity {
 // ============================================================================
 
 struct WeiiiDocumenta : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast; // -1 = Auto (follow VCV)
 
     enum ParamId {
         // 預處理與切片控制

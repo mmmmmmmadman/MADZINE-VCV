@@ -68,7 +68,7 @@ struct DECAPyramid : Module {
 
     bool sendPreLevel = false;
     int panelTheme = 1;
-    float panelContrast = panelContrastDefault;
+    float panelContrast = madzineDefaultContrast;
     int lastRtnAFilterMode = 0;
     int lastRtnBFilterMode = 0;
     float lastRtnAFilterValue = 0.f;

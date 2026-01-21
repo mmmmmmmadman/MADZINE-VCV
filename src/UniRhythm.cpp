@@ -398,8 +398,8 @@ struct MultiVoicePatterns {
 // ============================================================================
 
 struct UniRhythm : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast; // -1 = Auto (follow VCV)
 
     enum ParamId {
         // Per-role parameters (4 roles x 5 params: Style, Density, Length, Freq, Decay)

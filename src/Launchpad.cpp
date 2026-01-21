@@ -222,8 +222,8 @@ int CellWidget::targetRow = -1;
 int CellWidget::targetCol = -1;
 
 struct Launchpad : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault;
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamId {
         QUANTIZE_PARAM,

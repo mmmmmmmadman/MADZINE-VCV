@@ -105,8 +105,8 @@ struct SequenceTextField : LedDisplayTextField {
 };
 
 struct SongMode : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast; // -1 = Auto (follow VCV)
 
     enum ParamId {
         LENGTH_1_PARAM,

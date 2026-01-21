@@ -110,8 +110,8 @@ struct RunnerParamLabel : TransparentWidget {
 };
 
 struct Runner : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault;
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamIds {
         TIME_L_PARAM,

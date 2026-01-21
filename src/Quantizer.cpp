@@ -69,8 +69,8 @@ struct Quantizer;
 // ============================================================================
 
 struct Quantizer : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault; // -1 = Auto (follow VCV)
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast; // -1 = Auto (follow VCV)
 
     enum ParamIds {
         SCALE_PARAM, OFFSET_PARAM,

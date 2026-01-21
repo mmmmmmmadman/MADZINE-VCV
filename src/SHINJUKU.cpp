@@ -196,8 +196,8 @@ struct ShinjukuExclusiveSoloButton : VCVLightLatch<TLight> {
 };
 
 struct SHINJUKU : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault;
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamId {
         ENUMS(LEVEL_PARAM, SHINJUKU_TRACKS),

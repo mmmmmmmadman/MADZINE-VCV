@@ -112,8 +112,8 @@ struct FacehuggerParamLabel : TransparentWidget {
 };
 
 struct Facehugger : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault;
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamIds {
         SIZE_PARAM,

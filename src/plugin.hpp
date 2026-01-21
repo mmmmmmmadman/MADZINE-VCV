@@ -41,3 +41,19 @@ extern Model* modelSHINJUKU;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;
+
+// ============================================================================
+// Global Panel Settings (saved to MADZINE.json)
+// ============================================================================
+
+// Global default values for new modules
+extern float madzineDefaultContrast;  // Default: 255.0 (max brightness)
+extern int madzineDefaultTheme;       // Default: -1 (auto/follow VCV setting)
+
+// Load/save global settings
+void madzineLoadSettings();
+void madzineSaveSettings();
+
+// Apply settings to all MADZINE modules in current patch
+void madzineApplyContrastToAll(float contrast);
+void madzineApplyThemeToAll(int theme);

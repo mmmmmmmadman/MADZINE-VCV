@@ -194,8 +194,8 @@ struct AlexExclusiveSoloButton : VCVLightLatch<TLight> {
 };
 
 struct ALEXANDERPLATZ : Module {
-    int panelTheme = -1;
-    float panelContrast = panelContrastDefault;
+    int panelTheme = madzineDefaultTheme;
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamId {
         ENUMS(LEVEL_PARAM, ALEX_TRACKS),
