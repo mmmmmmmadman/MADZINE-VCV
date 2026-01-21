@@ -201,6 +201,24 @@ addChild(new EnhancedTextLabel(Vec(x, y - 24), Vec(20, 15), "LABEL", 7.f, nvgRGB
 - 所有標籤、按鈕使用完整名稱
 - 例：使用 "Volume" 而非 "Vol"，使用 "Position" 而非 "Pos"
 
+## 推薦參考
+
+### 元件座標對齊（建議）
+X/Y 座標盡量與左邊或上面已經有的功能對齊，提升視覺一致性：
+
+- 同一欄的元件 X 座標盡量相同
+- 同一排的元件 Y 座標盡量相同
+- CV input 可與對應的旋鈕垂直對齊，或與同排其他 CV input 對齊
+- 新增元件時，可參考現有元件座標
+
+```cpp
+// 範例：EXT IN 與 DECAY CV 對齊
+float decayCvX = rightCol + 26;  // DECAY CV 的 X 座標
+addInput(..., Vec(decayCvX, row3Y), ...);  // EXT IN 使用相同 X
+```
+
+---
+
 ## 設計檢查清單
 
 ### ⚠️ 強制項目（必須通過）
