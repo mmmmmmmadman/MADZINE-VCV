@@ -37,6 +37,28 @@ enum CellState {
 // Fade duration in samples (2ms at 48kHz)
 static const int FADE_SAMPLES = 96;
 
+// Speed conversion functions (non-linear mapping like weiii documenta)
+// 0-0.25 → -8x to 0x (reverse), 0.25-0.5 → 0x to 1x, 0.5-1.0 → 1x to 8x
+inline float knobToSpeed(float knob) {
+    if (knob < 0.25f) {
+        return -8.0f + knob * 32.0f;
+    } else if (knob < 0.5f) {
+        return (knob - 0.25f) * 4.0f;
+    } else {
+        return 1.0f + (knob - 0.5f) * 14.0f;
+    }
+}
+
+inline float speedToKnob(float speed) {
+    if (speed < 0.0f) {
+        return (speed + 8.0f) / 32.0f;
+    } else if (speed < 1.0f) {
+        return 0.25f + speed / 4.0f;
+    } else {
+        return 0.5f + (speed - 1.0f) / 14.0f;
+    }
+}
+
 // Cell data structure
 struct CellData {
     std::vector<float> buffer;
@@ -45,6 +67,10 @@ struct CellData {
     CellState state = CELL_EMPTY;
     int playPosition = 0;
     int recordPosition = 0;
+
+    // Playback speed (1.0 = normal, 0.5 = half speed, 2.0 = double speed, negative = reverse)
+    float playbackSpeed = 1.0f;
+    float playbackPhase = 0.0f;  // Fractional position accumulator for non-integer speeds
 
     // Fade envelope state
     float fadeGain = 0.0f;       // Current fade gain (0.0 to 1.0)
@@ -71,6 +97,8 @@ struct CellData {
         state = CELL_EMPTY;
         playPosition = 0;
         recordPosition = 0;
+        playbackSpeed = 1.0f;
+        playbackPhase = 0.0f;
         fadeGain = 0.0f;
         fadingIn = false;
         fadingOut = false;
@@ -192,7 +220,7 @@ struct CellWidget : OpaqueWidget {
     int col = 0;
     float pressTime = 0.f;
     bool pressed = false;
-    static constexpr float HOLD_TIME = 0.5f;  // 500ms for clear
+    static constexpr float HOLD_TIME = 1.0f;  // 1 second to hold for delete
 
     // Static drag state (shared across all cells)
     static CellWidget* dragSource;
@@ -212,6 +240,7 @@ struct CellWidget : OpaqueWidget {
 
     void draw(const DrawArgs& args) override;
     void drawWaveform(const DrawArgs& args, CellData& cell);
+    void createContextMenu();
 };
 
 // Static member initialization
@@ -505,6 +534,7 @@ struct Launchpad : Module {
                 if (cells[row][c].state == CELL_PLAYING || cells[row][c].state == CELL_STOP_QUEUED) {
                     // Start fade out for currently playing cell
                     cells[row][c].startFadeOut();
+                    cells[row][c].state = CELL_STOP_QUEUED;  // Change state to show fading out
                     addPendingStop(row, c);
                 } else {
                     cells[row][c].state = CELL_HAS_CONTENT;
@@ -529,6 +559,7 @@ struct Launchpad : Module {
                     if (quantize == 0) {
                         // Free mode: fade out then stop
                         cell.startFadeOut();
+                        cell.state = CELL_STOP_QUEUED;  // Change state to show fading out
                         addPendingStop(r, c);
                     } else {
                         // Quantize mode: queue for stop at next boundary
@@ -547,6 +578,7 @@ struct Launchpad : Module {
     void stopCellAtQuantize(int row, int col) {
         CellData& cell = cells[row][col];
         cell.startFadeOut();
+        cell.state = CELL_STOP_QUEUED;  // Ensure state reflects fading out
         addPendingStop(row, col);
     }
 
@@ -764,18 +796,43 @@ struct Launchpad : Module {
                 CellData& cell = cells[r][c];
                 // STOP_QUEUED continues playing until quantize boundary
                 if ((cell.state == CELL_PLAYING || cell.state == CELL_STOP_QUEUED) && cell.recordedLength > 0) {
-                    // Get sample with loop crossfade
-                    float sample = cell.buffer[cell.playPosition];
+                    float speed = cell.playbackSpeed;
+                    bool isReverse = speed < 0.0f;
+                    float absSpeed = std::fabs(speed);
 
-                    // Apply crossfade at loop boundaries
-                    int samplesFromEnd = cell.recordedLength - cell.playPosition;
-                    if (samplesFromEnd <= FADE_SAMPLES && cell.recordedLength > FADE_SAMPLES * 2) {
-                        // Approaching end: crossfade with beginning
-                        float fadeOut = (float)samplesFromEnd / FADE_SAMPLES;
-                        float fadeIn = 1.0f - fadeOut;
-                        int crossfadePos = FADE_SAMPLES - samplesFromEnd;
-                        if (crossfadePos >= 0 && crossfadePos < cell.recordedLength) {
-                            sample = sample * fadeOut + cell.buffer[crossfadePos] * fadeIn;
+                    // Get sample with interpolation for non-integer positions
+                    int pos = cell.playPosition;
+                    float frac = cell.playbackPhase;
+
+                    // Clamp position to valid range
+                    if (pos < 0) pos = 0;
+                    if (pos >= cell.recordedLength) pos = cell.recordedLength - 1;
+
+                    float sample;
+                    if (absSpeed == 0.0f) {
+                        // Speed 0: output silence
+                        sample = 0.0f;
+                    } else {
+                        // Linear interpolation between samples
+                        int nextPos = isReverse ? pos - 1 : pos + 1;
+                        if (nextPos < 0) nextPos = cell.recordedLength - 1;
+                        if (nextPos >= cell.recordedLength) nextPos = 0;
+
+                        float s1 = cell.buffer[pos];
+                        float s2 = cell.buffer[nextPos];
+                        sample = s1 + frac * (s2 - s1);
+
+                        // Apply crossfade at loop boundaries (only for forward playback at normal-ish speeds)
+                        if (!isReverse && absSpeed <= 2.0f) {
+                            int samplesFromEnd = cell.recordedLength - cell.playPosition;
+                            if (samplesFromEnd <= FADE_SAMPLES && cell.recordedLength > FADE_SAMPLES * 2) {
+                                float fadeOut = (float)samplesFromEnd / FADE_SAMPLES;
+                                float fadeIn = 1.0f - fadeOut;
+                                int crossfadePos = FADE_SAMPLES - samplesFromEnd;
+                                if (crossfadePos >= 0 && crossfadePos < cell.recordedLength) {
+                                    sample = sample * fadeOut + cell.buffer[crossfadePos] * fadeIn;
+                                }
+                            }
                         }
                     }
 
@@ -783,14 +840,26 @@ struct Launchpad : Module {
                     float fadeGain = cell.processFade();
                     rowOutput = sample * fadeGain;
 
-                    // Advance play position
-                    cell.playPosition++;
-                    if (cell.playPosition >= cell.recordedLength) {
-                        // Loop - skip samples already played during crossfade
-                        if (cell.recordedLength > FADE_SAMPLES * 2) {
-                            cell.playPosition = FADE_SAMPLES;
-                        } else {
-                            cell.playPosition = 0;
+                    // Advance play position using phase accumulation
+                    cell.playbackPhase += absSpeed;
+                    int positionDelta = (int)cell.playbackPhase;
+                    cell.playbackPhase -= (float)positionDelta;
+
+                    if (isReverse) {
+                        cell.playPosition -= positionDelta;
+                        // Loop backwards
+                        while (cell.playPosition < 0) {
+                            cell.playPosition += cell.recordedLength;
+                        }
+                    } else {
+                        cell.playPosition += positionDelta;
+                        // Loop forwards
+                        if (cell.playPosition >= cell.recordedLength) {
+                            if (cell.recordedLength > FADE_SAMPLES * 2) {
+                                cell.playPosition = FADE_SAMPLES + (cell.playPosition - cell.recordedLength);
+                            } else {
+                                cell.playPosition = cell.playPosition % cell.recordedLength;
+                            }
                         }
                     }
                     break;  // Session mode: only one cell per row
@@ -854,6 +923,7 @@ struct Launchpad : Module {
 
                 json_object_set_new(cellJ, "loopClocks", json_integer(cell.loopClocks));
                 json_object_set_new(cellJ, "recordedLength", json_integer(cell.recordedLength));
+                json_object_set_new(cellJ, "playbackSpeed", json_real(cell.playbackSpeed));
 
                 // Save buffer as base64 or skip if empty
                 if (cell.recordedLength > 0) {
@@ -896,6 +966,9 @@ struct Launchpad : Module {
                     json_t* recordedLengthJ = json_object_get(cellJ, "recordedLength");
                     if (recordedLengthJ) cell.recordedLength = json_integer_value(recordedLengthJ);
 
+                    json_t* speedJ = json_object_get(cellJ, "playbackSpeed");
+                    if (speedJ) cell.playbackSpeed = json_real_value(speedJ);
+
                     json_t* bufferJ = json_object_get(cellJ, "buffer");
                     if (bufferJ && cell.recordedLength > 0) {
                         cell.buffer.resize(MAX_BUFFER_SIZE, 0.f);
@@ -915,6 +988,11 @@ struct Launchpad : Module {
 void CellWidget::onButton(const event::Button& e) {
     // Must consume left-click to enable drag system
     if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_PRESS) {
+        e.consume(this);
+    }
+    // Right-click to open context menu
+    if (e.button == GLFW_MOUSE_BUTTON_RIGHT && e.action == GLFW_PRESS) {
+        createContextMenu();
         e.consume(this);
     }
 }
@@ -945,6 +1023,15 @@ void CellWidget::onDragMove(const event::DragMove& e) {
 }
 
 void CellWidget::onDragEnd(const event::DragEnd& e) {
+    // Only process left mouse button drag end
+    if (e.button != GLFW_MOUSE_BUTTON_LEFT) return;
+
+    // Only process if this cell started the drag
+    if (dragSource != this) {
+        pressed = false;
+        return;
+    }
+
     if (!module) {
         dragSource = nullptr;
         targetRow = -1;
@@ -1049,12 +1136,50 @@ void CellWidget::draw(const DrawArgs& args) {
     nvgStrokeWidth(args.vg, 1.0f);
     nvgStroke(args.vg);
 
-    // Pressed effect
+    // Pressed effect with delete progress indicator
     if (pressed) {
         nvgBeginPath(args.vg);
         nvgRoundedRect(args.vg, x, y, w, h, 3);
         nvgFillColor(args.vg, nvgRGBA(255, 255, 255, 30));
         nvgFill(args.vg);
+
+        // Show delete progress (only when cell has content)
+        if (module && module->cells[row][col].state != CELL_EMPTY) {
+            float progress = std::min(pressTime / HOLD_TIME, 1.0f);
+            if (progress > 0.05f) {  // Show earlier (5% progress)
+                // Red overlay that gets more opaque as progress increases
+                int fillAlpha = (int)(80 * progress);  // 0-80 alpha
+                nvgBeginPath(args.vg);
+                nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
+                nvgFillColor(args.vg, nvgRGBA(255, 50, 50, fillAlpha));
+                nvgFill(args.vg);
+
+                // Red border that gets brighter
+                int borderAlpha = (int)(150 + 105 * progress);  // 150-255 alpha
+                nvgBeginPath(args.vg);
+                nvgRoundedRect(args.vg, x + 1, y + 1, w - 2, h - 2, 2);
+                nvgStrokeColor(args.vg, nvgRGBA(255, 60, 60, borderAlpha));
+                nvgStrokeWidth(args.vg, 2.0f + progress * 2.0f);  // 2-4px width
+                nvgStroke(args.vg);
+
+                // Progress bar at bottom
+                float barWidth = (w - 4) * progress;
+                nvgBeginPath(args.vg);
+                nvgRect(args.vg, x + 2, y + h - 5, barWidth, 3);
+                nvgFillColor(args.vg, nvgRGBA(255, 100, 100, 220));
+                nvgFill(args.vg);
+
+                // "DELETE" text when progress > 50%
+                if (progress > 0.5f) {
+                    int textAlpha = (int)(255 * (progress - 0.5f) * 2);  // Fade in from 50%
+                    nvgFontSize(args.vg, 9.f);
+                    nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+                    nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+                    nvgFillColor(args.vg, nvgRGBA(255, 255, 255, textAlpha));
+                    nvgText(args.vg, x + w / 2, y + h / 2 - 2, "DELETE", NULL);
+                }
+            }
+        }
     }
 
     // Drag visual feedback (use pre-calculated targetRow/targetCol)
@@ -1162,6 +1287,112 @@ void CellWidget::drawWaveform(const DrawArgs& args, CellData& cell) {
     }
 }
 
+void CellWidget::createContextMenu() {
+    if (!module) return;
+
+    CellData& cell = module->cells[row][col];
+    if (cell.state == CELL_EMPTY) return;  // No menu for empty cells
+
+    ui::Menu* menu = createMenu();
+    menu->addChild(createMenuLabel("Cell " + std::to_string(row + 1) + "-" + std::to_string(col + 1)));
+
+    menu->addChild(new ui::MenuSeparator);
+    menu->addChild(createMenuLabel("Playback Speed"));
+
+    // Speed presets
+    struct SpeedItem : ui::MenuItem {
+        Launchpad* launchpad;
+        int cellRow, cellCol;
+        float speed;
+        void onAction(const event::Action& e) override {
+            if (launchpad) {
+                launchpad->cells[cellRow][cellCol].playbackSpeed = speed;
+                launchpad->cells[cellRow][cellCol].playbackPhase = 0.0f;
+            }
+        }
+        void step() override {
+            if (launchpad) {
+                rightText = (launchpad->cells[cellRow][cellCol].playbackSpeed == speed) ? "✔" : "";
+            }
+            MenuItem::step();
+        }
+    };
+
+    // Speed options: reverse speeds and forward speeds
+    std::vector<std::pair<std::string, float>> speeds = {
+        {"-8x (Reverse fast)", -8.0f},
+        {"-4x", -4.0f},
+        {"-2x", -2.0f},
+        {"-1x (Reverse)", -1.0f},
+        {"-0.5x", -0.5f},
+        {"0.5x (Half)", 0.5f},
+        {"1x (Normal)", 1.0f},
+        {"2x (Double)", 2.0f},
+        {"4x", 4.0f},
+        {"8x (Fast)", 8.0f}
+    };
+
+    for (auto& sp : speeds) {
+        SpeedItem* item = createMenuItem<SpeedItem>(sp.first);
+        item->launchpad = module;
+        item->cellRow = row;
+        item->cellCol = col;
+        item->speed = sp.second;
+        menu->addChild(item);
+    }
+
+    // Custom speed slider
+    menu->addChild(new ui::MenuSeparator);
+
+    struct SpeedSlider : ui::Slider {
+        Launchpad* launchpad;
+        int cellRow, cellCol;
+
+        struct SpeedQuantity : Quantity {
+            Launchpad* launchpad;
+            int cellRow, cellCol;
+
+            SpeedQuantity(Launchpad* l, int r, int c) : launchpad(l), cellRow(r), cellCol(c) {}
+
+            void setValue(float value) override {
+                if (launchpad) {
+                    launchpad->cells[cellRow][cellCol].playbackSpeed = knobToSpeed(value);
+                }
+            }
+            float getValue() override {
+                if (!launchpad) return 0.5f;
+                return speedToKnob(launchpad->cells[cellRow][cellCol].playbackSpeed);
+            }
+            float getMinValue() override { return 0.0f; }
+            float getMaxValue() override { return 1.0f; }
+            float getDefaultValue() override { return 0.5f; }  // 1x speed
+            std::string getLabel() override { return "Speed"; }
+            std::string getUnit() override { return ""; }
+            int getDisplayPrecision() override { return 2; }
+            std::string getDisplayValueString() override {
+                float speed = knobToSpeed(getValue());
+                char buf[32];
+                if (speed < 0) {
+                    snprintf(buf, sizeof(buf), "%.2fx (Rev)", speed);
+                } else {
+                    snprintf(buf, sizeof(buf), "%.2fx", speed);
+                }
+                return buf;
+            }
+        };
+
+        SpeedSlider(Launchpad* l, int r, int c) : launchpad(l), cellRow(r), cellCol(c) {
+            quantity = new SpeedQuantity(l, r, c);
+            box.size.x = 200.0f;
+        }
+        ~SpeedSlider() {
+            delete quantity;
+        }
+    };
+
+    menu->addChild(new SpeedSlider(module, row, col));
+}
+
 // White background panel for bottom section
 struct WhiteBottomPanel40HP : TransparentWidget {
     void draw(const DrawArgs& args) override {
@@ -1252,6 +1483,10 @@ struct LaunchpadWidget : ModuleWidget {
             // Row output - moved up 3px
             addOutput(createOutputCentered<PJ301MPort>(Vec(577, y + 3), module, Launchpad::ROW_1_OUTPUT + r));
         }
+
+        // Speed hint text below cells
+        addChild(new LaunchpadLabel(Vec(cellStartX - 20, 318), Vec(360, 10),
+            "Right-click cell to set playback speed", 8.f, nvgRGB(255, 255, 255), false));
 
         // Bottom section (Y=330+) with labels (pink color)
         NVGcolor pinkText = nvgRGB(232, 112, 112);  // Sashimi pink
