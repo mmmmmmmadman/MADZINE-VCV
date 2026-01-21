@@ -8,7 +8,7 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -22,8 +22,18 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -613,17 +623,17 @@ struct U8Widget : ModuleWidget {
 
         addChild(new TechnoEnhancedTextLabel(Vec(0, 28), Vec(box.size.x, 16), "INPUT", 8.f, nvgRGB(255, 255, 255), true));
 
-        addChild(new TechnoEnhancedTextLabel(Vec(-5, 89), Vec(box.size.x + 10, 10), "LEVEL", 10.5f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(-5, 89), Vec(box.size.x + 10, 10), "LEVEL", 8.f, nvgRGB(255, 255, 255), true));
         levelKnob = createParamCentered<TechnoStandardBlackKnob>(Vec(box.size.x / 2, 123), module, U8::LEVEL_PARAM);
         addParam(levelKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(box.size.x / 2, 161), module, U8::LEVEL_CV_INPUT));
 
-        addChild(new TechnoEnhancedTextLabel(Vec(-5, 182), Vec(box.size.x + 10, 10), "DUCK", 10.5f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(-5, 182), Vec(box.size.x + 10, 10), "DUCK", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(box.size.x / 2, 216), module, U8::DUCK_LEVEL_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(box.size.x / 2, 254), module, U8::DUCK_INPUT));
 
         // Mute/Solo（與 Input L/R 對齊）
-        addChild(new TechnoEnhancedTextLabel(Vec(-5, 270), Vec(box.size.x + 10, 10), "MUTE SOLO", 10.5f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(-5, 270), Vec(box.size.x + 10, 10), "MUTE     SOLO", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<RedLight>>>(Vec(15, 292), module, U8::MUTE_PARAM, U8::MUTE_LIGHT));
         addParam(createLightParamCentered<ExclusiveSoloButton<MediumSimpleLight<GreenLight>>>(Vec(box.size.x - 15, 292), module, U8::SOLO_PARAM, U8::SOLO_LIGHT));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 316), module, U8::MUTE_TRIG_INPUT));

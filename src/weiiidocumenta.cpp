@@ -2158,7 +2158,7 @@ struct EnhancedTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 10.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -2271,7 +2271,7 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         addChild(whitePanel);
 
         // ========== 標題區 ==========
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "weiii documenta", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "weiii documenta", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         addChild(new EnhancedTextLabel(Vec(0, 27), Vec(box.size.x, 12), "Collaborated with weiii", 10.f, nvgRGB(255, 255, 255), false));
 
@@ -2296,13 +2296,13 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         float btn2X = btnSpacing * 1.5f;       // 90px
         float btn3X = btnSpacing * 2.5f;       // 150px
 
-        addChild(new EnhancedTextLabel(Vec(btn1X-10, 89), Vec(20, 10), "REC", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(btn1X-10, 89), Vec(20, 10), "REC", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<VCVButton>(Vec(btn1X-11, 110), module, WeiiiDocumenta::REC_BUTTON_PARAM));
         addChild(createLightCentered<MediumLight<RedLight>>(Vec(btn1X-11, 110), module, WeiiiDocumenta::REC_LIGHT));
         addInput(createInputCentered<PJ301MPort>(Vec(btn1X+13, 110), module, WeiiiDocumenta::REC_TRIGGER_INPUT));
 
         // PLAY/LOOP label with underlines
-        addChild(new EnhancedTextLabel(Vec(btn2X-30, 89), Vec(50, 10), "PLAY/LOOP", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(btn2X-30, 89), Vec(50, 10), "PLAY/LOOP", 8.f, nvgRGB(255, 255, 255), true));
         addChild(new UnderlineWidget(Vec(btn2X-21, 97), Vec(14, 1), nvgRGB(100, 200, 150)));  // Green underline for PLAY
         addChild(new UnderlineWidget(Vec(btn2X-4, 97), Vec(14, 1), nvgRGB(100, 150, 255)));  // Blue underline for LOOP
         addParam(createParamCentered<VCVButton>(Vec(btn2X-11, 110), module, WeiiiDocumenta::PLAY_BUTTON_PARAM));
@@ -2310,18 +2310,18 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(btn2X+13, 110), module, WeiiiDocumenta::PLAY_TRIGGER_INPUT));
 
         addChild(new EnhancedTextLabel(Vec(btn3X-22, 92), Vec(44, 10), "(2Sec for Clear)", 5.f, nvgRGB(180, 180, 180), false));
-        addChild(new EnhancedTextLabel(Vec(btn3X-12, 89), Vec(24, 10), "STOP", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(btn3X-12, 89), Vec(24, 10), "STOP", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<VCVButton>(Vec(btn3X-11, 110), module, WeiiiDocumenta::CLEAR_BUTTON_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(btn3X+13, 110), module, WeiiiDocumenta::CLEAR_TRIGGER_INPUT));
 
         // EQ旋鈕 X=30 (從上到下: HIGH, MID, LOW)
-        addChild(new EnhancedTextLabel(Vec(18, 126), Vec(24, 10), "HIGH", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(18, 126), Vec(24, 10), "HIGH", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<LargeWhiteKnob>(Vec(30, 155), module, WeiiiDocumenta::EQ_HIGH_PARAM));
 
-        addChild(new EnhancedTextLabel(Vec(20, 176), Vec(20, 10), "MID", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(20, 176), Vec(20, 10), "MID", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<LargeWhiteKnob>(Vec(30, 205), module, WeiiiDocumenta::EQ_MID_PARAM));
 
-        addChild(new EnhancedTextLabel(Vec(20, 226), Vec(20, 10), "LOW", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(20, 226), Vec(20, 10), "LOW", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<LargeWhiteKnob>(Vec(30, 255), module, WeiiiDocumenta::EQ_LOW_PARAM));
 
         // Send/Return 接口 (在 EQ 下方) - 左邊 Send, 右邊 Return
@@ -2330,17 +2330,17 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         float srY1 = 290.0f;  // L (往上 5px)
         float srY2 = 315.0f;  // R
 
-        addChild(new EnhancedTextLabel(Vec(3, 271), Vec(24, 10), "SEND", 5.f, nvgRGB(255, 255, 255), false));
+        addChild(new EnhancedTextLabel(Vec(3, 271), Vec(24, 10), "SEND", 8.f, nvgRGB(255, 255, 255), false));
         addOutput(createOutputCentered<PJ301MPort>(Vec(sendX, srY1), module, WeiiiDocumenta::SEND_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(sendX, srY2), module, WeiiiDocumenta::SEND_R_OUTPUT));
 
-        addChild(new EnhancedTextLabel(Vec(33, 271), Vec(24, 10), "RETURN", 5.f, nvgRGB(255, 255, 255), false));
+        addChild(new EnhancedTextLabel(Vec(33, 271), Vec(24, 10), "RETURN", 8.f, nvgRGB(255, 255, 255), false));
         addInput(createInputCentered<PJ301MPort>(Vec(returnX, srY1), module, WeiiiDocumenta::RETURN_L_INPUT));
         addInput(createInputCentered<PJ301MPort>(Vec(returnX, srY2), module, WeiiiDocumenta::RETURN_R_INPUT));
 
         // Row 1: THRSH / SCAN / FDBK (往下 Y+20)
         // THRESH (WhiteKnob - 主要參數)
-        addChild(new EnhancedTextLabel(Vec(col1-15, 125), Vec(30, 10), "THRSH", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col1-15, 125), Vec(30, 10), "THRSH", 8.f, nvgRGB(255, 255, 255), true));
         thresholdKnob = createParamCentered<WhiteKnob>(Vec(col1, 149), module, WeiiiDocumenta::THRESHOLD_PARAM);
         addParam(thresholdKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col1, 176), module, WeiiiDocumenta::THRESHOLD_CV_INPUT));
@@ -2348,14 +2348,14 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         addParam(createParamCentered<Trimpot>(Vec(col1, 205), module, WeiiiDocumenta::THRESHOLD_CV_ATTEN_PARAM));
 
         // SCAN (GrayKnob - 手動切片瀏覽)
-        addChild(new EnhancedTextLabel(Vec(col2-10, 125), Vec(20, 10), "SCAN", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col2-10, 125), Vec(20, 10), "SCAN", 8.f, nvgRGB(255, 255, 255), true));
         scanKnob = createParamCentered<MediumGrayKnob>(Vec(col2, 149), module, WeiiiDocumenta::SCAN_PARAM);
         addParam(scanKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col2, 176), module, WeiiiDocumenta::SCAN_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col2, 199), module, WeiiiDocumenta::SCAN_CV_ATTEN_PARAM));
 
         // FEEDBACK (GrayKnob - 輔助參數)
-        addChild(new EnhancedTextLabel(Vec(col3-10, 125), Vec(20, 10), "FDBK", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col3-10, 125), Vec(20, 10), "FDBK", 8.f, nvgRGB(255, 255, 255), true));
         feedbackKnob = createParamCentered<MediumGrayKnob>(Vec(col3, 149), module, WeiiiDocumenta::FEEDBACK_AMOUNT_PARAM);
         addParam(feedbackKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col3, 176), module, WeiiiDocumenta::FEEDBACK_AMOUNT_CV_INPUT));
@@ -2368,36 +2368,36 @@ struct WeiiiDocumentaWidget : ModuleWidget {
 
         // Row 2: SLEW / AMT / RATE (S&H 區塊 - 原 Chaos)
         // SLEW (只有旋鈕，無 CV input)
-        addChild(new EnhancedTextLabel(Vec(col1-10, 238), Vec(20, 10), "SLEW", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col1-10, 238), Vec(20, 10), "SLEW", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<MediumGrayKnob>(Vec(col1, 260), module, WeiiiDocumenta::SH_SLEW_PARAM));
 
         // AMT (WhiteKnob - S&H 輸出大小)
-        addChild(new EnhancedTextLabel(Vec(col2-10, 238), Vec(20, 10), "AMT", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col2-10, 238), Vec(20, 10), "AMT", 8.f, nvgRGB(255, 255, 255), true));
         shAmountKnob = createParamCentered<WhiteKnob>(Vec(col2, 262), module, WeiiiDocumenta::SH_AMOUNT_PARAM);
         addParam(shAmountKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col2, 290), module, WeiiiDocumenta::SH_AMOUNT_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col2, 313), module, WeiiiDocumenta::SH_AMOUNT_CV_ATTEN_PARAM));
 
         // RATE (GrayKnob - S&H 速度)
-        addChild(new EnhancedTextLabel(Vec(col3-10, 238), Vec(20, 10), "RATE", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col3-10, 238), Vec(20, 10), "RATE", 8.f, nvgRGB(255, 255, 255), true));
         shRateKnob = createParamCentered<MediumGrayKnob>(Vec(col3, 260), module, WeiiiDocumenta::SH_RATE_PARAM);
         addParam(shRateKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(col3, 290), module, WeiiiDocumenta::SH_RATE_CV_INPUT));
         addParam(createParamCentered<Trimpot>(Vec(col3, 313), module, WeiiiDocumenta::SH_RATE_CV_ATTEN_PARAM));
 
         // S&H CV Output (取代原本的 Chaos 輸出)
-        addChild(new EnhancedTextLabel(Vec(col1-15, 282), Vec(30, 10), "S&H", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(col1-15, 282), Vec(30, 10), "S&H", 8.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(col1, 305), module, WeiiiDocumenta::SH_CV_OUTPUT));
 
         // ========== I/O 區域 ==========
         // 白色背景從 Y=330 開始
 
         // 第一行 Y=343: I/L
-        addChild(new EnhancedTextLabel(Vec(-2, 337), Vec(20, 15), "I/L", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(-2, 337), Vec(20, 15), "I/L", 7.f, nvgRGB(255, 133, 133), true));
         addInput(createInputCentered<PJ301MPort>(Vec(24, 343), module, WeiiiDocumenta::AUDIO_INPUT_L));
 
         // 第二行 Y=368: I/R
-        addChild(new EnhancedTextLabel(Vec(-2, 362), Vec(20, 15), "I/R", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(-2, 362), Vec(20, 15), "I/R", 7.f, nvgRGB(255, 133, 133), true));
         addInput(createInputCentered<PJ301MPort>(Vec(24, 368), module, WeiiiDocumenta::AUDIO_INPUT_R));
 
         // 連接線先加入 (在底層)
@@ -2405,12 +2405,12 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         addChild(new SpeedPolyCVLine(Vec(120, 354), Vec(88, 368), nvgRGB(150, 150, 150))); // Poly knob -> Poly CV
 
         // Speed 控制
-        addChild(new EnhancedTextLabel(Vec(40, 332), Vec(30, 10), "SPEED", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(40, 332), Vec(30, 10), "SPEED", 7.f, nvgRGB(255, 133, 133), true));
         speedKnob = createParamCentered<MediumGrayKnob>(Vec(55, 354), module, WeiiiDocumenta::SPEED_PARAM);
         addParam(speedKnob);
 
         // Polyphonic 控制 (X=120 同 S&H Amount CV Input)
-        addChild(new EnhancedTextLabel(Vec(100, 332), Vec(40, 10), "POLY", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(100, 332), Vec(40, 10), "POLY", 7.f, nvgRGB(255, 133, 133), true));
         polyKnob = createParamCentered<MediumGrayKnob>(Vec(120, 354), module, WeiiiDocumenta::POLY_PARAM);
         addParam(polyKnob);
 
@@ -2419,11 +2419,11 @@ struct WeiiiDocumentaWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(88, 368), module, WeiiiDocumenta::POLY_CV_INPUT));
 
         // O/L
-        addChild(new EnhancedTextLabel(Vec(133, 337), Vec(20, 15), "O/L", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(133, 337), Vec(20, 15), "O/L", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(160, 343), module, WeiiiDocumenta::MAIN_OUTPUT_L));
 
         // O/R
-        addChild(new EnhancedTextLabel(Vec(133, 362), Vec(20, 15), "O/R", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(133, 362), Vec(20, 15), "O/R", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(160, 368), module, WeiiiDocumenta::MAIN_OUTPUT_R));
     }
 

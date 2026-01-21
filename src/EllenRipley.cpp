@@ -11,8 +11,8 @@ struct EnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -21,14 +21,23 @@ struct EnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -844,109 +853,109 @@ struct EllenRipleyWidget : ModuleWidget {
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Ellen Ripley", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Ellen Ripley", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
-        addChild(new EnhancedTextLabel(Vec(0, 30), Vec(box.size.x, 15), "DELAY", 10.f, nvgRGB(255, 255, 255), true));
-        
+        addChild(new EnhancedTextLabel(Vec(0, 30), Vec(box.size.x, 15), "DELAY"));
+
         float delayY = 46;
         float x = 1;
-        
-        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "TIME L", 7.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "TIME L"));
         delayTimeLKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_TIME_L_PARAM);
         addParam(delayTimeLKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, delayY + 47), module, EllenRipley::DELAY_TIME_L_CV_INPUT));
         x += 31;
 
-        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "TIME R", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "TIME R"));
         delayTimeRKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_TIME_R_PARAM);
         addParam(delayTimeRKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, delayY + 47), module, EllenRipley::DELAY_TIME_R_CV_INPUT));
         x += 31;
 
-        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "FDBK", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "FDBK"));
         delayFeedbackKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_FEEDBACK_PARAM);
         addParam(delayFeedbackKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, delayY + 47), module, EllenRipley::DELAY_FEEDBACK_CV_INPUT));
         x += 30;
         
-        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "C", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, delayY), Vec(25, 10), "C", 8.f, nvgRGB(200, 200, 200), true));
         addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(Vec(x + 12, delayY + 22), module, EllenRipley::DELAY_CHAOS_PARAM, EllenRipley::DELAY_CHAOS_LIGHT));
-        
-        addChild(new EnhancedTextLabel(Vec(0, 112), Vec(box.size.x, 15), "GRATCH", 10.f, nvgRGB(255, 255, 255), true));
-        
+
+        addChild(new EnhancedTextLabel(Vec(0, 112), Vec(box.size.x, 15), "GRATCH"));
+
         float grainY = 128;
         x = 1;
-        
-        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "SIZE", 7.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "SIZE"));
         grainSizeKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_SIZE_PARAM);
         addParam(grainSizeKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, grainY + 47), module, EllenRipley::GRAIN_SIZE_CV_INPUT));
         x += 31;
 
-        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "BREAK", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "BREAK"));
         grainDensityKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_DENSITY_PARAM);
         addParam(grainDensityKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, grainY + 47), module, EllenRipley::GRAIN_DENSITY_CV_INPUT));
         x += 31;
 
-        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "SHIFT", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "SHIFT"));
         grainPositionKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_POSITION_PARAM);
         addParam(grainPositionKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, grainY + 47), module, EllenRipley::GRAIN_POSITION_CV_INPUT));
         x += 30;
         
-        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "C", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, grainY), Vec(25, 10), "C", 8.f, nvgRGB(200, 200, 200), true));
         addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(Vec(x + 12, grainY + 22), module, EllenRipley::GRAIN_CHAOS_PARAM, EllenRipley::GRAIN_CHAOS_LIGHT));
-        
-        addChild(new EnhancedTextLabel(Vec(0, 194), Vec(box.size.x, 15), "REVERB", 10.f, nvgRGB(255, 255, 255), true));
-        
+
+        addChild(new EnhancedTextLabel(Vec(0, 194), Vec(box.size.x, 15), "REVERB"));
+
         float reverbY = 210;
         x = 1;
-        
-        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "ROOM", 7.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "ROOM"));
         reverbRoomSizeKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_ROOM_SIZE_PARAM);
         addParam(reverbRoomSizeKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, reverbY + 47), module, EllenRipley::REVERB_ROOM_SIZE_CV_INPUT));
         x += 31;
 
-        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "TONE", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "TONE"));
         reverbDampingKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_DAMPING_PARAM);
         addParam(reverbDampingKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, reverbY + 47), module, EllenRipley::REVERB_DAMPING_CV_INPUT));
         x += 31;
 
-        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "DECAY", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "DECAY"));
         reverbDecayKnob = createParamCentered<StandardBlackKnob26>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_DECAY_PARAM);
         addParam(reverbDecayKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(x + 12, reverbY + 47), module, EllenRipley::REVERB_DECAY_CV_INPUT));
         x += 30;
         
-        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "C", 7.f, nvgRGB(200, 200, 200), true));
+        addChild(new EnhancedTextLabel(Vec(x, reverbY), Vec(25, 10), "C", 8.f, nvgRGB(200, 200, 200), true));
         addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(Vec(x + 12, reverbY + 22), module, EllenRipley::REVERB_CHAOS_PARAM, EllenRipley::REVERB_CHAOS_LIGHT));
-        
-        addChild(new EnhancedTextLabel(Vec(0, 276), Vec(box.size.x, 15), "CHAOS", 10.f, nvgRGB(255, 255, 255), true));
-        
+
+        addChild(new EnhancedTextLabel(Vec(0, 276), Vec(box.size.x, 15), "CHAOS"));
+
         // Chaos shape button next to CHAOS text, above reverb wet/dry
-        addChild(new EnhancedTextLabel(Vec(95, 276), Vec(25, 10), "SHAPE", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new EnhancedTextLabel(Vec(95, 276), Vec(25, 10), "SHAPE"));
         addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(Vec(107, 282), module, EllenRipley::CHAOS_SHAPE_PARAM, EllenRipley::CHAOS_SHAPE_LIGHT));
-        
+
         float chaosY = 292;
         x = 1;
-        
-        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "RATE", 7.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "RATE"));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, chaosY + 22), module, EllenRipley::CHAOS_RATE_PARAM));
         x += 31;
-        
-        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "DELAY", 7.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "DELAY"));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, chaosY + 22), module, EllenRipley::WET_DRY_PARAM));
         x += 31;
-        
-        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "GRATCH", 7.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "GRATCH"));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, chaosY + 22), module, EllenRipley::GRAIN_WET_DRY_PARAM));
         x += 31;
-        
-        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "REVERB", 6.f, nvgRGB(200, 200, 200), true));
+
+        addChild(new EnhancedTextLabel(Vec(x, chaosY), Vec(25, 10), "REVERB"));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 12, chaosY + 22), module, EllenRipley::REVERB_WET_DRY_PARAM));
         
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));

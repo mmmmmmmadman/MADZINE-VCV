@@ -12,7 +12,7 @@ struct SongModeLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    SongModeLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    SongModeLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                   NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -26,9 +26,17 @@ struct SongModeLabel : TransparentWidget {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
 
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        if (bold) {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -493,7 +501,7 @@ struct SongModeWidget : ModuleWidget {
         addChild(whitePanel);
 
         // Title
-        addChild(new SongModeLabel(Vec(0, 1), Vec(box.size.x, 20), "SONG MODE", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new SongModeLabel(Vec(0, 1), Vec(box.size.x, 20), "SONG MODE", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new SongModeLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         // Clock and Reset inputs
@@ -522,7 +530,7 @@ struct SongModeWidget : ModuleWidget {
             float y = startY + i * rowHeight;
 
             // Row number
-            addChild(new SongModeLabel(Vec(0, y - 2), Vec(14, 12), std::to_string(i + 1), 9.f, nvgRGB(255, 200, 0), true));
+            addChild(new SongModeLabel(Vec(0, y - 2), Vec(14, 12), std::to_string(i + 1), 8.f, nvgRGB(255, 200, 0), true));
 
             // Input jack
             addInput(createInputCentered<PJ301MPort>(Vec(22, y + 6), module, SongMode::IN_1_INPUT + i));

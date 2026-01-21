@@ -32,6 +32,7 @@ void init(Plugin* p) {
     p->addModel(modelEnvVCA6);
     p->addModel(modelWeiiiDocumenta);
     p->addModel(modelUniversalRhythm);
+    p->addModel(modelUniRhythm);
     p->addModel(modelSongMode);
     p->addModel(modelLaunchpad);
     p->addModel(modelRunner);

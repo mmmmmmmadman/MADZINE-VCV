@@ -284,8 +284,8 @@ struct EnhancedTextLabel : Widget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, const std::string& text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, const std::string& text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -294,14 +294,23 @@ struct EnhancedTextLabel : Widget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -481,7 +490,7 @@ struct QQWidget : ModuleWidget {
 
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Q_Q", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Q_Q", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         float centerX = box.size.x / 2;

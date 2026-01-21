@@ -9,8 +9,8 @@ struct TWNCLightEnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    TWNCLightEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    TWNCLightEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -19,14 +19,23 @@ struct TWNCLightEnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -581,31 +590,31 @@ struct TWNCLightWidget : ModuleWidget {
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new TWNCLightEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "TWNC LTE", 10.f, nvgRGB(255, 200, 0), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "TWNC LTE", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new TWNCLightEnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 8.f, nvgRGB(255, 200, 0), false));
 
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, 30), Vec(20, 15), "CLK", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, 30), Vec(20, 15), "CLK", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 51), module, TWNCLight::GLOBAL_CLOCK_INPUT));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(35, 30), Vec(20, 15), "LEN", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(35, 30), Vec(20, 15), "LEN", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(45, 53), module, TWNCLight::GLOBAL_LENGTH_PARAM));
 
         float drumY = 71;
-        addChild(new TWNCLightEnhancedTextLabel(Vec(20, drumY), Vec(20, 10), "Drum", 6.f, nvgRGB(255, 200, 100), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(20, drumY), Vec(20, 10), "Drum", 8.f, nvgRGB(255, 200, 100), true));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 12), Vec(20, 10), "ACCNT", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 12), Vec(20, 10), "ACCNT", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(15, drumY + 33), module, TWNCLight::VCA_SHIFT_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 12), Vec(20, 10), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 12), Vec(20, 10), "SHAPE", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, drumY + 33), module, TWNCLight::TRACK1_SHAPE_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 48), Vec(20, 10), "FILL", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 48), Vec(20, 10), "FILL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, drumY + 69), module, TWNCLight::TRACK1_FILL_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 48), Vec(20, 10), "A.DEC", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(35, drumY + 48), Vec(20, 10), "A.DEC", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, drumY + 69), module, TWNCLight::VCA_DECAY_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 84), Vec(20, 10), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, drumY + 84), Vec(20, 10), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
         drumDecayKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, drumY + 105), module, TWNCLight::TRACK1_DECAY_PARAM);
         addParam(drumDecayKnob);
         
@@ -613,22 +622,22 @@ struct TWNCLightWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(45, drumY + 105), module, TWNCLight::DRUM_DECAY_CV_INPUT));
 
         float hatsY = 195;
-        addChild(new TWNCLightEnhancedTextLabel(Vec(20, hatsY), Vec(20, 10), "HATs", 6.f, nvgRGB(255, 200, 100), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(20, hatsY), Vec(20, 10), "HATs", 8.f, nvgRGB(255, 200, 100), true));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 12), Vec(20, 10), "FILL", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 12), Vec(20, 10), "FILL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, hatsY + 33), module, TWNCLight::TRACK2_FILL_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 12), Vec(20, 10), "SHIFT", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 12), Vec(20, 10), "SHIFT", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(45, hatsY + 33), module, TWNCLight::TRACK2_SHIFT_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 48), Vec(20, 10), "D/M", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 48), Vec(20, 10), "D/M", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::SnapKnob26>(Vec(15, hatsY + 69), module, TWNCLight::TRACK2_DIVMULT_PARAM));
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 48), Vec(20, 10), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 48), Vec(20, 10), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
         hatsDecayKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(45, hatsY + 69), module, TWNCLight::TRACK2_DECAY_PARAM);
         addParam(hatsDecayKnob);
         
-        addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 84), Vec(20, 10), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TWNCLightEnhancedTextLabel(Vec(5, hatsY + 84), Vec(20, 10), "SHAPE", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(15, hatsY + 105), module, TWNCLight::TRACK2_SHAPE_PARAM));
         
         addChild(new TWNCLightEnhancedTextLabel(Vec(35, hatsY + 84), Vec(20, 10), "H.D", 5.f, nvgRGB(255, 133, 133), true));

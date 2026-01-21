@@ -78,22 +78,34 @@ struct AlexTextLabel : TransparentWidget {
     std::string text;
     float fontSize;
     NVGcolor color;
+    bool bold;
 
-    AlexTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
-                  NVGcolor color = nvgRGB(255, 255, 255)) {
+    AlexTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
+                  NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
         this->text = text;
         this->fontSize = fontSize;
         this->color = color;
+        this->bold = bold;
     }
 
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -643,18 +655,18 @@ struct ALEXANDERPLATZWidget : ModuleWidget {
             addChild(vuR);
 
             // LEVEL
-            addChild(new AlexTextLabel(Vec(trackX - 5, 89), Vec(trackWidth + 10, 10), "LEVEL", 10.5f, nvgRGB(255, 255, 255)));
+            addChild(new AlexTextLabel(Vec(trackX - 5, 89), Vec(trackWidth + 10, 10), "LEVEL", 8.f, nvgRGB(255, 255, 255)));
             levelKnobs[t] = createParamCentered<TechnoStandardBlackKnob>(Vec(centerX, 123), module, ALEXANDERPLATZ::LEVEL_PARAM + t);
             addParam(levelKnobs[t]);
             addInput(createInputCentered<PJ301MPort>(Vec(centerX, 161), module, ALEXANDERPLATZ::LEVEL_CV_INPUT + t));
 
             // DUCK
-            addChild(new AlexTextLabel(Vec(trackX - 5, 182), Vec(trackWidth + 10, 10), "DUCK", 10.5f, nvgRGB(255, 255, 255)));
+            addChild(new AlexTextLabel(Vec(trackX - 5, 182), Vec(trackWidth + 10, 10), "DUCK", 8.f, nvgRGB(255, 255, 255)));
             addParam(createParamCentered<TechnoStandardBlackKnob>(Vec(centerX, 216), module, ALEXANDERPLATZ::DUCK_PARAM + t));
             addInput(createInputCentered<PJ301MPort>(Vec(centerX, 254), module, ALEXANDERPLATZ::DUCK_INPUT + t));
 
             // MUTE / SOLO
-            addChild(new AlexTextLabel(Vec(trackX - 5, 270), Vec(trackWidth + 10, 10), "MUTE SOLO", 10.5f, nvgRGB(255, 255, 255)));
+            addChild(new AlexTextLabel(Vec(trackX - 5, 270), Vec(trackWidth + 10, 10), "MUTE     SOLO", 8.f, nvgRGB(255, 255, 255)));
             addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<RedLight>>>(Vec(centerX - 15, 292), module, ALEXANDERPLATZ::MUTE_PARAM + t, ALEXANDERPLATZ::MUTE_LIGHT + t));
             {
                 auto* soloBtn = createLightParamCentered<AlexExclusiveSoloButton<MediumSimpleLight<GreenLight>>>(Vec(centerX + 15, 292), module, ALEXANDERPLATZ::SOLO_PARAM + t, ALEXANDERPLATZ::SOLO_LIGHT + t);

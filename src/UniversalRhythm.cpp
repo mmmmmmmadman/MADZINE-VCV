@@ -80,7 +80,7 @@ struct URTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    URTextLabel(Vec pos, Vec size, std::string text, float fontSize = 10.f,
+    URTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                 NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -94,9 +94,17 @@ struct URTextLabel : TransparentWidget {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
 
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        if (bold) {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -2480,7 +2488,7 @@ struct UniversalRhythmWidget : ModuleWidget {
 
         // Title (MADDY+ style - left aligned with spacing)
         NVGcolor titleColor = nvgRGB(255, 200, 0);
-        addChild(new URTextLabel(Vec(27, 1), Vec(box.size.x, 20), "U N I V E R S A L  R H Y T H M", 12.f, titleColor, true));
+        addChild(new URTextLabel(Vec(27, 1), Vec(box.size.x, 20), "U N I V E R S A L  R H Y T H M", 14.f, titleColor, true));
         addChild(new URTextLabel(Vec(27, 13), Vec(box.size.x, 20), "MADZINE", 10.f, titleColor, false));
 
         // Pattern display
@@ -2498,17 +2506,17 @@ struct UniversalRhythmWidget : ModuleWidget {
         float ctrlSpacing = 38;  // More spacing for labels
 
         // Labels centered over inputs (adjust X position)
-        addChild(new URTextLabel(Vec(5, ctrlLabelY), Vec(40, 12), "CLOCK", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(5, ctrlLabelY), Vec(40, 12), "CLOCK", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(25, ctrlY + 5), module, UniversalRhythm::CLOCK_INPUT));
         addChild(createLightCentered<SmallLight<YellowLight>>(Vec(37, ctrlY - 2), module, UniversalRhythm::CLOCK_LIGHT));
 
         // Reset button (where RESET input used to be)
-        addChild(new URTextLabel(Vec(5 + ctrlSpacing, ctrlLabelY), Vec(40, 12), "RESET", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(5 + ctrlSpacing, ctrlLabelY), Vec(40, 12), "RESET", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<VCVButton>(Vec(25 + ctrlSpacing, ctrlY + 5), module, UniversalRhythm::RESET_BUTTON_PARAM));
         // Reset input moved to right of button
         addInput(createInputCentered<PJ301MPort>(Vec(48 + ctrlSpacing, ctrlY + 5), module, UniversalRhythm::RESET_INPUT));
 
-        addChild(new URTextLabel(Vec(5 + ctrlSpacing * 2 + 10, ctrlLabelY), Vec(40, 12), "REGEN", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(5 + ctrlSpacing * 2 + 10, ctrlLabelY), Vec(40, 12), "REGEN", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<VCVButton>(Vec(25 + ctrlSpacing * 2 + 10, ctrlY + 5), module, UniversalRhythm::REGENERATE_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(48 + ctrlSpacing * 2 + 10, ctrlY + 5), module, UniversalRhythm::REGENERATE_INPUT));
 
@@ -2519,11 +2527,11 @@ struct UniversalRhythmWidget : ModuleWidget {
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::VARIATION_PARAM));
 
         globalX += globalSpacing;
-        addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "HUMAN", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "HUMAN", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::HUMANIZE_PARAM));
 
         globalX += globalSpacing;
-        addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "SWING", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(globalX - 20, ctrlLabelY), Vec(40, 12), "SWING", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(globalX, ctrlY + 5), module, UniversalRhythm::SWING_PARAM));
 
         globalX += globalSpacing;
@@ -2541,11 +2549,11 @@ struct UniversalRhythmWidget : ModuleWidget {
         // v2.3.7: Articulation section (3-tier: Ghost → Accent → Articulation)
         // Uses same style as SPREAD (WhiteKnob)
         float artX = fillX + 25 + 35;  // FILL CV input + 35
-        addChild(new URTextLabel(Vec(artX - 24, ctrlLabelY), Vec(48, 12), "ARTICULATION", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(artX - 24, ctrlLabelY), Vec(48, 12), "ARTICULATION", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::ARTICULATION_PARAM));
 
         artX += 43;  // Spacing before SPREAD
-        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "SPREAD", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new URTextLabel(Vec(artX - 15, ctrlLabelY), Vec(30, 12), "SPREAD", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(artX, ctrlY + 5), module, UniversalRhythm::SPREAD_PARAM));
 
         // Separators (at vertical separator top position Y=151)
@@ -2585,7 +2593,7 @@ struct UniversalRhythmWidget : ModuleWidget {
             float leftCol = x - 45 - 4 - 4;  // X-8 total
 
             // Style (label above knob) - Y+6
-            addChild(new URTextLabel(Vec(leftCol - 14, roleY + 8), Vec(30, 10), "STYLE", 7.f, white, true));
+            addChild(new URTextLabel(Vec(leftCol - 14, roleY + 8), Vec(30, 10), "STYLE", 8.f, white, true));
             roleKnobs[role][0] = createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 8 + labelToKnob), module,
                      UniversalRhythm::TIMELINE_STYLE_PARAM + baseParam);
             addParam(roleKnobs[role][0]);
@@ -2593,7 +2601,7 @@ struct UniversalRhythmWidget : ModuleWidget {
                      UniversalRhythm::TIMELINE_STYLE_CV_INPUT + role * 4));
 
             // Density (label above knob) - Y+3
-            addChild(new URTextLabel(Vec(leftCol - 14, roleY + 5 + knobVSpacing), Vec(30, 10), "DENSITY", 7.f, white, true));
+            addChild(new URTextLabel(Vec(leftCol - 14, roleY + 5 + knobVSpacing), Vec(30, 10), "DENSITY", 8.f, white, true));
             roleKnobs[role][1] = createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 5 + knobVSpacing + labelToKnob), module,
                      UniversalRhythm::TIMELINE_DENSITY_PARAM + baseParam);
             addParam(roleKnobs[role][1]);
@@ -2601,7 +2609,7 @@ struct UniversalRhythmWidget : ModuleWidget {
                      UniversalRhythm::TIMELINE_DENSITY_CV_INPUT + role * 4));
 
             // Length (label above knob)
-            addChild(new URTextLabel(Vec(leftCol - 14, roleY + 2 + knobVSpacing * 2), Vec(30, 10), "LENGTH", 7.f, white, true));
+            addChild(new URTextLabel(Vec(leftCol - 14, roleY + 2 + knobVSpacing * 2), Vec(30, 10), "LENGTH", 8.f, white, true));
             addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(leftCol, roleY + 2 + knobVSpacing * 2 + labelToKnob), module,
                      UniversalRhythm::TIMELINE_LENGTH_PARAM + baseParam));
 
@@ -2609,7 +2617,7 @@ struct UniversalRhythmWidget : ModuleWidget {
             float rightCol = x + 15;  // X-10 for new CV inputs
 
             // Freq (label above knob) - Y+6
-            addChild(new URTextLabel(Vec(rightCol - 14, roleY + 8), Vec(30, 10), "FREQ", 7.f, white, true));
+            addChild(new URTextLabel(Vec(rightCol - 14, roleY + 8), Vec(30, 10), "FREQ", 8.f, white, true));
             roleKnobs[role][2] = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, roleY + 8 + labelToKnob), module,
                      UniversalRhythm::TIMELINE_FREQ_PARAM + baseParam);
             addParam(roleKnobs[role][2]);
@@ -2617,7 +2625,7 @@ struct UniversalRhythmWidget : ModuleWidget {
                      UniversalRhythm::TIMELINE_FREQ_CV_INPUT + role * 4));
 
             // Decay (label above knob) - Y+3
-            addChild(new URTextLabel(Vec(rightCol - 14, roleY + 5 + knobVSpacing), Vec(30, 10), "DECAY", 7.f, white, true));
+            addChild(new URTextLabel(Vec(rightCol - 14, roleY + 5 + knobVSpacing), Vec(30, 10), "DECAY", 8.f, white, true));
             roleKnobs[role][3] = createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, roleY + 5 + knobVSpacing + labelToKnob), module,
                      UniversalRhythm::TIMELINE_DECAY_PARAM + baseParam);
             addParam(roleKnobs[role][3]);
@@ -2630,17 +2638,17 @@ struct UniversalRhythmWidget : ModuleWidget {
             float row3ElementY = row3LabelY + labelToKnob;
 
             // EXT IN 1 at leftCol + 28 + 12 position (compensate for leftCol X-8)
-            addChild(new URTextLabel(Vec(leftCol + 28 + 12 - 14, row3LabelY), Vec(30, 10), "EXT IN 1", 7.f, white, true));
+            addChild(new URTextLabel(Vec(leftCol + 28 + 12 - 14, row3LabelY), Vec(30, 10), "EXT IN 1", 8.f, white, true));
             addInput(createInputCentered<PJ301MPort>(Vec(leftCol + 28 + 12, row3ElementY), module,
                      UniversalRhythm::TIMELINE_AUDIO_INPUT_1 + role * 2));
 
             // MIX at rightCol position (same X as Decay knob) - 0=internal, 1=external
-            addChild(new URTextLabel(Vec(rightCol - 15, row3LabelY), Vec(30, 10), "MIX", 7.f, white, true));
+            addChild(new URTextLabel(Vec(rightCol - 15, row3LabelY), Vec(30, 10), "MIX", 8.f, white, true));
             addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(rightCol, row3ElementY), module,
                      UniversalRhythm::TIMELINE_MIX_PARAM + role));
 
             // EXT IN 2 at rightCol + 28 position (same X as Decay CV input)
-            addChild(new URTextLabel(Vec(rightCol + 28 - 14, row3LabelY), Vec(30, 10), "EXT IN 2", 7.f, white, true));
+            addChild(new URTextLabel(Vec(rightCol + 28 - 14, row3LabelY), Vec(30, 10), "EXT IN 2", 8.f, white, true));
             addInput(createInputCentered<PJ301MPort>(Vec(rightCol + 28, row3ElementY), module,
                      UniversalRhythm::TIMELINE_AUDIO_INPUT_2 + role * 2));
         }
@@ -2662,10 +2670,10 @@ struct UniversalRhythmWidget : ModuleWidget {
         float mixY = (row1Y + row2Y) / 2;  // Centered between two rows (355.5)
 
         // Left side labels (type indicators) - 40px width
-        addChild(new URTextLabel(Vec(3, 337), Vec(18, 15), "Audio", 6.f, labelColor, true));
-        addChild(new URTextLabel(Vec(21, 337), Vec(18, 15), "Gate", 6.f, labelColor, true));
-        addChild(new URTextLabel(Vec(3, 362), Vec(18, 15), "Freq", 6.f, labelColor, true));
-        addChild(new URTextLabel(Vec(21, 362), Vec(18, 15), "Velo", 6.f, labelColor, true));
+        addChild(new URTextLabel(Vec(3, 337), Vec(18, 15), "Audio", 7.f, labelColor, true));
+        addChild(new URTextLabel(Vec(21, 337), Vec(18, 15), "Gate", 7.f, labelColor, true));
+        addChild(new URTextLabel(Vec(3, 362), Vec(18, 15), "Freq", 7.f, labelColor, true));
+        addChild(new URTextLabel(Vec(21, 362), Vec(18, 15), "Velo", 7.f, labelColor, true));
 
         // 8 voices: each voice has 4 outputs (AUD, GATE on row1; CV, ACC on row2)
         // Port spacing within voice: 30px (26+4), voice name centered above
@@ -2686,7 +2694,7 @@ struct UniversalRhythmWidget : ModuleWidget {
             int actualVoice = voiceUIToActual[i];  // Map UI position to actual voice index
 
             // Voice name label (centered above the two ports, same Y as MIX output)
-            addChild(new URTextLabel(Vec(voiceX + portSpacing/2 - 10, mixY - 5), Vec(20, 10), voiceNames[i], 6.f, labelColor, true));
+            addChild(new URTextLabel(Vec(voiceX + portSpacing/2 - 10, mixY - 5), Vec(20, 10), voiceNames[i], 7.f, labelColor, true));
 
             // Row 1: AUD output, GATE output
             addOutput(createOutputCentered<PJ301MPort>(Vec(voiceX, row1Y), module, UniversalRhythm::VOICE1_AUDIO_OUTPUT + actualVoice));
@@ -2701,7 +2709,7 @@ struct UniversalRhythmWidget : ModuleWidget {
         float mixOutputX = voiceStartX + 8 * (voiceWidth + voiceGap) + 1;  // Output X position
         float mixLabelCenterX = mixOutputX - 18;  // Label center X (left of outputs)
         // MIX label - box.pos.x = centerX - box.size.x/2 for proper centering
-        addChild(new URTextLabel(Vec(mixLabelCenterX - 10, mixY - 5), Vec(20, 10), "MIX", 6.f, labelColor, true));
+        addChild(new URTextLabel(Vec(mixLabelCenterX - 10, mixY - 5), Vec(20, 10), "MIX", 7.f, labelColor, true));
         // MIX outputs
         addOutput(createOutputCentered<PJ301MPort>(Vec(mixOutputX, row1Y), module, UniversalRhythm::MIX_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(mixOutputX, row2Y), module, UniversalRhythm::MIX_R_OUTPUT));

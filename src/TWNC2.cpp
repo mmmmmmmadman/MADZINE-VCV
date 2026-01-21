@@ -9,8 +9,8 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -19,14 +19,23 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -485,103 +494,103 @@ struct TWNC2Widget : ModuleWidget {
 
         addChild(new TechnoEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "TWNC 2", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new TechnoEnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
-        addChild(new TechnoEnhancedTextLabel(Vec(0, 24), Vec(box.size.x, 12), "Taiwan is never China", 6.f, nvgRGB(255, 200, 0), false));
+        addChild(new TechnoEnhancedTextLabel(Vec(0, 24), Vec(box.size.x, 12), "Taiwan is never China", 8.f, nvgRGB(255, 200, 0), false));
 
         float track1Y = 35;
         addChild(new TechnoEnhancedTextLabel(Vec(30, track1Y + 5), Vec(15, 10), "BD", 8.f, nvgRGB(255, 200, 100), true));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 11), Vec(30, 10), "VOL", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 11), Vec(30, 10), "VOL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track1Y + 34), module, TWNC2::KICK_VOLUME_PARAM));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 11), Vec(30, 10), "ENV", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 11), Vec(30, 10), "ENV", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track1Y + 34), module, TWNC2::KICK_ENV_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 11), Vec(30, 10), "[ACCNT]", 6.f, nvgRGB(0, 0, 0), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 11), Vec(30, 10), "[ACCNT]", 8.f, nvgRGB(0, 0, 0), true));
         addInput(createInputCentered<PJ301MPort>(Vec(100, track1Y + 34), module, TWNC2::KICK_ACCENT_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 48), Vec(30, 10), "TUNE", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 48), Vec(30, 10), "TUNE", 8.f, nvgRGB(255, 255, 255), true));
         kickFreqKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track1Y + 71), module, TWNC2::KICK_FREQ_PARAM);
         addParam(kickFreqKnob);
 
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 48), Vec(30, 10), "FM", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 48), Vec(30, 10), "FM", 8.f, nvgRGB(255, 255, 255), true));
         kickFmKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track1Y + 71), module, TWNC2::KICK_FM_AMT_PARAM);
         addParam(kickFmKnob);
 
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 48), Vec(30, 10), "PUNCH", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 48), Vec(30, 10), "PUNCH", 8.f, nvgRGB(255, 255, 255), true));
         kickPunchKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track1Y + 71), module, TWNC2::KICK_PUNCH_PARAM);
         addParam(kickPunchKnob);
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 85), Vec(30, 10), "CV", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track1Y + 85), Vec(30, 10), "CV", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(20, track1Y + 108), module, TWNC2::KICK_FREQ_CV_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 85), Vec(30, 10), "CV", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track1Y + 85), Vec(30, 10), "CV", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track1Y + 108), module, TWNC2::KICK_FM_CV_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 85), Vec(30, 10), "CV", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track1Y + 85), Vec(30, 10), "CV", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(100, track1Y + 108), module, TWNC2::KICK_PUNCH_CV_INPUT));
 
         float track2Y = 150;
         addChild(new TechnoEnhancedTextLabel(Vec(27, track2Y + 5), Vec(25, 10), "SN", 8.f, nvgRGB(255, 200, 100), true));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track2Y + 11), Vec(30, 10), "VOL", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track2Y + 11), Vec(30, 10), "VOL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track2Y + 34), module, TWNC2::SNARE_VOLUME_PARAM));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 11), Vec(30, 10), "ENV", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 11), Vec(30, 10), "ENV", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track2Y + 34), module, TWNC2::SNARE_ENV_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 11), Vec(30, 10), "N.BPF", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 11), Vec(30, 10), "N.BPF", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track2Y + 34), module, TWNC2::SNARE_NOISE_TONE_PARAM));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track2Y + 48), Vec(30, 10), "TUNE", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track2Y + 48), Vec(30, 10), "TUNE", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track2Y + 71), module, TWNC2::SNARE_FREQ_PARAM));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 48), Vec(30, 10), "N.MIX", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track2Y + 48), Vec(30, 10), "N.MIX", 8.f, nvgRGB(255, 255, 255), true));
         snareNoiseMixKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(60, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_PARAM);
         addParam(snareNoiseMixKnob);
         
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 48), Vec(30, 10), "N.MIX", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track2Y + 48), Vec(30, 10), "N.MIX", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(100, track2Y + 71), module, TWNC2::SNARE_NOISE_MIX_CV_INPUT));
 
         float track3Y = 235;
         addChild(new TechnoEnhancedTextLabel(Vec(30, track3Y + 5), Vec(15, 10), "HH", 8.f, nvgRGB(255, 200, 100), true));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 11), Vec(30, 10), "VOL", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 11), Vec(30, 10), "VOL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track3Y + 34), module, TWNC2::HATS_VOLUME_PARAM));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 11), Vec(30, 10), "ENV", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 11), Vec(30, 10), "ENV", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track3Y + 34), module, TWNC2::HATS_ENV_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track3Y + 11), Vec(30, 10), "TONE", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track3Y + 11), Vec(30, 10), "TONE", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(100, track3Y + 34), module, TWNC2::HATS_TONE_PARAM));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 48), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, track3Y + 48), Vec(30, 10), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
         hatsDecayKnob = createParamCentered<madzine::widgets::TechnoStandardBlackKnob30>(Vec(20, track3Y + 71), module, TWNC2::HATS_DECAY_PARAM);
         addParam(hatsDecayKnob);
         
-        addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 48), Vec(30, 10), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(45, track3Y + 48), Vec(30, 10), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(60, track3Y + 71), module, TWNC2::HATS_DECAY_CV_INPUT));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(85, track3Y + 48), Vec(30, 10), "EXT", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(85, track3Y + 48), Vec(30, 10), "EXT", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(100, track3Y + 71), module, TWNC2::EXTERNAL_INPUT));
 
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));
         
-        addChild(new TechnoEnhancedTextLabel(Vec(-4, 337), Vec(20, 15), "BD", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(-4, 337), Vec(20, 15), "BD", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(22, 343), module, TWNC2::KICK_OUTPUT));
-        
+
         addChild(new TechnoEnhancedTextLabel(Vec(0, 362), Vec(20, 15), "[DUCK]", 5.f, nvgRGB(0, 0, 0), true));
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(26, 368), module, TWNC2::DUCK_PARAM));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(36, 337), Vec(20, 15), "SN", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(36, 337), Vec(20, 15), "SN", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(62, 343), module, TWNC2::SNARE_OUTPUT));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(36, 362), Vec(20, 15), "L", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(36, 362), Vec(20, 15), "L", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(62, 368), module, TWNC2::MIX_OUTPUT_L));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(73, 337), Vec(20, 15), "HH", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(73, 337), Vec(20, 15), "HH", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(100, 343), module, TWNC2::HATS_OUTPUT1));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(73, 362), Vec(20, 15), "R", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(73, 362), Vec(20, 15), "R", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(100, 368), module, TWNC2::MIX_OUTPUT_R));
     }
 

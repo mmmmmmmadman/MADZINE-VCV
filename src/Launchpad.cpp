@@ -1193,11 +1193,11 @@ struct LaunchpadWidget : ModuleWidget {
         addChild(new LaunchpadLabel(Vec(160, 9), Vec(100, 20), "MADZINE", 20.f, titleColor, false));
 
         // Clock, Reset, Quantize - upper right (with labels)
-        addChild(new LaunchpadLabel(Vec(475 - 25, 25), Vec(50, 12), "Clock", 9.f));
+        addChild(new LaunchpadLabel(Vec(475 - 25, 25), Vec(50, 12), "Clock", 8.f));
         addInput(createInputCentered<PJ301MPort>(Vec(475, 50), module, Launchpad::CLOCK_INPUT));
-        addChild(new LaunchpadLabel(Vec(520 - 25, 25), Vec(50, 12), "Reset", 9.f));
+        addChild(new LaunchpadLabel(Vec(520 - 25, 25), Vec(50, 12), "Reset", 8.f));
         addInput(createInputCentered<PJ301MPort>(Vec(520, 50), module, Launchpad::RESET_INPUT));
-        addChild(new LaunchpadLabel(Vec(565 - 30, 25), Vec(60, 12), "Quantize", 9.f));
+        addChild(new LaunchpadLabel(Vec(565 - 30, 25), Vec(60, 12), "Quantize", 8.f));
         addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(565, 50), module, Launchpad::QUANTIZE_PARAM));
 
         // Scene trigger inputs (above scene buttons)
@@ -1215,10 +1215,10 @@ struct LaunchpadWidget : ModuleWidget {
         }
 
         // Column headers for row controls (X = knob center - labelWidth/2)
-        addChild(new LaunchpadLabel(Vec(430 - 18, 79), Vec(36, 12), "Send A", 7.f));   // knob at 430
-        addChild(new LaunchpadLabel(Vec(468 - 18, 79), Vec(36, 12), "Send B", 7.f));   // knob at 468
+        addChild(new LaunchpadLabel(Vec(430 - 18, 79), Vec(36, 12), "Send A", 8.f));   // knob at 430
+        addChild(new LaunchpadLabel(Vec(468 - 18, 79), Vec(36, 12), "Send B", 8.f));   // knob at 468
         addChild(new LaunchpadLabel(Vec(506 - 12, 79), Vec(24, 12), "Pan", 8.f));      // knob at 506
-        addChild(new LaunchpadLabel(Vec(544 - 15, 79), Vec(30, 12), "Level", 7.f));    // knob at 544
+        addChild(new LaunchpadLabel(Vec(544 - 15, 79), Vec(30, 12), "Level", 8.f));    // knob at 544
         addChild(new LaunchpadLabel(Vec(577 - 12, 79), Vec(24, 12), "Out", 8.f));      // port at 577
 
         // 8 rows

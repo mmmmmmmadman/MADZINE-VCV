@@ -1,7 +1,44 @@
 # MADZINE VCV Rack 開發指南
 
-版本：2.3.7
-更新日期：2025-12-24
+版本：2.4.3
+更新日期：2026-01-21
+
+---
+
+## 專用 Agent 使用規範
+
+**重要**：以下任務必須使用對應的專用 Agent，不可自行處理。
+
+### 必須使用 Agent 的情況
+
+| 任務類型 | Agent | 說明 |
+|---------|-------|------|
+| UI 佈局設計與修改 | `ui-layout` | Widget 元件位置、間距、Label 配置 |
+| 音訊處理架構 | `audio-processing` | 音訊引擎、效果器、多設備輸出 |
+| C++ 核心架構 | `cpp-core-architect` | JUCE 專案提取、跨平台核心庫 |
+| GPU 渲染優化 | `gpu-optimization` | Shader、渲染管線、Blend Modes |
+| MIDI 控制整合 | `midi-control` | MIDI Learn、CC/Note 映射 |
+
+### 使用方式
+
+當用戶指定使用 Agent 時，必須透過 Task 工具調用：
+```
+Task tool with subagent_type="ui-layout"
+```
+
+### 禁止事項
+
+- **禁止**在用戶指定使用 Agent 後自行修改程式碼
+- **禁止**以「小修改」為由跳過 Agent 使用
+- **禁止**先自行嘗試再使用 Agent
+
+### 違反案例記錄
+
+**2026-01-20 UniRhythm UI 佈局問題**：
+- 用戶明確說「使用我們的UI Agent, 不要自己亂做」
+- 錯誤：未使用 Agent 直接修改程式碼
+- 後果：佈局錯誤需要多次修正
+- 教訓：用戶指定 Agent 時必須立即使用，無例外
 
 ---
 
@@ -142,10 +179,52 @@ export RACK_DIR=~/Documents/VCV-Dev/Rack-SDK
 
 ### 內部文件
 - `MADZINE_DESIGN_SPECIFICATION.md` - 設計規範（含旋鈕、標籤、佈局）
+- `VCV_UI_SPECIFICATION.md` - VCV Rack UI 佈局完整規範（2026-01-20 新增）
 
 ### 外部資源
 - [VCV Rack 官方文件](https://vcvrack.com/manual/)
 - [Plugin 開發教學](https://vcvrack.com/manual/PluginDevelopmentTutorial)
+
+---
+
+## UI 佈局快速參考
+
+### 核心規則
+```
+標籤 Y = 元件 Y - 24px（標籤在元件上方）
+```
+
+### 字體大小規範（2026-01-21 更新）
+```
+模組標題: 14.f bold（長名稱如 PPaTTTerning 用 10.f）
+品牌標籤 MADZINE: 10.f
+功能標籤: 8.f bold（Y < 330 區域）
+輸出區域標籤: 7.f bold（Y >= 330 區域，粉紅色）
+背景裝飾文字:
+  - Pyramid: 32.f bold, nvgRGB(160,160,160)
+  - DECAPyramid: 80.f, nvgRGB(160,160,160), 帶黑色外框 (OutlinedTextLabel)
+```
+
+### 標準位置
+```
+白色輸出區: Y = 330
+Output Row 1: Y = 343
+Output Row 2: Y = 368
+```
+
+### HP 寬度
+```
+4HP = 60.96px
+8HP = 121.92px
+16HP = 243.84px
+32HP = 487.68px
+40HP = 609.6px
+```
+
+### 禁止事項
+- 禁止使用縮寫標籤（TL, FD, GR, LD）
+- 禁止標籤在元件下方
+- 禁止元件超出面板邊界
 
 ---
 

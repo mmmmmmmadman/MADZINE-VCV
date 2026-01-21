@@ -7,8 +7,8 @@ struct EnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -17,14 +17,23 @@ struct EnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -726,20 +735,20 @@ struct ADGeneratorWidget : ModuleWidget {
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "ADGenerator", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "ADGenerator", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         addChild(new UFOWidget(Vec(80, 285), Vec(40, 25)));
         addChild(new FluteWidget(Vec(78, 125), Vec(40, 25)));
         addChild(new HouseWidget(Vec(80, 205), Vec(40, 25)));
 
-        addChild(new EnhancedTextLabel(Vec(15, 30), Vec(30, 15), "ATK ALL", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(15, 30), Vec(30, 15), "ATK ALL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<Trimpot>(Vec(30, 50), module, ADGenerator::ATK_ALL_PARAM));
-        
-        addChild(new EnhancedTextLabel(Vec(50, 30), Vec(30, 15), "DEC ALL", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new EnhancedTextLabel(Vec(50, 30), Vec(30, 15), "DEC ALL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<Trimpot>(Vec(65, 50), module, ADGenerator::DEC_ALL_PARAM));
-        
-        addChild(new EnhancedTextLabel(Vec(83, 30), Vec(30, 15), "ROUTE", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new EnhancedTextLabel(Vec(83, 30), Vec(30, 15), "ROUTE", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<VCVLatch>(Vec(98, 50), module, ADGenerator::AUTO_ROUTE_PARAM));
         addChild(createLightCentered<MediumLight<RedLight>>(Vec(98, 65), module, ADGenerator::AUTO_ROUTE_LIGHT));
 
@@ -749,35 +758,35 @@ struct ADGeneratorWidget : ModuleWidget {
             float y = trackY[i];
             float x = 10;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "IN", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "IN"));
             addInput(createInputCentered<PJ301MPort>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_TRIG_INPUT + i));
             x += 27;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "ATK", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "ATK"));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_ATTACK_PARAM + i * 6));
             x += 27;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "DEC", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "DEC"));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_DECAY_PARAM + i * 6));
             x += 27;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "CURV", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "CURV"));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_CURVE_PARAM + i * 6));
             x += 27;
 
             x = 10;
             y += 35;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "Follower", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "Follower"));
             addParam(createParamCentered<VCVLatch>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_ENABLE_PARAM + i * 6));
             addChild(createLightCentered<MediumLight<BlueLight>>(Vec(x + 7, y + 12), module, ADGenerator::TRACK1_BPF_LIGHT + i));
             x += 27;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "FREQ"));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_FREQ_PARAM + i * 6));
             x += 27;
 
-            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "GAIN", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "GAIN"));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_BPF_GAIN_PARAM + i * 6));
         }
         

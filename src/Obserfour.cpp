@@ -148,7 +148,7 @@ struct EnhancedTextLabel : Widget {
     NVGcolor color;
     bool bold;
     
-    EnhancedTextLabel(Vec pos, Vec size, const std::string& text, float fontSize = 12.f, 
+    EnhancedTextLabel(Vec pos, Vec size, const std::string& text, float fontSize = 10.f, 
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -344,7 +344,7 @@ struct ObserfourWidget : ModuleWidget {
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Obserfour", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Obserfour", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         ClickableLight* trigLight = createParam<ClickableLight>(Vec(100, 13), module, Obserfour::TRIG_PARAM);

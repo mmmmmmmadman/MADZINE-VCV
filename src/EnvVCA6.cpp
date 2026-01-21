@@ -10,7 +10,7 @@ struct EnhancedTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -24,9 +24,18 @@ struct EnhancedTextLabel : TransparentWidget {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
 
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -598,7 +607,7 @@ struct EnvVCA6Widget : ModuleWidget {
         box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // Add module name and brand labels
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "E n v  V C A  6", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "E n v  V C A  6", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         addChild(new EnhancedTextLabel(Vec(0, 27), Vec(box.size.x, 12), "Collaborated with offthesky", 10.f, nvgRGB(255, 255, 255), false));
 
@@ -648,8 +657,8 @@ struct EnvVCA6Widget : ModuleWidget {
             // Add labels below first channel's buttons
             if (i == 0) {
                 addChild(new EnhancedTextLabel(Vec(65, y + 25), Vec(20, 10), "Manual", 6.f, nvgRGB(255, 255, 255), true)); // Manual gate label
-                addChild(new EnhancedTextLabel(Vec(85, y + 25), Vec(20, 10), "HOLD", 6.f, nvgRGB(255, 255, 255), true));    // HOLD mode label
-                addChild(new EnhancedTextLabel(Vec(105, y + 25), Vec(20, 10), "Sum", 6.f, nvgRGB(255, 255, 255), true));    // Sum label
+                addChild(new EnhancedTextLabel(Vec(85, y + 25), Vec(20, 10), "HOLD", 8.f, nvgRGB(255, 255, 255), true));    // HOLD mode label
+                addChild(new EnhancedTextLabel(Vec(105, y + 25), Vec(20, 10), "Sum", 8.f, nvgRGB(255, 255, 255), true));    // Sum label
             }
 
             // Output jacks (right side)

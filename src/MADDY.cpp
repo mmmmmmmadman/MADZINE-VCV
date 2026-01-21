@@ -9,8 +9,8 @@ struct MADDYEnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    MADDYEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    MADDYEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -19,14 +19,23 @@ struct MADDYEnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -1398,25 +1407,25 @@ struct MADDYWidget : ModuleWidget {
 
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         
-        addChild(new MADDYEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "M A D D Y", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new MADDYEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "M A D D Y", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new MADDYEnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
-        addChild(new MADDYEnhancedTextLabel(Vec(48, 28), Vec(25, 15), "RST", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new MADDYEnhancedTextLabel(Vec(48, 28), Vec(25, 15), "RST"));
         addInput(createInputCentered<PJ301MPort>(Vec(60, 52), module, MADDY::RESET_INPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 28), Vec(25, 15), "FREQ", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 28), Vec(25, 15), "FREQ"));
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(98, 52), module, MADDY::FREQ_PARAM));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(48, 61), Vec(25, 15), "SWING", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(48, 61), Vec(25, 15), "SWING"));
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(60, 85), module, MADDY::SWING_PARAM));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 61), Vec(25, 15), "CLK", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 61), Vec(25, 15), "CLK"));
         addOutput(createOutputCentered<PJ301MPort>(Vec(98, 85), module, MADDY::CLK_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(8, 28), Vec(25, 15), "LEN", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(8, 28), Vec(25, 15), "LEN"));
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 52), module, MADDY::LENGTH_PARAM));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(8, 61), Vec(25, 15), "DECAY", 6.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(8, 61), Vec(25, 15), "DECAY"));
         addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, 85), module, MADDY::DECAY_PARAM));
         
         addChild(new VerticalLine(Vec(39, 55), Vec(1, 242)));
@@ -1426,65 +1435,65 @@ struct MADDYWidget : ModuleWidget {
         
         for (int i = 0; i < 3; ++i) {
             float y = trackY[i];
-            
-            addChild(new MADDYEnhancedTextLabel(Vec(8, y - 10), Vec(25, 10), string::f("T%d", i+1), 7.f, nvgRGB(255, 200, 100), true));
-            
-            addChild(new MADDYEnhancedTextLabel(Vec(8, y), Vec(25, 10), "FILL", 6.f, nvgRGB(255, 255, 255), true));
+
+            addChild(new MADDYEnhancedTextLabel(Vec(8, y - 10), Vec(25, 10), string::f("T%d", i+1), 8.f, nvgRGB(255, 200, 100), true));
+
+            addChild(new MADDYEnhancedTextLabel(Vec(8, y), Vec(25, 10), "FILL"));
             addParam(createParamCentered<madzine::widgets::MediumGrayKnob>(Vec(20, y + 20), module, MADDY::TRACK1_FILL_PARAM + i * 2));
-            
-            addChild(new MADDYEnhancedTextLabel(Vec(8, y + 33), Vec(25, 10), "D/M", 6.f, nvgRGB(255, 255, 255), true));
+
+            addChild(new MADDYEnhancedTextLabel(Vec(8, y + 33), Vec(25, 10), "D/M"));
             addParam(createParamCentered<madzine::widgets::MADDYSnapKnob>(Vec(20, y + 53), module, MADDY::TRACK1_DIVMULT_PARAM + i * 2));
         }
         
         float cvY[5] = {127, 172, 217, 262, 307};
         for (int i = 0; i < 5; ++i) {
-            addChild(new MADDYEnhancedTextLabel(Vec(40, cvY[i] - 30), Vec(40, 10), string::f("Step %d", i + 1), 7.f, nvgRGB(255, 255, 255), true));
-            addChild(new MADDYEnhancedTextLabel(Vec(48, cvY[i] - 15), Vec(25, 10), std::to_string(i + 1), 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new MADDYEnhancedTextLabel(Vec(40, cvY[i] - 30), Vec(40, 10), string::f("Step %d", i + 1)));
+            addChild(new MADDYEnhancedTextLabel(Vec(48, cvY[i] - 15), Vec(25, 10), std::to_string(i + 1)));
             addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(60, cvY[i] - 5), module, MADDY::K1_PARAM + i));
         }
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 97), Vec(25, 10), "MODE", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 97), Vec(25, 10), "MODE"));
         addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(98, 116), module, MADDY::MODE_LIGHT_RED));
         addParam(createParamCentered<VCVButton>(Vec(98, 116), module, MADDY::MODE_PARAM));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 130), Vec(25, 10), "DENSITY", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 130), Vec(25, 10), "DENSITY"));
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(98, 154), module, MADDY::DENSITY_PARAM));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 170), Vec(25, 10), "CHAOS", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 170), Vec(25, 10), "CHAOS"));
         addParam(createParamCentered<madzine::widgets::WhiteKnob>(Vec(98, 194), module, MADDY::CHAOS_PARAM));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 210), Vec(25, 10), "CV OUT", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 210), Vec(25, 10), "CV OUT"));
         addOutput(createOutputCentered<PJ301MPort>(Vec(98, 234), module, MADDY::CV_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 250), Vec(25, 10), "TRIG OUT", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 250), Vec(25, 10), "TRIG OUT"));
         addOutput(createOutputCentered<PJ301MPort>(Vec(98, 274), module, MADDY::TRIG_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(86, 290), Vec(25, 10), "CLK SRC", 6.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(86, 290), Vec(25, 10), "CLK SRC"));
         addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(98, 308), module, MADDY::CLOCK_SOURCE_LIGHT_RED));
         addParam(createParamCentered<VCVButton>(Vec(98, 308), module, MADDY::CLOCK_SOURCE_PARAM));
-        
+
         std::vector<std::string> clockSourceTexts = {"LFO", "T1", "T2", "T3", "12", "23", "1213"};
-        addChild(new DynamicTextLabel(Vec(86, 317), Vec(25, 10), module, MADDY::CLOCK_SOURCE_PARAM, clockSourceTexts, 7.f, nvgRGB(255, 255, 255)));
+        addChild(new DynamicTextLabel(Vec(86, 317), Vec(25, 10), module, MADDY::CLOCK_SOURCE_PARAM, clockSourceTexts));
         
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, 50)));
         
-        addChild(new MADDYEnhancedTextLabel(Vec(-2, 337), Vec(20, 15), "T1", 6.f, nvgRGB(255, 133, 133), true));
+        addChild(new MADDYEnhancedTextLabel(Vec(-2, 337), Vec(20, 15), "T1", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(24, 343), module, MADDY::TRACK1_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(-2, 362), Vec(20, 15), "12", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(-2, 362), Vec(20, 15), "12", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(24, 368), module, MADDY::CHAIN_12_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(38, 337), Vec(20, 15), "T2", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(38, 337), Vec(20, 15), "T2", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(64, 343), module, MADDY::TRACK2_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(38, 362), Vec(20, 15), "23", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(38, 362), Vec(20, 15), "23", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(64, 368), module, MADDY::CHAIN_23_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(75, 337), Vec(20, 15), "T3", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(75, 337), Vec(20, 15), "T3", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(102, 343), module, MADDY::TRACK3_OUTPUT));
-        
-        addChild(new MADDYEnhancedTextLabel(Vec(75, 365), Vec(20, 6), "12", 6.f, nvgRGB(255, 133, 133), true));
-        addChild(new MADDYEnhancedTextLabel(Vec(75, 371), Vec(20, 6), "13", 6.f, nvgRGB(255, 133, 133), true));
+
+        addChild(new MADDYEnhancedTextLabel(Vec(75, 365), Vec(20, 6), "12", 7.f, nvgRGB(255, 133, 133), true));
+        addChild(new MADDYEnhancedTextLabel(Vec(75, 371), Vec(20, 6), "13", 7.f, nvgRGB(255, 133, 133), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(102, 368), module, MADDY::CHAIN_123_OUTPUT));
         
         if (module) {

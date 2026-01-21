@@ -389,8 +389,8 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -399,14 +399,64 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
+    }
+};
+
+// 大型背景裝飾標籤（帶黑色外框）
+struct OutlinedTextLabel : TransparentWidget {
+    std::string text;
+    float fontSize;
+    NVGcolor color;
+    float outlineWidth;
+
+    OutlinedTextLabel(Vec pos, Vec size, std::string text, float fontSize,
+                      NVGcolor color, float outlineWidth = 2.f) {
+        box.pos = pos;
+        box.size = size;
+        this->text = text;
+        this->fontSize = fontSize;
+        this->color = color;
+        this->outlineWidth = outlineWidth;
+    }
+
+    void draw(const DrawArgs &args) override {
+        nvgFontSize(args.vg, fontSize);
+        nvgFontFaceId(args.vg, APP->window->uiFont->handle);
+        nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+
+        float cx = box.size.x / 2.f;
+        float cy = box.size.y / 2.f;
+
+        // 繪製黑色外框（多次偏移繪製）
+        nvgFillColor(args.vg, nvgRGB(0, 0, 0));
+        for (float dx = -outlineWidth; dx <= outlineWidth; dx += 1.f) {
+            for (float dy = -outlineWidth; dy <= outlineWidth; dy += 1.f) {
+                if (dx != 0 || dy != 0) {
+                    nvgText(args.vg, cx + dx, cy + dy, text.c_str(), NULL);
+                }
+            }
+        }
+
+        // 繪製主要顏色文字
         nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        nvgText(args.vg, cx, cy, text.c_str(), NULL);
     }
 };
 
@@ -766,14 +816,16 @@ struct DECAPyramidWidget : ModuleWidget {
         
         box.size = Vec(40 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new TechnoEnhancedTextLabel(Vec(480, 1), Vec(120, 20), "DECAPYRAMID", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(480, 1), Vec(120, 20), "DECAPYRAMID", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new TechnoEnhancedTextLabel(Vec(480, 13), Vec(120, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 106), Vec(50, 10), "X", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 166), Vec(50, 10), "Y", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 226), Vec(50, 10), "Z", 10.f, nvgRGB(255, 255, 255), true));
-
         float trackY[] = {35, 85, 145, 205};
+
+        // X/Y/Z 大型背景裝飾標籤 - 在旋鈕之前添加，讓旋鈕渲染在上層
+        // 帶黑色外框，類似 259m 風格
+        addChild(new OutlinedTextLabel(Vec(7, 80), Vec(50, 10), "X", 80.f, nvgRGB(160, 160, 160), 2.f));
+        addChild(new OutlinedTextLabel(Vec(7, 145), Vec(50, 10), "Y", 80.f, nvgRGB(160, 160, 160), 2.f));
+        addChild(new OutlinedTextLabel(Vec(7, 215), Vec(50, 10), "Z", 80.f, nvgRGB(160, 160, 160), 2.f));
         std::string trackLabels[] = {"T", "X", "Y", "Z"};
         int trackParams[] = {0, DECAPyramid::X_PARAM_1, DECAPyramid::Y_PARAM_1, DECAPyramid::Z_PARAM_1};
         int trackInputs[] = {DECAPyramid::AUDIO_INPUT_1, DECAPyramid::X_CV_INPUT_1, DECAPyramid::Y_CV_INPUT_1, DECAPyramid::Z_CV_INPUT_1};
@@ -908,32 +960,32 @@ struct DECAPyramidWidget : ModuleWidget {
         
         // Add seven new knobs above the 3D display, aligned with outputs below
         // Top row: RTN A/B controls
-        addChild(new TechnoEnhancedTextLabel(Vec(478, 40), Vec(30, 10), "RTN A", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new TechnoEnhancedTextLabel(Vec(478, 50), Vec(30, 10), "LVL", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(478, 40), Vec(30, 10), "RTN A", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(478, 50), Vec(30, 10), "LVL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(493, 75), module, DECAPyramid::RTN_A_LEVEL_PARAM));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(509, 40), Vec(30, 10), "RTN A", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new TechnoEnhancedTextLabel(Vec(509, 50), Vec(30, 10), "FLT", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(509, 40), Vec(30, 10), "RTN A", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(509, 50), Vec(30, 10), "FLT", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(524, 75), module, DECAPyramid::RTN_A_FILTER_PARAM));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(540, 40), Vec(30, 10), "RTN B", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new TechnoEnhancedTextLabel(Vec(540, 50), Vec(30, 10), "LVL", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(540, 40), Vec(30, 10), "RTN B", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(540, 50), Vec(30, 10), "LVL", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(555, 75), module, DECAPyramid::RTN_B_LEVEL_PARAM));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(571, 40), Vec(30, 10), "RTN B", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new TechnoEnhancedTextLabel(Vec(571, 50), Vec(30, 10), "FLT", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(571, 40), Vec(30, 10), "RTN B", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(571, 50), Vec(30, 10), "FLT", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(586, 75), module, DECAPyramid::RTN_B_FILTER_PARAM));
-        
+
         // Bottom row: Output controls, aligned with output jacks below
-        addChild(new TechnoEnhancedTextLabel(Vec(478, 125), Vec(30, 10), "OUTPUT", 7.f, nvgRGB(255, 255, 255), true));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(509, 100), Vec(30, 10), "1-4", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(478, 125), Vec(30, 10), "OUTPUT", 8.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(509, 100), Vec(30, 10), "1-4", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(524, 125), module, DECAPyramid::OUTPUT_1_4_LEVEL_PARAM));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(540, 100), Vec(30, 10), "5-8", 7.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(540, 100), Vec(30, 10), "5-8", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(555, 125), module, DECAPyramid::OUTPUT_5_8_LEVEL_PARAM));
-        
-        addChild(new TechnoEnhancedTextLabel(Vec(571, 100), Vec(30, 10), "MASTER", 6.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new TechnoEnhancedTextLabel(Vec(571, 100), Vec(30, 10), "MASTER", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob26>(Vec(586, 125), module, DECAPyramid::MASTER_OUTPUT_LEVEL_PARAM));
         
         for (int i = 0; i < 8; i++) {

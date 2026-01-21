@@ -169,6 +169,12 @@
       "tags": ["Sequencer", "Clock generator", "Drum"]
     },
     {
+      "slug": "UniRhythm",
+      "name": "Uni Rhythm",
+      "description": "Compact 4-track rhythm generator with Primary-priority merged outputs, derived from Universal Rhythm",
+      "tags": ["Sequencer", "Clock generator", "Drum"]
+    },
+    {
       "slug": "SongMode",
       "name": "SONG MODE",
       "description": "8-input sequential switch with customizable playback order, per-input clock length, and learn mode",

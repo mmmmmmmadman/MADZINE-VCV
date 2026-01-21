@@ -708,8 +708,8 @@ struct EnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -718,14 +718,22 @@ struct EnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -761,28 +769,28 @@ struct PinppleWidget : ModuleWidget {
         
         float centerX = box.size.x / 2;
         
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Pinpple", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Pinpple", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         addParam(createParamCentered<VCVButton>(Vec(centerX - 15, 40), module, Pinpple::MUTE_PARAM));
         addChild(createLightCentered<MediumLight<RedLight>>(Vec(centerX - 15, 40), module, Pinpple::MUTE_LIGHT));
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX + 15, 40), module, Pinpple::VOLUME_PARAM));
         
-        addChild(new EnhancedTextLabel(Vec(0, 50), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 50), Vec(box.size.x, 20), "FREQ", 8.f, nvgRGB(255, 255, 255), true));
         freqKnob = createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 84), module, Pinpple::FREQ_PARAM);
         addParam(freqKnob);
         
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 108), module, Pinpple::FREQ_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 108), module, Pinpple::FREQ_CV_INPUT));
         
-        addChild(new EnhancedTextLabel(Vec(0, 123), Vec(box.size.x, 20), "DECAY", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 123), Vec(box.size.x, 20), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
         resonanceKnob = createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 155), module, Pinpple::RESONANCE_PARAM);
         addParam(resonanceKnob);
 
 addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 179), module, Pinpple::RESONANCE_CV_ATTEN_PARAM));
 addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 179), module, Pinpple::RESONANCE_CV_INPUT));
         
-        addChild(new EnhancedTextLabel(Vec(0, 194), Vec(box.size.x, 20), "FM AMT", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 194), Vec(box.size.x, 20), "FM AMT", 8.f, nvgRGB(255, 255, 255), true));
         fmAmountKnob = createParamCentered<PinppleRandomizedKnob>(Vec(centerX, 226), module, Pinpple::FM_AMOUNT_PARAM);
         addParam(fmAmountKnob);
         

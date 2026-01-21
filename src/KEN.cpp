@@ -333,8 +333,8 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -343,14 +343,23 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -382,19 +391,19 @@ struct KENWidget : ModuleWidget {
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new TechnoEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "KEN", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "KEN", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new TechnoEnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
-        addChild(new TechnoEnhancedTextLabel(Vec(15, 43), Vec(30, 10), "LEVEL", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(15, 43), Vec(30, 10), "LEVEL"));
         addParam(createParamCentered<StandardBlackKnob>(Vec(30, 70), module, KEN::LEVEL_PARAM));
 
         float inputStartY = 110;
         float inputSpacing = 28;
-        
+
         for (int i = 0; i < 8; i++) {
             float y = inputStartY + i * inputSpacing;
-            
-            addChild(new TechnoEnhancedTextLabel(Vec(3, y-5), Vec(20, 10), std::to_string(i + 1), 8.f, nvgRGB(255, 255, 255), true));
+
+            addChild(new TechnoEnhancedTextLabel(Vec(3, y-5), Vec(20, 10), std::to_string(i + 1)));
             addInput(createInputCentered<PJ301MPort>(Vec(30, y), module, KEN::INPUT_1 + i));
         }
 

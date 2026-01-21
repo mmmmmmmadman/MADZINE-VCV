@@ -80,22 +80,34 @@ struct FacehuggerParamLabel : TransparentWidget {
     std::string text;
     float fontSize;
     NVGcolor color;
+    bool bold;
 
-    FacehuggerParamLabel(Vec pos, Vec size, std::string text, float fontSize = 7.f,
-                         NVGcolor color = nvgRGB(255, 255, 255)) {
+    FacehuggerParamLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
+                         NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
         this->text = text;
         this->fontSize = fontSize;
         this->color = color;
+        this->bold = bold;
     }
 
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 

@@ -78,22 +78,34 @@ struct RunnerParamLabel : TransparentWidget {
     std::string text;
     float fontSize;
     NVGcolor color;
+    bool bold;
 
-    RunnerParamLabel(Vec pos, Vec size, std::string text, float fontSize = 7.f,
-                     NVGcolor color = nvgRGB(255, 255, 255)) {
+    RunnerParamLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
+                     NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
         this->text = text;
         this->fontSize = fontSize;
         this->color = color;
+        this->bold = bold;
     }
 
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -427,7 +439,7 @@ struct RunnerWidget : ModuleWidget {
         addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 72), module, Runner::TIME_R_PARAM));
 
         // Row 2: FEEDBACK, MIX (Y=117, 標籤 Y=93)
-        addChild(new RunnerParamLabel(Vec(0, 93), Vec(30, 15), "FEEDBACK", 5.f));
+        addChild(new RunnerParamLabel(Vec(0, 93), Vec(30, 15), "FEEDBACK", 6.f));
         feedbackKnob = createParamCentered<StandardBlackKnob26>(Vec(leftX, 117), module, Runner::FEEDBACK_PARAM);
         addParam(feedbackKnob);
 
@@ -449,7 +461,7 @@ struct RunnerWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(Vec(rightX, 197), module, Runner::TIME_R_CV_INPUT));
 
         // CV Row 2 (Y=232, 標籤 Y=208)
-        addChild(new RunnerParamLabel(Vec(0, 208), Vec(30, 15), "FEEDBACK", 5.f));
+        addChild(new RunnerParamLabel(Vec(0, 208), Vec(30, 15), "FEEDBACK", 6.f));
         addInput(createInputCentered<PJ301MPort>(Vec(leftX, 232), module, Runner::FEEDBACK_CV_INPUT));
 
         addChild(new RunnerParamLabel(Vec(30, 208), Vec(30, 15), "MIX"));

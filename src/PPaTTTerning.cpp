@@ -417,19 +417,27 @@ struct EnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos; box.size = size; this->text = text; this->fontSize = fontSize; this->color = color; this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -459,7 +467,7 @@ struct PPaTTTerningWidget : ModuleWidget {
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         float centerX = box.size.x / 2;
         
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "PPaTTTerning", 9.5f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "PPaTTTerning", 10.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
         addChild(new EnhancedTextLabel(Vec(5, 31), Vec(20, 20), "CLK", 8.f, nvgRGB(255, 255, 255), true));
@@ -471,7 +479,7 @@ struct PPaTTTerningWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(8, 69), Vec(15, 15), "1", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX - 15, 97), module, PPaTTTerning::K1_PARAM));
         
-        addChild(new EnhancedTextLabel(Vec(38, 74), Vec(15, 15), "MODE", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(38, 74), Vec(15, 15), "MODE", 8.f, nvgRGB(255, 255, 255), true));
         addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(centerX + 15, 97), module, PPaTTTerning::STYLE_LIGHT_RED));
         addParam(createParamCentered<VCVButton>(Vec(centerX + 15, 97), module, PPaTTTerning::STYLE_PARAM));
         
@@ -490,28 +498,28 @@ struct PPaTTTerningWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(8, 114), Vec(15, 15), "2", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX - 15, 142), module, PPaTTTerning::K2_PARAM));
         
-        addChild(new EnhancedTextLabel(Vec(32, 114), Vec(26, 15), "DENSITY", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(32, 114), Vec(26, 15), "DENSITY", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX + 15, 142), module, PPaTTTerning::DENSITY_PARAM));
         
         addChild(new EnhancedTextLabel(Vec(8, 159), Vec(15, 15), "3", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX - 15, 187), module, PPaTTTerning::K3_PARAM));
         
-        addChild(new EnhancedTextLabel(Vec(35, 159), Vec(20, 15), "CHAOS", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(35, 159), Vec(20, 15), "CHAOS", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX + 15, 187), module, PPaTTTerning::CHAOS_PARAM));
         
         addChild(new EnhancedTextLabel(Vec(8, 204), Vec(15, 15), "4", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX - 15, 232), module, PPaTTTerning::K4_PARAM));
         
-        addChild(new EnhancedTextLabel(Vec(32, 204), Vec(26, 15), "CV OUT", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(32, 204), Vec(26, 15), "CV OUT", 8.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(centerX + 15, 232), module, PPaTTTerning::CV_OUTPUT));
         
         addChild(new EnhancedTextLabel(Vec(8, 249), Vec(15, 15), "5", 8.f, nvgRGB(255, 255, 255), true));
         addParam(createParamCentered<StandardBlackKnob>(Vec(centerX - 15, 277), module, PPaTTTerning::K5_PARAM));
         
-        addChild(new EnhancedTextLabel(Vec(30, 249), Vec(30, 15), "TRIG", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 249), Vec(30, 15), "TRIG", 8.f, nvgRGB(255, 255, 255), true));
         addOutput(createOutputCentered<PJ301MPort>(Vec(centerX + 15, 277), module, PPaTTTerning::TRIG_OUTPUT));
         
-        addChild(new EnhancedTextLabel(Vec(5, 294), Vec(20, 15), "T2.DLY", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(5, 294), Vec(20, 15), "T2.DLY", 8.f, nvgRGB(255, 255, 255), true));
         addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(15, 315), module, PPaTTTerning::DELAY_LIGHT_RED));
         addParam(createParamCentered<VCVButton>(Vec(15, 315), module, PPaTTTerning::DELAY_PARAM));
         

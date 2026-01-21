@@ -13,7 +13,7 @@ struct EnhancedTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -27,9 +27,18 @@ struct EnhancedTextLabel : TransparentWidget {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
 
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -1644,7 +1653,7 @@ struct NIGOQWidget : ModuleWidget {
 
 
         // Title labels
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(180, 20), "N I G O Q", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(180, 20), "N I G O Q", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(180, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         // White background box
@@ -1711,47 +1720,47 @@ struct NIGOQWidget : ModuleWidget {
         addParam(createParamCentered<CKSSThree>(Vec(90, 85), module, NIGOQ::SYNC_MODE));
 
         // Input labels
-        addChild(new EnhancedTextLabel(Vec(145, 34), Vec(40, 10), "TRIG", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(0, 74), Vec(40, 10), "WAVE", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(145, 109), Vec(40, 10), "LPF", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(145, 154), Vec(40, 10), "RECT", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(0, 109), Vec(40, 10), "FM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(145, 199), Vec(40, 10), "FOLD", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(0, 199), Vec(40, 10), "TM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(0, 154), Vec(40, 10), "RECT", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(30, 289), Vec(40, 10), "M.FM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(0, 289), Vec(40, 10), "M.V/O", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(115, 289), Vec(40, 10), "F.FM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(145, 289), Vec(40, 10), "F.V/O", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(145, 34), Vec(40, 10), "TRIG", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 74), Vec(40, 10), "WAVE", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(145, 109), Vec(40, 10), "LPF", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(145, 154), Vec(40, 10), "RECT", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 109), Vec(40, 10), "FM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(145, 199), Vec(40, 10), "FOLD", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 199), Vec(40, 10), "TM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 154), Vec(40, 10), "RECT", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 289), Vec(40, 10), "M.FM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 289), Vec(40, 10), "M.V/O", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(115, 289), Vec(40, 10), "F.FM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(145, 289), Vec(40, 10), "F.V/O", 8.f, nvgRGB(255, 255, 255), true));
 
         // Parameter labels
-        addChild(new EnhancedTextLabel(Vec(23, 26), Vec(64, 15), "MOD FREQ", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(93, 26), Vec(64, 15), "FINAL FREQ", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(23, 26), Vec(64, 15), "MOD FREQ", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(93, 26), Vec(64, 15), "FINAL FREQ", 8.f, nvgRGB(255, 255, 255), true));
 
         // External input labels
-        addChild(new EnhancedTextLabel(Vec(40, 71), Vec(30, 10), "EXT IN", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(110, 71), Vec(30, 10), "EXT IN", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(93, 103), Vec(64, 12), "LPF", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(102, 148), Vec(46, 12), "RECTIFY", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(90, 193), Vec(70, 12), "FOLD", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(40, 71), Vec(30, 10), "EXT IN", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(110, 71), Vec(30, 10), "EXT IN", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(93, 103), Vec(64, 12), "LPF", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(102, 148), Vec(46, 12), "RECTIFY", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(90, 193), Vec(70, 12), "FOLD", 8.f, nvgRGB(255, 255, 255), true));
 
         // Small knob labels
-        addChild(new EnhancedTextLabel(Vec(4, 34), Vec(30, 12), "WAVE", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(30, 109), Vec(50, 10), "CV ATT", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(30, 199), Vec(50, 10), "CV ATT", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(30, 154), Vec(50, 10), "CV ATT", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(62, 289), Vec(30, 10), "M.FM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(93, 289), Vec(30, 10), "F.FM", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(4, 34), Vec(30, 12), "WAVE", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 109), Vec(50, 10), "CV ATT", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 199), Vec(50, 10), "CV ATT", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(30, 154), Vec(50, 10), "CV ATT", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(62, 289), Vec(30, 10), "M.FM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(93, 289), Vec(30, 10), "F.FM", 8.f, nvgRGB(255, 255, 255), true));
 
         // Gray knob labels
-        addChild(new EnhancedTextLabel(Vec(150, 70), Vec(30, 10), "DEC", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(150, 242), Vec(30, 10), "BASS", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(78, 107), Vec(25, 12), "FM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(75, 197), Vec(30, 12), "TM", 7.f, nvgRGB(255, 255, 255), true));
-        addChild(new EnhancedTextLabel(Vec(78, 152), Vec(25, 12), "RECT", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(150, 70), Vec(30, 10), "DEC", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(150, 242), Vec(30, 10), "BASS", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(78, 107), Vec(25, 12), "FM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(75, 197), Vec(30, 12), "TM", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(78, 152), Vec(25, 12), "RECT", 8.f, nvgRGB(255, 255, 255), true));
 
         // Switch label
-        addChild(new EnhancedTextLabel(Vec(75, 60), Vec(30, 12), "SYNC", 7.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(75, 60), Vec(30, 12), "SYNC", 8.f, nvgRGB(255, 255, 255), true));
 
         // Add scope display
         VisualDisplay* scopeDisplay = new VisualDisplay(module);

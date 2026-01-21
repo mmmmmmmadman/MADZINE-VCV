@@ -9,8 +9,8 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    TechnoEnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -19,14 +19,23 @@ struct TechnoEnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -535,62 +544,62 @@ struct KIMOWidget : ModuleWidget {
         // 在 KIMOWidget 建構函數中，找到所有座標設定並修改：
 
         // CLK 和 FILL (保持不變)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 38), Vec(20, 15), "CLK", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 38), Vec(20, 15), "CLK"));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 63), module, KIMO::CLK_INPUT));
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 38), Vec(20, 15), "FILL", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 38), Vec(20, 15), "FILL"));
         fillKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 63), module, KIMO::FILL_PARAM);
         addParam(fillKnob);
 
         // ACCENT (78 -> 80)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 80), Vec(20, 15), "ACCENT", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 80), Vec(20, 15), "ACCENT"));
         addParam(createParamCentered<TechnoSnapKnob30>(Vec(15, 105), module, KIMO::ACCENT_PARAM));
 
         // ACCENT DELAY (78 -> 80, 88 -> 90)
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 80), Vec(20, 15), "DELAY", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 80), Vec(20, 15), "DELAY"));
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 105), module, KIMO::ACCENT_DELAY_PARAM));
 
         // TUNE (118 -> 122)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 122), Vec(20, 15), "TUNE", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 122), Vec(20, 15), "TUNE"));
         tuneKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 147), module, KIMO::TUNE_PARAM);
         addParam(tuneKnob);
 
         // FM (118 -> 122)
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 122), Vec(20, 15), "FM", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 122), Vec(20, 15), "FM"));
         fmKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 147), module, KIMO::FM_PARAM);
         addParam(fmKnob);
 
         // PUNCH (158 -> 164)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 164), Vec(20, 15), "PUNCH", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 164), Vec(20, 15), "PUNCH"));
         punchKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 189), module, KIMO::PUNCH_PARAM);
         addParam(punchKnob);
 
         // DECAY (158 -> 164)
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 164), Vec(20, 15), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 164), Vec(20, 15), "DECAY"));
         decayKnob = createParamCentered<TechnoStandardBlackKnob30>(Vec(45, 189), module, KIMO::DECAY_PARAM);
         addParam(decayKnob);
 
         // SHAPE (198 -> 206)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 206), Vec(20, 15), "SHAPE", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 206), Vec(20, 15), "SHAPE"));
         addParam(createParamCentered<TechnoStandardBlackKnob30>(Vec(15, 231), module, KIMO::SHAPE_PARAM));
 
         // FILL CV
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 206), Vec(20, 15), "FILL", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 206), Vec(20, 15), "FILL"));
         addInput(createInputCentered<PJ301MPort>(Vec(45, 231), module, KIMO::FILL_CV_INPUT));
 
         // TUNE CV (178 -> 250)
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 250), Vec(20, 15), "TUNE", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 250), Vec(20, 15), "TUNE"));
         addInput(createInputCentered<PJ301MPort>(Vec(45, 272), module, KIMO::TUNE_CV_INPUT));
 
         // FM CV (213 -> 250)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 250), Vec(20, 15), "FM", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 250), Vec(20, 15), "FM"));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 272), module, KIMO::FM_CV_INPUT));
 
         // PUNCH CV (213 -> 285)
-        addChild(new TechnoEnhancedTextLabel(Vec(35, 285), Vec(20, 15), "PUNCH", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(35, 285), Vec(20, 15), "PUNCH"));
         addInput(createInputCentered<PJ301MPort>(Vec(45, 308), module, KIMO::PUNCH_CV_INPUT));
 
         // DECAY CV (248 -> 285)
-        addChild(new TechnoEnhancedTextLabel(Vec(5, 285), Vec(20, 15), "DECAY", 5.f, nvgRGB(255, 255, 255), true));
+        addChild(new TechnoEnhancedTextLabel(Vec(5, 285), Vec(20, 15), "DECAY"));
         addInput(createInputCentered<PJ301MPort>(Vec(15, 308), module, KIMO::DECAY_CV_INPUT));
 
         // 輸出區塊 (保持原座標)

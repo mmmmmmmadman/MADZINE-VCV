@@ -10,7 +10,7 @@ struct EnhancedTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 10.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -932,7 +932,7 @@ struct RunshowWidget : ModuleWidget {
         addChild(whitePanel);
 
         // Add module name and brand labels (like MADDY+)
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "R U N S H O W", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "R U N S H O W", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         addChild(new EnhancedTextLabel(Vec(0, 27), Vec(box.size.x, 12), "Collaborated with jan0ritter", 10.f, nvgRGB(255, 255, 255), false));
 

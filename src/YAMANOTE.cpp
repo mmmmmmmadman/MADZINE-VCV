@@ -8,7 +8,7 @@ struct EnhancedTextLabel : TransparentWidget {
     NVGcolor color;
     bool bold;
 
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f,
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -22,9 +22,18 @@ struct EnhancedTextLabel : TransparentWidget {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
 
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -442,7 +451,7 @@ struct YAMANOTEWidget : ModuleWidget {
         addChild(new GreenBackgroundBox(Vec(0, 1), Vec(box.size.x, 18)));
         addChild(new GreenTrainCarWidget(Vec(0, 31), Vec(box.size.x, 35)));
 
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "YAMANOTE", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "YAMANOTE", 14.f, nvgRGB(255, 255, 255), true));
         addChild(new EnhancedTextLabel(Vec(0, 16), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         float startY = 52;
@@ -451,23 +460,23 @@ struct YAMANOTEWidget : ModuleWidget {
         for (int i = 0; i < 8; ++i) {
             float y = startY + i * rowHeight;
 
-            addChild(new EnhancedTextLabel(Vec(5, y - 24), Vec(20, 15), "L", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(5, y - 24), Vec(20, 15), "L", 8.f, nvgRGB(255, 255, 255), true));
             addInput(createInputCentered<PJ301MPort>(Vec(15, y), module, YAMANOTE::CH1_L_INPUT + i * 2));
 
-            addChild(new EnhancedTextLabel(Vec(35, y - 24), Vec(20, 15), "R", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(35, y - 24), Vec(20, 15), "R", 8.f, nvgRGB(255, 255, 255), true));
             addInput(createInputCentered<PJ301MPort>(Vec(45, y), module, YAMANOTE::CH1_R_INPUT + i * 2));
 
-            addChild(new EnhancedTextLabel(Vec(65, y - 24), Vec(20, 15), "SendA", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(65, y - 24), Vec(20, 15), "SendA", 8.f, nvgRGB(255, 255, 255), true));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(75, y), module, YAMANOTE::CH1_SEND_A_PARAM + i * 2));
 
-            addChild(new EnhancedTextLabel(Vec(95, y - 24), Vec(20, 15), "SendB", 7.f, nvgRGB(255, 255, 255), true));
+            addChild(new EnhancedTextLabel(Vec(95, y - 24), Vec(20, 15), "SendB", 8.f, nvgRGB(255, 255, 255), true));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(105, y), module, YAMANOTE::CH1_SEND_B_PARAM + i * 2));
         }
 
         addChild(new WhiteBackgroundBox(Vec(0, 330), Vec(box.size.x, box.size.y - 330)));
 
         // Send A（儲存參考以便隱藏/顯示）
-        sendALabel = new EnhancedTextLabel(Vec(18, 292), Vec(30, 15), "SEND A", 6.f, nvgRGB(255, 255, 255), true);
+        sendALabel = new EnhancedTextLabel(Vec(18, 292), Vec(30, 15), "SEND A", 8.f, nvgRGB(255, 255, 255), true);
         addChild(sendALabel);
         sendALPort = createOutputCentered<PJ301MPort>(Vec(15, 315), module, YAMANOTE::SEND_A_L_OUTPUT);
         addOutput(sendALPort);
@@ -475,7 +484,7 @@ struct YAMANOTEWidget : ModuleWidget {
         addOutput(sendARPort);
 
         // Send B（儲存參考以便隱藏/顯示）
-        sendBLabel = new EnhancedTextLabel(Vec(77, 292), Vec(30, 15), "SEND B", 6.f, nvgRGB(255, 255, 255), true);
+        sendBLabel = new EnhancedTextLabel(Vec(77, 292), Vec(30, 15), "SEND B", 8.f, nvgRGB(255, 255, 255), true);
         addChild(sendBLabel);
         sendBLPort = createOutputCentered<PJ301MPort>(Vec(75, 315), module, YAMANOTE::SEND_B_L_OUTPUT);
         addOutput(sendBLPort);

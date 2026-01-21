@@ -211,8 +211,8 @@ struct EnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -221,14 +221,22 @@ struct EnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -265,34 +273,34 @@ struct SwingLFOWidget : ModuleWidget {
         
         float centerX = box.size.x / 2;
         
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "SwingLFO", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "SwingLFO", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
         
-        addChild(new EnhancedTextLabel(Vec(0, 26), Vec(box.size.x, 20), "FREQ", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 26), Vec(box.size.x, 20), "FREQ", 8.f, nvgRGB(255, 255, 255), true));
         freqKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX + 15, 59), module, SwingLFO::FREQ_PARAM);
         addParam(freqKnob);
         
-        addChild(new EnhancedTextLabel(Vec(5, 40), Vec(20, 20), "RST", 6.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(5, 40), Vec(20, 20), "RST", 8.f, nvgRGB(255, 255, 255), true));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX - 15, 65), module, SwingLFO::RESET_INPUT));
         
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 89), module, SwingLFO::FREQ_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 89), module, SwingLFO::FREQ_CV_INPUT));
 
-        addChild(new EnhancedTextLabel(Vec(0, 105), Vec(box.size.x, 20), "SWING", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 105), Vec(box.size.x, 20), "SWING", 8.f, nvgRGB(255, 255, 255), true));
         swingKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 136), module, SwingLFO::SWING_PARAM);
         addParam(swingKnob);
 
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 166), module, SwingLFO::SWING_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 166), module, SwingLFO::SWING_CV_INPUT));
 
-        addChild(new EnhancedTextLabel(Vec(0, 182), Vec(box.size.x, 20), "SHAPE", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 182), Vec(box.size.x, 20), "SHAPE", 8.f, nvgRGB(255, 255, 255), true));
         shapeKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 214), module, SwingLFO::SHAPE_PARAM);
         addParam(shapeKnob);
 
         addParam(createParamCentered<madzine::widgets::MicrotuneKnob>(Vec(centerX - 15, 244), module, SwingLFO::SHAPE_CV_ATTEN_PARAM));
         addInput(createInputCentered<PJ301MPort>(Vec(centerX + 15, 244), module, SwingLFO::SHAPE_CV_INPUT));
 
-        addChild(new EnhancedTextLabel(Vec(0, 257), Vec(box.size.x, 20), "MIX", 12.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(0, 257), Vec(box.size.x, 20), "MIX", 8.f, nvgRGB(255, 255, 255), true));
         mixKnob = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(centerX, 289), module, SwingLFO::MIX_PARAM);
         addParam(mixKnob);
 

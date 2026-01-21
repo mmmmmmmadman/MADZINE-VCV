@@ -10,8 +10,8 @@ struct EnhancedTextLabel : TransparentWidget {
     float fontSize;
     NVGcolor color;
     bool bold;
-    
-    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 12.f, 
+
+    EnhancedTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                       NVGcolor color = nvgRGB(255, 255, 255), bool bold = true) {
         box.pos = pos;
         box.size = size;
@@ -20,14 +20,23 @@ struct EnhancedTextLabel : TransparentWidget {
         this->color = color;
         this->bold = bold;
     }
-    
+
     void draw(const DrawArgs &args) override {
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(args.vg, color);
-        
-        nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+
+        if (bold) {
+            // 使用描邊模擬粗體效果
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+            nvgStrokeColor(args.vg, color);
+            nvgStrokeWidth(args.vg, 0.3f);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        } else {
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, box.size.x / 2.f, box.size.y / 2.f, text.c_str(), NULL);
+        }
     }
 };
 
@@ -598,54 +607,54 @@ struct EuclideanRhythmWidget : ModuleWidget {
         
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
-        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Euclidean Rhythm", 12.f, nvgRGB(255, 200, 0), true));
+        addChild(new EnhancedTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Euclidean Rhythm", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new EnhancedTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
-        addChild(new EnhancedTextLabel(Vec(18, 34), Vec(30, 15), "CLK", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new EnhancedTextLabel(Vec(18, 34), Vec(30, 15), "CLK"));
         addInput(createInputCentered<PJ301MPort>(Vec(33, 56), module, EuclideanRhythm::GLOBAL_CLOCK_INPUT));
-        
-        addChild(new EnhancedTextLabel(Vec(62, 34), Vec(30, 15), "RST", 8.f, nvgRGB(255, 255, 255), true));
+
+        addChild(new EnhancedTextLabel(Vec(62, 34), Vec(30, 15), "RST"));
         addInput(createInputCentered<PJ301MPort>(Vec(77, 56), module, EuclideanRhythm::GLOBAL_RESET_INPUT));
-        
+
         addParam(createParamCentered<VCVButton>(Vec(100, 56), module, EuclideanRhythm::MANUAL_RESET_PARAM));
 
         float trackY[3] = {77, 159, 241};
-        
+
         for (int i = 0; i < 3; ++i) {
             float y = trackY[i];
             float x = 1;
 
-            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "LEN", 7.f, nvgRGB(200, 200, 200), true));
+            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "LEN"));
             knobs[i][0] = createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_LENGTH_PARAM + i * 7);
             addParam(knobs[i][0]);
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_LENGTH_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_LENGTH_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
-            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "FILL", 7.f, nvgRGB(200, 200, 200), true));
+            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "FILL"));
             knobs[i][1] = createParamCentered<madzine::widgets::StandardBlackKnob26>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_FILL_PARAM + i * 7);
             addParam(knobs[i][1]);
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_FILL_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_FILL_CV_ATTEN_PARAM + i * 7));
             x += 31;
 
-            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "SHFT", 7.f, nvgRGB(200, 200, 200), true));
+            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "SHFT"));
             knobs[i][2] = createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_SHIFT_PARAM + i * 7);
             addParam(knobs[i][2]);
             addInput(createInputCentered<PJ301MPort>(Vec(x + 12, y + 47), module, EuclideanRhythm::TRACK1_SHIFT_CV_INPUT + i * 3));
             addParam(createParamCentered<Trimpot>(Vec(x + 12, y + 69), module, EuclideanRhythm::TRACK1_SHIFT_CV_ATTEN_PARAM + i * 7));
             x += 30;
 
-            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "D/M", 7.f, nvgRGB(200, 200, 200), true));
+            addChild(new EnhancedTextLabel(Vec(x, y), Vec(25, 10), "D/M"));
             addParam(createParamCentered<madzine::widgets::SnapKnob>(Vec(x + 12, y + 22), module, EuclideanRhythm::TRACK1_DIVMULT_PARAM + i * 7));
         }
-        
+
         for (int i = 0; i < 3; ++i) {
             float y = trackY[i];
             float outputX = 106;
             float outputY = y + 69;
-            
-            addChild(new EnhancedTextLabel(Vec(outputX - 12, outputY - 21), Vec(25, 10), "OUT " + std::to_string(i + 1), 7.f, nvgRGB(255, 255, 255), true));
+
+            addChild(new EnhancedTextLabel(Vec(outputX - 12, outputY - 21), Vec(25, 10), "OUT " + std::to_string(i + 1)));
             addOutput(createOutputCentered<PJ301MPort>(Vec(outputX, outputY), module, EuclideanRhythm::TRACK1_TRIG_OUTPUT + i));
         }
         

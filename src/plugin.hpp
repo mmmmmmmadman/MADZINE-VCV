@@ -30,6 +30,7 @@ extern Model* modelRunshow;
 extern Model* modelEnvVCA6;
 extern Model* modelWeiiiDocumenta;
 extern Model* modelUniversalRhythm;
+extern Model* modelUniRhythm;
 extern Model* modelSongMode;
 extern Model* modelLaunchpad;
 extern Model* modelRunner;
