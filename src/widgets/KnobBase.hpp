@@ -171,6 +171,33 @@ public:
     }
 
     /**
+     * 繪製 mapping indicator（供 Stoermelder TRANSIT、CV-MAP 等外部映射模組使用）
+     * VCV Rack 使用 ParamHandle 來追蹤被映射的參數
+     */
+    virtual void drawMappingIndicator(const DrawArgs& args) {
+        if (!module || paramId < 0) return;
+
+        // 從 Engine 取得此參數的 ParamHandle
+        engine::ParamHandle* paramHandle = APP->engine->getParamHandle(module->id, paramId);
+        if (!paramHandle) return;
+
+        // 檢查 ParamHandle 是否有設定顏色（alpha > 0 表示有映射）
+        if (paramHandle->color.a <= 0.f) return;
+
+        // 繪製 mapping indicator（小圓點，位於右下角）
+        float indicatorRadius = std::min(box.size.x, box.size.y) * 0.08f;
+        indicatorRadius = clamp(indicatorRadius, 2.f, 3.5f);
+
+        float x = box.size.x - indicatorRadius - 2.f;
+        float y = box.size.y - indicatorRadius - 2.f;
+
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, x, y, indicatorRadius);
+        nvgFillColor(args.vg, paramHandle->color);
+        nvgFill(args.vg);
+    }
+
+    /**
      * 主要繪製函數
      */
     void draw(const DrawArgs& args) override {
@@ -188,6 +215,14 @@ public:
 
         // 3. 繪製主指示器（在上層）
         drawIndicator(args, radius, baseAngle);
+
+        // 4. 繪製 mapping indicator（供 Stoermelder TRANSIT 等外部映射模組使用）
+        drawMappingIndicator(args);
+    }
+
+    void drawLayer(const DrawArgs& args, int layer) override {
+        // 呼叫父類的 drawLayer 以支援任何 layer-based 渲染
+        app::Knob::drawLayer(args, layer);
     }
 
     /**
