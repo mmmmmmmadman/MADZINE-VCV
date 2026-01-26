@@ -38,6 +38,7 @@ extern Model* modelFacehugger;
 extern Model* modelOvomorph;
 extern Model* modelALEXANDERPLATZ;
 extern Model* modelSHINJUKU;
+extern Model* modelPortal;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

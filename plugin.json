@@ -215,6 +215,12 @@
       "name": "SHINJUKU",
       "description": "8-track mixer with 12-band master EQ, level, duck and mute controls, Tokyo Marunouchi themed",
       "tags": ["Mixer", "Equalizer", "Utility"]
+    },
+    {
+      "slug": "Portal",
+      "name": "Portal",
+      "description": "8HP poly crossfader for UniRhythm with 3-band isolator, drive, DJ-style cue monitoring and curve selection",
+      "tags": ["Mixer", "Utility"]
     }
   ]
 }

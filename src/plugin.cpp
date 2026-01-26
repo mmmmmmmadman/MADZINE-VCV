@@ -141,4 +141,5 @@ void init(Plugin* p) {
     p->addModel(modelOvomorph);
     p->addModel(modelALEXANDERPLATZ);
     p->addModel(modelSHINJUKU);
+    p->addModel(modelPortal);
 }
