@@ -69,8 +69,8 @@ struct Quantizer;
 // ============================================================================
 
 struct Quantizer : Module {
-    int panelTheme = madzineDefaultTheme;
-    float panelContrast = madzineDefaultContrast; // -1 = Auto (follow VCV)
+    int panelTheme = madzineDefaultTheme; // -1 = Auto (follow VCV)
+    float panelContrast = madzineDefaultContrast;
 
     enum ParamIds {
         SCALE_PARAM, OFFSET_PARAM,
@@ -255,54 +255,72 @@ struct Quantizer : Module {
     }
 
     json_t* dataToJson() override {
-        json_t* root = json_object();
-        json_object_set_new(root, "panelTheme", json_integer(panelTheme));
-        json_object_set_new(root, "currentPreset", json_integer(currentPreset));
-        json_object_set_new(root, "hasDirectional", json_boolean(hasDirectional));
+        json_t* rootJ = json_object();
+        json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+        json_object_set_new(rootJ, "panelContrast", json_real(panelContrast));
+        json_object_set_new(rootJ, "currentPreset", json_integer(currentPreset));
+        json_object_set_new(rootJ, "hasDirectional", json_boolean(hasDirectional));
 
-        json_t* notes = json_array();
+        json_t* notesJ = json_array();
         for (int i = 0; i < 24; i++)
-            json_array_append_new(notes, json_boolean(enabledNotes[i]));
-        json_object_set_new(root, "enabledNotes", notes);
+            json_array_append_new(notesJ, json_boolean(enabledNotes[i]));
+        json_object_set_new(rootJ, "enabledNotes", notesJ);
 
-        json_t* asc = json_array();
-        json_t* desc = json_array();
+        json_t* ascJ = json_array();
+        json_t* descJ = json_array();
         for (int i = 0; i < 12; i++) {
-            json_array_append_new(asc, json_real(ascCents[i]));
-            json_array_append_new(desc, json_real(descCents[i]));
+            json_array_append_new(ascJ, json_real(ascCents[i]));
+            json_array_append_new(descJ, json_real(descCents[i]));
         }
-        json_object_set_new(root, "ascCents", asc);
-        json_object_set_new(root, "descCents", desc);
-        return root;
+        json_object_set_new(rootJ, "ascCents", ascJ);
+        json_object_set_new(rootJ, "descCents", descJ);
+        return rootJ;
     }
 
-    void dataFromJson(json_t* root) override {
-        json_t* j;
-        if ((j = json_object_get(root, "panelTheme"))) panelTheme = json_integer_value(j);
-        if ((j = json_object_get(root, "currentPreset"))) currentPreset = json_integer_value(j);
-        if ((j = json_object_get(root, "hasDirectional"))) hasDirectional = json_boolean_value(j);
+    void dataFromJson(json_t* rootJ) override {
+        json_t* themeJ = json_object_get(rootJ, "panelTheme");
+        if (themeJ) {
+            panelTheme = json_integer_value(themeJ);
+        }
+        json_t* contrastJ = json_object_get(rootJ, "panelContrast");
+        if (contrastJ) {
+            panelContrast = json_real_value(contrastJ);
+        }
+        json_t* presetJ = json_object_get(rootJ, "currentPreset");
+        if (presetJ) {
+            currentPreset = json_integer_value(presetJ);
+        }
+        json_t* directionalJ = json_object_get(rootJ, "hasDirectional");
+        if (directionalJ) {
+            hasDirectional = json_boolean_value(directionalJ);
+        }
 
-        if ((j = json_object_get(root, "enabledNotes"))) {
-            size_t len = json_array_size(j);
+        json_t* notesJ = json_object_get(rootJ, "enabledNotes");
+        if (notesJ) {
+            size_t len = json_array_size(notesJ);
             if (len == 12) {
                 // Legacy: 12-note format, expand to 24
                 for (int i = 0; i < 12; i++) {
-                    bool v = json_boolean_value(json_array_get(j, i));
+                    bool v = json_boolean_value(json_array_get(notesJ, i));
                     enabledNotes[i] = enabledNotes[i + 12] = v;
                 }
             } else {
                 for (int i = 0; i < 24; i++)
-                    if (json_t* n = json_array_get(j, i)) enabledNotes[i] = json_boolean_value(n);
+                    if (json_t* n = json_array_get(notesJ, i)) enabledNotes[i] = json_boolean_value(n);
             }
         }
 
-        if ((j = json_object_get(root, "ascCents")))
+        json_t* ascJ = json_object_get(rootJ, "ascCents");
+        if (ascJ) {
             for (int i = 0; i < 12; i++)
-                if (json_t* n = json_array_get(j, i)) ascCents[i] = json_real_value(n);
+                if (json_t* n = json_array_get(ascJ, i)) ascCents[i] = json_real_value(n);
+        }
 
-        if ((j = json_object_get(root, "descCents")))
+        json_t* descJ = json_object_get(rootJ, "descCents");
+        if (descJ) {
             for (int i = 0; i < 12; i++)
-                if (json_t* n = json_array_get(j, i)) descCents[i] = json_real_value(n);
+                if (json_t* n = json_array_get(descJ, i)) descCents[i] = json_real_value(n);
+        }
 
         updateRanges();
     }

@@ -39,6 +39,7 @@ extern Model* modelOvomorph;
 extern Model* modelALEXANDERPLATZ;
 extern Model* modelSHINJUKU;
 extern Model* modelPortal;
+extern Model* modelWorldDrum;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;

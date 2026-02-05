@@ -221,6 +221,12 @@
       "name": "Portal",
       "description": "8HP poly crossfader for UniRhythm with 3-band isolator, drive, DJ-style cue monitoring and curve selection",
       "tags": ["Mixer", "Utility"]
+    },
+    {
+      "slug": "WorldDrum",
+      "name": "World Drum",
+      "description": "4-voice world drum synthesizer with style presets and spread control",
+      "tags": ["Drum", "Synth voice"]
     }
   ]
 }

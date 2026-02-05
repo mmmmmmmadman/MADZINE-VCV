@@ -283,9 +283,9 @@ addOutput(createOutputCentered<PJ301MPort>(Vec(box.size.x - 15, row2Y), module, 
 ### 錯誤 4：使用縮寫
 
 ```
-錯誤: TL, FD, GR, LD
-正確: TIMELINE, FOUNDATION, GROOVE, LEAD
-（或空間不足時使用 TIME, FOUND 等可讀縮寫）
+錯誤: TL, FD, GR, LD, F, D
+正確: TIMELINE, FOUNDATION, GROOVE, LEAD, FREQ, DECAY
+不允許以空間不足為由使用縮寫
 ```
 
 ---
