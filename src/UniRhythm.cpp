@@ -374,6 +374,196 @@ inline void applyRolePreset(ExtendedDrumSynth& synth, int role, int styleIndex) 
 } // namespace worldrhythm
 
 // ============================================================================
+// IsolatorParamQuantity - Display dB for isolator knobs
+// ============================================================================
+
+struct URIsolatorParamQuantity : ParamQuantity {
+    float getDisplayValue() override {
+        return getValue();
+    }
+
+    std::string getString() override {
+        float p = getValue();
+        float gain;
+        if (p < 0) {
+            float t = 1.0f + p;
+            gain = t * t;
+        } else {
+            gain = 1.0f + p * 3.0f;
+        }
+
+        std::string s = getLabel();
+        s += ": ";
+        if (gain < 0.001f) {
+            s += "Kill";
+        } else {
+            float dB = 20.0f * std::log10(gain);
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.1f dB", dB);
+            s += buf;
+        }
+        return s;
+    }
+};
+
+// ============================================================================
+// ThreeBandIsolator - Linkwitz-Riley 4th order crossover
+// ============================================================================
+
+class URThreeBandIsolator {
+private:
+    float sampleRate = 44100.0f;
+
+    struct Biquad {
+        float a0, a1, a2, b1, b2;
+        float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+
+        void reset() { x1 = x2 = y1 = y2 = 0; }
+
+        float process(float in) {
+            float out = a0 * in + a1 * x1 + a2 * x2 - b1 * y1 - b2 * y2;
+            x2 = x1; x1 = in;
+            y2 = y1; y1 = out;
+            return out;
+        }
+    };
+
+    Biquad lpLow1[2], lpLow2[2];
+    Biquad hpLow1[2], hpLow2[2];
+    Biquad lpHigh1[2], lpHigh2[2];
+    Biquad hpHigh1[2], hpHigh2[2];
+
+    void calcButterworth2LP(Biquad& bq, float fc) {
+        float w0 = 2.0f * M_PI * fc / sampleRate;
+        float cosw0 = std::cos(w0);
+        float sinw0 = std::sin(w0);
+        float alpha = sinw0 / std::sqrt(2.0f);
+        float norm = 1.0f / (1.0f + alpha);
+        bq.a0 = (1.0f - cosw0) * 0.5f * norm;
+        bq.a1 = (1.0f - cosw0) * norm;
+        bq.a2 = bq.a0;
+        bq.b1 = -2.0f * cosw0 * norm;
+        bq.b2 = (1.0f - alpha) * norm;
+    }
+
+    void calcButterworth2HP(Biquad& bq, float fc) {
+        float w0 = 2.0f * M_PI * fc / sampleRate;
+        float cosw0 = std::cos(w0);
+        float sinw0 = std::sin(w0);
+        float alpha = sinw0 / std::sqrt(2.0f);
+        float norm = 1.0f / (1.0f + alpha);
+        bq.a0 = (1.0f + cosw0) * 0.5f * norm;
+        bq.a1 = -(1.0f + cosw0) * norm;
+        bq.a2 = bq.a0;
+        bq.b1 = -2.0f * cosw0 * norm;
+        bq.b2 = (1.0f - alpha) * norm;
+    }
+
+public:
+    void setSampleRate(float sr) {
+        sampleRate = sr;
+        for (int ch = 0; ch < 2; ch++) {
+            calcButterworth2LP(lpLow1[ch], 250.0f);
+            calcButterworth2LP(lpLow2[ch], 250.0f);
+            calcButterworth2HP(hpLow1[ch], 250.0f);
+            calcButterworth2HP(hpLow2[ch], 250.0f);
+            calcButterworth2LP(lpHigh1[ch], 4000.0f);
+            calcButterworth2LP(lpHigh2[ch], 4000.0f);
+            calcButterworth2HP(hpHigh1[ch], 4000.0f);
+            calcButterworth2HP(hpHigh2[ch], 4000.0f);
+        }
+        reset();
+    }
+
+    void reset() {
+        for (int ch = 0; ch < 2; ch++) {
+            lpLow1[ch].reset(); lpLow2[ch].reset();
+            hpLow1[ch].reset(); hpLow2[ch].reset();
+            lpHigh1[ch].reset(); lpHigh2[ch].reset();
+            hpHigh1[ch].reset(); hpHigh2[ch].reset();
+        }
+    }
+
+    void process(float& left, float& right, float lowParam, float midParam, float highParam) {
+        auto paramToGain = [](float p) {
+            if (p < 0) {
+                float t = 1.0f + p;
+                return t * t;
+            } else {
+                return 1.0f + p * 3.0f;
+            }
+        };
+
+        float gainLow = paramToGain(lowParam);
+        float gainMid = paramToGain(midParam);
+        float gainHigh = paramToGain(highParam);
+
+        float inputs[2] = {left, right};
+        float outputs[2];
+
+        for (int ch = 0; ch < 2; ch++) {
+            float in = inputs[ch];
+            float low = lpLow2[ch].process(lpLow1[ch].process(in));
+            float high = hpHigh2[ch].process(hpHigh1[ch].process(in));
+            float midTemp = hpLow2[ch].process(hpLow1[ch].process(in));
+            float mid = lpHigh2[ch].process(lpHigh1[ch].process(midTemp));
+            outputs[ch] = low * gainLow + mid * gainMid + high * gainHigh;
+        }
+
+        left = outputs[0];
+        right = outputs[1];
+    }
+};
+
+// ============================================================================
+// TubeDrive - Asymmetric tube saturation with DC blocker
+// ============================================================================
+
+class URTubeDrive {
+private:
+    float sampleRate = 44100.0f;
+    float dcBlockerL = 0, dcBlockerR = 0;
+    float dcCoeff = 0.999f;
+
+public:
+    void setSampleRate(float sr) {
+        sampleRate = sr;
+        float fc = 10.0f;
+        dcCoeff = 1.0f - (2.0f * M_PI * fc / sr);
+        if (dcCoeff < 0.9f) dcCoeff = 0.9f;
+        if (dcCoeff > 0.9999f) dcCoeff = 0.9999f;
+    }
+
+    void reset() {
+        dcBlockerL = dcBlockerR = 0;
+    }
+
+    void process(float& left, float& right, float driveAmount) {
+        if (driveAmount < 0.01f) return;
+
+        auto tubeShape = [](float x, float drive) {
+            float scaled = x * (1.0f + drive * 2.0f);
+            if (scaled >= 0) {
+                return std::tanh(scaled * 0.8f);
+            } else {
+                return std::tanh(scaled * 1.0f);
+            }
+        };
+
+        float makeupGain = 1.0f / (1.0f + driveAmount * 0.5f);
+        left = tubeShape(left, driveAmount) * makeupGain;
+        right = tubeShape(right, driveAmount) * makeupGain;
+
+        float prevL = dcBlockerL;
+        float prevR = dcBlockerR;
+        dcBlockerL = left - prevL + dcCoeff * dcBlockerL;
+        dcBlockerR = right - prevR + dcCoeff * dcBlockerR;
+        left = dcBlockerL;
+        right = dcBlockerR;
+    }
+};
+
+// ============================================================================
 // Pattern storage for 8 voices
 // ============================================================================
 
@@ -445,6 +635,11 @@ struct UniRhythm : Module {
         FOUNDATION_MIX_PARAM,
         GROOVE_MIX_PARAM,
         LEAD_MIX_PARAM,
+        // Master Isolator + Drive
+        ISO_LOW_PARAM,
+        ISO_MID_PARAM,
+        ISO_HIGH_PARAM,
+        DRIVE_PARAM,
         PARAMS_LEN
     };
 
@@ -504,6 +699,8 @@ struct UniRhythm : Module {
         // Mix outputs (2)
         MIX_L_OUTPUT,
         MIX_R_OUTPUT,
+        // Poly output (16ch for Portal)
+        POLY_OUTPUT,
         OUTPUTS_LEN
     };
 
@@ -528,6 +725,10 @@ struct UniRhythm : Module {
     WorldRhythm::AsymmetricGroupingEngine asymmetricEngine;
     WorldRhythm::AmenBreakEngine amenBreakEngine;
     worldrhythm::ExtendedDrumSynth drumSynth;
+
+    // Master Isolator + Drive (same as Portal)
+    URThreeBandIsolator isolator;
+    URTubeDrive tubeDrive;
 
     // Pattern storage
     MultiVoicePatterns patterns;           // Working patterns (with rest applied)
@@ -856,6 +1057,13 @@ struct UniRhythm : Module {
         }
         configOutput(MIX_L_OUTPUT, "Mix L");
         configOutput(MIX_R_OUTPUT, "Mix R");
+        configOutput(POLY_OUTPUT, "Poly Out (16ch for Portal)");
+
+        // Master Isolator + Drive parameters (same as Portal)
+        configParam<URIsolatorParamQuantity>(ISO_LOW_PARAM, -1.0f, 1.0f, 0.0f, "Isolator Low", " dB");
+        configParam<URIsolatorParamQuantity>(ISO_MID_PARAM, -1.0f, 1.0f, 0.0f, "Isolator Mid", " dB");
+        configParam<URIsolatorParamQuantity>(ISO_HIGH_PARAM, -1.0f, 1.0f, 0.0f, "Isolator High", " dB");
+        configParam(DRIVE_PARAM, 0.0f, 1.0f, 0.0f, "Master Drive", "%", 0.0f, 100.0f);
 
         // Initialize
         regenerateAllPatterns();
@@ -863,6 +1071,8 @@ struct UniRhythm : Module {
 
     void onSampleRateChange() override {
         drumSynth.setSampleRate(APP->engine->getSampleRate());
+        isolator.setSampleRate(APP->engine->getSampleRate());
+        tubeDrive.setSampleRate(APP->engine->getSampleRate());
     }
 
     void onReset() override {
@@ -2071,6 +2281,17 @@ struct UniRhythm : Module {
             mixR += mergedAudio * gainR;
         }
 
+        // Apply Master Isolator (three-band EQ)
+        float isoLow = params[ISO_LOW_PARAM].getValue();
+        float isoMid = params[ISO_MID_PARAM].getValue();
+        float isoHigh = params[ISO_HIGH_PARAM].getValue();
+        isolator.process(mixL, mixR, isoLow, isoMid, isoHigh);
+
+        // Apply Master Drive (tube saturation)
+        float driveAmount = params[DRIVE_PARAM].getValue();
+        tubeDrive.process(mixL, mixR, driveAmount);
+
+        // Master output with soft clip
         outputs[MIX_L_OUTPUT].setVoltage(std::tanh(mixL) * 5.0f);
         outputs[MIX_R_OUTPUT].setVoltage(std::tanh(mixR) * 5.0f);
 
@@ -2080,17 +2301,26 @@ struct UniRhythm : Module {
 
         for (int r = 0; r < 4; r++) {
             bool gate = gatePulses[r].process(args.sampleTime);
+            float gateV = gate ? 10.0f : 0.0f;
+            float pitchV = currentPitches[r];
+            float velenvV = velocityEnv[r].process(args.sampleTime);
 
-            outputs[TIMELINE_GATE_OUTPUT + r * 4].setVoltage(gate ? 10.0f : 0.0f);
+            outputs[TIMELINE_GATE_OUTPUT + r * 4].setVoltage(gateV);
+            outputs[TIMELINE_PITCH_OUTPUT + r * 4].setVoltage(pitchV);
+            outputs[TIMELINE_VELENV_OUTPUT + r * 4].setVoltage(velenvV);
 
-            // Pitch CV: 1V/Oct, C4 (261.63Hz) = 0V
-            outputs[TIMELINE_PITCH_OUTPUT + r * 4].setVoltage(currentPitches[r]);
-
-            // Velocity Envelope CV: 0-8V (peak at 8V per velocity)
-            outputs[TIMELINE_VELENV_OUTPUT + r * 4].setVoltage(velocityEnv[r].process(args.sampleTime));
+            // Poly output: [TL:0-3] [FD:4-7] [GR:8-11] [LD:12-15]
+            // Each role: Audio(0), Gate(1), Pitch(2), VelEnv(3)
+            int polyBase = r * 4;
+            outputs[POLY_OUTPUT].setVoltage(outputs[TIMELINE_AUDIO_OUTPUT + r * 4].getVoltage(), polyBase + 0);
+            outputs[POLY_OUTPUT].setVoltage(gateV, polyBase + 1);
+            outputs[POLY_OUTPUT].setVoltage(pitchV, polyBase + 2);
+            outputs[POLY_OUTPUT].setVoltage(velenvV, polyBase + 3);
 
             lights[TIMELINE_LIGHT + r].setBrightness(gate ? 1.0f : 0.0f);
         }
+
+        outputs[POLY_OUTPUT].setChannels(16);
     }
 
     json_t* dataToJson() override {
@@ -2670,11 +2900,40 @@ struct UniRhythmWidget : ModuleWidget {
             addChild(new URTextLabel(Vec(centerX - 10, labelY), Vec(20, 10), roleOutputAbbrev[i], 7.f, labelColor, true));
         }
 
-        // MIX L/R outputs at the end (vertically stacked, rightmost)
-        float mixOutputX = roleOutputStartX + 4 * roleOutputSpacing;  // After 4 roles
+        // MIX L/R outputs (aligned with Lead FREQ X = rightCol of uiPos=3)
+        // Lead: x = 60.96 + 3*121.92 = 426.72, rightCol = x + 12 = 438.72
+        float mixOutputX = 438.72f;
         addOutput(createOutputCentered<PJ301MPort>(Vec(mixOutputX, row1Y), module, UniRhythm::MIX_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(mixOutputX, row2Y), module, UniRhythm::MIX_R_OUTPUT));
         addChild(new URTextLabel(Vec(mixOutputX - 28, labelY), Vec(20, 10), "MIX", 7.f, labelColor, true));
+
+        // ===== Master Isolator + Drive knobs (in gaps between output groups) =====
+        // Gap centers: between FD-TL, TL-GR, GR-LD, LD-MIX
+        float isoKnobY = 355.5f;  // Centered vertically in white area (343+368)/2
+        float gapX[4];
+        for (int i = 0; i < 4; i++) {
+            float leftCenter = roleOutputStartX + i * roleOutputSpacing;
+            float rightCenter = (i < 3) ? (roleOutputStartX + (i + 1) * roleOutputSpacing) : mixOutputX;
+            gapX[i] = (leftCenter + rightCenter) / 2.f;
+        }
+
+        const int isoParams[4] = {UniRhythm::ISO_LOW_PARAM, UniRhythm::ISO_MID_PARAM,
+                                   UniRhythm::ISO_HIGH_PARAM, UniRhythm::DRIVE_PARAM};
+        const char* isoLabels[4] = {"LOW", "MID", "HIGH", "DRIVE"};
+
+        for (int i = 0; i < 4; i++) {
+            addParam(createParamCentered<madzine::widgets::StandardBlackKnob>(
+                Vec(gapX[i], isoKnobY), module, isoParams[i]));
+            addChild(new URTextLabel(Vec(gapX[i] - 15, 330), Vec(30, 10), isoLabels[i], 7.f, labelColor, true));
+        }
+
+        // ===== Poly Output (16ch for Portal) =====
+        // X aligned with last role's EXT IN (Lead rightCol + 26)
+        // Lead is uiPos=3: x = 60.96 + 3*121.92 = 426.72, rightCol = x+12 = 438.72, extInX = 464.72
+        float polyOutX = 464.72f;
+        addOutput(createOutputCentered<PJ301MPort>(Vec(polyOutX, row1Y), module, UniRhythm::POLY_OUTPUT));
+        // Label below port, centered on port X, Y=363 (text center at 368 = row2Y)
+        addChild(new URTextLabel(Vec(polyOutX - 15, 363), Vec(30, 10), "POLY", 7.f, labelColor, true));
     }
 
     void step() override {

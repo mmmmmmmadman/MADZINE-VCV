@@ -414,7 +414,7 @@ struct WorldDrumWidget : ModuleWidget {
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // ========== TITLE AREA (Y=0-26) ==========
-        addChild(new WorldDrumTextLabel(Vec(0, 1), Vec(box.size.x, 20), "WORLDDRUM", 10.f, nvgRGB(255, 200, 0), true));
+        addChild(new WorldDrumTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Drummmmmmer", 14.f, nvgRGB(255, 200, 0), true));
         addChild(new WorldDrumTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         // ========== WHITE BOTTOM PANEL (Y=330-380) ==========
