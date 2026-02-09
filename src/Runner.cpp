@@ -403,7 +403,11 @@ struct Runner : Module {
 struct RunnerWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
     StandardBlackKnob26* timeKnob = nullptr;
+    StandardBlackKnob26* timeRKnob = nullptr;
     StandardBlackKnob26* feedbackKnob = nullptr;
+    StandardBlackKnob26* mixKnob = nullptr;
+    StandardBlackKnob26* chaosKnob = nullptr;
+    StandardBlackKnob26* rateKnob = nullptr;
 
     // 自動配線追蹤
     int64_t autoSendLeftCableId = -1;
@@ -436,7 +440,8 @@ struct RunnerWidget : ModuleWidget {
         addParam(timeKnob);
 
         addChild(new RunnerParamLabel(Vec(30, 48), Vec(30, 15), "TIME R"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 72), module, Runner::TIME_R_PARAM));
+        timeRKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 72), module, Runner::TIME_R_PARAM);
+        addParam(timeRKnob);
 
         // Row 2: FEEDBACK, MIX (Y=117, 標籤 Y=93)
         addChild(new RunnerParamLabel(Vec(0, 93), Vec(30, 15), "FEEDBACK", 6.f));
@@ -444,14 +449,17 @@ struct RunnerWidget : ModuleWidget {
         addParam(feedbackKnob);
 
         addChild(new RunnerParamLabel(Vec(30, 93), Vec(30, 15), "MIX"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 117), module, Runner::MIX_PARAM));
+        mixKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 117), module, Runner::MIX_PARAM);
+        addParam(mixKnob);
 
         // Row 3: CHAOS, RATE (Y=162, 標籤 Y=138)
         addChild(new RunnerParamLabel(Vec(0, 138), Vec(30, 15), "CHAOS"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(leftX, 162), module, Runner::CHAOS_PARAM));
+        chaosKnob = createParamCentered<StandardBlackKnob26>(Vec(leftX, 162), module, Runner::CHAOS_PARAM);
+        addParam(chaosKnob);
 
         addChild(new RunnerParamLabel(Vec(30, 138), Vec(30, 15), "RATE"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 162), module, Runner::RATE_PARAM));
+        rateKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 162), module, Runner::RATE_PARAM);
+        addParam(rateKnob);
 
         // CV Row 1 (Y=197, 標籤 Y=173)
         addChild(new RunnerParamLabel(Vec(0, 173), Vec(30, 15), "TIME L"));
@@ -503,10 +511,30 @@ struct RunnerWidget : ModuleWidget {
                 timeKnob->setModulationEnabled(connected);
                 if (connected) timeKnob->setModulation(module->timeLCvMod);
             }
+            if (timeRKnob) {
+                bool connected = module->inputs[Runner::TIME_R_CV_INPUT].isConnected();
+                timeRKnob->setModulationEnabled(connected);
+                if (connected) timeRKnob->setModulation(module->timeRCvMod);
+            }
             if (feedbackKnob) {
                 bool connected = module->inputs[Runner::FEEDBACK_CV_INPUT].isConnected();
                 feedbackKnob->setModulationEnabled(connected);
                 if (connected) feedbackKnob->setModulation(module->feedbackCvMod);
+            }
+            if (mixKnob) {
+                bool connected = module->inputs[Runner::MIX_CV_INPUT].isConnected();
+                mixKnob->setModulationEnabled(connected);
+                if (connected) mixKnob->setModulation(module->mixCvMod);
+            }
+            if (chaosKnob) {
+                bool connected = module->inputs[Runner::CHAOS_CV_INPUT].isConnected();
+                chaosKnob->setModulationEnabled(connected);
+                if (connected) chaosKnob->setModulation(module->chaosCvMod);
+            }
+            if (rateKnob) {
+                bool connected = module->inputs[Runner::RATE_CV_INPUT].isConnected();
+                rateKnob->setModulationEnabled(connected);
+                if (connected) rateKnob->setModulation(module->rateCvMod);
             }
 
             // 自動配線到 YAMANOTE Send/Return

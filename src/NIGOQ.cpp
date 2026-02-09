@@ -1056,12 +1056,7 @@ struct NIGOQ : Module {
 
         // Calculate modulation signal (post-VCA) for FM/TM/AM
         float modOutputWithVca = modOutput * modVcaGain;
-        float modSignalForModulation;
-        if (inputs[MOD_EXT_IN].isConnected()) {
-            modSignalForModulation = modSignal * modVcaGain;
-        } else {
-            modSignalForModulation = (modOutputWithVca - 5.f) / 5.f;
-        }
+        float modSignalForModulation = modSignal * modVcaGain;
 
         // Track previous FINAL phase for sync detection (FINAL syncs MOD)
         prevFinalPhase = finalPhase;
@@ -1427,11 +1422,11 @@ struct NIGOQ : Module {
                 downFilter2.process_block_D2(finalOutputBuffer, finalOutputBuffer, BLOCK_SIZE * 2);
                 downFilter3.process_block_D2(finalSineBuffer, finalSineBuffer, BLOCK_SIZE * 2);
 
-                // Copy downsampled results
+                // Copy downsampled results (2x gain compensation for HalfRateFilter D2)
                 for (int i = 0; i < BLOCK_SIZE; i++) {
-                    modOutputDownsampled[i] = modOutputBuffer[i];
-                    finalOutputDownsampled[i] = finalOutputBuffer[i];
-                    finalSineDownsampled[i] = finalSineBuffer[i];
+                    modOutputDownsampled[i] = modOutputBuffer[i] * 2.0f;
+                    finalOutputDownsampled[i] = finalOutputBuffer[i] * 2.0f;
+                    finalSineDownsampled[i] = finalSineBuffer[i] * 2.0f;
                 }
             }
 

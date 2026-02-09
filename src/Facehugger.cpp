@@ -377,6 +377,10 @@ struct FacehuggerWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
     StandardBlackKnob26* sizeKnob = nullptr;
     StandardBlackKnob26* breakKnob = nullptr;
+    StandardBlackKnob26* shiftKnob = nullptr;
+    StandardBlackKnob26* mixKnob = nullptr;
+    StandardBlackKnob26* chaosKnob = nullptr;
+    StandardBlackKnob26* rateKnob = nullptr;
 
     // 自動配線追蹤
     int64_t autoSendLeftCableId = -1;
@@ -414,17 +418,21 @@ struct FacehuggerWidget : ModuleWidget {
 
         // Row 2: SHIFT, MIX (Y=117, 標籤 Y=93)
         addChild(new FacehuggerParamLabel(Vec(0, 93), Vec(30, 15), "SHIFT"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(leftX, 117), module, Facehugger::SHIFT_PARAM));
+        shiftKnob = createParamCentered<StandardBlackKnob26>(Vec(leftX, 117), module, Facehugger::SHIFT_PARAM);
+        addParam(shiftKnob);
 
         addChild(new FacehuggerParamLabel(Vec(30, 93), Vec(30, 15), "MIX"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 117), module, Facehugger::MIX_PARAM));
+        mixKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 117), module, Facehugger::MIX_PARAM);
+        addParam(mixKnob);
 
         // Row 3: CHAOS, RATE (Y=162, 標籤 Y=138)
         addChild(new FacehuggerParamLabel(Vec(0, 138), Vec(30, 15), "CHAOS"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(leftX, 162), module, Facehugger::CHAOS_PARAM));
+        chaosKnob = createParamCentered<StandardBlackKnob26>(Vec(leftX, 162), module, Facehugger::CHAOS_PARAM);
+        addParam(chaosKnob);
 
         addChild(new FacehuggerParamLabel(Vec(30, 138), Vec(30, 15), "RATE"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 162), module, Facehugger::RATE_PARAM));
+        rateKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 162), module, Facehugger::RATE_PARAM);
+        addParam(rateKnob);
 
         // CV Row 1 (Y=197, 標籤 Y=173)
         addChild(new FacehuggerParamLabel(Vec(0, 173), Vec(30, 15), "SIZE"));
@@ -480,6 +488,26 @@ struct FacehuggerWidget : ModuleWidget {
                 bool connected = module->inputs[Facehugger::BREAK_CV_INPUT].isConnected();
                 breakKnob->setModulationEnabled(connected);
                 if (connected) breakKnob->setModulation(module->breakCvMod);
+            }
+            if (shiftKnob) {
+                bool connected = module->inputs[Facehugger::SHIFT_CV_INPUT].isConnected();
+                shiftKnob->setModulationEnabled(connected);
+                if (connected) shiftKnob->setModulation(module->shiftCvMod);
+            }
+            if (mixKnob) {
+                bool connected = module->inputs[Facehugger::MIX_CV_INPUT].isConnected();
+                mixKnob->setModulationEnabled(connected);
+                if (connected) mixKnob->setModulation(module->mixCvMod);
+            }
+            if (chaosKnob) {
+                bool connected = module->inputs[Facehugger::CHAOS_CV_INPUT].isConnected();
+                chaosKnob->setModulationEnabled(connected);
+                if (connected) chaosKnob->setModulation(module->chaosCvMod);
+            }
+            if (rateKnob) {
+                bool connected = module->inputs[Facehugger::RATE_CV_INPUT].isConnected();
+                rateKnob->setModulationEnabled(connected);
+                if (connected) rateKnob->setModulation(module->rateCvMod);
             }
 
             // 自動配線到 YAMANOTE Send/Return

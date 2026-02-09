@@ -377,6 +377,10 @@ struct OvomorphWidget : ModuleWidget {
     PanelThemeHelper panelThemeHelper;
     StandardBlackKnob26* decayKnob = nullptr;
     StandardBlackKnob26* roomKnob = nullptr;
+    StandardBlackKnob26* toneKnob = nullptr;
+    StandardBlackKnob26* mixKnob = nullptr;
+    StandardBlackKnob26* chaosKnob = nullptr;
+    StandardBlackKnob26* rateKnob = nullptr;
 
     // 自動配線追蹤
     int64_t autoSendLeftCableId = -1;
@@ -409,7 +413,8 @@ struct OvomorphWidget : ModuleWidget {
         addParam(roomKnob);
 
         addChild(new OvomorphParamLabel(Vec(30, 48), Vec(30, 15), "TONE"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 72), module, Ovomorph::TONE_PARAM));
+        toneKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 72), module, Ovomorph::TONE_PARAM);
+        addParam(toneKnob);
 
         // Row 2: DECAY, MIX (Y=117, 標籤 Y=93)
         addChild(new OvomorphParamLabel(Vec(0, 93), Vec(30, 15), "DECAY"));
@@ -417,14 +422,17 @@ struct OvomorphWidget : ModuleWidget {
         addParam(decayKnob);
 
         addChild(new OvomorphParamLabel(Vec(30, 93), Vec(30, 15), "MIX"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 117), module, Ovomorph::MIX_PARAM));
+        mixKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 117), module, Ovomorph::MIX_PARAM);
+        addParam(mixKnob);
 
         // Row 3: CHAOS, RATE (Y=162, 標籤 Y=138)
         addChild(new OvomorphParamLabel(Vec(0, 138), Vec(30, 15), "CHAOS"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(leftX, 162), module, Ovomorph::CHAOS_PARAM));
+        chaosKnob = createParamCentered<StandardBlackKnob26>(Vec(leftX, 162), module, Ovomorph::CHAOS_PARAM);
+        addParam(chaosKnob);
 
         addChild(new OvomorphParamLabel(Vec(30, 138), Vec(30, 15), "RATE"));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(rightX, 162), module, Ovomorph::RATE_PARAM));
+        rateKnob = createParamCentered<StandardBlackKnob26>(Vec(rightX, 162), module, Ovomorph::RATE_PARAM);
+        addParam(rateKnob);
 
         // CV Row 1 (Y=197, 標籤 Y=173)
         addChild(new OvomorphParamLabel(Vec(0, 173), Vec(30, 15), "ROOM"));
@@ -480,6 +488,26 @@ struct OvomorphWidget : ModuleWidget {
                 bool connected = module->inputs[Ovomorph::ROOM_CV_INPUT].isConnected();
                 roomKnob->setModulationEnabled(connected);
                 if (connected) roomKnob->setModulation(module->roomCvMod);
+            }
+            if (toneKnob) {
+                bool connected = module->inputs[Ovomorph::TONE_CV_INPUT].isConnected();
+                toneKnob->setModulationEnabled(connected);
+                if (connected) toneKnob->setModulation(module->toneCvMod);
+            }
+            if (mixKnob) {
+                bool connected = module->inputs[Ovomorph::MIX_CV_INPUT].isConnected();
+                mixKnob->setModulationEnabled(connected);
+                if (connected) mixKnob->setModulation(module->mixCvMod);
+            }
+            if (chaosKnob) {
+                bool connected = module->inputs[Ovomorph::CHAOS_CV_INPUT].isConnected();
+                chaosKnob->setModulationEnabled(connected);
+                if (connected) chaosKnob->setModulation(module->chaosCvMod);
+            }
+            if (rateKnob) {
+                bool connected = module->inputs[Ovomorph::RATE_CV_INPUT].isConnected();
+                rateKnob->setModulationEnabled(connected);
+                if (connected) rateKnob->setModulation(module->rateCvMod);
             }
 
             // 自動配線到 YAMANOTE Send/Return
