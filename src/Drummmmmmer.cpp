@@ -1,5 +1,5 @@
 /**
- * WorldDrum.cpp
+ * Drummmmmmer.cpp
  * 4-Voice World Drum Synthesizer
  *
  * 從 Universal Rhythm 提取的獨立鼓合成器模組
@@ -190,7 +190,7 @@ struct WDStyleParamQuantity : ParamQuantity {
     }
 };
 
-struct WorldDrum : Module {
+struct Drummmmmmer : Module {
     enum ParamId {
         STYLE_PARAM,
         SPREAD_PARAM,
@@ -270,7 +270,7 @@ struct WorldDrum : Module {
     int panelTheme = -1;
     float panelContrast = 255.0f;
 
-    WorldDrum() {
+    Drummmmmmer() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
         // Global parameters
@@ -461,14 +461,14 @@ const NVGcolor STYLE_COLORS[10] = {
 };
 
 // Enhanced Text Label (same as ALEXANDERPLATZ)
-struct WorldDrumTextLabel : TransparentWidget {
+struct DrummmmmmerTextLabel : TransparentWidget {
     std::string text;
     float fontSize;
     NVGcolor color;
     bool bold;
     int align;
 
-    WorldDrumTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
+    DrummmmmmerTextLabel(Vec pos, Vec size, std::string text, float fontSize = 8.f,
                        NVGcolor color = nvgRGB(255, 255, 255), bool bold = true,
                        int align = NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE) {
         box.pos = pos;
@@ -501,11 +501,11 @@ struct WorldDrumTextLabel : TransparentWidget {
 };
 
 // Forward declaration for dynamic role title
-struct WorldDrum;
+struct Drummmmmmer;
 
 // Dynamic role title that changes color based on global style (left-aligned, compact for 8HP)
 struct WDDynamicRoleTitle : TransparentWidget {
-    WorldDrum* module = nullptr;
+    Drummmmmmer* module = nullptr;
     int roleIndex = -1;  // 0=TL, 1=FD, 2=GR, 3=LD. -1=static text mode
     std::string text;    // fallback static text (used when roleIndex < 0)
     float fontSize;
@@ -519,12 +519,12 @@ struct WDDynamicRoleTitle : TransparentWidget {
         this->bold = bold;
     }
 
-    void draw(const DrawArgs &args) override;  // Implemented after WorldDrum definition
+    void draw(const DrawArgs &args) override;  // Implemented after Drummmmmmer definition
 };
 
 // White Bottom Panel (Y >= 330)
-struct WorldDrumWhitePanel : Widget {
-    WorldDrumWhitePanel(Vec pos, Vec size) {
+struct DrummmmmmerWhitePanel : Widget {
+    DrummmmmmerWhitePanel(Vec pos, Vec size) {
         box.pos = pos;
         box.size = size;
     }
@@ -539,7 +539,7 @@ struct WorldDrumWhitePanel : Widget {
 
 // Dynamic Style Display
 struct StyleDisplay : TransparentWidget {
-    WorldDrum* module = nullptr;
+    Drummmmmmer* module = nullptr;
 
     StyleDisplay(Vec pos, Vec size) {
         box.pos = pos;
@@ -574,33 +574,33 @@ struct StyleDisplay : TransparentWidget {
     }
 };
 
-struct WorldDrumWidget : ModuleWidget {
+struct DrummmmmmerWidget : ModuleWidget {
     PanelThemeHelper panelHelper;
     TechnoSnapKnob30* styleKnob = nullptr;
     MediumGrayKnob* freqKnobs[4] = {};
     MediumGrayKnob* decayKnobs[4] = {};
 
-    WorldDrumWidget(WorldDrum* module) {
+    DrummmmmmerWidget(Drummmmmmer* module) {
         setModule(module);
         panelHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
 
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // ========== TITLE AREA (Y=0-26) ==========
-        addChild(new WorldDrumTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Drummmmmmer", 14.f, nvgRGB(255, 200, 0), true));
-        addChild(new WorldDrumTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
+        addChild(new DrummmmmmerTextLabel(Vec(0, 1), Vec(box.size.x, 20), "Drummmmmmer", 14.f, nvgRGB(255, 200, 0), true));
+        addChild(new DrummmmmmerTextLabel(Vec(0, 13), Vec(box.size.x, 20), "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         // ========== WHITE BOTTOM PANEL (Y=330-380) ==========
-        addChild(new WorldDrumWhitePanel(Vec(0, 330), Vec(box.size.x, 50)));
+        addChild(new DrummmmmmerWhitePanel(Vec(0, 330), Vec(box.size.x, 50)));
 
         // ========== PHASE 1: ALL PORTS AND KNOBS (z-order bottom) ==========
 
         // --- GLOBAL CONTROLS: STYLE knob (left) + StyleDisplay (center) + CV port (right), same row ---
         // STYLE knob (TechnoSnapKnob30, 30px) X=18, Y=56
-        styleKnob = createParamCentered<TechnoSnapKnob30>(Vec(18.f, 56.f), module, WorldDrum::STYLE_PARAM);
+        styleKnob = createParamCentered<TechnoSnapKnob30>(Vec(18.f, 56.f), module, Drummmmmmer::STYLE_PARAM);
         addParam(styleKnob);
         // STYLE CV port (24px) X=106, Y=56
-        addInput(createInputCentered<PJ301MPort>(Vec(106.f, 56.f), module, WorldDrum::STYLE_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(106.f, 56.f), module, Drummmmmmer::STYLE_CV_INPUT));
 
         // --- 4 VOICES AREA (spacing=61px, shifted down 12px from original) ---
         // Row2[3] bottom = 281+26+12 = 319 < 330
@@ -619,36 +619,36 @@ struct WorldDrumWidget : ModuleWidget {
             int vi = voiceMap[v];  // internal voice index
 
             // Row 1: TRIG port | FREQ knob (26px) | DECAY knob (26px) | Audio OUT port
-            addInput(createInputCentered<PJ301MPort>(Vec(trigX, sY), module, WorldDrum::TRIG_INPUT_TL + vi));
-            freqKnobs[vi] = createParamCentered<MediumGrayKnob>(Vec(freqX, sY), module, WorldDrum::FREQ_PARAM_TL + vi);
+            addInput(createInputCentered<PJ301MPort>(Vec(trigX, sY), module, Drummmmmmer::TRIG_INPUT_TL + vi));
+            freqKnobs[vi] = createParamCentered<MediumGrayKnob>(Vec(freqX, sY), module, Drummmmmmer::FREQ_PARAM_TL + vi);
             addParam(freqKnobs[vi]);
-            decayKnobs[vi] = createParamCentered<MediumGrayKnob>(Vec(decayX, sY), module, WorldDrum::DECAY_PARAM_TL + vi);
+            decayKnobs[vi] = createParamCentered<MediumGrayKnob>(Vec(decayX, sY), module, Drummmmmmer::DECAY_PARAM_TL + vi);
             addParam(decayKnobs[vi]);
-            addOutput(createOutputCentered<PJ301MPort>(Vec(outX, sY), module, WorldDrum::AUDIO_OUTPUT_TL + vi));
+            addOutput(createOutputCentered<PJ301MPort>(Vec(outX, sY), module, Drummmmmmer::AUDIO_OUTPUT_TL + vi));
 
             // Row 2 (sY+26): VEL port | FREQ CV port | DECAY CV port
-            addInput(createInputCentered<PJ301MPort>(Vec(trigX, sY + 26.f), module, WorldDrum::VEL_INPUT_TL + vi));
-            addInput(createInputCentered<PJ301MPort>(Vec(freqX, sY + 26.f), module, WorldDrum::FREQ_CV_INPUT_TL + vi));
-            addInput(createInputCentered<PJ301MPort>(Vec(decayX, sY + 26.f), module, WorldDrum::DECAY_CV_INPUT_TL + vi));
+            addInput(createInputCentered<PJ301MPort>(Vec(trigX, sY + 26.f), module, Drummmmmmer::VEL_INPUT_TL + vi));
+            addInput(createInputCentered<PJ301MPort>(Vec(freqX, sY + 26.f), module, Drummmmmmer::FREQ_CV_INPUT_TL + vi));
+            addInput(createInputCentered<PJ301MPort>(Vec(decayX, sY + 26.f), module, Drummmmmmer::DECAY_CV_INPUT_TL + vi));
         }
 
         // --- WHITE OUTPUT AREA (Y=330-380) ---
         // SPREAD knob (MediumGrayKnob, 26px) X=trigX(15), Y=355
-        addParam(createParamCentered<MediumGrayKnob>(Vec(15.f, 355.f), module, WorldDrum::SPREAD_PARAM));
+        addParam(createParamCentered<MediumGrayKnob>(Vec(15.f, 355.f), module, Drummmmmmer::SPREAD_PARAM));
         // VOICE knob (MediumGrayKnob, 26px) X=freqX(43), Y=355
-        addParam(createParamCentered<MediumGrayKnob>(Vec(43.f, 355.f), module, WorldDrum::VOICE_PARAM));
+        addParam(createParamCentered<MediumGrayKnob>(Vec(43.f, 355.f), module, Drummmmmmer::VOICE_PARAM));
         // MIX L output X=decayX(73), Y=355
-        addOutput(createOutputCentered<PJ301MPort>(Vec(73.f, 355.f), module, WorldDrum::MIX_L_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(73.f, 355.f), module, Drummmmmmer::MIX_L_OUTPUT));
         // MIX R output X=103, Y=355
-        addOutput(createOutputCentered<PJ301MPort>(Vec(103.f, 355.f), module, WorldDrum::MIX_R_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(103.f, 355.f), module, Drummmmmmer::MIX_R_OUTPUT));
 
         // ========== PHASE 2: ALL LABELS AND DISPLAYS (z-order top) ==========
 
         // --- GLOBAL LABELS ---
         // STYLE label (8.f bold white) above knob at X=18 (offset 28px for 30px knob: Y=56-28=28)
-        addChild(new WorldDrumTextLabel(Vec(3, 28), Vec(30, 15), "STYLE", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new DrummmmmmerTextLabel(Vec(3, 28), Vec(30, 15), "STYLE", 8.f, nvgRGB(255, 255, 255), true));
         // CV label (8.f bold white) above port at X=106 (offset 24px for port: Y=56-24=32)
-        addChild(new WorldDrumTextLabel(Vec(94, 32), Vec(24, 15), "CV", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new DrummmmmmerTextLabel(Vec(94, 32), Vec(24, 15), "CV", 8.f, nvgRGB(255, 255, 255), true));
 
         // --- StyleDisplay between knob and CV, same row (11.f colorful dynamic) ---
         StyleDisplay* styleDisp = new StyleDisplay(Vec(35, 48), Vec(56, 16));
@@ -656,9 +656,9 @@ struct WorldDrumWidget : ModuleWidget {
         addChild(styleDisp);
 
         // --- COLUMN HEADERS (Y=72, aligned with voice columns) ---
-        addChild(new WorldDrumTextLabel(Vec(33, 72), Vec(20, 15), "FREQ", 8.f, nvgRGB(255, 255, 255), true));
-        addChild(new WorldDrumTextLabel(Vec(60, 72), Vec(26, 15), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
-        addChild(new WorldDrumTextLabel(Vec(93, 72), Vec(20, 15), "OUT", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new DrummmmmmerTextLabel(Vec(33, 72), Vec(20, 15), "FREQ", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new DrummmmmmerTextLabel(Vec(60, 72), Vec(26, 15), "DECAY", 8.f, nvgRGB(255, 255, 255), true));
+        addChild(new DrummmmmmerTextLabel(Vec(93, 72), Vec(20, 15), "OUT", 8.f, nvgRGB(255, 255, 255), true));
 
         // --- VOICE NAMES (dynamic, shows current triggered voice name) ---
         {
@@ -676,33 +676,33 @@ struct WorldDrumWidget : ModuleWidget {
 
         // --- WHITE AREA LABELS (Y>=330, pink 7.f) ---
         // SPREAD label centered on X=15
-        addChild(new WorldDrumTextLabel(Vec(0, 331), Vec(30, 15), "SPREAD", 7.f, nvgRGB(255, 133, 133), true));
+        addChild(new DrummmmmmerTextLabel(Vec(0, 331), Vec(30, 15), "SPREAD", 7.f, nvgRGB(255, 133, 133), true));
         // VOICE label centered on X=43
-        addChild(new WorldDrumTextLabel(Vec(28, 331), Vec(30, 15), "VOICE", 7.f, nvgRGB(255, 133, 133), true));
+        addChild(new DrummmmmmerTextLabel(Vec(28, 331), Vec(30, 15), "VOICE", 7.f, nvgRGB(255, 133, 133), true));
         // L label
-        addChild(new WorldDrumTextLabel(Vec(61, 331), Vec(24, 15), "L", 7.f, nvgRGB(255, 133, 133), true));
+        addChild(new DrummmmmmerTextLabel(Vec(61, 331), Vec(24, 15), "L", 7.f, nvgRGB(255, 133, 133), true));
         // R label
-        addChild(new WorldDrumTextLabel(Vec(91, 331), Vec(24, 15), "R", 7.f, nvgRGB(255, 133, 133), true));
+        addChild(new DrummmmmmerTextLabel(Vec(91, 331), Vec(24, 15), "R", 7.f, nvgRGB(255, 133, 133), true));
     }
 
     void step() override {
-        WorldDrum* m = dynamic_cast<WorldDrum*>(module);
+        Drummmmmmer* m = dynamic_cast<Drummmmmmer*>(module);
         if (m) {
             panelHelper.step(m);
 
             if (styleKnob) {
-                bool connected = m->inputs[WorldDrum::STYLE_CV_INPUT].isConnected();
+                bool connected = m->inputs[Drummmmmmer::STYLE_CV_INPUT].isConnected();
                 styleKnob->setModulationEnabled(connected);
                 if (connected) styleKnob->setModulation(m->styleCvMod);
             }
             for (int v = 0; v < 4; v++) {
                 if (freqKnobs[v]) {
-                    bool connected = m->inputs[WorldDrum::FREQ_CV_INPUT_TL + v].isConnected();
+                    bool connected = m->inputs[Drummmmmmer::FREQ_CV_INPUT_TL + v].isConnected();
                     freqKnobs[v]->setModulationEnabled(connected);
                     if (connected) freqKnobs[v]->setModulation(m->freqCvMod[v]);
                 }
                 if (decayKnobs[v]) {
-                    bool connected = m->inputs[WorldDrum::DECAY_CV_INPUT_TL + v].isConnected();
+                    bool connected = m->inputs[Drummmmmmer::DECAY_CV_INPUT_TL + v].isConnected();
                     decayKnobs[v]->setModulationEnabled(connected);
                     if (connected) decayKnobs[v]->setModulation(m->decayCvMod[v]);
                 }
@@ -712,7 +712,7 @@ struct WorldDrumWidget : ModuleWidget {
     }
 
     void appendContextMenu(Menu* menu) override {
-        WorldDrum* module = dynamic_cast<WorldDrum*>(this->module);
+        Drummmmmmer* module = dynamic_cast<Drummmmmmer*>(this->module);
         if (!module) return;
 
         addPanelThemeMenu(menu, module);
@@ -720,7 +720,7 @@ struct WorldDrumWidget : ModuleWidget {
 };
 
 // ============================================================================
-// WDDynamicRoleTitle::draw implementation (after WorldDrum definition)
+// WDDynamicRoleTitle::draw implementation (after Drummmmmmer definition)
 // ============================================================================
 
 void WDDynamicRoleTitle::draw(const DrawArgs &args) {
@@ -776,4 +776,4 @@ void WDDynamicRoleTitle::draw(const DrawArgs &args) {
     }
 }
 
-Model* modelWorldDrum = createModel<WorldDrum, WorldDrumWidget>("WorldDrum");
+Model* modelDrummmmmmer = createModel<Drummmmmmer, DrummmmmmerWidget>("Drummmmmmer");

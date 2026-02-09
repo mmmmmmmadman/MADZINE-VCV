@@ -142,5 +142,5 @@ void init(Plugin* p) {
     p->addModel(modelALEXANDERPLATZ);
     p->addModel(modelSHINJUKU);
     p->addModel(modelPortal);
-    p->addModel(modelWorldDrum);
+    p->addModel(modelDrummmmmmer);
 }
