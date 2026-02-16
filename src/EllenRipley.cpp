@@ -937,7 +937,7 @@ struct EllenRipleyWidget : ModuleWidget {
         addChild(new EnhancedTextLabel(Vec(0, 276), Vec(box.size.x, 15), "CHAOS"));
 
         // Chaos shape button next to CHAOS text, above reverb wet/dry
-        addChild(new EnhancedTextLabel(Vec(95, 276), Vec(25, 10), "SHAPE"));
+        addChild(new EnhancedTextLabel(Vec(95, 260), Vec(25, 10), "SHAPE"));
         addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(Vec(107, 282), module, EllenRipley::CHAOS_SHAPE_PARAM, EllenRipley::CHAOS_SHAPE_LIGHT));
 
         float chaosY = 292;

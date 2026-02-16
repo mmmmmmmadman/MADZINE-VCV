@@ -230,6 +230,11 @@ struct SHINJUKU : Module {
     };
 
     static constexpr int MAX_POLY = 16;
+    static constexpr int DELAY_BUFFER_SIZE = 2048;
+
+    // Haas effect delay buffer for mono-to-stereo (per track, per poly channel)
+    float delayBuffer[SHINJUKU_TRACKS][MAX_POLY][DELAY_BUFFER_SIZE] = {};
+    int delayWriteIndex[SHINJUKU_TRACKS][MAX_POLY] = {};
 
     bool muteState[SHINJUKU_TRACKS] = {false};
     bool soloState[SHINJUKU_TRACKS] = {false};
@@ -380,9 +385,20 @@ struct SHINJUKU : Module {
                 if (muted) continue;
 
                 float leftIn = inputs[LEFT_INPUT + t].getPolyVoltage(c);
-                float rightIn = inputs[RIGHT_INPUT + t].isConnected()
-                    ? inputs[RIGHT_INPUT + t].getPolyVoltage(c)
-                    : leftIn;
+                float rightIn;
+                if (inputs[RIGHT_INPUT + t].isConnected()) {
+                    rightIn = inputs[RIGHT_INPUT + t].getPolyVoltage(c);
+                } else if (inputs[LEFT_INPUT + t].isConnected()) {
+                    // Haas effect: 20ms delayed copy for stereo widening
+                    int delaySamples = (int)(0.02f * args.sampleRate);
+                    delaySamples = clamp(delaySamples, 1, DELAY_BUFFER_SIZE - 1);
+                    int readIndex = (delayWriteIndex[t][c] - delaySamples + DELAY_BUFFER_SIZE) % DELAY_BUFFER_SIZE;
+                    rightIn = delayBuffer[t][c][readIndex];
+                    delayBuffer[t][c][delayWriteIndex[t][c]] = leftIn;
+                    delayWriteIndex[t][c] = (delayWriteIndex[t][c] + 1) % DELAY_BUFFER_SIZE;
+                } else {
+                    rightIn = 0.0f;
+                }
 
                 float level = params[LEVEL_PARAM + t].getValue();
                 if (inputs[LEVEL_CV_INPUT + t].isConnected()) {

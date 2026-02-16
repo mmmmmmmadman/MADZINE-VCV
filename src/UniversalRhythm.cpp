@@ -29,19 +29,19 @@
 // Style names and colors (MUJI-inspired pastel palette)
 // ============================================================================
 
-const char* STYLE_NAMES[10] = {
+static const char* STYLE_NAMES[10] = {
     "W.African", "Afro-Cuban", "Brazilian", "Balkan", "Indian",
     "Gamelan", "Jazz", "Electronic", "Breakbeat", "Techno"
 };
 
 // Groove template names
-const char* GROOVE_TEMPLATE_NAMES[7] = {
+static const char* GROOVE_TEMPLATE_NAMES[7] = {
     "Auto", "Straight", "Swing", "African", "Latin", "LaidBack", "Pushed"
 };
 
 
 // MUJI-inspired palette with better contrast between styles
-const NVGcolor STYLE_COLORS[10] = {
+static const NVGcolor STYLE_COLORS[10] = {
     nvgRGB(255, 120, 100),  // 0: West African - Warm coral
     nvgRGB(100, 200, 255),  // 1: Afro-Cuban - Sky blue
     nvgRGB(255, 200, 80),   // 2: Brazilian - Golden yellow
@@ -74,6 +74,7 @@ struct StyleParamQuantity : ParamQuantity {
 // Helper Widgets (MADDY+ style)
 // ============================================================================
 
+namespace {
 struct URTextLabel : TransparentWidget {
     std::string text;
     float fontSize;
@@ -107,6 +108,7 @@ struct URTextLabel : TransparentWidget {
         }
     }
 };
+} // anonymous namespace
 
 // Forward declaration
 struct UniversalRhythm;
@@ -147,6 +149,7 @@ struct URStyleNameDisplay : TransparentWidget {
     void draw(const DrawArgs &args) override;  // Implemented after UniversalRhythm definition
 };
 
+namespace {
 struct URWhiteBackgroundBox : Widget {
     URWhiteBackgroundBox(Vec pos, Vec size) {
         box.pos = pos;
@@ -196,6 +199,7 @@ struct URHorizontalLine : Widget {
         nvgStroke(args.vg);
     }
 };
+} // anonymous namespace
 
 // ============================================================================
 // Extended Drum Synth - 8 voices
@@ -2264,34 +2268,47 @@ struct UniversalRhythm : Module {
         }
     }
 
-    // onRandomize is called AFTER VCV has already randomized all params
-    // We use cachedRoleParams (updated every process() call) to restore excluded roles
+    // onRandomize: First let VCV randomize all params, then regenerate patterns.
+    // For Random Exclusive roles, save patterns/params before randomization and restore after.
     void onRandomize(const RandomizeEvent& e) override {
-        // Save excluded roles' patterns (params already randomized by VCV)
+        // Save excluded roles' patterns, params, and mix BEFORE randomization
         WorldRhythm::Pattern savedPatterns[8];
         int savedLastStyles[4];
         float savedLastDensities[4];
         int savedLastLengths[4];
+        float savedMix[4];
 
         for (int role = 0; role < 4; role++) {
             if (randomExclude[role]) {
-                // Save patterns
                 savedPatterns[role * 2] = patterns.patterns[role * 2];
                 savedPatterns[role * 2 + 1] = patterns.patterns[role * 2 + 1];
                 savedLastStyles[role] = lastStyles[role];
                 savedLastDensities[role] = lastDensities[role];
                 savedLastLengths[role] = lastLengths[role];
+                savedMix[role] = params[TIMELINE_MIX_PARAM + role].getValue();
+            }
+        }
 
-                // Restore params from cache (captured before VCV randomized them)
+        // Let VCV randomize all params
+        Module::onRandomize(e);
+
+        // Restore excluded roles' params from cache (captured before randomization)
+        for (int role = 0; role < 4; role++) {
+            if (randomExclude[role]) {
                 int baseParam = role * 5;
                 for (int p = 0; p < 5; p++) {
                     params[TIMELINE_STYLE_PARAM + baseParam + p].setValue(cachedRoleParams[role][p]);
                 }
+                params[TIMELINE_MIX_PARAM + role].setValue(savedMix[role]);
             }
         }
 
-        // Regenerate patterns with current params
+        // Regenerate patterns with randomized params
         regenerateAllPatternsInterlocked();
+
+        // Sync change-detection state to prevent process() from re-triggering regeneration
+        lastVariation = params[VARIATION_PARAM].getValue();
+        appliedRest = params[REST_PARAM].getValue();
 
         // Restore excluded roles' patterns
         for (int role = 0; role < 4; role++) {
@@ -2379,6 +2396,7 @@ void URStyleNameDisplay::draw(const DrawArgs &args) {
 // Pattern Display Widget
 // ============================================================================
 
+namespace {
 struct URPatternDisplay : TransparentWidget {
     UniversalRhythm* module = nullptr;
 
@@ -2467,6 +2485,7 @@ struct URPatternDisplay : TransparentWidget {
         }
     }
 };
+} // anonymous namespace
 
 // ============================================================================
 // Module Widget - 40HP
@@ -2768,10 +2787,13 @@ struct UniversalRhythmWidget : ModuleWidget {
         ));
 
         // Random Exclusive menu - roles excluded from Cmd+R randomization
+        // Display order matches panel: Lead, Groove, Timeline, Foundation (top to bottom)
         menu->addChild(createSubmenuItem("Random Exclusive", "",
             [=](Menu* menu) {
+                const int displayOrder[4] = {3, 2, 0, 1};  // Lead, Groove, Timeline, Foundation
                 const char* roleNames[4] = {"Timeline", "Foundation", "Groove", "Lead"};
-                for (int i = 0; i < 4; i++) {
+                for (int d = 0; d < 4; d++) {
+                    int i = displayOrder[d];
                     menu->addChild(createCheckMenuItem(roleNames[i], "",
                         [=]() { return module->randomExclude[i]; },
                         [=]() { module->randomExclude[i] = !module->randomExclude[i]; }
