@@ -227,6 +227,12 @@
       "name": "Drummmmmmer",
       "description": "4-voice world drum synthesizer with style presets and spread control",
       "tags": ["Drum", "Synth voice"]
+    },
+    {
+      "slug": "theKICK",
+      "name": "theKICK",
+      "description": "Kick drum synthesizer with pitch sweep, bend curve and tanh waveshaper",
+      "tags": ["Drum", "Synth voice"]
     }
   ]
 }

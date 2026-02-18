@@ -143,4 +143,5 @@ void init(Plugin* p) {
     p->addModel(modelSHINJUKU);
     p->addModel(modelPortal);
     p->addModel(modelDrummmmmmer);
+    p->addModel(modeltheKICK);
 }
