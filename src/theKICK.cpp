@@ -567,12 +567,6 @@ struct theKICK : Module {
         // Tone knob to frequency: 0=40Hz, 10=20kHz (logarithmic)
         float toneCutoff = 40.f * std::pow(500.f, toneKnob / 10.f);
 
-        // Mode LED button
-        if (modeTrigger.process(params[MODE_PARAM].getValue())) {
-            modeValue = (modeValue + 1) % 4;
-            params[MODE_PARAM].setValue((float)modeValue);
-        }
-
         // Update mode LED colors (midpoint between muted and pure YRGB)
         switch (modeValue) {
             case 0: // Saturate: vivid amber
