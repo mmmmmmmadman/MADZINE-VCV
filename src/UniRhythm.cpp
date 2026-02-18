@@ -220,11 +220,13 @@ public:
         }
     }
 
-    void setVoiceParams(int voice, SynthMode mode, float freq, float decay) {
+    void setVoiceParams(int voice, SynthMode mode, float freq, float decay, float sweep = 0.f, float bend = 1.f) {
         if (voice < 0 || voice > 7) return;
         voices[voice].setMode(mode);
         voices[voice].setFreq(freq);
         voices[voice].setDecay(decay);
+        voices[voice].setSweep(sweep);
+        voices[voice].setBend(bend);
     }
 
     void triggerVoice(int voice, float velocity = 1.0f) {
@@ -245,6 +247,8 @@ struct ExtendedStylePreset {
         float freq;
         float decay;
         const char* name;
+        float sweep = 0.f;
+        float bend = 1.f;
     };
     VoicePreset voices[8];
 };
@@ -333,8 +337,8 @@ const ExtendedStylePreset EXTENDED_PRESETS[10] = {
     // Timeline: Hi-hat 6-12kHz, Foundation: 808 Kick 40-80Hz, Groove: Clap 1-3kHz, Lead: variable
     {{{SynthMode::NOISE, 9000.0f, 30.0f, "HiHat"},
       {SynthMode::NOISE, 12000.0f, 20.0f, "HiHat Ac"},
-      {SynthMode::SINE, 45.0f, 280.0f, "808 Kick"},
-      {SynthMode::SINE, 60.0f, 200.0f, "Kick 2"},
+      {SynthMode::SINE, 45.0f, 280.0f, "808 Kick", 120.f, 0.8f},
+      {SynthMode::SINE, 60.0f, 200.0f, "Kick 2", 80.f, 1.0f},
       {SynthMode::NOISE, 1500.0f, 70.0f, "Clap"},
       {SynthMode::NOISE, 2500.0f, 50.0f, "Snare"},
       {SynthMode::NOISE, 6000.0f, 150.0f, "Open HH"},
@@ -344,8 +348,8 @@ const ExtendedStylePreset EXTENDED_PRESETS[10] = {
     // Timeline: Hi-hat 6-12kHz, Foundation: Kick 40-80Hz (2-step), Groove: Snare 1-3kHz, Lead: breaks
     {{{SynthMode::NOISE, 8000.0f, 25.0f, "HiHat"},
       {SynthMode::NOISE, 10000.0f, 15.0f, "HiHat Ac"},
-      {SynthMode::SINE, 55.0f, 180.0f, "Kick"},
-      {SynthMode::SINE, 70.0f, 120.0f, "Kick Gho"},
+      {SynthMode::SINE, 55.0f, 180.0f, "Kick", 140.f, 1.0f},
+      {SynthMode::SINE, 70.0f, 120.0f, "Kick Gho", 60.f, 1.2f},
       {SynthMode::NOISE, 2500.0f, 80.0f, "Snare"},
       {SynthMode::NOISE, 2000.0f, 50.0f, "Snare Gh"},
       {SynthMode::NOISE, 4000.0f, 40.0f, "Ghost"},
@@ -355,8 +359,8 @@ const ExtendedStylePreset EXTENDED_PRESETS[10] = {
     // Timeline: Hi-hat 6-12kHz, Foundation: 909 Kick 40-60Hz, Groove: Clap 1-3kHz, Lead: minimal perc
     {{{SynthMode::NOISE, 10000.0f, 20.0f, "HiHat"},
       {SynthMode::NOISE, 12000.0f, 12.0f, "HiHat Ac"},
-      {SynthMode::SINE, 42.0f, 250.0f, "909 Kick"},
-      {SynthMode::SINE, 55.0f, 180.0f, "Kick Lay"},
+      {SynthMode::SINE, 42.0f, 250.0f, "909 Kick", 160.f, 1.2f},
+      {SynthMode::SINE, 55.0f, 180.0f, "Kick Lay", 100.f, 1.0f},
       {SynthMode::NOISE, 1800.0f, 55.0f, "Clap"},
       {SynthMode::NOISE, 3000.0f, 35.0f, "Rim"},
       {SynthMode::NOISE, 5000.0f, 80.0f, "Open HH"},
@@ -370,9 +374,11 @@ inline void applyRolePreset(ExtendedDrumSynth& synth, int role, int styleIndex) 
     const ExtendedStylePreset& preset = EXTENDED_PRESETS[styleIndex];
     int voiceBase = role * 2;
     synth.setVoiceParams(voiceBase, preset.voices[voiceBase].mode,
-                         preset.voices[voiceBase].freq, preset.voices[voiceBase].decay);
+                         preset.voices[voiceBase].freq, preset.voices[voiceBase].decay,
+                         preset.voices[voiceBase].sweep, preset.voices[voiceBase].bend);
     synth.setVoiceParams(voiceBase + 1, preset.voices[voiceBase + 1].mode,
-                         preset.voices[voiceBase + 1].freq, preset.voices[voiceBase + 1].decay);
+                         preset.voices[voiceBase + 1].freq, preset.voices[voiceBase + 1].decay,
+                         preset.voices[voiceBase + 1].sweep, preset.voices[voiceBase + 1].bend);
 }
 
 } // namespace worldrhythm
@@ -745,6 +751,8 @@ struct UniRhythm : Module {
     // Cached synth parameters for TUNE/DECAY modification
     float cachedFreqs[8] = {0};
     float cachedDecays[8] = {0};
+    float cachedSweeps[8] = {0};
+    float cachedBends[8] = {1,1,1,1,1,1,1,1};
     float currentFreqs[8] = {0};  // Actual frequencies after FREQ knob/CV modulation (for Pitch CV output)
 
     // Triggers and pulses
@@ -1136,7 +1144,8 @@ struct UniRhythm : Module {
                     int styleIndex = lastStyles[role];
                     if (styleIndex >= 0 && styleIndex <= 9) {
                         const worldrhythm::ExtendedStylePreset& preset = worldrhythm::EXTENDED_PRESETS[styleIndex];
-                        drumSynth.setVoiceParams(voiceIdx, preset.voices[voiceIdx].mode, newFreq, newDecay);
+                        drumSynth.setVoiceParams(voiceIdx, preset.voices[voiceIdx].mode, newFreq, newDecay,
+                                                 cachedSweeps[voiceIdx], cachedBends[voiceIdx]);
                     }
                 }
             }
@@ -1335,6 +1344,10 @@ struct UniRhythm : Module {
             cachedFreqs[voiceBase + 1] = preset.voices[voiceBase + 1].freq;
             cachedDecays[voiceBase] = preset.voices[voiceBase].decay;
             cachedDecays[voiceBase + 1] = preset.voices[voiceBase + 1].decay;
+            cachedSweeps[voiceBase] = preset.voices[voiceBase].sweep;
+            cachedSweeps[voiceBase + 1] = preset.voices[voiceBase + 1].sweep;
+            cachedBends[voiceBase] = preset.voices[voiceBase].bend;
+            cachedBends[voiceBase + 1] = preset.voices[voiceBase + 1].bend;
             worldrhythm::applyRolePreset(drumSynth, r, styleIndex);
 
             // Update tracking
@@ -1382,6 +1395,10 @@ struct UniRhythm : Module {
             cachedFreqs[voiceBase + 1] = preset.voices[voiceBase + 1].freq;
             cachedDecays[voiceBase] = preset.voices[voiceBase].decay;
             cachedDecays[voiceBase + 1] = preset.voices[voiceBase + 1].decay;
+            cachedSweeps[voiceBase] = preset.voices[voiceBase].sweep;
+            cachedSweeps[voiceBase + 1] = preset.voices[voiceBase + 1].sweep;
+            cachedBends[voiceBase] = preset.voices[voiceBase].bend;
+            cachedBends[voiceBase + 1] = preset.voices[voiceBase + 1].bend;
             worldrhythm::applyRolePreset(drumSynth, role, styleIndex);
             return;
         }
@@ -1553,6 +1570,10 @@ struct UniRhythm : Module {
         cachedFreqs[voiceBase + 1] = preset.voices[voiceBase + 1].freq;
         cachedDecays[voiceBase] = preset.voices[voiceBase].decay;
         cachedDecays[voiceBase + 1] = preset.voices[voiceBase + 1].decay;
+        cachedSweeps[voiceBase] = preset.voices[voiceBase].sweep;
+        cachedSweeps[voiceBase + 1] = preset.voices[voiceBase + 1].sweep;
+        cachedBends[voiceBase] = preset.voices[voiceBase].bend;
+        cachedBends[voiceBase + 1] = preset.voices[voiceBase + 1].bend;
         worldrhythm::applyRolePreset(drumSynth, role, styleIndex);
 
         // Apply TUNE/DECAY modifiers

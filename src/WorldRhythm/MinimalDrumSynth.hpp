@@ -56,6 +56,11 @@ private:
     float actualDecay = 200.0f; // ms（實際值，受 velocity 影響）
     float velocity = 1.0f;    // 0-1
 
+    // Pitch sweep 參數（theKICK 引擎移植）
+    float sweep = 0.0f;       // pitch sweep 量 Hz（0 = 無 sweep）
+    float bend = 1.0f;        // pitch sweep 衰減速度
+    float pitchEnvTime = 0.0f; // pitch envelope 計時器
+
     // 常數
     static constexpr float ATTACK_TIME = 0.5f;  // ms，超快攻擊
     static constexpr float BPF_Q = 2.0f;        // BPF 品質因數
@@ -81,6 +86,14 @@ public:
         velocity = std::max(0.0f, std::min(v, 1.0f));
     }
 
+    void setSweep(float s) {
+        sweep = std::max(0.0f, s);
+    }
+
+    void setBend(float b) {
+        bend = std::max(0.1f, std::min(b, 10.0f));
+    }
+
     /**
      * 觸發音符
      * velocity 影響：
@@ -96,6 +109,8 @@ public:
         // 重置濾波器狀態避免爆音
         bpfZ1 = 0.0f;
         bpfZ2 = 0.0f;
+        // 重置 pitch envelope
+        pitchEnvTime = 0.0f;
         // 計算實際 decay（velocity 影響長度，1.5 倍影響力）
         // vel=1.0 -> 100% decay, vel=0.5 -> 46% decay, vel=0.2 -> 17% decay
         // 使用平方根讓變化更自然，係數調整為 1.5 倍影響
@@ -118,9 +133,23 @@ public:
 
         if (mode == SynthMode::SINE) {
             // === Sine 模式 ===
+            float actualFreq = freq;
+            if (sweep > 0.0f) {
+                // Pitch sweep（theKICK 引擎）
+                float pitchTau = 0.015f / bend;
+                float pitchEnv = sweep * std::exp(-pitchEnvTime / pitchTau);
+                actualFreq = freq + pitchEnv;
+                pitchEnvTime += 1.0f / sampleRate;
+            }
             output = std::sin(2.0f * M_PI * phase);
-            phase += freq / sampleRate;
+            phase += actualFreq / sampleRate;
             if (phase >= 1.0f) phase -= 1.0f;
+            // tanh saturate for kick voices with sweep
+            if (sweep > 0.0f) {
+                constexpr float gain = 1.6f;
+                constexpr float normFactor = 0.9217f; // 1/tanh(1.6)
+                output = std::tanh(gain * output) * normFactor;
+            }
         } else {
             // === Noise + BPF 模式 ===
             float noise = noiseDist(rng);
@@ -200,11 +229,13 @@ public:
     /**
      * 設定某個 Role 的音色
      */
-    void setVoiceParams(int role, SynthMode mode, float freq, float decay) {
+    void setVoiceParams(int role, SynthMode mode, float freq, float decay, float sweep = 0.f, float bend = 1.f) {
         if (role < 0 || role > 3) return;
         voices[role].setMode(mode);
         voices[role].setFreq(freq);
         voices[role].setDecay(decay);
+        voices[role].setSweep(sweep);
+        voices[role].setBend(bend);
     }
 
     /**
@@ -245,6 +276,8 @@ struct StyleSynthPreset {
         SynthMode mode;
         float freq;
         float decay;
+        float sweep = 0.f;
+        float bend = 1.f;
     };
 
     VoicePreset timeline;
@@ -308,24 +341,24 @@ inline const StyleSynthPreset STYLE_SYNTH_PRESETS[10] = {
     },
     // 7: Electronic (decay × 0.6)
     {
-        .timeline   = {SynthMode::NOISE, 9000.0f, 24.0f},   // Hi-Hat
-        .foundation = {SynthMode::SINE,  50.0f,   240.0f},  // 808 Kick
-        .groove     = {SynthMode::NOISE, 1500.0f, 60.0f},   // Clap
-        .lead       = {SynthMode::NOISE, 6000.0f, 120.0f}   // Open Hat
+        .timeline   = {SynthMode::NOISE, 9000.0f, 24.0f},                // Hi-Hat
+        .foundation = {SynthMode::SINE,  50.0f,   240.0f, 120.f, 0.8f},  // 808 Kick + sweep
+        .groove     = {SynthMode::NOISE, 1500.0f, 60.0f},                // Clap
+        .lead       = {SynthMode::NOISE, 6000.0f, 120.0f}                // Open Hat
     },
     // 8: Breakbeat (decay × 0.6)
     {
-        .timeline   = {SynthMode::NOISE, 8000.0f, 18.0f},   // Hi-Hat
-        .foundation = {SynthMode::SINE,  60.0f,   150.0f},  // Kick
-        .groove     = {SynthMode::NOISE, 2500.0f, 72.0f},   // Snare
-        .lead       = {SynthMode::NOISE, 4000.0f, 36.0f}    // Ghost
+        .timeline   = {SynthMode::NOISE, 8000.0f, 18.0f},                // Hi-Hat
+        .foundation = {SynthMode::SINE,  60.0f,   150.0f, 140.f, 1.0f},  // Kick + sweep
+        .groove     = {SynthMode::NOISE, 2500.0f, 72.0f},                // Snare
+        .lead       = {SynthMode::NOISE, 4000.0f, 36.0f}                 // Ghost
     },
     // 9: Techno (decay × 0.6)
     {
-        .timeline   = {SynthMode::NOISE, 10000.0f, 15.0f},  // Hi-Hat
-        .foundation = {SynthMode::SINE,  45.0f,   210.0f},  // 909 Kick
-        .groove     = {SynthMode::NOISE, 1800.0f, 48.0f},   // Clap
-        .lead       = {SynthMode::NOISE, 3500.0f, 30.0f}    // Rim
+        .timeline   = {SynthMode::NOISE, 10000.0f, 15.0f},               // Hi-Hat
+        .foundation = {SynthMode::SINE,  45.0f,   210.0f, 160.f, 1.2f},  // 909 Kick + sweep
+        .groove     = {SynthMode::NOISE, 1800.0f, 48.0f},                // Clap
+        .lead       = {SynthMode::NOISE, 3500.0f, 30.0f}                 // Rim
     }
 };
 
@@ -338,13 +371,17 @@ inline void applyStylePreset(MinimalDrumSynth& synth, int styleIndex) {
     const StyleSynthPreset& preset = STYLE_SYNTH_PRESETS[styleIndex];
 
     synth.setVoiceParams(0, preset.timeline.mode,
-                         preset.timeline.freq, preset.timeline.decay);
+                         preset.timeline.freq, preset.timeline.decay,
+                         preset.timeline.sweep, preset.timeline.bend);
     synth.setVoiceParams(1, preset.foundation.mode,
-                         preset.foundation.freq, preset.foundation.decay);
+                         preset.foundation.freq, preset.foundation.decay,
+                         preset.foundation.sweep, preset.foundation.bend);
     synth.setVoiceParams(2, preset.groove.mode,
-                         preset.groove.freq, preset.groove.decay);
+                         preset.groove.freq, preset.groove.decay,
+                         preset.groove.sweep, preset.groove.bend);
     synth.setVoiceParams(3, preset.lead.mode,
-                         preset.lead.freq, preset.lead.decay);
+                         preset.lead.freq, preset.lead.decay,
+                         preset.lead.sweep, preset.lead.bend);
 }
 
 } // namespace worldrhythm
