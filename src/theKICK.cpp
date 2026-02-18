@@ -90,6 +90,7 @@ struct theKICK : Module {
         FB_CV_INPUT,
         TONE_CV_INPUT,
         SAMPLE_CV_INPUT,
+        ACCENT_INPUT,
         INPUTS_LEN
     };
     enum OutputId {
@@ -113,6 +114,9 @@ struct theKICK : Module {
     // Feedback FM state
     float fbY1 = 0.f;
     float fbY2 = 0.f;
+
+    // Accent level (sampled on trigger)
+    float accentLevel = 1.f;
 
     // LPF state (4-pole, 24dB/oct)
     float lpfState[4] = {};
@@ -182,6 +186,7 @@ struct theKICK : Module {
         configInput(FB_CV_INPUT, "Feedback CV");
         configInput(TONE_CV_INPUT, "Tone CV");
         configInput(SAMPLE_CV_INPUT, "Sample CV");
+        configInput(ACCENT_INPUT, "Accent");
 
         configOutput(OUT_OUTPUT, "Kick Output");
 
@@ -212,6 +217,7 @@ struct theKICK : Module {
         active = false;
         fbY1 = 0.f;
         fbY2 = 0.f;
+        accentLevel = 1.f;
         for (int i = 0; i < 4; i++) lpfState[i] = 0.f;
         samplePlayPos = 0.f;
         modeValue = 0;
@@ -601,6 +607,13 @@ struct theKICK : Module {
             for (int i = 0; i < 4; i++) lpfState[i] = 0.f;
             samplePlayPos = 0.f;
             active = true;
+
+            // Sample accent level on trigger
+            if (inputs[ACCENT_INPUT].isConnected()) {
+                accentLevel = clamp(inputs[ACCENT_INPUT].getVoltage() / 10.f, 0.f, 1.f);
+            } else {
+                accentLevel = 1.f;
+            }
         }
 
         // Build process state
@@ -643,7 +656,7 @@ struct theKICK : Module {
             processPosition++;
         }
 
-        outputs[OUT_OUTPUT].setVoltage(outputFinal);
+        outputs[OUT_OUTPUT].setVoltage(outputFinal * accentLevel);
     }
 
     // ========================================================================
@@ -1049,13 +1062,14 @@ struct theKICKWidget : ModuleWidget {
         addParam(toneKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(colR, row4Y + cvOffset), module, theKICK::TONE_CV_INPUT));
 
-        // --- I/O in white area ---
+        // --- I/O in white area (3 jacks: TRIG left, ACCENT center, OUT right) ---
+        float ioLeft = 22.f;
+        float ioCenter = box.size.x / 2.f;
+        float ioRight = box.size.x - 22.f;
 
-        // TRIGGER input (left column)
-        addInput(createInputCentered<PJ301MPort>(Vec(colL, ioY), module, theKICK::TRIGGER_INPUT));
-
-        // OUT output (right column)
-        addOutput(createOutputCentered<PJ301MPort>(Vec(colR, ioY), module, theKICK::OUT_OUTPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(ioLeft, ioY), module, theKICK::TRIGGER_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(ioCenter, ioY), module, theKICK::ACCENT_INPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(ioRight, ioY), module, theKICK::OUT_OUTPUT));
 
         // ================================================================
         // Layer 4: Labels (top layer — added last so never obscured)
@@ -1081,8 +1095,9 @@ struct theKICKWidget : ModuleWidget {
         addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "TONE", 10.f, nvgRGB(255, 255, 255), true));
 
         // I/O area labels (Y >= 330, on white background)
-        addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "TRIG", 10.f, nvgRGB(0, 0, 0), true));
-        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "OUT", 10.f, nvgRGB(255, 133, 133), true));
+        addChild(new theKICKTextLabel(Vec(ioLeft - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "TRIG", 10.f, nvgRGB(0, 0, 0), true));
+        addChild(new theKICKTextLabel(Vec(ioCenter - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "ACCENT", 10.f, nvgRGB(0, 0, 0), true));
+        addChild(new theKICKTextLabel(Vec(ioRight - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "OUT", 10.f, nvgRGB(255, 133, 133), true));
     }
 
     void step() override {
