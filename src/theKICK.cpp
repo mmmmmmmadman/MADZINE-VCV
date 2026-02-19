@@ -130,9 +130,10 @@ struct theKICK : Module {
     bool hasSample = false;
     std::string samplePath;
 
-    // --- Mode (waveshaper type) ---
-    // 0=Saturate(red), 1=Fold(green), 2=Asymmetric(blue), 3=Destroy(white)
+    // --- Mode (sample interaction type) ---
+    // 0=PM(amber), 1=RM(rose), 2=AM(green), 3=SYNC(blue)
     int modeValue = 0;
+    float prevSampleVal = 0.f;  // for SYNC zero-crossing detection
     dsp::SchmittTrigger modeTrigger;
 
     // --- 2x Oversampling (from NIGOQ) ---
@@ -166,15 +167,15 @@ struct theKICK : Module {
     theKICK() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
-        configParam(PITCH_PARAM, 20.f, 200.f, 46.3f, "Pitch", " Hz");
-        configParam(SWEEP_PARAM, 0.f, 500.f, 158.f, "Sweep", " Hz");
-        configParam(BEND_PARAM, 0.5f, 4.f, 1.f, "Bend");
+        configParam(PITCH_PARAM, 20.f, 200.f, 47.f, "Pitch", " Hz");
+        configParam(SWEEP_PARAM, 0.f, 500.f, 260.f, "Sweep", " Hz");
+        configParam(BEND_PARAM, 0.5f, 4.f, 0.88f, "Bend");
         configParam(DECAY_PARAM, 10.f, 1000.f, 136.f, "Decay", " ms");
         configParam(FOLD_PARAM, 0.f, 10.f, 0.3f, "Fold");
         configParam(SAMPLE_PARAM, 0.f, 10.f, 0.f, "Sample");
         configParam(FB_PARAM, 0.f, 1.f, 0.f, "Feedback");
         configParam(TONE_PARAM, 0.f, 10.f, 10.f, "Tone");
-        configParam(MODE_PARAM, 0.f, 3.f, 0.f, "Waveshaper Mode");
+        configParam(MODE_PARAM, 0.f, 3.f, 0.f, "FM Mode");
         getParamQuantity(MODE_PARAM)->snapEnabled = true;
 
         configInput(TRIGGER_INPUT, "Trigger");
@@ -368,32 +369,6 @@ struct theKICK : Module {
         return sampleTable[idx] * (1.f - frac) + sampleTable[idx + 1] * frac;
     }
 
-    // Apply waveshaper based on mode
-    float applyWaveshaper(float x, float gain, int mode) {
-        switch (mode) {
-            case 0: { // Saturate: tanh soft clip
-                float tanhG = std::tanh(gain);
-                if (tanhG < 0.001f) return x;
-                return std::tanh(x * gain) / tanhG;
-            }
-            case 1: { // Fold: sine wavefolder
-                return std::sin(x * gain);
-            }
-            case 2: { // Asymmetric: tube-like even harmonics
-                float asymK = 0.3f;
-                float input = x * gain + asymK * gain * x * x;
-                float normFactor = std::tanh(gain * (1.f + asymK));
-                if (normFactor < 0.001f) return x;
-                return std::tanh(input) / normFactor;
-            }
-            case 3: { // Destroy: compound fold + saturate
-                return std::sin(gain * std::tanh(2.f * x));
-            }
-            default:
-                return x;
-        }
-    }
-
     // ========================================================================
     // Single sample DSP (called at oversampled rate)
     // ========================================================================
@@ -412,23 +387,20 @@ struct theKICK : Module {
             fbPhase = state.fb * 0.5f * (fbY1 + fbY2);
         }
 
-        // Sample PM: sample table modulates phase, envelope follows pitch sweep
-        float samplePhase = 0.f;
-        if (hasSample && state.sampleFm > 0.01f) {
-            // Read sample table at current playback position (wrapping)
+        // Read sample value (needed for all modes)
+        float sampleVal = 0.f;
+        float modDepth = 0.f;
+        float sampleEnv = 0.f;
+        bool useSample = hasSample && state.sampleFm > 0.01f;
+        if (useSample) {
             float tablePos = samplePlayPos * TABLE_SIZE;
             int idx = ((int)tablePos) % TABLE_SIZE;
             if (idx < 0) idx += TABLE_SIZE;
             int next = (idx + 1) % TABLE_SIZE;
             float frac = tablePos - std::floor(tablePos);
-            float sampleVal = sampleTable[idx] * (1.f - frac) + sampleTable[next] * frac;
-
-            // FM index from SAMPLE knob (0-10 -> 0-PI)
-            float fmIndex = state.sampleFm * M_PI / 10.f;
-
-            // Envelope follows pitch sweep (decays with BEND)
-            float sampleEnv = std::exp(-pitchEnvTime / pitchTau);
-            samplePhase = fmIndex * sampleVal * sampleEnv;
+            sampleVal = sampleTable[idx] * (1.f - frac) + sampleTable[next] * frac;
+            modDepth = state.sampleFm / 10.f;  // 0~1 normalized
+            sampleEnv = std::exp(-pitchEnvTime / pitchTau);
 
             // Advance sample playback at oscillator frequency
             samplePlayPos += freq * sampleTime;
@@ -440,46 +412,72 @@ struct theKICK : Module {
         while (phase >= 1.f) phase -= 1.f;
         while (phase < 0.f) phase += 1.f;
 
-        // Sine oscillator with feedback + sample phase modulation
-        float osc = std::sin(2.f * M_PI * phase + fbPhase + samplePhase);
-
-        // Waveshaper
-        float shaped;
-        if (state.fold > 0.01f) {
-            float gain;
+        // Mode-dependent oscillator: sample interaction type
+        float osc;
+        if (useSample) {
+            float carrier = std::sin(2.f * M_PI * phase + fbPhase);
             switch (modeValue) {
-                case 0: gain = 1.f + state.fold * 2.f; break;
-                case 1: gain = state.fold * M_PI * 0.5f; break;
-                case 2: gain = 1.f + state.fold * 2.f; break;
-                case 3: gain = 1.f + state.fold * 1.5f; break;
-                default: gain = 1.f; break;
+                case 0: { // PM: phase modulation (classic FM)
+                    float fmIndex = modDepth * 4.f * M_PI;  // 0~4π
+                    float samplePhase = fmIndex * sampleVal * sampleEnv;
+                    osc = std::sin(2.f * M_PI * phase + fbPhase + samplePhase);
+                    break;
+                }
+                case 1: { // RM: ring modulation
+                    float depth = modDepth * sampleEnv;
+                    osc = carrier * (1.f - depth + depth * sampleVal);
+                    break;
+                }
+                case 2: { // AM: amplitude modulation
+                    float depth = modDepth * sampleEnv;
+                    osc = carrier * (1.f + depth * sampleVal);
+                    break;
+                }
+                case 3: { // SYNC: hard sync (phase reset on zero crossings)
+                    float depth = modDepth * sampleEnv;
+                    if (prevSampleVal * sampleVal < 0.f && depth > 0.01f) {
+                        phase *= (1.f - depth);
+                    }
+                    osc = std::sin(2.f * M_PI * phase + fbPhase);
+                    break;
+                }
+                default:
+                    osc = carrier;
+                    break;
             }
-            shaped = applyWaveshaper(osc, gain, modeValue);
+            prevSampleVal = sampleVal;
         } else {
-            shaped = osc;
+            osc = std::sin(2.f * M_PI * phase + fbPhase);
         }
 
         // Update feedback state
         fbY2 = fbY1;
-        fbY1 = shaped;
+        fbY1 = osc;
 
         // Tone LPF (4-pole, 24dB/oct cascaded one-pole with frequency warping)
         float fc = state.toneCutoff * sampleTime;
         fc = clamp(fc, 0.0001f, 0.4999f);
         float wc = std::tan(M_PI * fc);
         float lpAlpha = wc / (1.f + wc);
-        lpfState[0] = shaped * lpAlpha + lpfState[0] * (1.f - lpAlpha);
+        lpfState[0] = osc * lpAlpha + lpfState[0] * (1.f - lpAlpha);
         lpfState[1] = lpfState[0] * lpAlpha + lpfState[1] * (1.f - lpAlpha);
         lpfState[2] = lpfState[1] * lpAlpha + lpfState[2] * (1.f - lpAlpha);
         lpfState[3] = lpfState[2] * lpAlpha + lpfState[3] * (1.f - lpAlpha);
         float filtered = lpfState[3];
 
-        // Amplitude envelope: exponential decay
+        // Post-LPF Drive: tanh saturation
+        if (state.fold > 0.01f) {
+            float g = 1.f + state.fold * 0.5f;  // 1~6x gain
+            float tanhG = std::tanh(g);
+            filtered = std::tanh(filtered * g) / tanhG;
+        }
+
+        // Amplitude envelope: simple exponential decay
         float decaySec = state.decayMs * 0.001f;
         float ampEnv = std::exp(-ampEnvTime / decaySec);
 
-        // Output (±5V)
-        float output = filtered * ampEnv * 5.f;
+        // Output (±8V base, ±16V with 2x oversample compensation)
+        float output = filtered * ampEnv * 8.f;
 
         // Advance envelope times
         pitchEnvTime += sampleTime;
@@ -567,28 +565,34 @@ struct theKICK : Module {
         // Tone knob to frequency: 0=40Hz, 10=20kHz (logarithmic)
         float toneCutoff = 40.f * std::pow(500.f, toneKnob / 10.f);
 
-        // Update mode LED colors (midpoint between muted and pure YRGB)
-        switch (modeValue) {
-            case 0: // Saturate: vivid amber
-                lights[MODE_LIGHT_RED].setBrightness(0.890f);
-                lights[MODE_LIGHT_GREEN].setBrightness(0.731f);
-                lights[MODE_LIGHT_BLUE].setBrightness(0.039f);
-                break;
-            case 1: // Fold: vivid rose
-                lights[MODE_LIGHT_RED].setBrightness(0.890f);
-                lights[MODE_LIGHT_GREEN].setBrightness(0.080f);
-                lights[MODE_LIGHT_BLUE].setBrightness(0.102f);
-                break;
-            case 2: // Asymmetric: vivid green
-                lights[MODE_LIGHT_RED].setBrightness(0.080f);
-                lights[MODE_LIGHT_GREEN].setBrightness(0.820f);
-                lights[MODE_LIGHT_BLUE].setBrightness(0.127f);
-                break;
-            case 3: // Destroy: vivid blue
-                lights[MODE_LIGHT_RED].setBrightness(0.102f);
-                lights[MODE_LIGHT_GREEN].setBrightness(0.127f);
-                lights[MODE_LIGHT_BLUE].setBrightness(0.890f);
-                break;
+        // Update mode LED colors: active when sample loaded, off otherwise
+        if (hasSample) {
+            switch (modeValue) {
+                case 0: // PM: vivid amber
+                    lights[MODE_LIGHT_RED].setBrightness(0.890f);
+                    lights[MODE_LIGHT_GREEN].setBrightness(0.731f);
+                    lights[MODE_LIGHT_BLUE].setBrightness(0.039f);
+                    break;
+                case 1: // RM: vivid rose
+                    lights[MODE_LIGHT_RED].setBrightness(0.890f);
+                    lights[MODE_LIGHT_GREEN].setBrightness(0.080f);
+                    lights[MODE_LIGHT_BLUE].setBrightness(0.102f);
+                    break;
+                case 2: // AM: vivid green
+                    lights[MODE_LIGHT_RED].setBrightness(0.080f);
+                    lights[MODE_LIGHT_GREEN].setBrightness(0.820f);
+                    lights[MODE_LIGHT_BLUE].setBrightness(0.127f);
+                    break;
+                case 3: // SYNC: vivid blue
+                    lights[MODE_LIGHT_RED].setBrightness(0.102f);
+                    lights[MODE_LIGHT_GREEN].setBrightness(0.127f);
+                    lights[MODE_LIGHT_BLUE].setBrightness(0.890f);
+                    break;
+            }
+        } else {
+            lights[MODE_LIGHT_RED].setBrightness(0.f);
+            lights[MODE_LIGHT_GREEN].setBrightness(0.f);
+            lights[MODE_LIGHT_BLUE].setBrightness(0.f);
         }
 
         // Trigger detection
@@ -598,9 +602,17 @@ struct theKICK : Module {
             ampEnvTime = 0.f;
             fbY1 = 0.f;
             fbY2 = 0.f;
+            prevSampleVal = 0.f;
             for (int i = 0; i < 4; i++) lpfState[i] = 0.f;
             samplePlayPos = 0.f;
             active = true;
+
+            // Force oversampling to start a fresh block immediately
+            // Without this, stale samples from the previous block play
+            // for up to BLOCK_SIZE-1 samples after trigger, causing
+            // delayed onset and reduced amplitude on first kick
+            processPosition = BLOCK_SIZE;
+            downFilter.reset();
 
             // Sample accent level on trigger
             if (inputs[ACCENT_INPUT].isConnected()) {
@@ -730,7 +742,7 @@ struct theKICKModeOverlay : OpaqueWidget {
 
     void onButton(const event::Button& e) override {
         if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-            if (module) {
+            if (module && module->hasSample) {
                 module->modeValue = (module->modeValue + 1) % 4;
                 module->params[theKICK::MODE_PARAM].setValue((float)module->modeValue);
             }
@@ -738,10 +750,10 @@ struct theKICKModeOverlay : OpaqueWidget {
             return;
         }
         if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {
-            if (module) {
+            if (module && module->hasSample) {
                 ui::Menu* menu = createMenu();
-                menu->addChild(createMenuLabel("Waveshaper Mode"));
-                const char* names[] = {"Saturate", "Fold", "Asymmetric", "Destroy"};
+                menu->addChild(createMenuLabel("FM Mode"));
+                const char* names[] = {"PM", "RM", "AM", "SYNC"};
                 for (int i = 0; i < 4; i++) {
                     menu->addChild(createMenuItem(names[i], CHECKMARK(module->modeValue == i), [=]() {
                         module->modeValue = i;
@@ -889,20 +901,25 @@ struct theKICKDynamicModeLabel : TransparentWidget {
     }
 
     void draw(const DrawArgs &args) override {
-        const char* modeNames[] = {"SATURATE", "FOLD", "ASYMMETRIC", "DESTROY"};
-        // Colors matching LED: amber, rose, sage, periwinkle
+        const char* modeNames[] = {"PM", "RM", "AM", "SYNC"};
+        // Colors matching LED: amber, rose, green, blue
         const NVGcolor modeColors[] = {
             nvgRGB(227, 187, 10),   // vivid amber
             nvgRGB(227, 21, 26),    // vivid rose
             nvgRGB(21, 209, 33),    // vivid green
             nvgRGB(26, 33, 227),    // vivid blue
         };
-        int mode = 0;
-        if (module) {
-            mode = clamp(module->modeValue, 0, 3);
+
+        std::string text;
+        NVGcolor color;
+        if (module && module->hasSample) {
+            int mode = clamp(module->modeValue, 0, 3);
+            text = modeNames[mode];
+            color = modeColors[mode];
+        } else {
+            text = "FM";
+            color = nvgRGB(255, 255, 255);
         }
-        std::string text = modeNames[mode];
-        NVGcolor color = modeColors[mode];
 
         nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
@@ -911,18 +928,22 @@ struct theKICKDynamicModeLabel : TransparentWidget {
         float cx = box.size.x / 2.f;
         float cy = box.size.y / 2.f;
 
-        // White outline: draw text offset in 4 directions
-        NVGcolor outline = nvgRGB(255, 255, 255);
-        nvgFillColor(args.vg, outline);
-        float off = 0.8f;
-        nvgText(args.vg, cx - off, cy, text.c_str(), NULL);
-        nvgText(args.vg, cx + off, cy, text.c_str(), NULL);
-        nvgText(args.vg, cx, cy - off, text.c_str(), NULL);
-        nvgText(args.vg, cx, cy + off, text.c_str(), NULL);
-
-        // Colored fill on top
-        nvgFillColor(args.vg, color);
-        nvgText(args.vg, cx, cy, text.c_str(), NULL);
+        if (module && module->hasSample) {
+            // With sample: white outline + colored fill
+            NVGcolor outline = nvgRGB(255, 255, 255);
+            nvgFillColor(args.vg, outline);
+            float off = 0.8f;
+            nvgText(args.vg, cx - off, cy, text.c_str(), NULL);
+            nvgText(args.vg, cx + off, cy, text.c_str(), NULL);
+            nvgText(args.vg, cx, cy - off, text.c_str(), NULL);
+            nvgText(args.vg, cx, cy + off, text.c_str(), NULL);
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, cx, cy, text.c_str(), NULL);
+        } else {
+            // No sample: plain white text, no outline
+            nvgFillColor(args.vg, color);
+            nvgText(args.vg, cx, cy, text.c_str(), NULL);
+        }
     }
 };
 
@@ -1018,11 +1039,18 @@ struct theKICKWidget : ModuleWidget {
 
         // --- Right column: Timbre section (WhiteKnob 30px) ---
 
-        // Row 1: FOLD knob + CV (left-below) + MODE (right-below, symmetric)
-        foldKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row1Y), module, theKICK::FOLD_PARAM);
-        addParam(foldKnob);
-        // FOLD CV input: symmetric left-below knob
-        addInput(createInputCentered<PJ301MPort>(Vec(colR - foldSubOffset, row1Y + cvOffset), module, theKICK::FOLD_CV_INPUT));
+        // Row 1: SAMPLE/FM knob + LOAD button (between label and knob) + CV (left-below) + MODE LED (right-below)
+        sampleKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row1Y), module, theKICK::SAMPLE_PARAM);
+        addParam(sampleKnob);
+        // LOAD button between dynamic label and knob
+        {
+            auto* loadBtn = new theKICKLoadButton();
+            loadBtn->box.pos = Vec(colR - 14.f, row1Y - 17.f);
+            loadBtn->module = module;
+            addChild(loadBtn);
+        }
+        // SAMPLE CV input: symmetric left-below knob
+        addInput(createInputCentered<PJ301MPort>(Vec(colR - foldSubOffset, row1Y + cvOffset), module, theKICK::SAMPLE_CV_INPUT));
         // MODE LED + Button + overlay: symmetric right-below knob
         addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(colR + foldSubOffset, row1Y + cvOffset), module, theKICK::MODE_LIGHT_RED));
         addParam(createParamCentered<VCVButton>(Vec(colR + foldSubOffset, row1Y + cvOffset), module, theKICK::MODE_PARAM));
@@ -1033,28 +1061,20 @@ struct theKICKWidget : ModuleWidget {
             addChild(overlay);
         }
 
-        // Row 2: SAMPLE knob + LOAD button (above) + SAMPLE CV (below)
-        sampleKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row2Y), module, theKICK::SAMPLE_PARAM);
-        addParam(sampleKnob);
-        // LOAD button at original label position (above knob)
-        {
-            auto* loadBtn = new theKICKLoadButton();
-            loadBtn->box.pos = Vec(colR - 14.f, row2Y - labelOffset - 1.f);
-            loadBtn->module = module;
-            addChild(loadBtn);
-        }
-        // SAMPLE CV input (below knob)
-        addInput(createInputCentered<PJ301MPort>(Vec(colR, row2Y + cvOffset), module, theKICK::SAMPLE_CV_INPUT));
-
-        // Row 3: FB knob + CV
-        fbKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row3Y), module, theKICK::FB_PARAM);
+        // Row 2: FB knob + CV
+        fbKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row2Y), module, theKICK::FB_PARAM);
         addParam(fbKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colR, row3Y + cvOffset), module, theKICK::FB_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(colR, row2Y + cvOffset), module, theKICK::FB_CV_INPUT));
 
-        // Row 4: TONE knob + CV
-        toneKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row4Y), module, theKICK::TONE_PARAM);
+        // Row 3: TONE knob + CV
+        toneKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row3Y), module, theKICK::TONE_PARAM);
         addParam(toneKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colR, row4Y + cvOffset), module, theKICK::TONE_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(colR, row3Y + cvOffset), module, theKICK::TONE_CV_INPUT));
+
+        // Row 4: DRIVE knob + CV
+        foldKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row4Y), module, theKICK::FOLD_PARAM);
+        addParam(foldKnob);
+        addInput(createInputCentered<PJ301MPort>(Vec(colR, row4Y + cvOffset), module, theKICK::FOLD_CV_INPUT));
 
         // --- I/O in white area (3 jacks: TRIG left, ACCENT center, OUT right) ---
         float ioLeft = 22.f;
@@ -1075,18 +1095,19 @@ struct theKICKWidget : ModuleWidget {
         addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "BEND", 10.f, nvgRGB(255, 255, 255), true));
         addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "DECAY", 10.f, nvgRGB(255, 255, 255), true));
 
-        // Right column labels (white, 20.f bold, Y < 330)
-        // Row 1: Dynamic mode label (SATURATE/FOLD/ASYMMETRIC/DESTROY)
+        // Right column labels (white, 10.f bold, Y < 330)
+        // Row 1: Dynamic FM label (mode name when sample loaded, "FM" otherwise)
         {
             auto* modeLabel = new theKICKDynamicModeLabel(Vec(colR - labelW / 2.f, row1Y - labelOffset), Vec(labelW, labelH), 10.f, true);
             modeLabel->module = module;
             addChild(modeLabel);
         }
-        // Row 2: No SAMPLE label (replaced by LOAD button above knob)
-        // Row 3: FEEDBACK
-        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "FEEDBACK", 10.f, nvgRGB(255, 255, 255), true));
-        // Row 4: TONE
-        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "TONE", 10.f, nvgRGB(255, 255, 255), true));
+        // Row 2: FEEDBACK
+        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row2Y - labelOffset), Vec(labelW, labelH), "FEEDBACK", 10.f, nvgRGB(255, 255, 255), true));
+        // Row 3: TONE
+        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "TONE", 10.f, nvgRGB(255, 255, 255), true));
+        // Row 4: DRIVE
+        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "DRIVE", 10.f, nvgRGB(255, 255, 255), true));
 
         // I/O area labels (Y >= 330, on white background)
         addChild(new theKICKTextLabel(Vec(ioLeft - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "TRIG", 10.f, nvgRGB(0, 0, 0), true));
