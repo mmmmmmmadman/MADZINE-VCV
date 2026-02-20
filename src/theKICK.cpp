@@ -901,48 +901,97 @@ struct theKICKDynamicModeLabel : TransparentWidget {
     }
 
     void draw(const DrawArgs &args) override {
-        const char* modeNames[] = {"PM", "RM", "AM", "SYNC"};
-        // Colors matching LED: amber, rose, green, blue
-        const NVGcolor modeColors[] = {
-            nvgRGB(227, 187, 10),   // vivid amber
-            nvgRGB(227, 21, 26),    // vivid rose
-            nvgRGB(21, 209, 33),    // vivid green
-            nvgRGB(26, 33, 227),    // vivid blue
-        };
+        float cx = box.size.x / 2.f;
 
-        std::string text;
-        NVGcolor color;
-        if (module && module->hasSample) {
-            int mode = clamp(module->modeValue, 0, 3);
-            text = modeNames[mode];
-            color = modeColors[mode];
-        } else {
-            text = "FM";
-            color = nvgRGB(255, 255, 255);
-        }
-
-        nvgFontSize(args.vg, fontSize);
         nvgFontFaceId(args.vg, APP->window->uiFont->handle);
         nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
 
-        float cx = box.size.x / 2.f;
-        float cy = box.size.y / 2.f;
-
         if (module && module->hasSample) {
-            // With sample: white outline + colored fill
+            const char* modeNames[] = {"PM", "RM", "AM", "SYNC"};
+            const NVGcolor modeColors[] = {
+                nvgRGB(227, 187, 10),
+                nvgRGB(227, 21, 26),
+                nvgRGB(21, 209, 33),
+                nvgRGB(26, 33, 227),
+            };
+            int mode = clamp(module->modeValue, 0, 3);
+            std::string text = modeNames[mode];
+            NVGcolor color = modeColors[mode];
+
+            // White outline + colored fill, rendered at label position (top of widget)
+            float labelY = 7.f;  // center of original 14px label area
+            nvgFontSize(args.vg, fontSize);
             NVGcolor outline = nvgRGB(255, 255, 255);
             nvgFillColor(args.vg, outline);
             float off = 0.8f;
-            nvgText(args.vg, cx - off, cy, text.c_str(), NULL);
-            nvgText(args.vg, cx + off, cy, text.c_str(), NULL);
-            nvgText(args.vg, cx, cy - off, text.c_str(), NULL);
-            nvgText(args.vg, cx, cy + off, text.c_str(), NULL);
+            nvgText(args.vg, cx - off, labelY, text.c_str(), NULL);
+            nvgText(args.vg, cx + off, labelY, text.c_str(), NULL);
+            nvgText(args.vg, cx, labelY - off, text.c_str(), NULL);
+            nvgText(args.vg, cx, labelY + off, text.c_str(), NULL);
             nvgFillColor(args.vg, color);
-            nvgText(args.vg, cx, cy, text.c_str(), NULL);
+            nvgText(args.vg, cx, labelY, text.c_str(), NULL);
         } else {
-            // No sample: plain white text, no outline
-            nvgFillColor(args.vg, color);
-            nvgText(args.vg, cx, cy, text.c_str(), NULL);
+            // No sample: 3-line overlay text covering knob+CV area
+            nvgFontSize(args.vg, 10.f);
+            nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+            float midY = box.size.y / 2.f;
+            nvgText(args.vg, cx, midY - 13.f, "Load wav", NULL);
+            nvgText(args.vg, cx, midY, "to activate", NULL);
+            nvgText(args.vg, cx, midY + 13.f, "dynamic FM", NULL);
+        }
+    }
+};
+
+// ============================================================================
+// Dimmable FM knob — grayed out and non-interactive when no sample loaded
+// ============================================================================
+
+struct theKICKFMKnob : madzine::widgets::WhiteKnob {
+    theKICK* kickModule = nullptr;
+
+    void draw(const DrawArgs& args) override {
+        if (kickModule && !kickModule->hasSample) {
+            nvgSave(args.vg);
+            nvgGlobalAlpha(args.vg, 0.25f);
+            WhiteKnob::draw(args);
+            nvgRestore(args.vg);
+        } else {
+            WhiteKnob::draw(args);
+        }
+    }
+
+    void onButton(const event::Button& e) override {
+        if (kickModule && !kickModule->hasSample) {
+            e.consume(this);
+            return;
+        }
+        WhiteKnob::onButton(e);
+    }
+
+    void onDragStart(const event::DragStart& e) override {
+        if (kickModule && !kickModule->hasSample) {
+            e.consume(this);
+            return;
+        }
+        WhiteKnob::onDragStart(e);
+    }
+};
+
+// ============================================================================
+// Dimmable port — grayed out when no sample loaded (still allows connection)
+// ============================================================================
+
+struct theKICKDimmablePort : PJ301MPort {
+    theKICK* kickModule = nullptr;
+
+    void draw(const DrawArgs& args) override {
+        if (kickModule && !kickModule->hasSample) {
+            nvgSave(args.vg);
+            nvgGlobalAlpha(args.vg, 0.25f);
+            PJ301MPort::draw(args);
+            nvgRestore(args.vg);
+        } else {
+            PJ301MPort::draw(args);
         }
     }
 };
@@ -959,7 +1008,7 @@ struct theKICKWidget : ModuleWidget {
     madzine::widgets::StandardBlackKnob* bendKnob = nullptr;
     madzine::widgets::StandardBlackKnob* decayKnob = nullptr;
     madzine::widgets::WhiteKnob* foldKnob = nullptr;
-    madzine::widgets::WhiteKnob* sampleKnob = nullptr;
+    theKICKFMKnob* sampleKnob = nullptr;
     madzine::widgets::WhiteKnob* fbKnob = nullptr;
     madzine::widgets::WhiteKnob* toneKnob = nullptr;
 
@@ -970,25 +1019,26 @@ struct theKICKWidget : ModuleWidget {
         box.size = Vec(8 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // ================================================================
-        // Layout constants — Two-column layout
-        // Left column: Synthesis (black knobs) — PITCH, SWEEP, BEND, DECAY
-        // Right column: Timbre (white knobs) — FOLD, SAMPLE, FB, TONE
+        // Layout constants
+        // Row 1-3: Two-column layout (left=synthesis, right=timbre)
+        // Row 4: Three-column layout (DECAY, TONE, DRIVE)
         // ================================================================
-        float colL = 32.f;    // Left column center X
-        float colR = 90.f;    // Right column center X
+        float colL = 32.f;    // Left column center X (Row 1-3)
+        float colR = 90.f;    // Right column center X (Row 1-2)
 
-        // Vertical positions: 4 rows (adjusted spacing)
-        // Row 1 & Row 3/4 shifted toward Row 2 by 2px each
-        float row1Y = 60.f;   // Row 1 knob center (was 58, +2)
-        float row2Y = 135.f;  // Row 2 knob center (unchanged)
-        float row3Y = 210.f;  // Row 3 knob center (was 212, -2)
-        float row4Y = 285.f;  // Row 4 knob center (was 289, -4 toward row3)
+        // Row 4 three-column X positions (30px knobs, 37px spacing)
+        float col4L = 24.f;   // DECAY
+        float col4M = 61.f;   // TONE
+        float col4R = 98.f;   // DRIVE
 
-        float cvOffset = 28.f;   // Knob center to CV port center (15+12+1)
-        float labelOffset = 30.f; // 30px knob label offset (per vcv-layout rule 3)
+        // Vertical positions
+        float row1Y = 60.f;   // Row 1: PITCH + LOAD/MODE
+        float row2Y = 135.f;  // Row 2: SWEEP + FM
+        float row3Y = 210.f;  // Row 3: BEND + FEEDBACK
+        float row4Y = 288.f;  // Row 4: DECAY + TONE + DRIVE
 
-        // Symmetric offset for FOLD sub-elements (CV left, MODE right)
-        float foldSubOffset = 17.f;
+        float cvOffset = 28.f;    // Knob center to CV port center
+        float labelOffset = 28.f; // 30px knob label offset (radius 15 + label height 10 + gap 3)
 
         // Output area
         float whiteBoxY = 330.f;
@@ -1015,68 +1065,71 @@ struct theKICKWidget : ModuleWidget {
         // Layer 3: Knobs, ports, buttons (interactive elements)
         // ================================================================
 
-        // --- Left column: Synthesis section (StandardBlackKnob 30px) ---
+        // --- Row 1: PITCH (left) + LOAD/MODE (right) ---
 
-        // Row 1: PITCH knob + CV
         pitchKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(colL, row1Y), module, theKICK::PITCH_PARAM);
         addParam(pitchKnob);
         addInput(createInputCentered<PJ301MPort>(Vec(colL, row1Y + cvOffset), module, theKICK::PITCH_CV_INPUT));
 
-        // Row 2: SWEEP knob + CV
-        sweepKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(colL, row2Y), module, theKICK::SWEEP_PARAM);
-        addParam(sweepKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colL, row2Y + cvOffset), module, theKICK::SWEEP_CV_INPUT));
-
-        // Row 3: BEND knob + CV
-        bendKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(colL, row3Y), module, theKICK::BEND_PARAM);
-        addParam(bendKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colL, row3Y + cvOffset), module, theKICK::BEND_CV_INPUT));
-
-        // Row 4: DECAY knob + CV
-        decayKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(colL, row4Y), module, theKICK::DECAY_PARAM);
-        addParam(decayKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colL, row4Y + cvOffset), module, theKICK::DECAY_CV_INPUT));
-
-        // --- Right column: Timbre section (WhiteKnob 30px) ---
-
-        // Row 1: SAMPLE/FM knob + LOAD button (between label and knob) + CV (left-below) + MODE LED (right-below)
-        sampleKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row1Y), module, theKICK::SAMPLE_PARAM);
-        addParam(sampleKnob);
-        // LOAD button between dynamic label and knob
+        // LOAD button — display area on Row 1 right side
         {
             auto* loadBtn = new theKICKLoadButton();
-            loadBtn->box.pos = Vec(colR - 14.f, row1Y - 17.f);
+            loadBtn->box.pos = Vec(colR - 23.f, 53.f);
+            loadBtn->box.size = Vec(46.f, 18.f);
             loadBtn->module = module;
             addChild(loadBtn);
         }
-        // SAMPLE CV input: symmetric left-below knob
-        addInput(createInputCentered<PJ301MPort>(Vec(colR - foldSubOffset, row1Y + cvOffset), module, theKICK::SAMPLE_CV_INPUT));
-        // MODE LED + Button + overlay: symmetric right-below knob
-        addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(colR + foldSubOffset, row1Y + cvOffset), module, theKICK::MODE_LIGHT_RED));
-        addParam(createParamCentered<VCVButton>(Vec(colR + foldSubOffset, row1Y + cvOffset), module, theKICK::MODE_PARAM));
+
+        // MODE LED + Button + overlay — below LOAD button
+        addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(Vec(colR, 86.f), module, theKICK::MODE_LIGHT_RED));
+        addParam(createParamCentered<VCVButton>(Vec(colR, 86.f), module, theKICK::MODE_PARAM));
         {
             auto* overlay = new theKICKModeOverlay();
-            overlay->box.pos = Vec(colR + foldSubOffset - 8.f, row1Y + cvOffset - 8.f);
+            overlay->box.pos = Vec(colR - 8.f, 86.f - 8.f);
             overlay->module = module;
             addChild(overlay);
         }
 
-        // Row 2: FB knob + CV
-        fbKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row2Y), module, theKICK::FB_PARAM);
+        // --- Row 2: SWEEP (left) + FM (right) ---
+
+        sweepKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(colL, row2Y), module, theKICK::SWEEP_PARAM);
+        addParam(sweepKnob);
+        addInput(createInputCentered<PJ301MPort>(Vec(colL, row2Y + cvOffset), module, theKICK::SWEEP_CV_INPUT));
+
+        sampleKnob = createParamCentered<theKICKFMKnob>(Vec(colR, row2Y), module, theKICK::SAMPLE_PARAM);
+        sampleKnob->kickModule = module;
+        addParam(sampleKnob);
+        {
+            auto* fmPort = createInputCentered<theKICKDimmablePort>(Vec(colR, row2Y + cvOffset), module, theKICK::SAMPLE_CV_INPUT);
+            fmPort->kickModule = module;
+            addInput(fmPort);
+        }
+
+        // --- Row 3: BEND (left) + FEEDBACK (right) ---
+
+        bendKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(colL, row3Y), module, theKICK::BEND_PARAM);
+        addParam(bendKnob);
+        addInput(createInputCentered<PJ301MPort>(Vec(colL, row3Y + cvOffset), module, theKICK::BEND_CV_INPUT));
+
+        fbKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row3Y), module, theKICK::FB_PARAM);
         addParam(fbKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colR, row2Y + cvOffset), module, theKICK::FB_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(colR, row3Y + cvOffset), module, theKICK::FB_CV_INPUT));
 
-        // Row 3: TONE knob + CV
-        toneKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row3Y), module, theKICK::TONE_PARAM);
+        // --- Row 4: DECAY (left) + TONE (center) + DRIVE (right) ---
+
+        decayKnob = createParamCentered<madzine::widgets::StandardBlackKnob>(Vec(col4L, row4Y), module, theKICK::DECAY_PARAM);
+        addParam(decayKnob);
+        addInput(createInputCentered<PJ301MPort>(Vec(col4L, row4Y + cvOffset), module, theKICK::DECAY_CV_INPUT));
+
+        toneKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(col4M, row4Y), module, theKICK::TONE_PARAM);
         addParam(toneKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colR, row3Y + cvOffset), module, theKICK::TONE_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(col4M, row4Y + cvOffset), module, theKICK::TONE_CV_INPUT));
 
-        // Row 4: DRIVE knob + CV
-        foldKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(colR, row4Y), module, theKICK::FOLD_PARAM);
+        foldKnob = createParamCentered<madzine::widgets::WhiteKnob>(Vec(col4R, row4Y), module, theKICK::FOLD_PARAM);
         addParam(foldKnob);
-        addInput(createInputCentered<PJ301MPort>(Vec(colR, row4Y + cvOffset), module, theKICK::FOLD_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(col4R, row4Y + cvOffset), module, theKICK::FOLD_CV_INPUT));
 
-        // --- I/O in white area (3 jacks: TRIG left, ACCENT center, OUT right) ---
+        // --- I/O in white area (3 ports: TRIG left, ACCENT center, OUT right) ---
         float ioLeft = 22.f;
         float ioCenter = box.size.x / 2.f;
         float ioRight = box.size.x - 22.f;
@@ -1089,25 +1142,26 @@ struct theKICKWidget : ModuleWidget {
         // Layer 4: Labels (top layer — added last so never obscured)
         // ================================================================
 
-        // Left column labels (white, 20.f bold, Y < 330)
+        // Row 1 labels
         addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row1Y - labelOffset), Vec(labelW, labelH), "PITCH", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row2Y - labelOffset), Vec(labelW, labelH), "SWEEP", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "BEND", 10.f, nvgRGB(255, 255, 255), true));
-        addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "DECAY", 10.f, nvgRGB(255, 255, 255), true));
 
-        // Right column labels (white, 10.f bold, Y < 330)
-        // Row 1: Dynamic FM label (mode name when sample loaded, "FM" otherwise)
+        // Row 2 labels
+        addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row2Y - labelOffset), Vec(labelW, labelH), "SWEEP", 10.f, nvgRGB(255, 255, 255), true));
         {
-            auto* modeLabel = new theKICKDynamicModeLabel(Vec(colR - labelW / 2.f, row1Y - labelOffset), Vec(labelW, labelH), 10.f, true);
+            // Enlarged widget: covers from label top (row2Y-28) to below CV port (row2Y+28+12), height=68
+            auto* modeLabel = new theKICKDynamicModeLabel(Vec(colR - labelW / 2.f, row2Y - labelOffset), Vec(labelW, 68.f), 10.f, true);
             modeLabel->module = module;
             addChild(modeLabel);
         }
-        // Row 2: FEEDBACK
-        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row2Y - labelOffset), Vec(labelW, labelH), "FEEDBACK", 10.f, nvgRGB(255, 255, 255), true));
-        // Row 3: TONE
-        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "TONE", 10.f, nvgRGB(255, 255, 255), true));
-        // Row 4: DRIVE
-        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "DRIVE", 10.f, nvgRGB(255, 255, 255), true));
+
+        // Row 3 labels
+        addChild(new theKICKTextLabel(Vec(colL - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "BEND", 10.f, nvgRGB(255, 255, 255), true));
+        addChild(new theKICKTextLabel(Vec(colR - labelW / 2.f, row3Y - labelOffset), Vec(labelW, labelH), "FEEDBACK", 10.f, nvgRGB(255, 255, 255), true));
+
+        // Row 4 labels (three columns)
+        addChild(new theKICKTextLabel(Vec(col4L - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "DECAY", 10.f, nvgRGB(255, 255, 255), true));
+        addChild(new theKICKTextLabel(Vec(col4M - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "TONE", 10.f, nvgRGB(255, 255, 255), true));
+        addChild(new theKICKTextLabel(Vec(col4R - labelW / 2.f, row4Y - labelOffset), Vec(labelW, labelH), "DRIVE", 10.f, nvgRGB(255, 255, 255), true));
 
         // I/O area labels (Y >= 330, on white background)
         addChild(new theKICKTextLabel(Vec(ioLeft - labelW / 2.f, ioY - 24.f), Vec(labelW, labelH), "TRIG", 10.f, nvgRGB(0, 0, 0), true));
