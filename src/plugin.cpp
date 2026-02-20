@@ -144,4 +144,5 @@ void init(Plugin* p) {
     p->addModel(modelPortal);
     p->addModel(modelDrummmmmmer);
     p->addModel(modeltheKICK);
+    p->addModel(modelManual);
 }

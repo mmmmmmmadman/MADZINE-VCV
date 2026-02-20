@@ -463,7 +463,7 @@ struct PPaTTTerningWidget : ModuleWidget {
 
     PPaTTTerningWidget(PPaTTTerning* module) {
         setModule(module);
-        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
+        panelThemeHelper.init(this, "4HP", module ? &module->panelContrast : nullptr);
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
         float centerX = box.size.x / 2;
         

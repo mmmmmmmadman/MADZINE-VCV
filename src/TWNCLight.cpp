@@ -211,6 +211,12 @@ struct TWNCLight : Module {
     float drumDecayCvMod = 0.0f;
     float hatsDecayCvMod = 0.0f;
 
+    // Hats delay state (moved from static locals in process() to avoid multi-instance interference)
+    int hatsDelayCounter = 0;
+    bool hatsDelayActive = false;
+    bool hatsStarted = false;
+    int lastVcaShift = -1;
+
     float globalClockSeconds = 0.5f;
     float secondsSinceLastClock = -1.0f;
     int globalClockCount = 0;
@@ -405,6 +411,10 @@ struct TWNCLight : Module {
         }
         quarterClock.reset();
         mainVCA.reset();
+        hatsDelayCounter = 0;
+        hatsDelayActive = false;
+        hatsStarted = false;
+        lastVcaShift = -1;
     }
 
     json_t* dataToJson() override {
@@ -462,10 +472,8 @@ struct TWNCLight : Module {
         bool vcaTriggered = quarterClock.processStep(globalClockTriggered, globalLength, vcaShift);
         float vcaTrigger = quarterClock.getTrigger(args.sampleTime);
 
-        static int hatsDelayCounter = 0;
-        static bool hatsDelayActive = false;
-        static bool hatsStarted = false;
-        static int lastVcaShift = -1;
+        // hatsDelayCounter, hatsDelayActive, hatsStarted, lastVcaShift
+        // are now instance member variables (no longer static)
 
         int currentHatsShift = (int)std::round(params[TRACK2_SHIFT_PARAM].getValue());
         
@@ -586,7 +594,7 @@ struct TWNCLightWidget : ModuleWidget {
 
     TWNCLightWidget(TWNCLight* module) {
         setModule(module);
-        panelThemeHelper.init(this, "8HP", module ? &module->panelContrast : nullptr);
+        panelThemeHelper.init(this, "4HP", module ? &module->panelContrast : nullptr);
         
         box.size = Vec(4 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 

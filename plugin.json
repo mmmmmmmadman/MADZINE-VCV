@@ -233,6 +233,12 @@
       "name": "theKICK",
       "description": "Kick drum synthesizer with pitch sweep, bend curve and tanh waveshaper",
       "tags": ["Drum", "Synth voice"]
+    },
+    {
+      "slug": "Manual",
+      "name": "Manual",
+      "description": "Interactive help display showing module descriptions when hovering MADZINE modules",
+      "tags": ["Utility", "Visual"]
     }
   ]
 }

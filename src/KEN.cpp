@@ -64,7 +64,7 @@ struct KEN : Module {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         
         configParam(LEVEL_PARAM, 0.f, 1.f, 0.7f, "Level", "%", 0.f, 100.f);
-        
+
         configInput(INPUT_1, "1");
         configInput(INPUT_2, "2");
         configInput(INPUT_3, "3");
@@ -73,7 +73,7 @@ struct KEN : Module {
         configInput(INPUT_6, "6");
         configInput(INPUT_7, "7");
         configInput(INPUT_8, "8");
-        
+
         configOutput(LEFT_OUTPUT, "Left");
         configOutput(RIGHT_OUTPUT, "Right");
 
