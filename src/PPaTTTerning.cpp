@@ -2,11 +2,12 @@
 #include "widgets/Knobs.hpp"
 #include "widgets/PanelTheme.hpp"
 
+namespace {
 struct DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         float value = getValue();
         int steps, primaryKnobs;
-        
+
         if (value < 0.2f) {
             steps = 8 + (int)(value * 20);
             primaryKnobs = 2;
@@ -21,10 +22,11 @@ struct DensityParamQuantity : ParamQuantity {
             primaryKnobs = 5;
         }
         steps = clamp(steps, 8, 48);
-        
+
         return string::f("%d knobs, %d steps", primaryKnobs, steps);
     }
 };
+} // namespace
 
 struct PPaTTTerning : Module {
     int panelTheme = madzineDefaultTheme;

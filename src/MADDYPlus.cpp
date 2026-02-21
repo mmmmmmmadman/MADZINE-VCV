@@ -530,6 +530,7 @@ struct HorizontalLine : Widget {
     }
 };
 
+namespace {
 struct DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
         float value = getValue();
@@ -541,6 +542,7 @@ struct DensityParamQuantity : ParamQuantity {
         return "Density";
     }
 };
+} // namespace
 
 struct Ch2DensityParamQuantity : ParamQuantity {
     std::string getDisplayValueString() override {
