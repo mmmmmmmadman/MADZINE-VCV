@@ -1,7 +1,7 @@
 # MADZINE VCV Rack 開發指南
 
-版本：2.4.3
-更新日期：2026-01-21
+版本：2.5.0
+更新日期：2026-02-21
 
 ---
 
@@ -46,7 +46,7 @@ Task tool with subagent_type="ui-layout"
 
 ### 標準流程
 ```bash
-export RACK_DIR=~/Documents/VCV-Dev/Rack-SDK
+export RACK_DIR=~/Documents/Tools/Rack-SDK
 make clean && make && make install
 ```
 
@@ -133,7 +133,7 @@ MADZINE/
 
 ### 找不到 rack.hpp
 ```bash
-export RACK_DIR=~/Documents/VCV-Dev/Rack-SDK
+export RACK_DIR=~/Documents/Tools/Rack-SDK
 ```
 
 ### 面板主題不切換
@@ -232,6 +232,16 @@ Output Row 2: Y = 368
 
 - GitHub: https://github.com/mmmmmmmadman/MADZINE-VCV
 - Email: madzinetw@gmail.com
+
+---
+
+## DSP 設計原則
+
+### 乾濕比 (Dry/Wet) 規則
+
+- 除非有獨立的乾濕比旋鈕，否則一律實作為 **100% wet**
+- 如果實作中需要使用乾濕混合（crossfade、dry/wet blend），必須先向使用者確認
+- 不得擅自加入隱式的乾濕比交叉混合來「緩和」效果
 
 ---
 
