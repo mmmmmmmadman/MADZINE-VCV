@@ -67,7 +67,7 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Panel Theme", {"Light / Dark panel appearance", "Light / Dark 面板外觀", "Light / Dark パネル外観"}});
         data["ADGenerator"] = std::move(m);
     }
-    // ALEXANDERPLATZ (29 entries)
+    // ALEXANDERPLATZ (39 entries)
     {
         ModuleHelpData m;
         m.name = "ALEXANDERPLATZ";
@@ -81,7 +81,7 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Processing", {"Applied to summed stereo output before final limiting", "Applied to summed stereo output before final limiting", "Applied to summed stereo output before final limiting"}});
         m.entries.push_back({"INPUT L/R", {"Stereo audio input (polyphonic). If only L connected, a 20ms delayed copy is sent to R (Haas effect stereo widening).", "Stereo Audio 輸入（Polyphonic）。若僅連接 L，以 20ms 延遲複製至 R（Haas Effect Stereo Widening）。", "ステレオオーディオ入力（ポリフォニック）。Lのみ接続時、20ms遅延コピーをRに送出（Haasエフェクトステレオワイドニング）。"}});
         m.entries.push_back({"LEVEL Knob", {"Track gain 0-200% (default: 100%)", "軌道 Gain 0-200%（預設: 100%）", "Track gain 0-200% (default: 100%)"}});
-        m.entries.push_back({"LEVEL CV", {"Gain modulation input (\\u00b110V adds \\u00b1100% to knob value, final gain clamped 0.0-2.0)", "Gain 調變輸入（±10V 加減 Knob 值 ±100%，最終 Gain 限制 0.0-2.0）", "ゲイン変調入力（±10Vでノブ値に±100%加算、最終ゲイン0.0-2.0にクランプ）"}});
+        m.entries.push_back({"LEVEL CV", {"Gain modulation input (\\u00b110V adds \\u00b1100% to knob value, final gain clamped 0.0-2.0)", "聲道音量 CV 輸入。", "チャンネル音量のCV入力。"}});
         m.entries.push_back({"DUCK Knob", {"Sidechain ducking depth 0-100%", "Sidechain Ducking 深度 0-100%", "Sidechain ducking depth 0-100%"}});
         m.entries.push_back({"DUCK Input", {"Sidechain control input (expects envelope 0-10V)", "Sidechain 控制輸入（預期 Envelope 0-10V）", "Sidechain control input (expects envelope 0-10V)"}});
         m.entries.push_back({"MUTE Button", {"Toggle track mute with red LED indicator", "切換軌道 Mute，紅色 LED 指示", "Toggle track mute with red LED indicator"}});
@@ -101,6 +101,16 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Chain Right", {"Right channel chain input for daisy-chaining multiple mixer modules.", "右聲道 Chain 輸入，用於串接多個混音器模組。", "複数のミキサーモジュールをデイジーチェーン接続するための右チャンネルチェイン入力。"}});
         m.entries.push_back({"Mix Left", {"Main stereo mix left output. Sum of all tracks, EQ, and chain input.", "主立體聲混音左輸出。所有軌道、EQ 與 Chain 輸入的總和。", "メインステレオミックス左出力。全トラック、EQ、チェイン入力の合計。"}});
         m.entries.push_back({"Mix Right", {"Main stereo mix right output. Sum of all tracks, EQ, and chain input.", "主立體聲混音右輸出。所有軌道、EQ 與 Chain 輸入的總和。", "メインステレオミックス右出力。全トラック、EQ、チェイン入力の合計。"}});
+        m.entries.push_back({"Left", {"Per-channel stereo audio input (left channel).", "各聲道立體聲音訊輸入（左聲道）。", "チャンネル別ステレオオーディオ入力（左チャンネル）。"}});
+        m.entries.push_back({"Right", {"Per-channel stereo audio input (right channel).", "各聲道立體聲音訊輸入（右聲道）。", "チャンネル別ステレオオーディオ入力（右チャンネル）。"}});
+        m.entries.push_back({"Level", {"Per-channel volume control (0-200%, default 100%).", "各聲道音量控制（0-200%，預設 100%）。", "チャンネル別音量コントロール（0-200%、デフォルト100%）。"}});
+        m.entries.push_back({"Duck", {"Sidechain duck amount (0-100%).", "Sidechain Ducking 量（0-100%）。", "サイドチェインダック量（0-100%）。"}});
+        m.entries.push_back({"Mute", {"Toggle channel mute.", "切換聲道靜音。", "チャンネルミュート切替。"}});
+        m.entries.push_back({"Solo", {"Toggle channel solo (exclusive mode available in right-click menu).", "切換聲道 Solo（右鍵選單可啟用 Exclusive 模式）。", "チャンネルソロ切替（右クリックメニューでエクスクルーシブモード利用可能）。"}});
+        m.entries.push_back({"Level CV", {"CV input for channel volume control.", "聲道音量 CV 輸入。", "チャンネル音量のCV入力。"}});
+        m.entries.push_back({"Mute Trigger", {"Trigger input to toggle mute state.", "切換靜音狀態的 Trigger 輸入。", "ミュート状態を切り替えるトリガー入力。"}});
+        m.entries.push_back({"Solo Trigger", {"Trigger input to toggle solo state.", "切換 Solo 狀態的 Trigger 輸入。", "ソロ状態を切り替えるトリガー入力。"}});
+        m.entries.push_back({"Master EQ", {"8-band parametric EQ (63/125/250/500/1K/2K/4K/8K Hz), \\u00b112dB per band.", "8 頻段參數型 EQ（63/125/250/500/1K/2K/4K/8K Hz），每頻段 \\u00b112dB。", "8バンドパラメトリックEQ（63/125/250/500/1K/2K/4K/8K Hz）、バンドあたり\\u00b112dB。"}});
         data["ALEXANDERPLATZ"] = std::move(m);
     }
     // DECAPyramid (47 entries)
@@ -147,10 +157,10 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Insert Return", {"Return from external processing per track (passes through when unpatched)", "各軌外部處理後 Return（未接線時訊號直接通過）", "トラック別インサートリターン入力。未接続時は信号が直接通過。"}});
         m.entries.push_back({"Send A", {"Mono aux send A output to external effects", "Mono Aux Send A 至外部效果器", "ポストフェーダーAuxセンドAレベル（0.0〜1.0、デフォルト: 0、表示: %）。右クリックメニューでプリフェーダーに切替可能。"}});
         m.entries.push_back({"Send B", {"Mono aux send B output to external effects", "Mono Aux Send B 至外部效果器", "ポストフェーダーAuxセンドBレベル（0.0〜1.0、デフォルト: 0、表示: %）。右クリックメニューでプリフェーダーに切替可能。"}});
-        m.entries.push_back({"Return A L", {"Stereo return A left input", "Stereo Return A Left 輸入", "Stereo return A left input"}});
-        m.entries.push_back({"Return A R", {"Stereo return A right input", "Stereo Return A Right 輸入", "Stereo return A right input"}});
-        m.entries.push_back({"Return B L", {"Stereo return B left input", "Stereo Return B Left 輸入", "Stereo return B left input"}});
-        m.entries.push_back({"Return B R", {"Stereo return B right input", "Stereo Return B Right 輸入", "Stereo return B right input"}});
+        m.entries.push_back({"Return A L", {"Stereo return A left input", "Stereo Return A Left 輸入", "ステレオリターンA左入力"}});
+        m.entries.push_back({"Return A R", {"Stereo return A right input", "Stereo Return A Right 輸入", "ステレオリターンA右入力"}});
+        m.entries.push_back({"Return B L", {"Stereo return B left input", "Stereo Return B Left 輸入", "ステレオリターンB左入力"}});
+        m.entries.push_back({"Return B R", {"Stereo return B right input", "Stereo Return B Right 輸入", "ステレオリターンB右入力"}});
         m.entries.push_back({"Master", {"8 speaker outputs (Master 1-8), upper layer (1-4) and lower layer (5-8)", "8 個 Speaker 輸出（Master 1-8），上層（1-4）與下層（5-8）", "8 speaker outputs (Master 1-8), upper layer (1-4) and lower layer (5-8)"}});
         m.entries.push_back({"Pyramid", {"3D spatial panner for single source (companion module)", "單一來源的 3D Spatial Panner（配套模組）", "単一ソース用3D空間パンナー（コンパニオンモジュール）"}});
         m.entries.push_back({"KEN", {"8-to-2 binaural processor (converts 8-channel output to headphones)", "8-to-2 Binaural Processor（Pyramid Series）", "8-to-2バイノーラルプロセッサー（Pyramid Series）"}});
@@ -621,7 +631,7 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Audio", {"Final kick drum audio output (\\u00b110V peak).", "最終 Kick Drum Audio 輸出（\\u00b110V Peak）。", "最終キックドラムオーディオ出力（\\u00b110Vピーク）。"}});
         data["KIMO"] = std::move(m);
     }
-    // Launchpad (50 entries)
+    // Launchpad (52 entries)
     {
         ModuleHelpData m;
         m.name = "Launchpad";
@@ -676,6 +686,8 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Return B Right", {"Right channel return input for Send/Return bus B.", "Send/Return Bus B 的右聲道 Return 輸入。", "Send/Return Bus Bの右チャンネルリターン入力。"}});
         m.entries.push_back({"Mix Left", {"Main stereo mix left output.", "主立體聲混音左輸出。", "メインステレオミックス左出力。"}});
         m.entries.push_back({"Mix Right", {"Main stereo mix right output.", "主立體聲混音右輸出。", "メインステレオミックス右出力。"}});
+        m.entries.push_back({"Row", {"Audio input/output per row. Each row is an independent loop recorder/player.", "每列的 Audio 輸入/輸出。每列為獨立的 Loop 錄音/播放器。", "各行のAudio入出力。各行は独立したループレコーダー/プレーヤー。"}});
+        m.entries.push_back({"Scene", {"Scene buttons trigger different scene configurations. Can be CV-triggered.", "Scene 按鈕觸發不同的場景配置。可由 CV 觸發。", "シーンボタンで異なるシーン構成をトリガー。CVトリガー対応。"}});
         data["Launchpad"] = std::move(m);
     }
     // MADDY (49 entries)
@@ -708,7 +720,7 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Density", {"Controls how many knobs are active (2-5 knobs). 0-0.2: 2 knobs, 0.2-0.4: 3, 0.4-0.6: 4, 0.6-1.0: 5. Default: 0.5 (4 knobs).", "控制啟用的旋鈕數量（2-5 個）。0-0.2：2 個、0.2-0.4：3 個、0.4-0.6：4 個、0.6-1.0：5 個。預設：0.5（4 個）。", "有効なノブ数を制御（2-5個）。0-0.2：2個、0.2-0.4：3個、0.4-0.6：4個、0.6-1.0：5個。デフォルト：0.5（4個）。"}});
         m.entries.push_back({"Length", {"Same as global pattern length (1-48 steps). The CV sequencer wraps at this length.", "與全域 Pattern 長度相同（1-48 步）。CV Sequencer 在此長度時回繞。", "グローバルパターン長と同一（1-48ステップ）。CVシーケンサーはこの長さで折り返し。"}});
         m.entries.push_back({"Clock Source", {"Default is LFO (internal clock). Selectable via CLK SRC button.", "預設為 LFO（內部 Clock）。可透過 CLK SRC 按鈕選擇。", "CVシーケンサーの進行ソースを選択。7オプション：LFO（内部、デフォルト）、T1/T2/T3（トラックトリガー）、12/23/1213（チェーン出力）。"}});
-        m.entries.push_back({"Chaos", {"Randomization amount (0-100%, default: 0%)", "隨機化量（0-100%，預設：0%）", "Randomization amount (0-100%, default: 0%)"}});
+        m.entries.push_back({"Chaos", {"Randomization amount (0-100%, default: 0%)", "隨機化量（0-100%，預設：0%）", "ランダム化量（0-100%、デフォルト：0%）"}});
         m.entries.push_back({"CHAIN 12", {"Chained envelope sequence of T1 and T2. Plays T1 envelope for one cycle, then T2, repeating.", "T1 和 T2 的 Chain Envelope 序列。播放 T1 Envelope 一個循環，然後 T2，重複。", "T1とT2のチェーンエンベロープシーケンス。T1エンベロープを1サイクル再生後、T2を再生、繰り返し。"}});
         m.entries.push_back({"CHAIN 23", {"Chained envelope sequence of T2 and T3. Plays T2 for one cycle, then T3, repeating.", "T2 和 T3 的 Chain Envelope 序列。播放 T2 一個循環，然後 T3，重複。", "T2とT3のチェーンエンベロープシーケンス。T2を1サイクル再生後、T3を再生、繰り返し。"}});
         m.entries.push_back({"CHAIN 123", {"Chained envelope sequence following pattern T1->T2->T1->T3, creating a weighted rotation.", "Chain Envelope 序列依循 T1->T2->T1->T3 Pattern，產生加權旋轉。", "T1->T2->T1->T3パターンに従うチェーンエンベロープシーケンス、加重ローテーションを生成。"}});
@@ -1385,7 +1397,7 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Bar 4 Timer", {"Waveform output triggered at start of Bar 4 (0-10V).", "Bar 4 開始時觸發的 Waveform 輸出（0-10V）。", "バー4開始時にトリガーされる波形出力（0-10V）。"}});
         data["Runshow"] = std::move(m);
     }
-    // SHINJUKU (29 entries)
+    // SHINJUKU (39 entries)
     {
         ModuleHelpData m;
         m.name = "SHINJUKU";
@@ -1399,7 +1411,7 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Processing", {"Applied to summed stereo output before final limiting", "Applied to summed stereo output before final limiting", "Applied to summed stereo output before final limiting"}});
         m.entries.push_back({"INPUT L/R", {"Stereo audio input (polyphonic). If only L connected, a 20ms delayed copy is sent to R (Haas effect stereo widening).", "Stereo Audio 輸入（Polyphonic）。若僅連接 L，以 20ms 延遲複製至 R（Haas Effect Stereo Widening）。", "ステレオオーディオ入力（ポリフォニック）。Lのみ接続時、20ms遅延コピーをRに送出（Haasエフェクトステレオワイドニング）。"}});
         m.entries.push_back({"LEVEL Knob", {"Track gain 0-200% (default: 100%)", "軌道 Gain 0-200%（預設: 100%）", "Track gain 0-200% (default: 100%)"}});
-        m.entries.push_back({"LEVEL CV", {"Gain modulation input (\\u00b110V adds \\u00b1100% to knob value, final gain clamped 0.0-2.0)", "Gain 調變輸入（±10V 加減 Knob 值 ±100%，最終 Gain 限制 0.0-2.0）", "ゲイン変調入力（±10Vでノブ値に±100%加算、最終ゲイン0.0-2.0にクランプ）"}});
+        m.entries.push_back({"LEVEL CV", {"Gain modulation input (\\u00b110V adds \\u00b1100% to knob value, final gain clamped 0.0-2.0)", "聲道音量 CV 輸入。", "チャンネル音量のCV入力。"}});
         m.entries.push_back({"DUCK Knob", {"Sidechain ducking depth 0-100%", "Sidechain Ducking 深度 0-100%", "Sidechain ducking depth 0-100%"}});
         m.entries.push_back({"DUCK Input", {"Sidechain control input (expects envelope 0-10V)", "Sidechain 控制輸入（預期 Envelope 0-10V）", "Sidechain control input (expects envelope 0-10V)"}});
         m.entries.push_back({"MUTE Button", {"Toggle track mute with red LED indicator", "切換軌道 Mute，紅色 LED 指示", "Toggle track mute with red LED indicator"}});
@@ -1419,6 +1431,16 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Chain Right", {"Right channel chain input for daisy-chaining multiple mixer modules.", "右聲道 Chain 輸入，用於串接多個混音器模組。", "複数のミキサーモジュールをデイジーチェーン接続するための右チャンネルチェイン入力。"}});
         m.entries.push_back({"Mix Left", {"Main stereo mix left output. Sum of all 8 tracks, 12-band EQ, and chain input.", "主立體聲混音左輸出。所有 8 軌、12 頻段 EQ 與 Chain 輸入的總和。", "メインステレオミックス左出力。全8トラック、12バンドEQ、チェイン入力の合計。"}});
         m.entries.push_back({"Mix Right", {"Main stereo mix right output. Sum of all 8 tracks, 12-band EQ, and chain input.", "主立體聲混音右輸出。所有 8 軌、12 頻段 EQ 與 Chain 輸入的總和。", "メインステレオミックス右出力。全8トラック、12バンドEQ、チェイン入力の合計。"}});
+        m.entries.push_back({"Left", {"Per-channel stereo audio input (left channel).", "各聲道立體聲音訊輸入（左聲道）。", "チャンネル別ステレオオーディオ入力（左チャンネル）。"}});
+        m.entries.push_back({"Right", {"Per-channel stereo audio input (right channel).", "各聲道立體聲音訊輸入（右聲道）。", "チャンネル別ステレオオーディオ入力（右チャンネル）。"}});
+        m.entries.push_back({"Level", {"Per-channel volume control (0-200%, default 100%).", "各聲道音量控制（0-200%，預設 100%）。", "チャンネル別音量コントロール（0-200%、デフォルト100%）。"}});
+        m.entries.push_back({"Duck", {"Sidechain duck amount (0-100%).", "Sidechain Ducking 量（0-100%）。", "サイドチェインダック量（0-100%）。"}});
+        m.entries.push_back({"Mute", {"Toggle channel mute.", "切換聲道靜音。", "チャンネルミュート切替。"}});
+        m.entries.push_back({"Solo", {"Toggle channel solo (exclusive mode available in right-click menu).", "切換聲道 Solo（右鍵選單可啟用 Exclusive 模式）。", "チャンネルソロ切替（右クリックメニューでエクスクルーシブモード利用可能）。"}});
+        m.entries.push_back({"Level CV", {"CV input for channel volume control.", "聲道音量 CV 輸入。", "チャンネル音量のCV入力。"}});
+        m.entries.push_back({"Mute Trigger", {"Trigger input to toggle mute state.", "切換靜音狀態的 Trigger 輸入。", "ミュート状態を切り替えるトリガー入力。"}});
+        m.entries.push_back({"Solo Trigger", {"Trigger input to toggle solo state.", "切換 Solo 狀態的 Trigger 輸入。", "ソロ状態を切り替えるトリガー入力。"}});
+        m.entries.push_back({"Master EQ", {"12-band parametric EQ (31/63/125/250/500/1K/2K/3K/5K/8K/12K/16K Hz), \\u00b112dB per band.", "12 頻段參數型 EQ（31/63/125/250/500/1K/2K/3K/5K/8K/12K/16K Hz），每頻段 \\u00b112dB。", "12バンドパラメトリックEQ（31/63/125/250/500/1K/2K/3K/5K/8K/12K/16K Hz）、バンドあたり\\u00b112dB。"}});
         data["SHINJUKU"] = std::move(m);
     }
     // SongMode (56 entries)
