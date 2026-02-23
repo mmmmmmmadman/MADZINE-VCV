@@ -17,5 +17,9 @@ dep/
 .vscode/
 .idea/
 
+# Claude Code
+CLAUDE.md
+.claude/
+
 # 其他
 *.log
