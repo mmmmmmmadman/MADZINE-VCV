@@ -305,39 +305,30 @@ struct ADGenerator : Module {
     float bpfGains[3] = {3.0f, 3.0f, 3.0f};
     
     struct BandPassFilter {
-        float lowpass1 = 0.0f, highpass1 = 0.0f, bandpass1 = 0.0f;
-        float lowpass2 = 0.0f, highpass2 = 0.0f, bandpass2 = 0.0f;
-        float lowpass3 = 0.0f, highpass3 = 0.0f, bandpass3 = 0.0f;
-        float lowpass4 = 0.0f, highpass4 = 0.0f, bandpass4 = 0.0f;
-        
+        float ic1eq = 0.0f;
+        float ic2eq = 0.0f;
+
         void reset() {
-            lowpass1 = highpass1 = bandpass1 = 0.0f;
-            lowpass2 = highpass2 = bandpass2 = 0.0f;
-            lowpass3 = highpass3 = bandpass3 = 0.0f;
-            lowpass4 = highpass4 = bandpass4 = 0.0f;
+            ic1eq = 0.0f;
+            ic2eq = 0.0f;
         }
-        
+
         float process(float input, float cutoff, float sampleRate) {
-            float f = 2.0f * std::sin(M_PI * cutoff / sampleRate);
-            f = clamp(f, 0.0f, 1.0f);
-            
-            lowpass1 += f * (input - lowpass1);
-            highpass1 = input - lowpass1;
-            bandpass1 += f * (highpass1 - bandpass1);
-            
-            lowpass2 += f * (bandpass1 - lowpass2);
-            highpass2 = bandpass1 - lowpass2;
-            bandpass2 += f * (highpass2 - bandpass2);
-            
-            lowpass3 += f * (bandpass2 - lowpass3);
-            highpass3 = bandpass2 - lowpass3;
-            bandpass3 += f * (highpass3 - bandpass3);
-            
-            lowpass4 += f * (bandpass3 - lowpass4);
-            highpass4 = bandpass3 - lowpass4;
-            bandpass4 += f * (highpass4 - bandpass4);
-            
-            return bandpass4;
+            float g = std::tan(M_PI * clamp(cutoff, 20.0f, sampleRate * 0.49f) / sampleRate);
+            float k = 1.0f; // Q = 1.0
+            float a1 = 1.0f / (1.0f + g * (g + k));
+            float a2 = g * a1;
+            float a3 = g * a2;
+
+            float v3 = input - ic2eq;
+            float v1 = a1 * ic1eq + a2 * v3;
+            float v2 = ic2eq + a2 * ic1eq + a3 * v3;
+
+            ic1eq = 2.0f * v1 - ic1eq;
+            ic2eq = 2.0f * v2 - ic2eq;
+
+            // bandpass = v1
+            return v1;
         }
     };
     
@@ -525,20 +516,17 @@ struct ADGenerator : Module {
             } else {
                 float atkOffset = atkAll * 0.5f;
                 float decOffset = decAll * 0.5f;
-                
+
                 attackTime = std::pow(10.0f, (attack - 0.5f) * 6.0f) + atkOffset;
                 decayTime = std::pow(10.0f, (decay - 0.5f) * 6.0f) + decOffset;
-                
+
                 attackTime = std::max(0.001f, attackTime);
                 decayTime = std::max(0.001f, decayTime);
-                
+
                 curve = curveParam;
-                
-                float triggerEnv = processTriggerEnvelope(triggerVoltage, sampleTime, attackTime, decayTime, curve);
-                float followerEnv = processEnvelopeFollower(triggerVoltage, sampleTime, attackTime, decayTime, curve);
-                
-                float output = std::max(triggerEnv, followerEnv);
-                
+
+                float output = processEnvelopeFollower(triggerVoltage, sampleTime, attackTime, decayTime, curve);
+
                 return output * 10.0f;
             }
         }

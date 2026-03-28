@@ -62,6 +62,7 @@ struct QQ : Module {
     float track3DecayCvMod = 0.0f;
 
     bool retriggerEnabled = false;  // Retrigger option
+    int shapeMode[3] = {0, 0, 0}; // 0 = S-Drum, 1 = Extreme Curve
     static constexpr int SCOPE_BUFFER_SIZE = 128;
     
     ScopePoint scopeBuffer[3][SCOPE_BUFFER_SIZE];
@@ -120,6 +121,13 @@ struct QQ : Module {
         // Save retrigger option
         json_object_set_new(rootJ, "retriggerEnabled", json_boolean(retriggerEnabled));
 
+        // Save shape modes
+        json_t* shapeModesJ = json_array();
+        for (int i = 0; i < 3; i++) {
+            json_array_append_new(shapeModesJ, json_integer(shapeMode[i]));
+        }
+        json_object_set_new(rootJ, "shapeModes", shapeModesJ);
+
         return rootJ;
     }
 
@@ -149,6 +157,17 @@ struct QQ : Module {
         if (retriggerJ) {
             retriggerEnabled = json_boolean_value(retriggerJ);
         }
+
+        // Load shape modes
+        json_t* shapeModesJ = json_object_get(rootJ, "shapeModes");
+        if (shapeModesJ) {
+            for (int i = 0; i < 3; i++) {
+                json_t* shapeModeJ = json_array_get(shapeModesJ, i);
+                if (shapeModeJ) {
+                    shapeMode[i] = json_integer_value(shapeModeJ);
+                }
+            }
+        }
     }
 
     float smoothDecayEnvelope(float t, float totalTime, float shapeParam) {
@@ -169,6 +188,23 @@ struct QQ : Module {
         }
         
         float curveResult = (normalizedT - k * normalizedT) / denominator;
+        return 1.f - curveResult;
+    }
+
+    float extremeCurveDecay(float t, float totalTime, float shapeParam) {
+        if (t >= totalTime) return 0.f;
+        float normalizedT = t / totalTime;
+
+        // AD Generator 的 applyCurve 邏輯
+        // shapeParam 範圍 0~0.99，映射到 curvature -0.99~0.99
+        float curvature = -0.99f + shapeParam * (0.99f - (-0.99f));
+
+        float abs_x = std::abs(normalizedT);
+        float denominator = curvature - 2.0f * curvature * abs_x + 1.0f;
+        if (std::abs(denominator) < 1e-6f) {
+            return 1.f - normalizedT;
+        }
+        float curveResult = (normalizedT - curvature * normalizedT) / denominator;
         return 1.f - curveResult;
     }
 
@@ -250,7 +286,11 @@ struct QQ : Module {
                         tracks[i].gateState = false;
                         envOutput = 0.f;
                     } else {
-                        envOutput = smoothDecayEnvelope(decayPhase, decayTime, shapeParam);
+                        if (shapeMode[i] == 0) {
+                            envOutput = smoothDecayEnvelope(decayPhase, decayTime, shapeParam);
+                        } else {
+                            envOutput = extremeCurveDecay(decayPhase, decayTime, shapeParam);
+                        }
                     }
                 }
 
@@ -598,8 +638,6 @@ struct QQWidget : ModuleWidget {
         QQ* module = dynamic_cast<QQ*>(this->module);
         if (!module) return;
 
-        addPanelThemeMenu(menu, module);
-
         menu->addChild(new MenuSeparator);
         menu->addChild(createMenuLabel("Attack Time"));
 
@@ -639,7 +677,7 @@ struct QQWidget : ModuleWidget {
             };
 
             AttackTimeSlider1(QQ* module, int trackIndex) {
-                box.size.x = 200.0f;
+                box.size.x = 140.0f;
                 quantity = new AttackTimeQuantity(module, trackIndex);
             }
 
@@ -663,6 +701,27 @@ struct QQWidget : ModuleWidget {
         AttackTimeSlider1* slider3 = new AttackTimeSlider1(module, 2);
         menu->addChild(slider3);
 
+        // Shape mode selection
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Shape"));
+
+        for (int i = 0; i < 3; i++) {
+            const int trackIdx = i;
+            menu->addChild(createSubmenuItem(string::f("Track %d", i + 1),
+                module->shapeMode[i] == 0 ? "S-Drum" : "Extreme Curve",
+                [=](ui::Menu* subMenu) {
+                    subMenu->addChild(createCheckMenuItem("S-Drum", "",
+                        [=]() { return module->shapeMode[trackIdx] == 0; },
+                        [=]() { module->shapeMode[trackIdx] = 0; }
+                    ));
+                    subMenu->addChild(createCheckMenuItem("Extreme Curve", "",
+                        [=]() { return module->shapeMode[trackIdx] == 1; },
+                        [=]() { module->shapeMode[trackIdx] = 1; }
+                    ));
+                }
+            ));
+        }
+
         // Retrigger option
         menu->addChild(new MenuSeparator);
         struct RetriggerItem : ui::MenuItem {
@@ -678,6 +737,10 @@ struct QQWidget : ModuleWidget {
         retriggerItem->rightText = CHECKMARK(module->retriggerEnabled);
         retriggerItem->module = module;
         menu->addChild(retriggerItem);
+
+        // Panel Theme (moved to bottom)
+        menu->addChild(new MenuSeparator);
+        addPanelThemeMenu(menu, module);
     }
 };
 

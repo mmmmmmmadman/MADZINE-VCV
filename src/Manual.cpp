@@ -223,8 +223,11 @@ struct ManualDisplay : TransparentWidget {
                 nvgFillColor(args.vg, nvgRGB(255, 133, 133));
             else
                 nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-            nvgText(args.vg, pad, y, target.c_str(), NULL);
-            y += bodySize * 1.4f;
+            nvgTextBox(args.vg, pad, y, maxW, target.c_str(), NULL);
+            // Calculate actual height of wrapped target text
+            NVGtextRow rows[8];
+            int nrows = nvgTextBreakLines(args.vg, target.c_str(), NULL, maxW, rows, 8);
+            y += bodySize * 1.4f * std::max(1, nrows);
         }
 
         // Separator
