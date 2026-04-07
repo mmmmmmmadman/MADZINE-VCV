@@ -32,7 +32,7 @@ CATEGORIES = {
             "zh": "展現 MADZINE 獨特合成與訊號處理風格的模組。",
             "ja": "MADZINEならではの合成とシグナル処理を実現する代表的モジュール。"
         },
-        "modules": ["maddy", "maddy_", "nigoq", "weiii_documenta", "universal_rhythm", "songmode", "launchpad"]
+        "modules": ["maddy", "maddy_", "nigoq", "weiii_documenta", "universal_rhythm", "uni_rhythm", "portal", "songmode", "launchpad"]
     },
     "drum": {
         "name": {
@@ -1051,10 +1051,10 @@ def build():
 
     html += html_foot
 
-    with open('madzine_modules_compact_v4.6.html', 'w', encoding='utf-8') as f:
+    with open('madzine_modules_compact_v4.7.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print("已生成: madzine_modules_compact_v4.6.html")
+    print("已生成: madzine_modules_compact_v4.7.html")
 
 if __name__ == '__main__':
     build()

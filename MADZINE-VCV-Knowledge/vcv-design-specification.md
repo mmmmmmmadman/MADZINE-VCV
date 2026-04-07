@@ -5,7 +5,7 @@
 > **This is a REFERENCE for the MADZINE design system** — it reflects one team's design choices, not universal VCV Rack rules.
 > Adapt these patterns to your own project's visual identity.
 
-Version: 2.5.0
+Version: 2.5.1
 Last Updated: 2026-02-21
 
 ---

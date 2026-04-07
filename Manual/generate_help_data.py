@@ -65,6 +65,16 @@ def extract_entries(html_str):
     return entries
 
 
+def _build_longest(entries):
+    """Build dict keeping the longest description per key (uppercase)."""
+    result = {}
+    for name, desc in entries:
+        key = name.upper()
+        if key not in result or len(desc) > len(result[key]):
+            result[key] = desc
+    return result
+
+
 def escape_cpp(s):
     s = s.replace('\\', '\\\\')
     s = s.replace('"', '\\"')
@@ -127,8 +137,8 @@ def main():
         manual_ja = d.get('manual_ja', '')
 
         entries_en = extract_entries(manual_en)
-        entries_zh = {n.upper(): desc for n, desc in extract_entries(manual_zh)}
-        entries_ja = {n.upper(): desc for n, desc in extract_entries(manual_ja)}
+        entries_zh = _build_longest(extract_entries(manual_zh))
+        entries_ja = _build_longest(extract_entries(manual_ja))
 
         lines.append(f'    // {slug} ({len(entries_en)} entries)')
         lines.append('    {')

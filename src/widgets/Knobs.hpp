@@ -206,7 +206,7 @@ struct HiddenTimeKnobNIGOQ : BaseHiddenKnob {
 struct HiddenAttenuatorKnob : BaseHiddenKnob {
     HiddenAttenuatorKnob() {
         box.size = Vec(24, 24);
-        speed = 0.005f;  // 特殊靈敏度
+        speed = 0.5f;
     }
 
     void onEnter(const event::Enter& e) override {
