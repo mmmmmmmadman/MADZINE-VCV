@@ -557,8 +557,13 @@ struct WeiiiDocumenta : Module {
                     // 線性插值 with fade envelope
                     float voiceL = (layer.bufferL[pos0] * (1.0f - frac) + layer.bufferL[pos1] * frac) * voices[i].fadeEnvelope;
                     float voiceR = (layer.bufferR[pos0] * (1.0f - frac) + layer.bufferR[pos1] * frac) * voices[i].fadeEnvelope;
-                    outputL += voiceL;
-                    outputR += voiceR;
+
+                    // Per-voice equal-power auto panning (preserve stereo width)
+                    float pan = (numVoices == 1) ? 0.0f : -1.0f + 2.0f * (float)i / (float)(numVoices - 1);
+                    float gainL = std::cos((pan + 1.f) * 0.25f * M_PI);
+                    float gainR = std::sin((pan + 1.f) * 0.25f * M_PI);
+                    outputL += voiceL * gainL + voiceR * (1.0f - gainR);
+                    outputR += voiceR * gainR + voiceL * (1.0f - gainL);
                 }
 
                 // Divide by numVoices to prevent clipping
@@ -687,9 +692,14 @@ struct WeiiiDocumenta : Module {
                         voices[i].speedMultiplier = speedDist(randomEngine);
                     }
 
-                    // Random initial timer for slice changes (0.5-2.0 seconds)
-                    std::uniform_real_distribution<float> timerDist(0.5f, 2.0f);
-                    voices[i].sliceChangeTimer = timerDist(randomEngine);
+                    // Random initial timer based on S&H Rate period with per-voice random multiplier
+                    {
+                        float rateParam = params[SH_RATE_PARAM].getValue();
+                        float rateHz = std::pow(2.0f, rateParam);
+                        float basePeriod = 1.0f / rateHz;
+                        std::uniform_real_distribution<float> timerMultDist(0.5f, 2.0f);
+                        voices[i].sliceChangeTimer = basePeriod * timerMultDist(randomEngine);
+                    }
                 }
             } else {
                 // Single voice or no slices
@@ -1052,14 +1062,16 @@ struct WeiiiDocumenta : Module {
                             voices[i].sliceChangeTimer -= args.sampleTime;
 
                             if (voices[i].sliceChangeTimer <= 0.0f) {
-                                // Time to switch to a random slice (with crossfade)
-                                std::uniform_int_distribution<int> sliceDist(0, slices.size() - 1);
-                                int newSliceIndex = sliceDist(randomEngine);
+                                // Time to switch slice: S&H CV as base position + small random offset
+                                float shNorm = (sampleHoldCV + 10.0f) / 20.0f; // 0-1
+                                int baseIndex = (int)(shNorm * (float)(slices.size() - 1));
+                                std::uniform_int_distribution<int> offsetDist(-2, 2);
+                                int newSliceIndex = clamp(baseIndex + offsetDist(randomEngine), 0, (int)slices.size() - 1);
 
                                 // Avoid selecting the same slice
                                 int attempts = 0;
                                 while (newSliceIndex == voices[i].sliceIndex && slices.size() > 1 && attempts < 10) {
-                                    newSliceIndex = sliceDist(randomEngine);
+                                    newSliceIndex = clamp(baseIndex + offsetDist(randomEngine), 0, (int)slices.size() - 1);
                                     attempts++;
                                 }
 
@@ -1070,9 +1082,14 @@ struct WeiiiDocumenta : Module {
                                     voices[i].pendingPlaybackPosition = slices[newSliceIndex].startSample;
                                 }
 
-                                // Reset timer with random interval (0.5-2.0 seconds)
-                                std::uniform_real_distribution<float> timerDist(0.5f, 2.0f);
-                                voices[i].sliceChangeTimer = timerDist(randomEngine);
+                                // Reset timer based on S&H Rate period with per-voice random multiplier
+                                {
+                                    float rateParam = params[SH_RATE_PARAM].getValue();
+                                    float rateHz = std::pow(2.0f, rateParam);
+                                    float basePeriod = 1.0f / rateHz;
+                                    std::uniform_real_distribution<float> timerMultDist(0.5f, 2.0f);
+                                    voices[i].sliceChangeTimer = basePeriod * timerMultDist(randomEngine);
+                                }
                             }
                         }
                     }
