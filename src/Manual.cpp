@@ -28,32 +28,14 @@ static std::string findEntryText(const std::string& moduleSlug, const std::strin
     const ModuleHelpData& md = it->second;
     std::string upperTarget = toUpper(targetName);
 
-    // 1. Exact case-insensitive match
+    // Exact case-insensitive match only
     for (const auto& [entryName, entry] : md.entries) {
         if (toUpper(entryName) == upperTarget) {
             return entry.get(lang);
         }
     }
 
-    // 2. Best substring match (minimum 3 chars)
-    std::string bestMatch;
-    size_t bestLen = 0;
-    for (const auto& [entryName, entry] : md.entries) {
-        std::string upperEntry = toUpper(entryName);
-        if (upperEntry.length() >= 3 && upperTarget.find(upperEntry) != std::string::npos) {
-            if (upperEntry.length() > bestLen) {
-                bestLen = upperEntry.length();
-                bestMatch = entry.get(lang);
-            }
-        }
-        if (upperTarget.length() >= 3 && upperEntry.find(upperTarget) != std::string::npos) {
-            if (upperTarget.length() > bestLen) {
-                bestLen = upperTarget.length();
-                bestMatch = entry.get(lang);
-            }
-        }
-    }
-    return bestMatch;
+    return "";
 }
 
 static std::string findModuleDesc(const std::string& moduleSlug, const std::string& lang) {
@@ -145,8 +127,80 @@ struct Manual : Module {
 // Display Widget
 // ============================================================================
 
+struct TextSegment {
+    std::string text;
+    bool isSmall;
+};
+
+static std::vector<TextSegment> parseSegments(const std::string& body) {
+    std::vector<TextSegment> segments;
+    size_t pos = 0;
+    size_t len = body.length();
+
+    while (pos < len) {
+        size_t tagStart = body.find("{s}", pos);
+        if (tagStart == std::string::npos) {
+            // No more tags, rest is normal
+            if (pos < len) {
+                segments.push_back({body.substr(pos), false});
+            }
+            break;
+        }
+        // Normal text before {s}
+        if (tagStart > pos) {
+            segments.push_back({body.substr(pos, tagStart - pos), false});
+        }
+        // Find closing {/s}
+        size_t contentStart = tagStart + 3;  // length of "{s}"
+        size_t tagEnd = body.find("{/s}", contentStart);
+        if (tagEnd == std::string::npos) {
+            // Unclosed {s}, rest is small
+            if (contentStart < len) {
+                segments.push_back({body.substr(contentStart), true});
+            }
+            break;
+        }
+        // Small text between {s} and {/s}
+        if (tagEnd > contentStart) {
+            segments.push_back({body.substr(contentStart, tagEnd - contentStart), true});
+        }
+        pos = tagEnd + 4;  // length of "{/s}"
+    }
+
+    return segments;
+}
+
+static bool isCJK(uint32_t cp) {
+    return (cp >= 0x2E80 && cp <= 0x9FFF) ||
+           (cp >= 0xF900 && cp <= 0xFAFF) ||
+           (cp >= 0xFE30 && cp <= 0xFE4F) ||
+           (cp >= 0x3000 && cp <= 0x30FF) ||
+           (cp >= 0x31F0 && cp <= 0x31FF) ||
+           (cp >= 0xAC00 && cp <= 0xD7AF);
+}
+
+// Decode one UTF-8 codepoint, advance pos. Returns 0 on failure.
+static uint32_t decodeUTF8(const std::string& s, size_t& pos) {
+    if (pos >= s.size()) return 0;
+    uint8_t c = static_cast<uint8_t>(s[pos]);
+    uint32_t cp = 0;
+    int extra = 0;
+    if (c < 0x80) { cp = c; extra = 0; }
+    else if ((c & 0xE0) == 0xC0) { cp = c & 0x1F; extra = 1; }
+    else if ((c & 0xF0) == 0xE0) { cp = c & 0x0F; extra = 2; }
+    else if ((c & 0xF8) == 0xF0) { cp = c & 0x07; extra = 3; }
+    else { pos++; return 0xFFFD; }
+    pos++;
+    for (int i = 0; i < extra && pos < s.size(); i++, pos++) {
+        cp = (cp << 6) | (static_cast<uint8_t>(s[pos]) & 0x3F);
+    }
+    return cp;
+}
+
 struct ManualDisplay : TransparentWidget {
     Manual* module = nullptr;
+    std::string lastBody;
+    std::vector<TextSegment> cachedSegments;
 
     ManualDisplay() {
         box.size = Vec(12 * RACK_GRID_WIDTH - 10, 325);
@@ -239,10 +293,91 @@ struct ManualDisplay : TransparentWidget {
         nvgStroke(args.vg);
         y += 5;
 
-        // Body text (word-wrapped by nvgTextBox)
-        nvgFontSize(args.vg, bodySize);
+        // Body text with {s}...{/s} mixed font support
         nvgFillColor(args.vg, nvgRGB(210, 210, 210));
-        nvgTextBox(args.vg, pad, y, maxW, body.c_str(), NULL);
+
+        // Update segment cache if body changed
+        if (body != lastBody) {
+            lastBody = body;
+            cachedSegments = parseSegments(body);
+        }
+
+        float lineHeight = bodySize * 1.4f;
+        float cursorX = pad;
+        float cursorY = y;
+
+        for (const auto& seg : cachedSegments) {
+            float segFontSize = seg.isSmall ? bodySize * 0.7f : bodySize;
+            nvgFontSize(args.vg, segFontSize);
+
+            // Split segment text into tokens for word wrapping
+            const std::string& text = seg.text;
+            size_t pos = 0;
+            size_t len = text.length();
+
+            while (pos < len) {
+                // Handle newlines
+                if (text[pos] == '\n') {
+                    cursorX = pad;
+                    cursorY += lineHeight;
+                    pos++;
+                    continue;
+                }
+
+                // Check for CJK character (render char by char)
+                size_t peekPos = pos;
+                uint32_t cp = decodeUTF8(text, peekPos);
+                if (isCJK(cp)) {
+                    std::string ch = text.substr(pos, peekPos - pos);
+                    float bounds[4];
+                    nvgTextBounds(args.vg, 0, 0, ch.c_str(), NULL, bounds);
+                    float chW = bounds[2] - bounds[0];
+                    if (cursorX + chW > pad + maxW && cursorX > pad) {
+                        cursorX = pad;
+                        cursorY += lineHeight;
+                    }
+                    nvgText(args.vg, cursorX, cursorY, ch.c_str(), NULL);
+                    cursorX += chW;
+                    pos = peekPos;
+                    continue;
+                }
+
+                // Collect a word (non-space, non-newline sequence)
+                size_t wordStart = pos;
+                while (pos < len && text[pos] != ' ' && text[pos] != '\n') {
+                    // Check if next char is CJK, break word before it
+                    size_t checkPos = pos;
+                    uint32_t wcp = decodeUTF8(text, checkPos);
+                    if (isCJK(wcp)) break;
+                    pos = checkPos;
+                }
+                std::string word = text.substr(wordStart, pos - wordStart);
+
+                if (!word.empty()) {
+                    float bounds[4];
+                    nvgTextBounds(args.vg, 0, 0, word.c_str(), NULL, bounds);
+                    float wordW = bounds[2] - bounds[0];
+
+                    // Wrap if needed
+                    if (cursorX + wordW > pad + maxW && cursorX > pad) {
+                        cursorX = pad;
+                        cursorY += lineHeight;
+                    }
+
+                    nvgText(args.vg, cursorX, cursorY, word.c_str(), NULL);
+                    cursorX += wordW;
+                }
+
+                // Consume spaces
+                while (pos < len && text[pos] == ' ') {
+                    float bounds[4];
+                    nvgTextBounds(args.vg, 0, 0, " ", NULL, bounds);
+                    float spaceW = bounds[2] - bounds[0];
+                    cursorX += spaceW;
+                    pos++;
+                }
+            }
+        }
     }
 };
 
