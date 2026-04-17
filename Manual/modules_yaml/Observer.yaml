@@ -1,0 +1,386 @@
+slug: Observer
+name: Observer
+hp: 8
+wide: false
+alt: Observer
+description:
+  en: 8-channel oscilloscope with color-coded waveforms matching cable colors and adjustable time base
+  zh: 8 通道 Oscilloscope，Waveform 顏色對應 Cable 顏色，可調整 Time Base
+  ja: ケーブル色に対応したカラーコード波形表示と調整可能なタイムベースを備えた8チャンネルオシロスコープ
+features:
+  en:
+  - 8 simultaneous input channels
+  - Color-coded waveform display
+  - Adjustable time base control
+  - 8HP compact design
+  - Real-time signal monitoring
+  zh:
+  - 8 個同步輸入通道
+  - Waveform 顏色對應 Cable
+  - 可調整 Time Base 控制
+  - 8HP 精簡設計
+  - 即時訊號監測
+  ja:
+  - 8同時入力チャンネル
+  - カラーコード波形表示
+  - 調整可能なタイムベース制御
+  - 8HPコンパクト設計
+  - リアルタイム信号監視
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">8-track waveform oscilloscope based on VCV Scope architecture, optimized for visual signal monitoring with color-matched waveforms. Each track automatically adopts the color of its connected cable, making it easy to identify and compare multiple signals simultaneously. Features adjustable time base with logarithmic scaling and optional trigger synchronization.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Display Architecture</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Buffer Size</b>: 256 samples per track (SCOPE_BUFFER_SIZE constant)</li>
+    <li><b>Waveform Rendering</b>: Anti-aliased line drawing with 1.5px stroke width</li>
+    <li><b>Y-axis Scaling</b>: ±10V mapped to display height with -0.05 multiplier (voltage × -0.05 + 0.5)</li>
+    <li><b>Color Source</b>: Reads cable color from input port connection via PortWidget API</li>
+    <li><b>Frame Rate</b>: Waveform updates at display refresh rate (typically 60Hz)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Time Base Control</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Range</b>: 5ms to 50,000ms (50s) per screen width</li>
+    <li><b>Scaling</b>: Base-2 logarithmic curve from 5ms to 50,000ms</li>
+    <li><b>Samples per Buffer</b>: Derived from time base and sample rate</li>
+    <li><b>Interaction</b>: Click and drag vertically on display to adjust time base</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Trigger System</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Trigger Source</b>: First connected input (lowest numbered track with cable)</li>
+    <li><b>Trigger Mode Toggle</b>: Click LED to switch between free-running and triggered</li>
+    <li><b>Triggered (White LED)</b>: Waits for rising edge using rescale(voltage, 0, 0.001, 0, 1) with Schmitt trigger</li>
+    <li><b>Free-Running (Pink LED)</b>: Continuous waveform display without synchronization</li>
+    <li><b>Threshold</b>: Schmitt trigger with rescale from 0V-0.001V to 0-1 range (triggers when voltage rises above 0.001V)</li>
+    <li><b>Holdoff</b>: Buffer refills completely after each trigger before waiting for next</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Processing</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Input Handling</b>: Reads first channel of polyphonic inputs (channel 0)</li>
+    <li><b>Sample Decimation</b>: At longer time bases, samples are decimated to fit buffer</li>
+    <li><b>Buffer Write</b>: Circular buffer with frame index tracking</li>
+    <li><b>Display Mapping</b>: Buffer index 0-255 mapped to display X coordinates</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Inputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Track 1</b>: Top row input 1 (leftmost). Waveform color matches connected cable.</li>
+    <li><b>Track 2</b>: Top row input 2. Waveform color matches connected cable.</li>
+    <li><b>Track 3</b>: Top row input 3. Waveform color matches connected cable.</li>
+    <li><b>Track 4</b>: Top row input 4 (rightmost). Waveform color matches connected cable.</li>
+    <li><b>Track 5</b>: Bottom row input 1 (leftmost). Waveform color matches connected cable.</li>
+    <li><b>Track 6</b>: Bottom row input 2. Waveform color matches connected cable.</li>
+    <li><b>Track 7</b>: Bottom row input 3. Waveform color matches connected cable.</li>
+    <li><b>Track 8</b>: Bottom row input 4 (rightmost). Waveform color matches connected cable.</li>
+    <li><b>Time</b>: Hidden time base control (click and drag on display). Range: 5ms to 50,000ms per screen width, logarithmic scaling.</li>
+    <li><b>Trigger</b>: Click LED to toggle trigger mode. Enabled (white LED) = waits for rising edge; Disabled (pink LED) = free-running display.</li>
+    <li>Input Priority: First connected input (lowest track number) becomes trigger source when trigger mode is enabled.</li>
+    <li>Polyphonic Handling: Only channel 0 is displayed for polyphonic inputs.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Visual Features</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Cable Color Matching</b>: Waveform color automatically matches the connected cable color using VCV's cable color API</li>
+    <li><b>Grid Lines</b>: Horizontal center line at 0V, vertical divisions at regular intervals</li>
+    <li><b>Trigger LED</b>: Top-right indicator showing trigger mode (white = triggered, pink = free-running)</li>
+    <li><b>Dark Background</b>: High contrast display optimized for waveform visibility</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Input voltage range: ±10V (soft clipped at display bounds)</li>
+    <li>Input channels: 8 mono inputs (polyphonic inputs show channel 0 only)</li>
+    <li>Buffer size: 256 samples per track</li>
+    <li>Time scale: 5ms to 50,000ms (50s) per screen (logarithmic control)</li>
+    <li>Trigger threshold: rescale 0V-0.001V via Schmitt trigger (rising edge)</li>
+    <li>Display update: Synchronized to GUI frame rate</li>
+    <li>Processing: 32-bit floating point</li>
+    <li>Module width: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Implementation Notes</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Based on</b>: VCV Scope module architecture</li>
+    <li><b>Key Difference</b>: Multiple simultaneous tracks with automatic cable color matching</li>
+    <li><b>Performance</b>: Optimized for minimal CPU usage with frame-rate-limited display updates</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">基於 VCV Scope 架構的 8 軌 Waveform Oscilloscope，針對視覺訊號監測進行最佳化，具備顏色對應的 Waveform。各軌自動採用其連接 Cable 的顏色，便於同時識別與比較多個訊號。功能包含可調整的 Time Base（對數縮放）與選擇性 Trigger 同步。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">顯示架構</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Buffer 大小</b>: 各軌 256 Samples（SCOPE_BUFFER_SIZE 常數）</li>
+    <li><b>Waveform 渲染</b>: 抗鋸齒線條繪製，1.5px 筆畫寬度</li>
+    <li><b>Y 軸縮放</b>: ±10V 對應至顯示高度，倍數 -0.05（voltage × -0.05 + 0.5）</li>
+    <li><b>顏色來源</b>: 透過 PortWidget API 從輸入連接埠讀取 Cable 顏色</li>
+    <li><b>畫面更新率</b>: Waveform 以顯示更新率更新（通常 60Hz）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Time Base 控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>範圍</b>: 每畫面寬度 5ms 至 50,000ms（50s）</li>
+    <li><b>縮放</b>: 底數 2 對數曲線，範圍 5ms 至 50,000ms</li>
+    <li><b>每 Buffer Samples 數</b>: 由 Time Base 與 Sample Rate 計算</li>
+    <li><b>互動</b>: 在顯示區垂直點擊拖曳以調整 Time Base</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Trigger 系統</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Trigger 來源</b>: 第一個連接的輸入（最低編號且有 Cable 的軌）</li>
+    <li><b>Trigger Mode 切換</b>: 點擊 LED 在自由運行與 Triggered 之間切換</li>
+    <li><b>Triggered（白色 LED）</b>: 使用 rescale(voltage, 0, 0.001, 0, 1) 配合 Schmitt Trigger 等待上升邊緣</li>
+    <li><b>自由運行（粉色 LED）</b>: 連續 Waveform 顯示，無同步</li>
+    <li><b>閾值</b>: Schmitt Trigger 將 0V-0.001V rescale 至 0-1 範圍（電壓升超 0.001V 時觸發）</li>
+    <li><b>Holdoff</b>: 各 Trigger 後 Buffer 完全填滿才等待下一次</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號處理</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>輸入處理</b>: 讀取 Polyphonic 輸入的第一通道（Channel 0）</li>
+    <li><b>Sample Decimation</b>: 較長 Time Base 時，Samples 經抽取以適應 Buffer</li>
+    <li><b>Buffer 寫入</b>: 循環 Buffer 配合畫面索引追蹤</li>
+    <li><b>顯示對應</b>: Buffer 索引 0-255 對應至顯示 X 座標</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸入</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Track 1</b>：上排輸入 1（最左）。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 2</b>：上排輸入 2。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 3</b>：上排輸入 3。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 4</b>：上排輸入 4（最右）。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 5</b>：下排輸入 1（最左）。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 6</b>：下排輸入 2。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 7</b>：下排輸入 3。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Track 8</b>：下排輸入 4（最右）。Waveform 顏色對應連接 Cable。</li>
+    <li><b>Time</b>：隱藏 Time Base 控制（在顯示上點擊拖曳）。範圍：每畫面 5ms 至 50,000ms，對數縮放。</li>
+    <li><b>Trigger</b>：點擊 LED 切換 Trigger 模式。Enabled（白色 LED）= 等待上升邊緣；Disabled（粉色 LED）= 自由運行顯示。</li>
+    <li>輸入優先度：第一個連接的輸入（最低軌編號）於啟用 Trigger Mode 時成為 Trigger 來源</li>
+    <li>Polyphonic 處理：Polyphonic 輸入僅顯示 Channel 0</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">視覺功能</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Cable 顏色對應</b>: Waveform 顏色自動對應連接的 Cable 顏色，使用 VCV 的 Cable 顏色 API</li>
+    <li><b>格線</b>: 0V 處水平中心線，定期間隔垂直分割</li>
+    <li><b>Trigger LED</b>: 右上指示器顯示 Trigger Mode（白色 = Triggered，粉色 = 自由運行）</li>
+    <li><b>深色背景</b>: 針對 Waveform 可見度最佳化的高對比顯示</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>輸入電壓範圍: ±10V（顯示邊界軟限幅）</li>
+    <li>輸入通道: 8 個 Mono 輸入（Polyphonic 輸入僅顯示 Channel 0）</li>
+    <li>Buffer 大小: 各軌 256 Samples</li>
+    <li>Time Scale: 每畫面 5ms 至 50,000ms（50s）（對數控制）</li>
+    <li>Trigger 閾值: rescale 0V-0.001V 經 Schmitt Trigger（上升邊緣）</li>
+    <li>顯示更新: 與 GUI 畫面更新率同步</li>
+    <li>處理: 32-bit 浮點運算</li>
+    <li>模組寬度: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">實作備註</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>基於</b>: VCV Scope 模組架構</li>
+    <li><b>主要差異</b>: 多個同步軌配合自動 Cable 顏色對應</li>
+    <li><b>效能</b>: 最佳化以最小 CPU 使用量，配合畫面更新率限制的顯示更新</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Buffer Size</b>: 各軌 256 Samples（SCOPE_BUFFER_SIZE 常數）</li>
+    <li><b>Waveform Rendering</b>: 抗鋸齒線條繪製，1.5px 筆畫寬度</li>
+    <li><b>Y-axis Scaling</b>: +/-10V 對應至顯示高度，倍數 -0.05（voltage x -0.05 + 0.5）</li>
+    <li><b>Color Source</b>: 透過 PortWidget API 從輸入連接埠讀取 Cable 顏色</li>
+    <li><b>Frame Rate</b>: Waveform 以顯示更新率更新（通常 60Hz）</li>
+    <li><b>Range</b>: 每畫面寬度 5ms 至 50,000ms（50s）</li>
+    <li><b>Scaling</b>: 底數 2 對數曲線，範圍 5ms 至 50,000ms</li>
+    <li><b>Samples per Buffer</b>: 由 Time Base 與 Sample Rate 計算</li>
+    <li><b>Interaction</b>: 在顯示上垂直點擊並拖曳以調整 Time Base</li>
+    <li><b>Trigger Source</b>: 第一個連接的輸入（最低編號且有線纜的軌道）</li>
+    <li><b>Trigger Mode Toggle</b>: 點擊 LED 在自由運行與觸發模式間切換</li>
+    <li><b>Triggered (White LED)</b>: 使用 rescale(voltage, 0, 0.001, 0, 1) 等待上升沿（帶 Schmitt Trigger 功能）</li>
+    <li><b>Free-Running (Pink LED)</b>: 無同步的連續波形顯示</li>
+    <li><b>Threshold</b>: Schmitt Trigger，從 0V-0.001V 到 0-1 範圍的 rescale（電壓超過閾值時觸發）</li>
+    <li><b>Input Handling</b>: 讀取多聲道輸入的第一個聲道（聲道 0）</li>
+    <li><b>Buffer Write</b>: 具有幀索引追蹤的循環 Buffer</li>
+    <li><b>Display Mapping</b>: Buffer 索引 0-255 對應至顯示 X 座標</li>
+    <li><b>Cable Color Matching</b>: Waveform 顏色自動匹配連接 Cable 顏色（使用 VCV 的 Cable 顏色 API）</li>
+    <li><b>Grid Lines</b>: 0V 水平中心線，定期間隔的垂直分割線</li>
+    <li><b>Dark Background</b>: 高對比度顯示，為 Waveform 可視性優化</li>
+    <li><b>Based on</b>: VCV Scope 模組架構</li>
+    <li><b>Key Difference</b>: 多軌同時顯示，自動 Cable 顏色匹配</li>
+    <li><b>Performance</b>: 針對最低 CPU 使用量進行最佳化，透過幀率限制來控制顯示更新頻率</li>
+    </ul></div>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">VCV Scopeアーキテクチャベースの8トラック波形オシロスコープで、カラーマッチング波形による視覚的信号監視に最適化。各トラックは接続されたケーブルの色を自動的に採用し、複数信号の同時識別と比較が容易。対数スケーリング調整可能なタイムベースとオプションのトリガー同期を搭載。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ディスプレイアーキテクチャ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>バッファサイズ</b>: トラックあたり256サンプル（SCOPE_BUFFER_SIZE定数）</li>
+    <li><b>波形レンダリング</b>: アンチエイリアスライン描画、1.5pxストローク幅</li>
+    <li><b>Y軸スケーリング</b>: ±10Vをディスプレイ高さにマッピング、-0.05乗数（voltage × -0.05 + 0.5）</li>
+    <li><b>カラーソース</b>: PortWidget APIを介して入力ポート接続からケーブル色を読取</li>
+    <li><b>フレームレート</b>: 波形はディスプレイリフレッシュレートで更新（通常60Hz）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">タイムベース制御</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>範囲</b>: 画面幅あたり5ms〜50,000ms（50s）</li>
+    <li><b>スケーリング</b>: 底2対数曲線、5ms〜50,000msの範囲</li>
+    <li><b>バッファあたりサンプル数</b>: タイムベースとサンプルレートから算出</li>
+    <li><b>操作</b>: ディスプレイ上で垂直にクリック＆ドラッグしてタイムベースを調整</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">トリガーシステム</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>トリガーソース</b>: 最初の接続入力（ケーブル付き最小番号トラック）</li>
+    <li><b>トリガーモード切替</b>: LEDをクリックしてフリーランとトリガー間を切替</li>
+    <li><b>トリガー（白色LED）</b>: rescale(voltage, 0, 0.001, 0, 1)とシュミットトリガーを使用して立ち上がりエッジを待機</li>
+    <li><b>フリーラン（ピンク色LED）</b>: 同期なしの連続波形表示</li>
+    <li><b>しきい値</b>: シュミットトリガーで0V-0.001Vを0-1範囲にrescale（電圧が0.001Vを超えるとトリガー）</li>
+    <li><b>ホールドオフ</b>: 各トリガー後、バッファが完全に再充填されてから次を待機</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号処理</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>入力処理</b>: ポリフォニック入力の最初のチャンネルを読取（チャンネル0）</li>
+    <li><b>サンプルデシメーション</b>: 長いタイムベースでは、サンプルをバッファに合わせてデシメート</li>
+    <li><b>バッファ書込</b>: フレームインデックストラッキング付き循環バッファ</li>
+    <li><b>ディスプレイマッピング</b>: バッファインデックス0-255をディスプレイX座標にマッピング</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">入力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Track 1</b>：上段入力1（最左）。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 2</b>：上段入力2。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 3</b>：上段入力3。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 4</b>：上段入力4（最右）。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 5</b>：下段入力1（最左）。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 6</b>：下段入力2。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 7</b>：下段入力3。波形色は接続ケーブル色に対応。</li>
+    <li><b>Track 8</b>：下段入力4（最右）。波形色は接続ケーブル色に対応。</li>
+    <li><b>Time</b>：隠しタイムベース制御（ディスプレイをクリック＆ドラッグ）。範囲：画面幅あたり5ms〜50,000ms、対数スケーリング。</li>
+    <li><b>Trigger</b>：LEDをクリックしてトリガーモードを切替。Enabled（白色LED）= 立ち上がりエッジ待機；Disabled（ピンク色LED）= フリーランディスプレイ。</li>
+    <li>入力優先度：最初の接続入力（最小トラック番号）がトリガーモード有効時にトリガーソースになる</li>
+    <li>ポリフォニック処理：ポリフォニック入力はチャンネル0のみ表示</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ビジュアル機能</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>ケーブルカラーマッチング</b>: 波形色はVCVのケーブルカラーAPIを使用して接続ケーブル色に自動マッチ</li>
+    <li><b>グリッドライン</b>: 0Vの水平センターライン、定期間隔の垂直分割線</li>
+    <li><b>トリガーLED</b>: トリガーモードを示す右上インジケーター（白 = トリガー、ピンク = フリーラン）</li>
+    <li><b>ダークバックグラウンド</b>: 波形視認性に最適化された高コントラストディスプレイ</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>入力電圧範囲: ±10V（ディスプレイ境界でソフトクリップ）</li>
+    <li>入力チャンネル: 8モノ入力（ポリフォニック入力はチャンネル0のみ表示）</li>
+    <li>バッファサイズ: トラックあたり256サンプル</li>
+    <li>タイムスケール: 画面あたり5ms〜50,000ms（50s）（対数制御）</li>
+    <li>トリガーしきい値: rescale 0V-0.001Vをシュミットトリガーで処理（立ち上がりエッジ）</li>
+    <li>ディスプレイ更新: GUIフレームレートに同期</li>
+    <li>処理: 32ビット浮動小数点</li>
+    <li>モジュール幅: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">実装ノート</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>ベース</b>: VCV Scopeモジュールアーキテクチャ</li>
+    <li><b>主な違い</b>: 自動ケーブルカラーマッチング付き複数同時トラック</li>
+    <li><b>パフォーマンス</b>: フレームレート制限ディスプレイ更新で最小CPU使用量に最適化</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Buffer Size</b>: トラックあたり256サンプル（SCOPE_BUFFER_SIZE定数）</li>
+    <li><b>Waveform Rendering</b>: アンチエイリアスライン描画、1.5pxストローク幅</li>
+    <li><b>Y-axis Scaling</b>: +/-10Vを表示高さにマッピング、-0.05乗数（voltage x -0.05 + 0.5）</li>
+    <li><b>Color Source</b>: PortWidget APIで入力ポート接続からケーブル色を読み取り</li>
+    <li><b>Frame Rate</b>: 表示リフレッシュレートで波形更新（通常60Hz）</li>
+    <li><b>Range</b>: 画面幅あたり5ms〜50,000ms（50s）</li>
+    <li><b>Scaling</b>: 底数2の対数曲線、5ms〜50,000ms</li>
+    <li><b>Samples per Buffer</b>: タイムベースとサンプルレートから計算</li>
+    <li><b>Interaction</b>: ディスプレイを垂直にクリック＆ドラッグしてタイムベースを調整</li>
+    <li><b>Trigger Source</b>: 最初に接続された入力（ケーブルが付いた最小番号トラック）</li>
+    <li><b>Trigger Mode Toggle</b>: LEDをクリックしてフリーランとトリガーモードを切り替え</li>
+    <li><b>Triggered (White LED)</b>: シュミットトリガー機能でrescale(voltage, 0, 0.001, 0, 1)を使用して立ち上がりエッジを待機</li>
+    <li><b>Free-Running (Pink LED)</b>: 同期なしの連続波形表示</li>
+    <li><b>Threshold</b>: シュミットトリガー、0V〜0.001VをO〜1にrescale（電圧が閾値を超えるとトリガー）</li>
+    <li><b>Input Handling</b>: ポリフォニック入力の最初のチャンネル（チャンネル0）を読み取り</li>
+    <li><b>Buffer Write</b>: フレームインデックス追跡付き循環バッファ</li>
+    <li><b>Display Mapping</b>: バッファインデックス0〜255を表示X座標にマッピング</li>
+    <li><b>Cable Color Matching</b>: VCVのケーブル色APIを使用して波形色が接続ケーブル色に自動マッチ</li>
+    <li><b>Grid Lines</b>: 0V水平中心線、定期間隔の垂直区切り線</li>
+    <li><b>Dark Background</b>: 波形視認性のために最適化された高コントラスト表示</li>
+    <li><b>Based on</b>: VCV Scopeモジュールアーキテクチャ</li>
+    <li><b>Key Difference</b>: 複数同時トラック、自動ケーブル色マッチング</li>
+    <li><b>Performance</b>: フレームレート制限による表示更新で、最小限のCPU使用量に最適化されています</li>
+    <li><b>Holdoff</b>: 各トリガー後、次を待つ前にバッファを完全充填</li>
+    <li><b>Sample Decimation</b>: 長いタイムベースではサンプルをデシメーションしてバッファに収める</li>
+    <li><b>Trigger LED</b>: トリガーモード表示インジケーター（白=トリガー、ピンク=フリーラン）</li>
+    </ul></div>
+controls:
+- name: Time
+  type: param
+  desc:
+    en: 'Time base per screen width. Range: 5ms to 50,000ms (50s), default 500ms. Hidden knob: click and drag vertically on display area.'
+    zh: Time Base（每畫面寬度）。範圍 5ms 至 50,000ms（50s），預設 500ms。隱藏 Knob，於 Scope 顯示區上下拖曳調整。
+    ja: 画面幅あたりのタイムベース。範囲：5ms〜50,000ms（50s）、デフォルト500ms。隠しノブ、ディスプレイ上で垂直にドラッグ。
+- name: Trigger
+  type: param
+  desc:
+    en: 'Trigger mode switch. Range: Enabled/Disabled, default Disabled. Click LED: white (Enabled) = waits for rising edge on first connected Track; pink (Disabled) = free-running.'
+    zh: Trigger 模式切換。範圍 Enabled/Disabled，預設 Disabled。點擊 LED：白色（Enabled）= 等待第一個連接 Track 的上升邊緣；粉色（Disabled）= 自由運行。
+    ja: トリガーモード切替。範囲：Enabled/Disabled、デフォルトDisabled。LEDクリック：白（Enabled）=最初の接続トラックの立ち上がりエッジ待機；ピンク（Disabled）=フリーラン。
+- name: Track 1
+  type: input
+  desc:
+    en: Top row input 1 (leftmost). Waveform color matches connected cable.
+    zh: Track 1 訊號輸入（上排第 1 個（最左））。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 上段入力1（最左）。波形色は接続ケーブル色に対応。
+- name: Track 2
+  type: input
+  desc:
+    en: Top row input 2. Waveform color matches connected cable.
+    zh: Track 2 訊號輸入（上排第 2 個）。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 上段入力2。波形色は接続ケーブル色に対応。
+- name: Track 3
+  type: input
+  desc:
+    en: Top row input 3. Waveform color matches connected cable.
+    zh: Track 3 訊號輸入（上排第 3 個）。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 上段入力3。波形色は接続ケーブル色に対応。
+- name: Track 4
+  type: input
+  desc:
+    en: Top row input 4 (rightmost). Waveform color matches connected cable.
+    zh: Track 4 訊號輸入（上排第 4 個（最右））。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 上段入力4（最右）。波形色は接続ケーブル色に対応。
+- name: Track 5
+  type: input
+  desc:
+    en: Bottom row input 1 (leftmost). Waveform color matches connected cable.
+    zh: Track 5 訊號輸入（下排第 1 個（最左））。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 下段入力1（最左）。波形色は接続ケーブル色に対応。
+- name: Track 6
+  type: input
+  desc:
+    en: Bottom row input 2. Waveform color matches connected cable.
+    zh: Track 6 訊號輸入（下排第 2 個）。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 下段入力2。波形色は接続ケーブル色に対応。
+- name: Track 7
+  type: input
+  desc:
+    en: Bottom row input 3. Waveform color matches connected cable.
+    zh: Track 7 訊號輸入（下排第 3 個）。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 下段入力3。波形色は接続ケーブル色に対応。
+- name: Track 8
+  type: input
+  desc:
+    en: Bottom row input 4 (rightmost). Waveform color matches connected cable.
+    zh: Track 8 訊號輸入（下排第 4 個（最右））。Waveform 顏色自動對應連接 Cable 顏色。
+    ja: 下段入力4（最右）。波形色は接続ケーブル色に対応。

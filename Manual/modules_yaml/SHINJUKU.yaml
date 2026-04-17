@@ -1,0 +1,1126 @@
+slug: SHINJUKU
+name: SHINJUKU
+hp: 32
+wide: true
+alt: SHINJUKU
+description:
+  en: 8-track stereo mixer with 12-band master EQ, sidechain ducking, and cross-module solo, Tokyo Marunouchi line themed
+  zh: 8 軌 Stereo Mixer，具備 12-band Master EQ、Sidechain Ducking 與跨模組 Solo，東京丸之內線主題
+  ja: 12バンドマスターEQ、サイドチェインダッキング、クロスモジュールソロを備えた8トラックステレオミキサー、東京丸ノ内線テーマ
+features:
+  en:
+  - 8-track stereo mixer
+  - 12-band master EQ (31Hz-16kHz)
+  - Per-track level, duck, mute, solo
+  - Cross-module exclusive solo
+  - Chain input for mixer expansion
+  - Auto-patch cable connection
+  - 16-channel polyphonic support
+  zh:
+  - 8 軌 Stereo Mixer
+  - 12-band Master EQ（31Hz-16kHz）
+  - 各軌 Level、Duck、Mute、Solo
+  - 跨模組 Exclusive Solo
+  - Mixer 擴展用 Chain 輸入
+  - 自動 Cable 連接
+  - 16 聲道 Polyphonic 支援
+  ja:
+  - 8トラックステレオミキサー
+  - 12バンドマスターEQ（31Hz-16kHz）
+  - トラック別レベル、ダック、ミュート、ソロ
+  - クロスモジュールエクスクルーシブソロ
+  - ミキサー拡張用チェーン入力
+  - 自動ケーブル接続
+  - 16チャンネルポリフォニック対応
+manual_html_raw:
+  en: '<h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+
+    <p style="margin-bottom: 1rem;">8-track stereo mixer with 12-band master EQ, designed as a large-format multi-channel expansion of U8. Features per-track level control with CV modulation, sidechain ducking, mute/solo with cross-module exclusive solo function. The master EQ uses biquad peak filters spanning the full audible spectrum (31Hz-16kHz) for comprehensive tonal shaping of the final mix output. Tokyo Marunouchi line themed with red color scheme (#F62F36).</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+
+    <p style="margin-bottom: 1rem;">Input L/R (per track) → Level (with CV) → Sidechain Ducking → Mute/Solo → Sum all tracks → Chain Input → 12-band Master EQ → Output L/R. All processing maintains polyphonic channel separation up to 16 channels.</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Master EQ</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Bands</b>: 12 frequency bands (full spectrum coverage)</li>
+
+    <li><b>Frequencies</b>: 31Hz, 63Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 3.15kHz, 5kHz, 8kHz, 12.5kHz, 16kHz</li>
+
+    <li><b>Gain Range</b>: -12dB to +12dB per band</li>
+
+    <li><b>Filter Type</b>: Biquad peak EQ (Audio EQ Cookbook)</li>
+
+    <li><b>Q Factor</b>: Fixed at 1.41 (approximately 1 octave bandwidth)</li>
+
+    <li><b>Controls</b>: Vertical faders with center detent at 0dB</li>
+
+    <li><b>Processing</b>: Applied to summed stereo output before final limiting</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Track Controls</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>INPUT L/R</b>: Stereo audio input (polyphonic). If only L connected, a 20ms delayed copy is sent to R (Haas effect stereo widening).</li>
+
+    <li><b>LEVEL Knob</b>: Track gain 0-200% (default: 100%)</li>
+
+    <li><b>LEVEL CV</b>: Gain modulation input (\u00b110V adds \u00b1100% to knob value, final gain clamped 0.0-2.0)</li>
+
+    <li><b>DUCK Knob</b>: Sidechain ducking depth 0-100%</li>
+
+    <li><b>DUCK Input</b>: Sidechain control input (expects envelope 0-10V)</li>
+
+    <li><b>MUTE Button</b>: Toggle track mute with red LED indicator</li>
+
+    <li><b>SOLO Button</b>: Toggle track solo with green LED indicator</li>
+
+    <li><b>MUTE/SOLO Triggers</b>: External trigger inputs for mute/solo toggle</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Cross-Module Solo</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Chain Detection</b>: Solo state is shared across adjacent U8, ALEXANDERPLATZ, and SHINJUKU modules</li>
+
+    <li><b>Exclusive Solo</b>: Hold solo button for 400ms to activate exclusive mode (cancels all other solos in chain)</li>
+
+    <li><b>Visual Feedback</b>: Mute LED lights up when track is silenced by another track''s solo</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Chain Integration</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>CHAIN L/R</b>: Input from previous mixer module in chain</li>
+
+    <li><b>MIX L/R</b>: Final stereo output (track sum + chain + EQ processed)</li>
+
+    <li><b>Auto-Patch</b>: Automatically connects to adjacent U8, YAMANOTE, ALEXANDERPLATZ, or SHINJUKU</li>
+
+    <li><b>Cable Color</b>: Red (#F62F36) matching Tokyo Marunouchi line</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">VU Meters</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Display</b>: Horizontal stereo VU meter per track</li>
+
+    <li><b>Range</b>: -36dB to +6dB</li>
+
+    <li><b>Color</b>: Green to red gradient, red zone above 0dB</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+
+    <ul style="padding-left: 1.5rem;">
+
+    <li>Audio input/output: ±10V (clamped)</li>
+
+    <li>CV input: 0-10V</li>
+
+    <li>Trigger threshold: 2.0V rising edge</li>
+
+    <li>Polyphony: Up to 16 channels</li>
+
+    <li>Level range: 0-200%</li>
+
+    <li>Duck attenuation: 0-300% (with 3x multiplier)</li>
+
+    <li>EQ gain: ±12dB per band</li>
+
+    <li>Processing: 32-bit floating point</li>
+
+    <li>Module width: 32HP</li>
+
+    <li><b>Chain Left</b>: Left channel chain input for daisy-chaining multiple mixer modules.</li>
+
+    <li><b>Chain Right</b>: Right channel chain input for daisy-chaining multiple mixer modules.</li>
+
+    <li><b>Mix Left</b>: Main stereo mix left output. Sum of all 8 tracks, 12-band EQ, and chain input.</li>
+
+    <li><b>Mix Right</b>: Main stereo mix right output. Sum of all 8 tracks, 12-band EQ, and chain input.</li>
+
+    <li><b>Left</b>: Per-channel stereo audio input (left channel).</li>
+
+    <li><b>Right</b>: Per-channel stereo audio input (right channel).</li>
+
+    <li><b>Level</b>: Per-channel volume control (0-200%, default 100%).</li>
+
+    <li><b>Duck</b>: Sidechain duck amount (0-100%).</li>
+
+    <li><b>Mute</b>: Toggle channel mute.</li>
+
+    <li><b>Solo</b>: Toggle channel solo (exclusive mode available in right-click menu).</li>
+
+    <li><b>Level CV</b>: CV input for channel volume control.</li>
+
+    <li><b>Mute Trigger</b>: Trigger input to toggle mute state.</li>
+
+    <li><b>Solo Trigger</b>: Trigger input to toggle solo state.</li>
+
+    <li><b>Master EQ</b>: 12-band parametric EQ (31/63/125/250/500/1K/2K/3K/5K/8K/12K/16K Hz), \u00b112dB per band.</li>
+
+    </ul>'
+  zh: '<h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+
+    <p style="margin-bottom: 1rem;">8 軌 Stereo Mixer 搭配 12-band Master EQ，設計為 U8 的大型多軌擴展。具備各軌 Level 控制與 CV 調變、Sidechain Ducking、Mute/Solo 與跨模組 Exclusive Solo 功能。Master EQ 使用 Biquad Peak Filter 涵蓋完整可聽頻譜（31Hz-16kHz），對最終 Mix Output 進行全面的音色塑形。東京丸之內線主題，紅色配色（#F62F36）。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+
+    <p style="margin-bottom: 1rem;">Input L/R（各軌）→ Level（含 CV）→ Sidechain Ducking → Mute/Solo → 所有軌道加總 → Chain Input → 12-band Master EQ → Output L/R。所有處理維持最多 16 聲道的 Polyphonic 分離。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Master EQ</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>頻段</b>: 12 個頻率 Band（全頻譜涵蓋）</li>
+
+    <li><b>頻率</b>: 31Hz、63Hz、125Hz、250Hz、500Hz、1kHz、2kHz、3.15kHz、5kHz、8kHz、12.5kHz、16kHz</li>
+
+    <li><b>Gain 範圍</b>: 每 Band -12dB 至 +12dB</li>
+
+    <li><b>Filter 類型</b>: Biquad Peak EQ（Audio EQ Cookbook）</li>
+
+    <li><b>Q 值</b>: 固定 1.41（約 1 Octave 頻寬）</li>
+
+    <li><b>控制</b>: 垂直 Fader，中心點為 0dB</li>
+
+    <li><b>處理</b>: 在最終限幅前套用至 Stereo Output 加總</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">各軌控制</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>INPUT L/R</b>: Stereo Audio 輸入（Polyphonic）。若僅連接 L，以 20ms 延遲複製至 R（Haas Effect Stereo Widening）。</li>
+
+    <li><b>LEVEL Knob</b>: 軌道 Gain 0-200%（預設: 100%）</li>
+
+    <li><b>LEVEL CV</b>: Gain 調變輸入（±10V 加減 Knob 值 ±100%，最終 Gain 限制 0.0-2.0）</li>
+
+    <li><b>DUCK Knob</b>: Sidechain Ducking 深度 0-100%</li>
+
+    <li><b>DUCK Input</b>: Sidechain 控制輸入（預期 Envelope 0-10V）</li>
+
+    <li><b>MUTE Button</b>: 切換軌道 Mute，紅色 LED 指示</li>
+
+    <li><b>SOLO Button</b>: 切換軌道 Solo，綠色 LED 指示</li>
+
+    <li><b>MUTE/SOLO Triggers</b>: Mute/Solo 切換的外部 Trigger 輸入</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">跨模組 Solo</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Chain 偵測</b>: Solo 狀態在相鄰的 U8、ALEXANDERPLATZ、SHINJUKU 模組間共享</li>
+
+    <li><b>Exclusive Solo</b>: 長按 Solo 按鈕 400ms 啟用 Exclusive 模式（取消 Chain 中所有其他 Solo）</li>
+
+    <li><b>視覺回饋</b>: 當軌道被其他軌道的 Solo 靜音時，Mute LED 亮起</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Chain 整合</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>CHAIN L/R</b>: 來自 Chain 中前一個 Mixer 模組的輸入</li>
+
+    <li><b>MIX L/R</b>: 最終 Stereo 輸出（軌道加總 + Chain + EQ 處理）</li>
+
+    <li><b>Auto-Patch</b>: 自動連接至相鄰的 U8、YAMANOTE、ALEXANDERPLATZ 或 SHINJUKU</li>
+
+    <li><b>Cable 顏色</b>: 紅色（#F62F36）與東京丸之內線相符</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">VU Meter</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>顯示</b>: 各軌水平 Stereo VU Meter</li>
+
+    <li><b>範圍</b>: -36dB 至 +6dB</li>
+
+    <li><b>顏色</b>: 綠至紅漸層，0dB 以上為紅區</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+
+    <ul style="padding-left: 1.5rem;">
+
+    <li>Audio 輸入/輸出: ±10V（限幅）</li>
+
+    <li>CV 輸入: 0-10V</li>
+
+    <li>Trigger 閾值: 2.0V 上升邊緣</li>
+
+    <li>Polyphony: 最多 16 聲道</li>
+
+    <li>Level 範圍: 0-200%</li>
+
+    <li>Duck 衰減: 0-300%（含 3 倍乘數）</li>
+
+    <li>EQ Gain: 每 Band ±12dB</li>
+
+    <li>處理: 32-bit 浮點</li>
+
+    <li>模組寬度: 32HP</li>
+
+    <li><b>Chain Left</b>: 左聲道 Chain 輸入，用於串接多個混音器模組。</li>
+
+    <li><b>Chain Right</b>: 右聲道 Chain 輸入，用於串接多個混音器模組。</li>
+
+    <li><b>Mix Left</b>: 主立體聲混音左輸出。所有 8 軌、12 頻段 EQ 與 Chain 輸入的總和。</li>
+
+    <li><b>Mix Right</b>: 主立體聲混音右輸出。所有 8 軌、12 頻段 EQ 與 Chain 輸入的總和。</li>
+
+    <li><b>Left</b>: 各聲道立體聲音訊輸入（左聲道）。</li>
+
+    <li><b>Right</b>: 各聲道立體聲音訊輸入（右聲道）。</li>
+
+    <li><b>Level</b>: 各聲道音量控制（0-200%，預設 100%）。</li>
+
+    <li><b>Duck</b>: Sidechain Ducking 量（0-100%）。</li>
+
+    <li><b>Mute</b>: 切換聲道靜音。</li>
+
+    <li><b>Solo</b>: 切換聲道 Solo（右鍵選單可啟用 Exclusive 模式）。</li>
+
+    <li><b>Level CV</b>: 聲道音量 CV 輸入。</li>
+
+    <li><b>Mute Trigger</b>: 切換靜音狀態的 Trigger 輸入。</li>
+
+    <li><b>Solo Trigger</b>: 切換 Solo 狀態的 Trigger 輸入。</li>
+
+    <li><b>Master EQ</b>: 12 頻段參數型 EQ（31/63/125/250/500/1K/2K/3K/5K/8K/12K/16K Hz），每頻段 \u00b112dB。</li>
+
+    </ul>
+
+    <div style="display:none"><ul>
+
+    <li><b>Bands</b>: 12 個頻率 Band（全頻譜覆蓋）</li>
+
+    <li><b>Frequencies</b>: 31Hz、63Hz、125Hz、250Hz、500Hz、1kHz、2kHz、3.15kHz、5kHz、8kHz、12.5kHz、16kHz</li>
+
+    <li><b>Gain Range</b>: 每 Band -12dB 至 +12dB</li>
+
+    <li><b>Filter Type</b>: Biquad Peak EQ（Audio EQ Cookbook）</li>
+
+    <li><b>Q Factor</b>: 固定 1.41（約 1 Octave 頻寬）</li>
+
+    <li><b>Controls</b>: 垂直 Fader，中心點為 0dB</li>
+
+    <li><b>Processing</b>: 在最終限幅前套用至 Stereo Output 加總</li>
+
+    <li><b>Chain Detection</b>: Solo 狀態在相鄰的 U8、ALEXANDERPLATZ、SHINJUKU 模組間共享</li>
+
+    <li><b>Visual Feedback</b>: 當軌道被其他軌道的 Solo 靜音時，Mute LED 亮起</li>
+
+    <li><b>Cable Color</b>: 紅色（#F62F36），與東京丸之內線配色一致</li>
+
+    <li><b>Display</b>: 各軌水平 Stereo VU Meter</li>
+
+    <li><b>Range</b>: -36dB 至 +6dB</li>
+
+    <li><b>Color</b>: 綠至紅漸層，0dB 以上為紅區</li>
+
+    </ul></div>'
+  ja: '<h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+
+    <p style="margin-bottom: 1rem;">12バンドマスターEQを搭載した8トラックステレオミキサー、U8の大型マルチチャンネル拡張として設計。CV変調付きトラック別レベル制御、サイドチェインダッキング、クロスモジュールエクスクルーシブソロ機能付きミュート/ソロを搭載。マスターEQはバイクアッドピークフィルターを使用し、完全な可聴スペクトル（31Hz-16kHz）をカバーし、最終ミックス出力の包括的なトーンシェイピングを実現。東京丸ノ内線テーマ、赤のカラースキーム（#F62F36）。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+
+    <p style="margin-bottom: 1rem;">Input L/R（各トラック）→ Level（CV付き）→ サイドチェインダッキング → ミュート/ソロ → 全トラック合計 → チェーン入力 → 12バンドマスターEQ → Output L/R。全処理は最大 16チャンネルのポリフォニック分離を維持。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">マスターEQ</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>バンド数</b>: 12周波数バンド（全スペクトルカバー）</li>
+
+    <li><b>周波数</b>: 31Hz、63Hz、125Hz、250Hz、500Hz、1kHz、2kHz、3.15kHz、5kHz、8kHz、12.5kHz、16kHz</li>
+
+    <li><b>ゲイン範囲</b>: バンドあたり-12dB～+12dB</li>
+
+    <li><b>フィルタータイプ</b>: バイクアッドピークEQ（Audio EQ Cookbook）</li>
+
+    <li><b>Q値</b>: 1.41固定（約1オクターブ帯域幅）</li>
+
+    <li><b>コントロール</b>: 0dBセンターデテント付き垂直フェーダー</li>
+
+    <li><b>処理</b>: 最終リミッティング前のステレオ出力合計に適用</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">トラック別コントロール</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>INPUT L/R</b>: ステレオオーディオ入力（ポリフォニック）。Lのみ接続時、20ms遅延コピーをRに送出（Haasエフェクトステレオワイドニング）。</li>
+
+    <li><b>LEVELノブ</b>: トラックゲイン 0-200%（デフォルト: 100%）</li>
+
+    <li><b>LEVEL CV</b>: ゲイン変調入力（±10Vでノブ値に±100%加算、最終ゲイン0.0-2.0にクランプ）</li>
+
+    <li><b>DUCKノブ</b>: サイドチェインダッキング深度 0-100%</li>
+
+    <li><b>DUCK入力</b>: サイドチェインコントロール入力（エンベロープ 0-10Vを想定）</li>
+
+    <li><b>MUTEボタン</b>: トラックミュート切替、赤LEDインジケーター</li>
+
+    <li><b>SOLOボタン</b>: トラックソロ切替、緑LEDインジケーター</li>
+
+    <li><b>MUTE/SOLOトリガー</b>: ミュート/ソロ切替の外部トリガー入力</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クロスモジュールソロ</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>チェーン検出</b>: ソロ状態は隣接するU8、ALEXANDERPLATZ、SHINJUKUモジュール間で共有</li>
+
+    <li><b>エクスクルーシブソロ</b>: ソロボタンを400ms長押しでエクスクルーシブモード起動（チェーン内の他全ソロをキャンセル）</li>
+
+    <li><b>視覚フィードバック</b>: 他トラックのソロでミュートされた時、ミュートLEDが点灯</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">チェーン統合</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>CHAIN L/R</b>: チェーン内の前のミキサーモジュールからの入力</li>
+
+    <li><b>MIX L/R</b>: 最終ステレオ出力（トラック合計 + チェーン + EQ処理）</li>
+
+    <li><b>オートパッチ</b>: 隣接するU8、YAMANOTE、ALEXANDERPLATZ、またはSHINJUKUに自動接続</li>
+
+    <li><b>ケーブル色</b>: 赤（#F62F36）東京丸ノ内線に対応</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">VUメーター</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>表示</b>: トラック別水平ステレオVUメーター</li>
+
+    <li><b>範囲</b>: -36dB～+6dB</li>
+
+    <li><b>色</b>: 緑から赤のグラデーション、0dB以上は赤ゾーン</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+
+    <ul style="padding-left: 1.5rem;">
+
+    <li>オーディオ入出力: ±10V（クランプ）</li>
+
+    <li>CV入力: 0-10V</li>
+
+    <li>トリガー閾値: 2.0V立ち上がりエッジ</li>
+
+    <li>ポリフォニー: 最大16チャンネル</li>
+
+    <li>レベル範囲: 0-200%</li>
+
+    <li>ダック減衰: 0-300%（3倍乗数付き）</li>
+
+    <li>EQゲイン: バンドあたり±12dB</li>
+
+    <li>処理: 32ビット浮動小数点</li>
+
+    <li>モジュール幅: 32HP</li>
+
+    <li><b>Chain Left</b>: 複数のミキサーモジュールをデイジーチェーン接続するための左チャンネルチェイン入力。</li>
+
+    <li><b>Chain Right</b>: 複数のミキサーモジュールをデイジーチェーン接続するための右チャンネルチェイン入力。</li>
+
+    <li><b>Mix Left</b>: メインステレオミックス左出力。全8トラック、12バンドEQ、チェイン入力の合計。</li>
+
+    <li><b>Mix Right</b>: メインステレオミックス右出力。全8トラック、12バンドEQ、チェイン入力の合計。</li>
+
+    <li><b>Left</b>: チャンネル別ステレオオーディオ入力（左チャンネル）。</li>
+
+    <li><b>Right</b>: チャンネル別ステレオオーディオ入力（右チャンネル）。</li>
+
+    <li><b>Level</b>: チャンネル別音量コントロール（0-200%、デフォルト100%）。</li>
+
+    <li><b>Duck</b>: サイドチェインダック量（0-100%）。</li>
+
+    <li><b>Mute</b>: チャンネルミュート切替。</li>
+
+    <li><b>Solo</b>: チャンネルソロ切替（右クリックメニューでエクスクルーシブモード利用可能）。</li>
+
+    <li><b>Level CV</b>: チャンネル音量のCV入力。</li>
+
+    <li><b>Mute Trigger</b>: ミュート状態を切り替えるトリガー入力。</li>
+
+    <li><b>Solo Trigger</b>: ソロ状態を切り替えるトリガー入力。</li>
+
+    <li><b>Master EQ</b>: 12バンドパラメトリックEQ（31/63/125/250/500/1K/2K/3K/5K/8K/12K/16K Hz）、バンドあたり\u00b112dB。</li>
+
+    </ul>
+
+    <div style="display:none"><ul>
+
+    <li><b>Bands</b>: 12周波数バンド（全スペクトルカバー）</li>
+
+    <li><b>Frequencies</b>: 31Hz、63Hz、125Hz、250Hz、500Hz、1kHz、2kHz、3.15kHz、5kHz、8kHz、12.5kHz、16kHz</li>
+
+    <li><b>Gain Range</b>: バンドあたり -12dB〜+12dB</li>
+
+    <li><b>Filter Type</b>: バイクアッドピークEQ（Audio EQ Cookbook）</li>
+
+    <li><b>Q Factor</b>: 固定値 1.41（約1オクターブ帯域幅）</li>
+
+    <li><b>Controls</b>: 0dBセンターデテント付き垂直フェーダー</li>
+
+    <li><b>Processing</b>: 最終リミッター前のステレオ出力合計に適用</li>
+
+    <li><b>Chain Detection</b>: ソロ状態は隣接するU8、ALEXANDERPLATZ、SHINJUKUモジュール間で共有</li>
+
+    <li><b>Visual Feedback</b>: 他トラックのソロでミュートされた時、ミュートLEDが点灯</li>
+
+    <li><b>Cable Color</b>: 東京丸ノ内線に合わせた赤（#F62F36）</li>
+
+    <li><b>Display</b>: 各トラック水平ステレオVUメーター</li>
+
+    <li><b>Range</b>: -36dB〜+6dB</li>
+
+    <li><b>Color</b>: 緑から赤のグラデーション、0dB以上は赤ゾーン</li>
+
+    <li><b>LEVEL Knob</b>: トラックゲイン 0〜200%（デフォルト：100%）</li>
+
+    <li><b>DUCK Knob</b>: サイドチェインダッキング深度 0〜100%</li>
+
+    <li><b>DUCK Input</b>: サイドチェインコントロール入力（エンベロープ 0〜10V を想定）</li>
+
+    <li><b>MUTE Button</b>: トラックミュート切替、赤LEDインジケーター</li>
+
+    <li><b>SOLO Button</b>: トラックソロ切替、緑LEDインジケーター</li>
+
+    <li><b>MUTE/SOLO Triggers</b>: ミュート/ソロ切替の外部トリガー入力</li>
+
+    <li><b>Exclusive Solo</b>: ソロボタンを400ms長押しでエクスクルーシブモード（他のソロをキャンセル）</li>
+
+    <li><b>Auto-Patch</b>: 隣接するU8、YAMANOTE、ALEXANDERPLATZ、SHINJUKUへ自動接続</li>
+
+    </ul></div>'
+controls:
+- name: Track 1 Level
+  type: param
+  desc:
+    zh: Track 1 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 1 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 1 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 2 Level
+  type: param
+  desc:
+    zh: Track 2 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 2 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 2 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 3 Level
+  type: param
+  desc:
+    zh: Track 3 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 3 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 3 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 4 Level
+  type: param
+  desc:
+    zh: Track 4 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 4 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 4 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 5 Level
+  type: param
+  desc:
+    zh: Track 5 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 5 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 5 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 6 Level
+  type: param
+  desc:
+    zh: Track 6 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 6 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 6 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 7 Level
+  type: param
+  desc:
+    zh: Track 7 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 7 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 7 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 8 Level
+  type: param
+  desc:
+    zh: Track 8 音量控制（0-200%，預設 100%），可由 Level CV 輸入進行調變。
+    en: Track 8 level gain (0-200%, default 100%), modulated by Level CV input.
+    ja: Track 8 のレベルゲイン（0-200%、デフォルト 100%）、Level CV 入力で変調可能。
+- name: Track 1 Duck
+  type: param
+  desc:
+    zh: Track 1 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 1 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 1 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 2 Duck
+  type: param
+  desc:
+    zh: Track 2 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 2 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 2 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 3 Duck
+  type: param
+  desc:
+    zh: Track 3 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 3 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 3 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 4 Duck
+  type: param
+  desc:
+    zh: Track 4 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 4 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 4 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 5 Duck
+  type: param
+  desc:
+    zh: Track 5 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 5 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 5 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 6 Duck
+  type: param
+  desc:
+    zh: Track 6 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 6 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 6 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 7 Duck
+  type: param
+  desc:
+    zh: Track 7 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 7 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 7 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 8 Duck
+  type: param
+  desc:
+    zh: Track 8 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
+    en: Track 8 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
+    ja: Track 8 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+- name: Track 1 Mute
+  type: param
+  desc:
+    zh: Track 1 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 1 mute toggle; silences the track output with red LED indicator.
+    ja: Track 1 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 2 Mute
+  type: param
+  desc:
+    zh: Track 2 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 2 mute toggle; silences the track output with red LED indicator.
+    ja: Track 2 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 3 Mute
+  type: param
+  desc:
+    zh: Track 3 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 3 mute toggle; silences the track output with red LED indicator.
+    ja: Track 3 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 4 Mute
+  type: param
+  desc:
+    zh: Track 4 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 4 mute toggle; silences the track output with red LED indicator.
+    ja: Track 4 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 5 Mute
+  type: param
+  desc:
+    zh: Track 5 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 5 mute toggle; silences the track output with red LED indicator.
+    ja: Track 5 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 6 Mute
+  type: param
+  desc:
+    zh: Track 6 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 6 mute toggle; silences the track output with red LED indicator.
+    ja: Track 6 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 7 Mute
+  type: param
+  desc:
+    zh: Track 7 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 7 mute toggle; silences the track output with red LED indicator.
+    ja: Track 7 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 8 Mute
+  type: param
+  desc:
+    zh: Track 8 Mute 開關，靜音該軌道的輸出，紅色 LED 指示狀態。
+    en: Track 8 mute toggle; silences the track output with red LED indicator.
+    ja: Track 8 のミュート切替。トラック出力を無音化、赤 LED で状態表示。
+- name: Track 1 Solo
+  type: param
+  desc:
+    zh: Track 1 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 1 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 1 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 2 Solo
+  type: param
+  desc:
+    zh: Track 2 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 2 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 2 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 3 Solo
+  type: param
+  desc:
+    zh: Track 3 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 3 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 3 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 4 Solo
+  type: param
+  desc:
+    zh: Track 4 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 4 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 4 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 5 Solo
+  type: param
+  desc:
+    zh: Track 5 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 5 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 5 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 6 Solo
+  type: param
+  desc:
+    zh: Track 6 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 6 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 6 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 7 Solo
+  type: param
+  desc:
+    zh: Track 7 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 7 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 7 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 8 Solo
+  type: param
+  desc:
+    zh: Track 8 Solo 開關，綠色 LED 指示；長按 400ms 啟用 Exclusive 模式，取消整個 Chain 中其他所有 Solo。
+    en: Track 8 solo toggle with green LED; hold 400ms for exclusive mode, canceling all other solos across the chain.
+    ja: Track 8 のソロ切替、緑 LED で表示。400ms 長押しでエクスクルーシブモード起動、チェーン内の他全ソロをキャンセル。
+- name: Track 1 Left
+  type: input
+  desc:
+    zh: Track 1 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 1 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 1 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 2 Left
+  type: input
+  desc:
+    zh: Track 2 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 2 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 2 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 3 Left
+  type: input
+  desc:
+    zh: Track 3 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 3 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 3 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 4 Left
+  type: input
+  desc:
+    zh: Track 4 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 4 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 4 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 5 Left
+  type: input
+  desc:
+    zh: Track 5 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 5 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 5 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 6 Left
+  type: input
+  desc:
+    zh: Track 6 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 6 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 6 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 7 Left
+  type: input
+  desc:
+    zh: Track 7 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 7 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 7 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 8 Left
+  type: input
+  desc:
+    zh: Track 8 Stereo 左聲道輸入（Polyphonic，最多 16 聲道）；若僅連接此輸入，右聲道會以 20ms 延遲自動產生 Haas Effect。
+    en: Track 8 stereo left input (polyphonic, up to 16 channels); if only this input is connected, the right channel is derived via 20ms Haas delay.
+    ja: Track 8 のステレオ左入力（ポリフォニック、最大 16ch）。この入力のみ接続時、右ch は 20ms 遅延の Haas エフェクトで自動生成。
+- name: Track 1 Right
+  type: input
+  desc:
+    zh: Track 1 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 1 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 1 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 2 Right
+  type: input
+  desc:
+    zh: Track 2 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 2 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 2 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 3 Right
+  type: input
+  desc:
+    zh: Track 3 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 3 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 3 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 4 Right
+  type: input
+  desc:
+    zh: Track 4 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 4 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 4 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 5 Right
+  type: input
+  desc:
+    zh: Track 5 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 5 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 5 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 6 Right
+  type: input
+  desc:
+    zh: Track 6 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 6 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 6 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 7 Right
+  type: input
+  desc:
+    zh: Track 7 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 7 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 7 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 8 Right
+  type: input
+  desc:
+    zh: Track 8 Stereo 右聲道輸入（Polyphonic，最多 16 聲道）。
+    en: Track 8 stereo right input (polyphonic, up to 16 channels).
+    ja: Track 8 のステレオ右入力（ポリフォニック、最大 16ch）。
+- name: Track 1 Level CV
+  type: input
+  desc:
+    zh: Track 1 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 1 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 1 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 2 Level CV
+  type: input
+  desc:
+    zh: Track 2 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 2 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 2 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 3 Level CV
+  type: input
+  desc:
+    zh: Track 3 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 3 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 3 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 4 Level CV
+  type: input
+  desc:
+    zh: Track 4 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 4 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 4 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 5 Level CV
+  type: input
+  desc:
+    zh: Track 5 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 5 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 5 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 6 Level CV
+  type: input
+  desc:
+    zh: Track 6 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 6 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 6 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 7 Level CV
+  type: input
+  desc:
+    zh: Track 7 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 7 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 7 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 8 Level CV
+  type: input
+  desc:
+    zh: Track 8 Level CV 輸入（±10V，內部除以 10 後與 Knob 值相加，最終限制 0.0-2.0）。
+    en: Track 8 Level CV input (±10V scaled by 1/10 and added to knob value, final gain clamped 0.0-2.0).
+    ja: Track 8 の Level CV 入力（±10V を 1/10 スケーリングしてノブ値に加算、最終ゲインは 0.0-2.0 にクランプ）。
+- name: Track 1 Duck
+  type: input
+  desc:
+    zh: Track 1 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 1 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 1 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 2 Duck
+  type: input
+  desc:
+    zh: Track 2 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 2 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 2 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 3 Duck
+  type: input
+  desc:
+    zh: Track 3 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 3 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 3 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 4 Duck
+  type: input
+  desc:
+    zh: Track 4 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 4 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 4 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 5 Duck
+  type: input
+  desc:
+    zh: Track 5 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 5 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 5 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 6 Duck
+  type: input
+  desc:
+    zh: Track 6 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 6 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 6 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 7 Duck
+  type: input
+  desc:
+    zh: Track 7 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 7 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 7 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 8 Duck
+  type: input
+  desc:
+    zh: Track 8 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
+    en: Track 8 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
+    ja: Track 8 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+- name: Track 1 Mute Trigger
+  type: input
+  desc:
+    zh: Track 1 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 1 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 1 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 2 Mute Trigger
+  type: input
+  desc:
+    zh: Track 2 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 2 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 2 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 3 Mute Trigger
+  type: input
+  desc:
+    zh: Track 3 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 3 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 3 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 4 Mute Trigger
+  type: input
+  desc:
+    zh: Track 4 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 4 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 4 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 5 Mute Trigger
+  type: input
+  desc:
+    zh: Track 5 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 5 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 5 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 6 Mute Trigger
+  type: input
+  desc:
+    zh: Track 6 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 6 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 6 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 7 Mute Trigger
+  type: input
+  desc:
+    zh: Track 7 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 7 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 7 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 8 Mute Trigger
+  type: input
+  desc:
+    zh: Track 8 Mute Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Mute 狀態。
+    en: Track 8 mute trigger input; each rising edge (2.0V threshold) toggles mute state.
+    ja: Track 8 のミュートトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにミュート状態を切替。
+- name: Track 1 Solo Trigger
+  type: input
+  desc:
+    zh: Track 1 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 1 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 1 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 2 Solo Trigger
+  type: input
+  desc:
+    zh: Track 2 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 2 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 2 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 3 Solo Trigger
+  type: input
+  desc:
+    zh: Track 3 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 3 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 3 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 4 Solo Trigger
+  type: input
+  desc:
+    zh: Track 4 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 4 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 4 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 5 Solo Trigger
+  type: input
+  desc:
+    zh: Track 5 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 5 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 5 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 6 Solo Trigger
+  type: input
+  desc:
+    zh: Track 6 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 6 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 6 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 7 Solo Trigger
+  type: input
+  desc:
+    zh: Track 7 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 7 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 7 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Track 8 Solo Trigger
+  type: input
+  desc:
+    zh: Track 8 Solo Trigger 輸入，每個上升邊緣（閾值 2.0V）切換 Solo 狀態。
+    en: Track 8 solo trigger input; each rising edge (2.0V threshold) toggles solo state.
+    ja: Track 8 のソロトリガー入力。立ち上がりエッジ（閾値 2.0V）ごとにソロ状態を切替。
+- name: Chain Left
+  type: input
+  desc:
+    en: Left channel chain input for daisy-chaining multiple mixer modules.
+    zh: 左聲道 Chain 輸入，用於串接多個混音器模組。
+    ja: 複数のミキサーモジュールをデイジーチェーン接続するための左チャンネルチェイン入力。
+- name: Chain Right
+  type: input
+  desc:
+    en: Right channel chain input for daisy-chaining multiple mixer modules.
+    zh: 右聲道 Chain 輸入，用於串接多個混音器模組。
+    ja: 複数のミキサーモジュールをデイジーチェーン接続するための右チャンネルチェイン入力。
+- name: Mix Left
+  type: output
+  desc:
+    en: Main stereo mix left output (±10V clamped), sum of all 8 tracks plus Chain input through the 12-band Master EQ.
+    zh: Mix 主立體聲左輸出（限制 ±10V），為 8 軌加總與 Chain 輸入經 12-band Master EQ 處理後的結果。
+    ja: メインステレオMix左出力（±10Vクランプ）、8トラック合計とChain入力を12バンドMaster EQ処理した結果。
+- name: Mix Right
+  type: output
+  desc:
+    en: Main stereo mix right output (±10V clamped), sum of all 8 tracks plus Chain input through the 12-band Master EQ.
+    zh: Mix 主立體聲右輸出（限制 ±10V），為 8 軌加總與 Chain 輸入經 12-band Master EQ 處理後的結果。
+    ja: メインステレオMix右出力（±10Vクランプ）、8トラック合計とChain入力を12バンドMaster EQ処理した結果。
+- name: Master EQ 31 Hz
+  type: param
+  desc:
+    zh: Master EQ Band 1（31Hz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 1 (31Hz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 1（31Hz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 63 Hz
+  type: param
+  desc:
+    zh: Master EQ Band 2（63Hz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 2 (63Hz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 2（63Hz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 125 Hz
+  type: param
+  desc:
+    zh: Master EQ Band 3（125Hz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 3 (125Hz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 3（125Hz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 250 Hz
+  type: param
+  desc:
+    zh: Master EQ Band 4（250Hz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 4 (250Hz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 4（250Hz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 500 Hz
+  type: param
+  desc:
+    zh: Master EQ Band 5（500Hz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 5 (500Hz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 5（500Hz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 1K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 6（1kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 6 (1kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 6（1kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 2K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 7（2kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 7 (2kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 7（2kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 3K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 8（3.15kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 8 (3.15kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 8（3.15kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 5K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 9（5kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 9 (5kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 9（5kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 8K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 10（8kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 10 (8kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 10（8kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 12K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 11（12.5kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 11 (12.5kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 11（12.5kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。
+- name: Master EQ 16K Hz
+  type: param
+  desc:
+    zh: Master EQ Band 12（16kHz）Gain（-12dB 至 +12dB，預設 0dB，Q=1.41 約 1 Octave 頻寬）。
+    en: Master EQ band 12 (16kHz) gain (-12dB to +12dB, default 0dB; Biquad peak, Q=1.41 ≈ 1 octave).
+    ja: Master EQ バンド 12（16kHz）のゲイン（-12dB〜+12dB、デフォルト 0dB、Q=1.41 約 1 オクターブ帯域幅）。

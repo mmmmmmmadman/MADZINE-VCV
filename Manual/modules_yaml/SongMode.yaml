@@ -1,0 +1,588 @@
+slug: SongMode
+name: SONG MODE
+hp: 8
+wide: false
+alt: SONG MODE
+description:
+  en: 8-input sequential switch with clock-based length control and crossfade support
+  zh: 8 輸入順序切換器，具備 Clock 長度控制與 Crossfade 支援
+  ja: 8入力シーケンシャルスイッチ、クロックベース長さ制御とクロスフェード対応
+features:
+  en:
+  - 8 audio/CV inputs with individual length
+  - Learn mode for automatic length detection
+  - Customizable sequence via text field
+  - Linear crossfade between inputs
+  - Per-input trigger outputs
+  zh:
+  - 8 組 Audio/CV 輸入，各有獨立長度
+  - Learn 模式自動偵測長度
+  - 可透過文字欄位自訂序列
+  - 線性 Crossfade 切換
+  - 各輸入獨立 Trigger 輸出
+  ja:
+  - 個別長さ設定可能な8系統Audio/CV入力
+  - 自動長さ検出のLearnモード
+  - テキストフィールドでシーケンスカスタマイズ
+  - 入力間のリニアクロスフェード
+  - 入力別トリガー出力
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Clock-driven sequential switch that cycles through 8 inputs based on configurable length values. Each input plays for a specified number of clock cycles before switching to the next. Supports polyphonic signals up to 16 channels with automatic channel count detection.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+    <p style="margin-bottom: 1rem;">CLOCK → Counter → Input Selection → [optional Crossfade] → Output. Each clock pulse advances the internal counter. When counter reaches the current input's length, it resets and advances to the next input in the sequence.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sequence Control</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Sequence Field</b>: Text input defining playback order. Default: "12345678"</li>
+    <li><b>Formats</b>: Direct ("12345678"), space-separated ("1 2 3"), comma-separated ("1,2,3"), range ("1-4" expands to 1,2,3,4)</li>
+    <li><b>Numbers</b>: 1-8 corresponding to inputs IN 1 through IN 8</li>
+    <li><b>Loop</b>: Sequence repeats indefinitely after completion</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Length Parameters</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Length 1-8</b>: Clock cycles per input (1-64, default: 4). Determines how many clocks each input plays before advancing.</li>
+    <li><b>Snap</b>: Values snap to integers for precise timing</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Learn Mode</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Learn</b>: Activates learn mode for that input (red LED)</li>
+    <li><b>Behavior</b>: Counts incoming clocks while active. Press again to set length to counted value.</li>
+    <li><b>Use Case</b>: Match input length to external loop length automatically</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Crossfade Parameters</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Fade Clock</b>: Start crossfade N clocks before input ends (0-16, default: 0). If 0, no fade occurs.</li>
+    <li><b>Fade Time</b>: Crossfade duration in milliseconds (0-1000, default: 100)</li>
+    <li><b>Behavior</b>: Linear crossfade between current and next input signals</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Inputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: Clock input for advancing the sequence</li>
+    <li><b>Reset</b>: Reset to beginning of sequence</li>
+    <li><b>Input 1-8</b>: Eight audio/CV inputs (polyphonic)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Main</b>: Routed output signal (active input with optional crossfade, polyphonic, matches maximum input channel count)</li>
+    <li><b>Trigger 1-8</b>: Trigger output when corresponding input becomes active</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Active Indicator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Green LED</b>: Shows currently active input</li>
+    <li><b>Red LED</b>: Shows learn mode is active for that input</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Length 1</b>: Clock cycles for Input 1 (1-64, default 4).</li>
+    <li><b>Length 2</b>: Clock cycles for Input 2 (1-64, default 4).</li>
+    <li><b>Length 3</b>: Clock cycles for Input 3 (1-64, default 4).</li>
+    <li><b>Length 4</b>: Clock cycles for Input 4 (1-64, default 4).</li>
+    <li><b>Length 5</b>: Clock cycles for Input 5 (1-64, default 4).</li>
+    <li><b>Length 6</b>: Clock cycles for Input 6 (1-64, default 4).</li>
+    <li><b>Length 7</b>: Clock cycles for Input 7 (1-64, default 4).</li>
+    <li><b>Length 8</b>: Clock cycles for Input 8 (1-64, default 4).</li>
+    <li><b>Learn 1</b>: Learn mode for Input 1. Counts clocks to auto-set length.</li>
+    <li><b>Learn 2</b>: Learn mode for Input 2. Counts clocks to auto-set length.</li>
+    <li><b>Learn 3</b>: Learn mode for Input 3. Counts clocks to auto-set length.</li>
+    <li><b>Learn 4</b>: Learn mode for Input 4. Counts clocks to auto-set length.</li>
+    <li><b>Learn 5</b>: Learn mode for Input 5. Counts clocks to auto-set length.</li>
+    <li><b>Learn 6</b>: Learn mode for Input 6. Counts clocks to auto-set length.</li>
+    <li><b>Learn 7</b>: Learn mode for Input 7. Counts clocks to auto-set length.</li>
+    <li><b>Learn 8</b>: Learn mode for Input 8. Counts clocks to auto-set length.</li>
+    <li><b>Fade Clock</b>: Start crossfade N clocks before input ends (0-16, default 0).</li>
+    <li><b>Fade Time</b>: Crossfade duration in milliseconds (0-1000, default 100).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: Clock input for advancing the sequence.</li>
+    <li><b>Reset</b>: Reset to beginning of sequence.</li>
+    <li><b>Input 1</b>: Audio/CV input 1 (polyphonic).</li>
+    <li><b>Input 2</b>: Audio/CV input 2 (polyphonic).</li>
+    <li><b>Input 3</b>: Audio/CV input 3 (polyphonic).</li>
+    <li><b>Input 4</b>: Audio/CV input 4 (polyphonic).</li>
+    <li><b>Input 5</b>: Audio/CV input 5 (polyphonic).</li>
+    <li><b>Input 6</b>: Audio/CV input 6 (polyphonic).</li>
+    <li><b>Input 7</b>: Audio/CV input 7 (polyphonic).</li>
+    <li><b>Input 8</b>: Audio/CV input 8 (polyphonic).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Main</b>: Routed output signal (active input with optional crossfade, polyphonic).</li>
+    <li><b>Trigger 1</b>: Trigger output when Input 1 becomes active.</li>
+    <li><b>Trigger 2</b>: Trigger output when Input 2 becomes active.</li>
+    <li><b>Trigger 3</b>: Trigger output when Input 3 becomes active.</li>
+    <li><b>Trigger 4</b>: Trigger output when Input 4 becomes active.</li>
+    <li><b>Trigger 5</b>: Trigger output when Input 5 becomes active.</li>
+    <li><b>Trigger 6</b>: Trigger output when Input 6 becomes active.</li>
+    <li><b>Trigger 7</b>: Trigger output when Input 7 becomes active.</li>
+    <li><b>Trigger 8</b>: Trigger output when Input 8 becomes active.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Module width: 8HP</li>
+    <li>Polyphony: Up to 16 channels</li>
+    <li>Length range: 1-64 clocks per input</li>
+    <li>Crossfade time: 0-1000ms</li>
+    <li>Crossfade advance: 0-16 clocks</li>
+    <li>Processing: 32-bit floating point</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">Clock 驅動的順序切換器，根據可設定的長度值循環切換 8 個輸入。每個輸入播放指定的 Clock 週期數後切換至下一個。支援最多 16 聲道的 Polyphonic 訊號，自動偵測聲道數。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+    <p style="margin-bottom: 1rem;">CLOCK → Counter → Input 選擇 → [選用 Crossfade] → Output。每個 Clock Pulse 推進內部計數器。當計數器達到當前輸入的長度時，重置並前進到序列中的下一個輸入。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">序列控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Sequence Field</b>: 定義播放順序的文字輸入。預設："12345678"</li>
+    <li><b>Formats</b>: 直接輸入（"12345678"）、空格分隔（"1 2 3"）、逗號分隔（"1,2,3"）、範圍（"1-4" 展開為 1,2,3,4）</li>
+    <li><b>Numbers</b>: 1-8 對應 IN 1 至 IN 8 輸入</li>
+    <li><b>Loop</b>: 序列完成後無限循環</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">長度參數</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Length 1-8</b>: 每個輸入的 Clock 週期數（1-64，預設：4）。決定每個輸入播放多少 Clock 後切換。</li>
+    <li><b>Snap</b>: 數值自動對齊整數以確保精確時序</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Learn 模式</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Learn</b>: 啟動該輸入的 Learn 模式（紅色 LED）</li>
+    <li><b>Behavior</b>: 啟動時計數接收的 Clock。再次按下設定長度為計數值。</li>
+    <li><b>Use Case</b>: 自動匹配輸入長度與外部 Loop 長度</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Crossfade 參數</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Fade Clock</b>: 在輸入結束前 N 個 Clock 開始 Crossfade（0-16，預設：0）。若為 0 則無淡入淡出。</li>
+    <li><b>Fade Time</b>: Crossfade 持續時間，單位毫秒（0-1000，預設：100）
+    <li><b>Behavior</b>: 當前與下一個輸入訊號之間的線性 Crossfade</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸入</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: Clock 輸入用於推進序列</li>
+    <li><b>Reset</b>: 重置至序列開頭</li>
+    <li><b>Input 1-8</b>: 8 組 Audio/CV 輸入（Polyphonic）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Main</b>: 路由輸出訊號（當前活動輸入，可選交叉淡入，Polyphonic，匹配最大輸入聲道數）</li>
+    <li><b>Trigger 1-8</b>: 對應輸入變為活動時的 Trigger 輸出</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">活動指示器</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Green LED</b>: 顯示當前活動的輸入</li>
+    <li><b>Red LED</b>: 顯示該輸入的 Learn 模式已啟動</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Length 1</b>: Input 1 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 2</b>: Input 2 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 3</b>: Input 3 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 4</b>: Input 4 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 5</b>: Input 5 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 6</b>: Input 6 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 7</b>: Input 7 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Length 8</b>: Input 8 的 Clock 週期數（1-64，預設 4）。</li>
+    <li><b>Learn 1</b>: Input 1 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 2</b>: Input 2 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 3</b>: Input 3 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 4</b>: Input 4 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 5</b>: Input 5 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 6</b>: Input 6 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 7</b>: Input 7 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Learn 8</b>: Input 8 的 Learn 模式。計數 Clock 以自動設定長度。</li>
+    <li><b>Fade Clock</b>: 在輸入結束前 N 個 Clock 開始 Crossfade（0-16，預設 0）。</li>
+    <li><b>Fade Time</b>: Crossfade 持續時間（0-1000ms，預設 100）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: Clock 輸入用於推進序列。</li>
+    <li><b>Reset</b>: 重置至序列開頭。</li>
+    <li><b>Input 1</b>: Audio/CV 輸入 1（Polyphonic）。</li>
+    <li><b>Input 2</b>: Audio/CV 輸入 2（Polyphonic）。</li>
+    <li><b>Input 3</b>: Audio/CV 輸入 3（Polyphonic）。</li>
+    <li><b>Input 4</b>: Audio/CV 輸入 4（Polyphonic）。</li>
+    <li><b>Input 5</b>: Audio/CV 輸入 5（Polyphonic）。</li>
+    <li><b>Input 6</b>: Audio/CV 輸入 6（Polyphonic）。</li>
+    <li><b>Input 7</b>: Audio/CV 輸入 7（Polyphonic）。</li>
+    <li><b>Input 8</b>: Audio/CV 輸入 8（Polyphonic）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Main</b>: 路由輸出訊號（當前活動輸入，可選 Crossfade，Polyphonic）。</li>
+    <li><b>Trigger 1</b>: Input 1 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 2</b>: Input 2 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 3</b>: Input 3 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 4</b>: Input 4 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 5</b>: Input 5 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 6</b>: Input 6 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 7</b>: Input 7 變為活動時的 Trigger 輸出。</li>
+    <li><b>Trigger 8</b>: Input 8 變為活動時的 Trigger 輸出。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>模組寬度：8HP</li>
+    <li>Polyphony：最多 16 聲道</li>
+    <li>長度範圍：每輸入 1-64 Clock</li>
+    <li>Crossfade 時間：0-1000ms</li>
+    <li>Crossfade 提前量：0-16 Clock</li>
+    <li>處理：32-bit 浮點</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">設定可能な長さ値に基づいて8入力を順次切り替えるクロック駆動シーケンシャルスイッチ。各入力は指定されたクロックサイクル数再生後、次に切り替わります。最大16チャンネルのポリフォニック信号対応、自動チャンネル数検出。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+    <p style="margin-bottom: 1rem;">CLOCK → カウンター → 入力選択 → [オプションクロスフェード] → 出力。各クロックパルスで内部カウンターが進行。カウンターが現在の入力長さに達するとリセットされ、シーケンス内の次の入力に進みます。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">シーケンス制御</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Sequence Field</b>: 再生順序を定義するテキスト入力。デフォルト："12345678"</li>
+    <li><b>Formats</b>: 直接入力（"12345678"）、スペース区切り（"1 2 3"）、カンマ区切り（"1,2,3"）、範囲（"1-4"は1,2,3,4に展開）</li>
+    <li><b>Numbers</b>: 1-8はIN 1からIN 8に対応</li>
+    <li><b>Loop</b>: シーケンス完了後無限ループ</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">長さパラメータ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Length 1-8</b>: 入力毎のクロックサイクル数（1-64、デフォルト：4）。各入力が切り替わるまでのクロック数を決定。</li>
+    <li><b>Snap</b>: 正確なタイミングのため整数にスナップ</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Learnモード</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Learn</b>: その入力のLearnモードを有効化（赤LED）</li>
+    <li><b>Behavior</b>: 有効時に入力クロックをカウント。再度押すと長さをカウント値に設定。</li>
+    <li><b>Use Case</b>: 外部ループ長さに入力長さを自動マッチング</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クロスフェードパラメータ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Fade Clock</b>: 入力終了Nクロック前にクロスフェード開始（0-16、デフォルト：0）。0の場合フェードなし。</li>
+    <li><b>Fade Time</b>: クロスフェード持続時間（ミリ秒）（0-1000、デフォルト：100）</li>
+    <li><b>Behavior</b>: 現在と次の入力信号間のリニアクロスフェード</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">入力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: シーケンス進行用クロック入力</li>
+    <li><b>Reset</b>: シーケンス先頭にリセット</li>
+    <li><b>Input 1-8</b>: 8系統Audio/CV入力（ポリフォニック）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Main</b>: ルーティング出力信号（アクティブ入力、クロスフェード可、ポリフォニック、最大入力チャンネル数にマッチ）</li>
+    <li><b>Trigger 1-8</b>: 対応する入力がアクティブになった時のトリガー出力</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">アクティブインジケーター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Green LED</b>: 現在アクティブな入力を表示</li>
+    <li><b>Red LED</b>: その入力のLearnモードが有効であることを表示</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Length 1</b>: Input 1のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 2</b>: Input 2のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 3</b>: Input 3のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 4</b>: Input 4のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 5</b>: Input 5のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 6</b>: Input 6のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 7</b>: Input 7のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Length 8</b>: Input 8のクロックサイクル数（1-64、デフォルト4）。</li>
+    <li><b>Learn 1</b>: Input 1のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 2</b>: Input 2のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 3</b>: Input 3のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 4</b>: Input 4のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 5</b>: Input 5のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 6</b>: Input 6のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 7</b>: Input 7のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Learn 8</b>: Input 8のLearnモード。クロックをカウントして長さを自動設定。</li>
+    <li><b>Fade Clock</b>: 入力終了Nクロック前にクロスフェード開始（0-16、デフォルト0）。</li>
+    <li><b>Fade Time</b>: クロスフェード持続時間（0-1000ms、デフォルト100）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: シーケンス進行用クロック入力。</li>
+    <li><b>Reset</b>: シーケンス先頭にリセット。</li>
+    <li><b>Input 1</b>: Audio/CV入力1（ポリフォニック）。</li>
+    <li><b>Input 2</b>: Audio/CV入力2（ポリフォニック）。</li>
+    <li><b>Input 3</b>: Audio/CV入力3（ポリフォニック）。</li>
+    <li><b>Input 4</b>: Audio/CV入力4（ポリフォニック）。</li>
+    <li><b>Input 5</b>: Audio/CV入力5（ポリフォニック）。</li>
+    <li><b>Input 6</b>: Audio/CV入力6（ポリフォニック）。</li>
+    <li><b>Input 7</b>: Audio/CV入力7（ポリフォニック）。</li>
+    <li><b>Input 8</b>: Audio/CV入力8（ポリフォニック）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Main</b>: ルーティング出力信号（アクティブ入力、クロスフェード可、ポリフォニック）。</li>
+    <li><b>Trigger 1</b>: Input 1がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 2</b>: Input 2がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 3</b>: Input 3がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 4</b>: Input 4がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 5</b>: Input 5がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 6</b>: Input 6がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 7</b>: Input 7がアクティブになった時のトリガー出力。</li>
+    <li><b>Trigger 8</b>: Input 8がアクティブになった時のトリガー出力。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>モジュール幅：8HP</li>
+    <li>ポリフォニー：最大16チャンネル</li>
+    <li>長さ範囲：入力毎1-64クロック</li>
+    <li>クロスフェード時間：0-1000ms</li>
+    <li>クロスフェード先行量：0-16クロック</li>
+    <li>処理：32ビット浮動小数点</li>
+    </ul>
+controls:
+- name: Length 1
+  type: param
+  desc:
+    en: Clock cycles per Input 1 (1-64, default 4, snap to integer).
+    zh: Input 1 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 1のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 2
+  type: param
+  desc:
+    en: Clock cycles per Input 2 (1-64, default 4, snap to integer).
+    zh: Input 2 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 2のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 3
+  type: param
+  desc:
+    en: Clock cycles per Input 3 (1-64, default 4, snap to integer).
+    zh: Input 3 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 3のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 4
+  type: param
+  desc:
+    en: Clock cycles per Input 4 (1-64, default 4, snap to integer).
+    zh: Input 4 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 4のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 5
+  type: param
+  desc:
+    en: Clock cycles per Input 5 (1-64, default 4, snap to integer).
+    zh: Input 5 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 5のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 6
+  type: param
+  desc:
+    en: Clock cycles per Input 6 (1-64, default 4, snap to integer).
+    zh: Input 6 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 6のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 7
+  type: param
+  desc:
+    en: Clock cycles per Input 7 (1-64, default 4, snap to integer).
+    zh: Input 7 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 7のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Length 8
+  type: param
+  desc:
+    en: Clock cycles per Input 8 (1-64, default 4, snap to integer).
+    zh: Input 8 每段 Clock 週期數（1-64，預設 4，整數 Snap）。
+    ja: Input 8のクロックサイクル数（1-64、デフォルト4、整数スナップ）。
+- name: Learn 1
+  type: param
+  desc:
+    en: Learn button for Input 1. Press to start counting Clock pulses, press again to set Length 1.
+    zh: Input 1 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 1。
+    ja: Input 1のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 1に設定。
+- name: Learn 2
+  type: param
+  desc:
+    en: Learn button for Input 2. Press to start counting Clock pulses, press again to set Length 2.
+    zh: Input 2 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 2。
+    ja: Input 2のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 2に設定。
+- name: Learn 3
+  type: param
+  desc:
+    en: Learn button for Input 3. Press to start counting Clock pulses, press again to set Length 3.
+    zh: Input 3 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 3。
+    ja: Input 3のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 3に設定。
+- name: Learn 4
+  type: param
+  desc:
+    en: Learn button for Input 4. Press to start counting Clock pulses, press again to set Length 4.
+    zh: Input 4 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 4。
+    ja: Input 4のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 4に設定。
+- name: Learn 5
+  type: param
+  desc:
+    en: Learn button for Input 5. Press to start counting Clock pulses, press again to set Length 5.
+    zh: Input 5 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 5。
+    ja: Input 5のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 5に設定。
+- name: Learn 6
+  type: param
+  desc:
+    en: Learn button for Input 6. Press to start counting Clock pulses, press again to set Length 6.
+    zh: Input 6 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 6。
+    ja: Input 6のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 6に設定。
+- name: Learn 7
+  type: param
+  desc:
+    en: Learn button for Input 7. Press to start counting Clock pulses, press again to set Length 7.
+    zh: Input 7 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 7。
+    ja: Input 7のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 7に設定。
+- name: Learn 8
+  type: param
+  desc:
+    en: Learn button for Input 8. Press to start counting Clock pulses, press again to set Length 8.
+    zh: Input 8 的 Learn 按鈕。按下開始計數 Clock，再次按下將計數值設為 Length 8。
+    ja: Input 8のLearnボタン。押すとClockパルスのカウント開始、もう一度押すとLength 8に設定。
+- name: Fade Clock
+  type: param
+  desc:
+    en: Start crossfade N Clocks before segment ends (0-16, default 0, snap to integer). 0 disables Clock-advance fade.
+    zh: 在段落結束前 N 個 Clock 開始 Crossfade（0-16，預設 0，整數 Snap）。0 時停用提前 Crossfade。
+    ja: セグメント終了Nクロック前にクロスフェード開始（0-16、デフォルト0、整数スナップ）。0で事前クロスフェード無効。
+- name: Fade Time
+  type: param
+  desc:
+    en: Crossfade duration in milliseconds (0-1000, default 100). Linear crossfade between current and next Input.
+    zh: Crossfade 持續時間，單位毫秒（0-1000，預設 100）。當前與下一個 Input 之間的線性 Crossfade。
+    ja: クロスフェード持続時間（ミリ秒、0-1000、デフォルト100）。現在と次のInput間のリニアクロスフェード。
+- name: Clock
+  type: input
+  desc:
+    en: Clock input. Each pulse advances the internal counter.
+    zh: Clock 輸入。每個 Pulse 推進內部計數器。
+    ja: クロック入力。各パルスで内部カウンターが進行。
+- name: Reset
+  type: input
+  desc:
+    en: Reset input. Trigger returns Sequence to the first step.
+    zh: Reset 輸入。Trigger 時回到 Sequence 第一步。
+    ja: リセット入力。トリガーでシーケンスを先頭に戻す。
+- name: Input 1
+  type: input
+  desc:
+    en: Audio/CV Input 1. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 1。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力1。ポリフォニック、最大16チャンネル。
+- name: Input 2
+  type: input
+  desc:
+    en: Audio/CV Input 2. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 2。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力2。ポリフォニック、最大16チャンネル。
+- name: Input 3
+  type: input
+  desc:
+    en: Audio/CV Input 3. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 3。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力3。ポリフォニック、最大16チャンネル。
+- name: Input 4
+  type: input
+  desc:
+    en: Audio/CV Input 4. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 4。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力4。ポリフォニック、最大16チャンネル。
+- name: Input 5
+  type: input
+  desc:
+    en: Audio/CV Input 5. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 5。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力5。ポリフォニック、最大16チャンネル。
+- name: Input 6
+  type: input
+  desc:
+    en: Audio/CV Input 6. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 6。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力6。ポリフォニック、最大16チャンネル。
+- name: Input 7
+  type: input
+  desc:
+    en: Audio/CV Input 7. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 7。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力7。ポリフォニック、最大16チャンネル。
+- name: Input 8
+  type: input
+  desc:
+    en: Audio/CV Input 8. Polyphonic, up to 16 channels.
+    zh: Audio/CV 輸入 8。Polyphonic，最多 16 聲道。
+    ja: Audio/CV入力8。ポリフォニック、最大16チャンネル。
+- name: Main
+  type: output
+  desc:
+    en: Main output. Routed active Input with optional linear crossfade. Polyphonic, channel count matches active Input.
+    zh: Main 輸出。當前活動 Input，可含線性 Crossfade。Polyphonic，聲道數依活動 Input。
+    ja: メイン出力。アクティブInputをルーティング、リニアクロスフェード可。ポリフォニック、チャンネル数はアクティブInputに一致。
+- name: Trigger 1
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 1 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 1 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 1がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 2
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 2 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 2 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 2がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 3
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 3 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 3 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 3がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 4
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 4 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 4 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 4がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 5
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 5 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 5 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 5がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 6
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 6 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 6 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 6がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 7
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 7 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 7 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 7がアクティブになった時1ms 10Vパルスを出力。
+- name: Trigger 8
+  type: output
+  desc:
+    en: Trigger output. 1ms 10V pulse when Input 8 becomes active in the Sequence.
+    zh: Trigger 輸出。Sequence 切換至 Input 8 為活動時發出 1ms 10V Pulse。
+    ja: トリガー出力。シーケンスでInput 8がアクティブになった時1ms 10Vパルスを出力。

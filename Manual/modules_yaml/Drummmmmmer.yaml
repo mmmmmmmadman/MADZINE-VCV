@@ -1,0 +1,474 @@
+slug: Drummmmmmer
+name: Drummmmmmer
+hp: 8
+wide: false
+alt: Drummmmmmer
+description:
+  en: 4-voice world drum synthesizer with 10 cultural style presets, 8-voice engine, per-role frequency and decay controls, voice variation probability, and stereo spread
+  zh: 4 聲部世界鼓合成器，具備 10 種文化風格預設、8 聲引擎、各角色頻率與衰減控制、Voice 變化機率與 Stereo Spread
+  ja: 10種の文化スタイルプリセット、8ボイスエンジン、ロール別周波数・ディケイコントロール、ボイスバリエーション確率、ステレオスプレッドを備えた4ボイスワールドドラムシンセサイザー
+features:
+  en:
+  - 10 world music style presets with MUJI-inspired color display
+  - '4 roles: Lead, Groove, Timeline, Foundation (top to bottom)'
+  - 8-voice drum engine (2 voice variations per role)
+  - VOICE probability knob for voice variation selection
+  - Per-role FREQ/DECAY knobs with CV inputs
+  - Dynamic voice name labels showing last triggered voice
+  - SPREAD for stereo panning with equal-power law
+  - Stereo MIX L/R output with soft limiting
+  zh:
+  - 10 種世界音樂風格預設，帶 MUJI 風格彩色顯示
+  - 4 種角色：Lead、Groove、Timeline、Foundation（由上至下）
+  - 8 聲 Drum Engine（每角色 2 個 Voice 變化）
+  - VOICE 機率旋鈕選擇 Voice 變化
+  - 各角色 FREQ/DECAY 旋鈕，帶 CV 輸入
+  - 動態 Voice 名稱標籤，顯示最後觸發的 Voice
+  - SPREAD Stereo Panning，使用等功率法則
+  - Stereo MIX L/R 輸出，帶 Soft Limiting
+  ja:
+  - 10種のワールドミュージックスタイルプリセット、MUJI風カラー表示
+  - 4ロール：Lead、Groove、Timeline、Foundation（上から下）
+  - 8ボイスドラムエンジン（ロールあたり2ボイスバリエーション）
+  - VOICEプロバビリティノブでボイスバリエーション選択
+  - ロール別FREQ/DECAYノブ、CV入力対応
+  - 最後にトリガーされたボイス名を表示するダイナミックラベル
+  - イコールパワー法則によるSPREADステレオパンニング
+  - ソフトリミッティング付きステレオMIX L/R出力
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Standalone 4-voice world drum synthesizer extracted from the Universal Rhythm engine. Each of the 4 roles (Lead, Groove, Timeline, Foundation, arranged top to bottom on the panel) has 2 voice variations selected probabilistically by the VOICE knob. The module provides 10 cultural style presets with a dynamic color-coded display, per-role frequency and decay controls with CV modulation, individual audio outputs per role, and a stereo mix output with configurable spread panning.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Style Presets</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>0 - West African</b>: Gankogui, Dununba, Sangban, Djembe Slap/Tone</li>
+    <li><b>1 - Afro-Cuban</b>: Clave, Tumba, Conga, Timbales, Quinto</li>
+    <li><b>2 - Brazilian</b>: Agogo, Surdo, Tamborim, Caixa, Ganza</li>
+    <li><b>3 - Balkan</b>: Rim, Tapan Bass/Mid, Tarabuka Doum/Tek</li>
+    <li><b>4 - Indian</b>: Manjira, Baya Ge/Ka, Daya Na/Tin/Ti/Re</li>
+    <li><b>5 - Gamelan</b>: Kenong, Kethuk, Gong, Kempul, Bonang Po, Bonang Sa, Gender, Saron</li>
+    <li><b>6 - Jazz</b>: Ride/Bell, Kick, Snare, HiHat Cl/Op</li>
+    <li><b>7 - Electronic</b>: HiHat, 808 Kick, Clap, Snare, Open HH</li>
+    <li><b>8 - Breakbeat</b>: HiHat, Kick, Snare, Ghost, Open HH</li>
+    <li><b>9 - Techno</b>: HiHat, 909 Kick, Clap, Rim, Open HH, Tom</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">4-Role System</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Lead</b> (Voices 6-7, top row): High-frequency embellishments and accents. Ghost notes and effects.</li>
+    <li><b>Groove</b> (Voices 4-5, second row): Mid-range 250-700Hz. Snare, clap, and conga patterns.</li>
+    <li><b>Timeline</b> (Voices 0-1, third row): Time-keeping layer. Bells, hi-hats, 3-12kHz.</li>
+    <li><b>Foundation</b> (Voices 2-3, bottom row): Bass layer 40-150Hz. Kick and bass drums.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Voice Variation</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>VOICE Knob</b>: Controls probability of triggering voice 2 instead of voice 1 (0-100%). At 0%, always triggers primary voice. At 100%, always triggers secondary voice.</li>
+    <li><b>Voice Name Display</b>: Dynamic labels on the right side show the name of the last triggered voice per role, with style-colored glow effect.</li>
+    <li><b>Both voices process simultaneously</b>: One may be decaying while the other is freshly triggered, allowing natural overlapping tails.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Role Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>TRIG</b>: Trigger input per role. Schmitt trigger detection (0.1V low, 2V high).</li>
+    <li><b>VEL</b>: Velocity CV input per role (0-10V, normalized to 0-1). Default velocity is 1.0 when disconnected.</li>
+    <li><b>FREQ</b>: Frequency modifier (-1 to +1 octave). Applies to both voices via pow(2, freqParam). CV: ±5V = ±1 octave.</li>
+    <li><b>DECAY</b>: Decay multiplier (0.2x to 2.0x). Applies to both voices. CV: ±1V = ±0.18x (±5V = ±0.9x).</li>
+    <li><b>OUT</b>: Individual audio output per role (sum of both voices, scaled to ±5V).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Global Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE</b>: Style selection knob (0-9, snapped to integers). 30px TechnoSnapKnob with CV modulation ring display.</li>
+    <li><b>STYLE CV</b>: CV input for style selection. ±10V range, added to knob value.</li>
+    <li><b>SPREAD</b>: Stereo spread amount (0-100%, default 50%). Pan positions: Timeline -0.5, Foundation 0, Groove +0.3, Lead +0.7.</li>
+    <li><b>VOICE</b>: Voice variation probability (0-100%, default 0%). Controls which of the 2 voices per role gets triggered.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Inputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE CV</b>: Style selection modulation (added to knob value, clamped 0-9).</li>
+    <li><b>TRIG (x4)</b>: Trigger input per role (Lead, Groove, Timeline, Foundation).</li>
+    <li><b>VEL (x4)</b>: Velocity CV per role (0-10V).</li>
+    <li><b>FREQ CV (x4)</b>: Frequency modulation per role (±5V = ±1 octave).</li>
+    <li><b>DECAY CV (x4)</b>: Decay modulation per role (±1V = ±0.18x, ±5V = ±0.9x).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>OUT (x4)</b>: Individual audio output per role (±5V, sum of 2 voices).</li>
+    <li><b>MIX L</b>: Stereo left mix output with spread panning and soft limiting (tanh).</li>
+    <li><b>MIX R</b>: Stereo right mix output with spread panning and soft limiting (tanh).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Module width: 8HP</li>
+    <li>Voice count: 8 (2 per role)</li>
+    <li>Synth modes: SINE (pitched), NOISE (unpitched)</li>
+    <li>Frequency range: 42Hz - 12kHz (style dependent)</li>
+    <li>Decay range: 12ms - 800ms (style dependent)</li>
+    <li>Stereo panning: Equal-power law (cos/sin)</li>
+    <li>Output limiting: Soft clip via tanh</li>
+    <li>Processing: 32-bit floating point</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">從 Universal Rhythm 引擎提取的獨立 4 聲部世界鼓合成器。4 個角色（Lead、Groove、Timeline、Foundation，面板由上至下排列）各有 2 個 Voice 變化，由 VOICE 旋鈕以機率方式選擇。模組提供 10 種文化風格預設，帶動態彩色顯示、各角色頻率與衰減控制（含 CV 調變）、各角色獨立 Audio 輸出，以及可調 Spread Panning 的 Stereo Mix 輸出。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">風格預設</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>0 - West African</b>: Gankogui、Dununba、Sangban、Djembe Slap/Tone</li>
+    <li><b>1 - Afro-Cuban</b>: Clave、Tumba、Conga、Timbales、Quinto</li>
+    <li><b>2 - Brazilian</b>: Agogo、Surdo、Tamborim、Caixa、Ganza</li>
+    <li><b>3 - Balkan</b>: Rim、Tapan Bass/Mid、Tarabuka Doum/Tek</li>
+    <li><b>4 - Indian</b>: Manjira、Baya Ge/Ka、Daya Na/Tin/Ti/Re</li>
+    <li><b>5 - Gamelan</b>: Kenong、Kethuk、Gong、Kempul、Bonang Po、Bonang Sa、Gender、Saron</li>
+    <li><b>6 - Jazz</b>: Ride/Bell、Kick、Snare、HiHat Cl/Op</li>
+    <li><b>7 - Electronic</b>: HiHat、808 Kick、Clap、Snare、Open HH</li>
+    <li><b>8 - Breakbeat</b>: HiHat、Kick、Snare、Ghost、Open HH</li>
+    <li><b>9 - Techno</b>: HiHat、909 Kick、Clap、Rim、Open HH、Tom</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">4 角色系統</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Lead</b>（Voice 6-7，最上排）: 高頻裝飾與重音。Ghost Note 與效果。</li>
+    <li><b>Groove</b>（Voice 4-5，第二排）: 中頻 250-700Hz。Snare、Clap、Conga Pattern。</li>
+    <li><b>Timeline</b>（Voice 0-1，第三排）: 計時層。鈴鐺、Hi-hat，3-12kHz。</li>
+    <li><b>Foundation</b>（Voice 2-3，最下排）: Bass 層 40-150Hz。Kick 與 Bass 鼓。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Voice 變化</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>VOICE Knob</b>: 控制觸發 Voice 2 而非 Voice 1 的機率（0-100%）。0% 時永遠觸發 Primary Voice。100% 時永遠觸發 Secondary Voice。</li>
+    <li><b>Voice Name Display</b>: 右側的動態標籤顯示每個角色最後觸發的 Voice 名稱，搭配該風格對應的彩色光暈效果。</li>
+    <li><b>Both voices process simultaneously</b>: 兩個 Voice 同時處理，一個可能正在衰減而另一個剛被觸發，允許自然的重疊尾音效果。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">各角色控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>TRIG</b>: 各角色 Trigger 輸入。Schmitt Trigger 偵測（0.1V 低、2V 高）。</li>
+    <li><b>VEL</b>: 各角色 Velocity CV 輸入（0-10V，正規化至 0-1）。未連接時預設 Velocity 為 1.0。</li>
+    <li><b>FREQ</b>: 頻率修正（-1 至 +1 八度）。透過 pow(2, freqParam) 套用至兩個 Voice。CV: ±5V = ±1 八度。</li>
+    <li><b>DECAY</b>: Decay 倍數（0.2x 至 2.0x）。套用至兩個 Voice。CV: ±1V = ±0.18x（±5V = ±0.9x）。</li>
+    <li><b>OUT</b>: 各角色獨立 Audio 輸出（兩個 Voice 總和，±5V 縮放）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">全域控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE</b>: 風格選擇旋鈕（0-9，整數對齊）。30px TechnoSnapKnob，帶 CV 調變環顯示。</li>
+    <li><b>STYLE CV</b>: 風格選擇 CV 輸入。±10V 範圍，加到旋鈕值。</li>
+    <li><b>SPREAD</b>: Stereo Spread 量（0-100%，預設 50%）。Pan 位置：Timeline -0.5、Foundation 0、Groove +0.3、Lead +0.7。</li>
+    <li><b>VOICE</b>: Voice 變化機率（0-100%，預設 0%）。控制各角色觸發哪個 Voice。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸入</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE CV</b>: 風格選擇調變（加到旋鈕值，限制 0-9）。</li>
+    <li><b>TRIG (x4)</b>: 各角色 Trigger 輸入（Lead、Groove、Timeline、Foundation）。</li>
+    <li><b>VEL (x4)</b>: 各角色 Velocity CV（0-10V）。</li>
+    <li><b>FREQ CV (x4)</b>: 各角色頻率調變（±5V = ±1 八度）。</li>
+    <li><b>DECAY CV (x4)</b>: 各角色 Decay 調變（±1V = ±0.18x，±5V = ±0.9x）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>OUT (x4)</b>: 各角色獨立 Audio 輸出（±5V，2 Voice 總和）。</li>
+    <li><b>MIX L</b>: Stereo 左聲道 Mix 輸出，含 Spread Panning 與 Soft Limiting（tanh）。</li>
+    <li><b>MIX R</b>: Stereo 右聲道 Mix 輸出，含 Spread Panning 與 Soft Limiting（tanh）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>模組寬度: 8HP</li>
+    <li>Voice 數量: 8（每角色 2）</li>
+    <li>合成模式: SINE（音高）、NOISE（無音高）</li>
+    <li>頻率範圍: 42Hz - 12kHz（視風格而定）</li>
+    <li>Decay 範圍: 12ms - 800ms（視風格而定）</li>
+    <li>Stereo Panning: 等功率法則（cos/sin）</li>
+    <li>輸出限幅: 透過 tanh 的 Soft Clip</li>
+    <li>處理: 32 位元浮點</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">Universal Rhythmエンジンから抽出したスタンドアロン4ボイスワールドドラムシンセサイザー。4つのロール（Lead、Groove、Timeline、Foundation、パネル上から下に配置）はそれぞれ2つのボイスバリエーションを持ち、VOICEノブで確率的に選択。10種の文化スタイルプリセットをダイナミックカラー表示で提供し、ロール別周波数・ディケイコントロール（CV変調対応）、ロール別オーディオ出力、調整可能なスプレッドパンニング付きステレオミックス出力を搭載。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">スタイルプリセット</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>0 - West African</b>: Gankogui、Dununba、Sangban、Djembe Slap/Tone</li>
+    <li><b>1 - Afro-Cuban</b>: Clave、Tumba、Conga、Timbales、Quinto</li>
+    <li><b>2 - Brazilian</b>: Agogo、Surdo、Tamborim、Caixa、Ganza</li>
+    <li><b>3 - Balkan</b>: Rim、Tapan Bass/Mid、Tarabuka Doum/Tek</li>
+    <li><b>4 - Indian</b>: Manjira、Baya Ge/Ka、Daya Na/Tin/Ti/Re</li>
+    <li><b>5 - Gamelan</b>: Kenong、Kethuk、Gong、Kempul、Bonang Po、Bonang Sa、Gender、Saron</li>
+    <li><b>6 - Jazz</b>: Ride/Bell、Kick、Snare、HiHat Cl/Op</li>
+    <li><b>7 - Electronic</b>: HiHat、808 Kick、Clap、Snare、Open HH</li>
+    <li><b>8 - Breakbeat</b>: HiHat、Kick、Snare、Ghost、Open HH</li>
+    <li><b>9 - Techno</b>: HiHat、909 Kick、Clap、Rim、Open HH、Tom</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">4ロールシステム</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Lead</b>（ボイス6-7、最上段）: 高域装飾音とアクセント。ゴーストノートとエフェクト。</li>
+    <li><b>Groove</b>（ボイス4-5、2段目）: 中域250-700Hz。スネア、クラップ、コンガパターン。</li>
+    <li><b>Timeline</b>（ボイス0-1、3段目）: タイムキーピングレイヤー。ベル、ハイハット、3-12kHz。</li>
+    <li><b>Foundation</b>（ボイス2-3、最下段）: ベースレイヤー40-150Hz。キックとベースドラム。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ボイスバリエーション</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>VOICE Knob</b>: ボイス1の代わりにボイス2をトリガーする確率を制御（0-100%）。0%ではプライマリボイスのみ。100%ではセカンダリボイスのみ。</li>
+    <li><b>Voice Name Display</b>: 右側のダイナミックラベルがロールごとに最後にトリガーされたボイス名を表示。スタイルカラーのグロー効果付き。</li>
+    <li><b>Both voices process simultaneously</b>: 一方が減衰中にもう一方が新たにトリガーされ、自然なオーバーラップテールが可能。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ロール別コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>TRIG</b>: ロール別トリガー入力。シュミットトリガー検出（0.1V低、2V高）。</li>
+    <li><b>VEL</b>: ロール別ベロシティCV入力（0-10V、0-1に正規化）。未接続時のデフォルトベロシティは1.0。</li>
+    <li><b>FREQ</b>: 周波数修正（-1～+1オクターブ）。pow(2, freqParam)で両ボイスに適用。CV: ±5V = ±1オクターブ。</li>
+    <li><b>DECAY</b>: ディケイ倍率（0.2x～2.0x）。両ボイスに適用。CV: ±1V = ±0.18x（±5V = ±0.9x）。</li>
+    <li><b>OUT</b>: ロール別オーディオ出力（両ボイス合計、±5Vスケール）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">グローバルコントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE</b>: スタイル選択ノブ（0-9、整数スナップ）。30px TechnoSnapKnob、CV変調リング表示付き。</li>
+    <li><b>STYLE CV</b>: スタイル選択CV入力。±10V範囲、ノブ値に加算。</li>
+    <li><b>SPREAD</b>: ステレオスプレッド量（0-100%、デフォルト50%）。パン位置：Timeline -0.5、Foundation 0、Groove +0.3、Lead +0.7。</li>
+    <li><b>VOICE</b>: ボイスバリエーション確率（0-100%、デフォルト0%）。各ロールでどちらのボイスがトリガーされるかを制御。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">入力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE CV</b>: スタイル選択変調（ノブ値に加算、0-9にクランプ）。</li>
+    <li><b>TRIG (x4)</b>: ロール別トリガー入力（Lead、Groove、Timeline、Foundation）。</li>
+    <li><b>VEL (x4)</b>: ロール別ベロシティCV（0-10V）。</li>
+    <li><b>FREQ CV (x4)</b>: ロール別周波数変調（±5V = ±1オクターブ）。</li>
+    <li><b>DECAY CV (x4)</b>: ロール別ディケイ変調（±1V = ±0.18x、±5V = ±0.9x）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>OUT (x4)</b>: ロール別オーディオ出力（±5V、2ボイス合計）。</li>
+    <li><b>MIX L</b>: ステレオ左ミックス出力、スプレッドパンニングとソフトリミッティング（tanh）適用済み。</li>
+    <li><b>MIX R</b>: ステレオ右ミックス出力、スプレッドパンニングとソフトリミッティング（tanh）適用済み。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>モジュール幅: 8HP</li>
+    <li>ボイス数: 8（ロールあたり2）</li>
+    <li>シンセモード: SINE（ピッチあり）、NOISE（ピッチなし）</li>
+    <li>周波数範囲: 42Hz - 12kHz（スタイル依存）</li>
+    <li>ディケイ範囲: 12ms - 800ms（スタイル依存）</li>
+    <li>ステレオパンニング: イコールパワー法則（cos/sin）</li>
+    <li>出力リミッティング: tanhによるソフトクリップ</li>
+    <li>処理: 32ビット浮動小数点</li>
+    </ul>
+controls:
+- name: Style
+  type: param
+  desc:
+    en: Style selection knob (0-9, snapped to integers). 30px TechnoSnapKnob with CV modulation ring display.
+    zh: 風格選擇旋鈕（0-9，整數對齊）。30px TechnoSnapKnob，帶 CV 調變環顯示。
+    ja: スタイル選択ノブ（0-9、整数スナップ）。30px TechnoSnapKnob、CV変調リング表示付き。
+- name: Stereo Spread
+  type: param
+  desc:
+    en: Stereo spread amount controlling per-voice panning width (0-100%, default 50%).
+    zh: Stereo Spread 量，控制各 Voice 的 Panning 寬度（0-100%，預設 50%）。
+    ja: 各ボイスのパンニング幅を制御するステレオスプレッド量（0-100%、デフォルト50%）。
+- name: Voice Variation
+  type: param
+  desc:
+    en: Probability of triggering the secondary voice instead of the primary one per role (0-100%, default 0%).
+    zh: 各角色觸發 Secondary Voice 而非 Primary Voice 的機率（0-100%，預設 0%）。
+    ja: 各ロールでプライマリの代わりにセカンダリボイスをトリガーする確率（0-100%、デフォルト0%）。
+- name: Timeline Freq
+  type: param
+  desc:
+    en: Timeline role frequency offset in octaves applied to both voices (-1 to +1 oct, default 0).
+    zh: Timeline 角色頻率偏移，套用至兩個 Voice（-1 至 +1 oct，預設 0）。
+    ja: Timelineロールの周波数オフセット、両ボイスに適用（-1～+1 oct、デフォルト0）。
+- name: Foundation Freq
+  type: param
+  desc:
+    en: Foundation role frequency offset in octaves applied to both voices (-1 to +1 oct, default 0).
+    zh: Foundation 角色頻率偏移，套用至兩個 Voice（-1 至 +1 oct，預設 0）。
+    ja: Foundationロールの周波数オフセット、両ボイスに適用（-1～+1 oct、デフォルト0）。
+- name: Groove Freq
+  type: param
+  desc:
+    en: Groove role frequency offset in octaves applied to both voices (-1 to +1 oct, default 0).
+    zh: Groove 角色頻率偏移，套用至兩個 Voice（-1 至 +1 oct，預設 0）。
+    ja: Grooveロールの周波数オフセット、両ボイスに適用（-1～+1 oct、デフォルト0）。
+- name: Lead Freq
+  type: param
+  desc:
+    en: Lead role frequency offset in octaves applied to both voices (-1 to +1 oct, default 0).
+    zh: Lead 角色頻率偏移，套用至兩個 Voice（-1 至 +1 oct，預設 0）。
+    ja: Leadロールの周波数オフセット、両ボイスに適用(-1～+1 oct、デフォルト0)。
+- name: Timeline Decay
+  type: param
+  desc:
+    en: Timeline role decay multiplier applied to both voices (0.2x to 2.0x, default 1.0x).
+    zh: Timeline 角色 Decay 倍數，套用至兩個 Voice（0.2x 至 2.0x，預設 1.0x）。
+    ja: Timelineロールのディケイ倍率、両ボイスに適用（0.2x～2.0x、デフォルト1.0x）。
+- name: Foundation Decay
+  type: param
+  desc:
+    en: Foundation role decay multiplier applied to both voices (0.2x to 2.0x, default 1.0x).
+    zh: Foundation 角色 Decay 倍數，套用至兩個 Voice（0.2x 至 2.0x，預設 1.0x）。
+    ja: Foundationロールのディケイ倍率、両ボイスに適用（0.2x～2.0x、デフォルト1.0x）。
+- name: Groove Decay
+  type: param
+  desc:
+    en: Groove role decay multiplier applied to both voices (0.2x to 2.0x, default 1.0x).
+    zh: Groove 角色 Decay 倍數，套用至兩個 Voice（0.2x 至 2.0x，預設 1.0x）。
+    ja: Grooveロールのディケイ倍率、両ボイスに適用（0.2x～2.0x、デフォルト1.0x）。
+- name: Lead Decay
+  type: param
+  desc:
+    en: Lead role decay multiplier applied to both voices (0.2x to 2.0x, default 1.0x).
+    zh: Lead 角色 Decay 倍數，套用至兩個 Voice（0.2x 至 2.0x，預設 1.0x）。
+    ja: Leadロールのディケイ倍率、両ボイスに適用（0.2x～2.0x、デフォルト1.0x）。
+- name: Style CV
+  type: input
+  desc:
+    en: CV input for style selection. ±10V range, added to knob value.
+    zh: 風格選擇 CV 輸入。±10V 範圍，加到旋鈕值。
+    ja: スタイル選択変調（ノブ値に加算、0-9にクランプ）。
+- name: Timeline Trigger
+  type: input
+  desc:
+    en: Trigger input for Timeline role using Schmitt trigger detection (0.1V low, 2V high).
+    zh: Timeline 角色 Trigger 輸入，使用 Schmitt Trigger 偵測（0.1V 低、2V 高）。
+    ja: Timelineロールのトリガー入力、シュミットトリガー検出（0.1V低、2V高）。
+- name: Foundation Trigger
+  type: input
+  desc:
+    en: Trigger input for Foundation role using Schmitt trigger detection (0.1V low, 2V high).
+    zh: Foundation 角色 Trigger 輸入，使用 Schmitt Trigger 偵測（0.1V 低、2V 高）。
+    ja: Foundationロールのトリガー入力、シュミットトリガー検出（0.1V低、2V高）。
+- name: Groove Trigger
+  type: input
+  desc:
+    en: Trigger input for Groove role using Schmitt trigger detection (0.1V low, 2V high).
+    zh: Groove 角色 Trigger 輸入，使用 Schmitt Trigger 偵測（0.1V 低、2V 高）。
+    ja: Grooveロールのトリガー入力、シュミットトリガー検出（0.1V低、2V高）。
+- name: Lead Trigger
+  type: input
+  desc:
+    en: Trigger input for Lead role using Schmitt trigger detection (0.1V low, 2V high).
+    zh: Lead 角色 Trigger 輸入，使用 Schmitt Trigger 偵測（0.1V 低、2V 高）。
+    ja: Leadロールのトリガー入力、シュミットトリガー検出（0.1V低、2V高)。
+- name: Timeline Velocity CV
+  type: input
+  desc:
+    en: Velocity CV input for Timeline role, normalized from 0-10V to 0-1 (defaults to 1.0 when unplugged).
+    zh: Timeline 角色 Velocity CV 輸入，從 0-10V 正規化至 0-1（未連接時預設 1.0）。
+    ja: TimelineロールのベロシティCV入力、0-10Vを0-1に正規化（未接続時はデフォルト1.0）。
+- name: Foundation Velocity CV
+  type: input
+  desc:
+    en: Velocity CV input for Foundation role, normalized from 0-10V to 0-1 (defaults to 1.0 when unplugged).
+    zh: Foundation 角色 Velocity CV 輸入，從 0-10V 正規化至 0-1（未連接時預設 1.0）。
+    ja: FoundationロールのベロシティCV入力、0-10Vを0-1に正規化（未接続時はデフォルト1.0）。
+- name: Groove Velocity CV
+  type: input
+  desc:
+    en: Velocity CV input for Groove role, normalized from 0-10V to 0-1 (defaults to 1.0 when unplugged).
+    zh: Groove 角色 Velocity CV 輸入，從 0-10V 正規化至 0-1（未連接時預設 1.0）。
+    ja: GrooveロールのベロシティCV入力、0-10Vを0-1に正規化（未接続時はデフォルト1.0）。
+- name: Lead Velocity CV
+  type: input
+  desc:
+    en: Velocity CV input for Lead role, normalized from 0-10V to 0-1 (defaults to 1.0 when unplugged).
+    zh: Lead 角色 Velocity CV 輸入，從 0-10V 正規化至 0-1（未連接時預設 1.0）。
+    ja: LeadロールのベロシティCV入力、0-10Vを0-1に正規化（未接続時はデフォルト1.0）。
+- name: Timeline Freq CV
+  type: input
+  desc:
+    en: Frequency CV input for Timeline role, where ±5V equals ±1 octave of modulation.
+    zh: Timeline 角色頻率 CV 輸入，±5V 對應 ±1 八度調變。
+    ja: Timelineロールの周波数CV入力、±5Vが±1オクターブの変調に対応。
+- name: Foundation Freq CV
+  type: input
+  desc:
+    en: Frequency CV input for Foundation role, where ±5V equals ±1 octave of modulation.
+    zh: Foundation 角色頻率 CV 輸入，±5V 對應 ±1 八度調變。
+    ja: Foundationロールの周波数CV入力、±5Vが±1オクターブの変調に対応。
+- name: Groove Freq CV
+  type: input
+  desc:
+    en: Frequency CV input for Groove role, where ±5V equals ±1 octave of modulation.
+    zh: Groove 角色頻率 CV 輸入，±5V 對應 ±1 八度調變。
+    ja: Grooveロールの周波数CV入力、±5Vが±1オクターブの変調に対応。
+- name: Lead Freq CV
+  type: input
+  desc:
+    en: Frequency CV input for Lead role, where ±5V equals ±1 octave of modulation.
+    zh: Lead 角色頻率 CV 輸入，±5V 對應 ±1 八度調變。
+    ja: Leadロールの周波数CV入力、±5Vが±1オクターブの変調に対応。
+- name: Timeline Decay CV
+  type: input
+  desc:
+    en: Decay CV input for Timeline role, where ±5V equals ±0.9x of the decay multiplier.
+    zh: Timeline 角色 Decay CV 輸入，±5V 對應 ±0.9x Decay 倍數。
+    ja: TimelineロールのディケイCV入力、±5Vが±0.9xディケイ倍率に対応。
+- name: Foundation Decay CV
+  type: input
+  desc:
+    en: Decay CV input for Foundation role, where ±5V equals ±0.9x of the decay multiplier.
+    zh: Foundation 角色 Decay CV 輸入，±5V 對應 ±0.9x Decay 倍數。
+    ja: FoundationロールのディケイCV入力、±5Vが±0.9xディケイ倍率に対応。
+- name: Groove Decay CV
+  type: input
+  desc:
+    en: Decay CV input for Groove role, where ±5V equals ±0.9x of the decay multiplier.
+    zh: Groove 角色 Decay CV 輸入，±5V 對應 ±0.9x Decay 倍數。
+    ja: GrooveロールのディケイCV入力、±5Vが±0.9xディケイ倍率に対応。
+- name: Lead Decay CV
+  type: input
+  desc:
+    en: Decay CV input for Lead role, where ±5V equals ±0.9x of the decay multiplier.
+    zh: Lead 角色 Decay CV 輸入，±5V 對應 ±0.9x Decay 倍數。
+    ja: LeadロールのディケイCV入力、±5Vが±0.9xディケイ倍率に対応。
+- name: Timeline Audio
+  type: output
+  desc:
+    en: Timeline role audio output summing both voices and scaled to ±5V.
+    zh: Timeline 角色 Audio 輸出，兩個 Voice 總和並縮放至 ±5V。
+    ja: Timelineロールのオーディオ出力、両ボイス合計で±5Vにスケール。
+- name: Foundation Audio
+  type: output
+  desc:
+    en: Foundation role audio output summing both voices and scaled to ±5V.
+    zh: Foundation 角色 Audio 輸出，兩個 Voice 總和並縮放至 ±5V。
+    ja: Foundationロールのオーディオ出力、両ボイス合計で±5Vにスケール。
+- name: Groove Audio
+  type: output
+  desc:
+    en: Groove role audio output summing both voices and scaled to ±5V.
+    zh: Groove 角色 Audio 輸出，兩個 Voice 總和並縮放至 ±5V。
+    ja: Grooveロールのオーディオ出力、両ボイス合計で±5Vにスケール。
+- name: Lead Audio
+  type: output
+  desc:
+    en: Lead role audio output summing both voices and scaled to ±5V.
+    zh: Lead 角色 Audio 輸出，兩個 Voice 總和並縮放至 ±5V。
+    ja: Leadロールのオーディオ出力、両ボイス合計で±5Vにスケール。
+- name: Mix L
+  type: output
+  desc:
+    en: Stereo left mix output with spread panning and soft limiting (tanh).
+    zh: Stereo 左聲道 Mix 輸出，含 Spread Panning 與 Soft Limiting（tanh）。
+    ja: ステレオ左ミックス出力、スプレッドパンニングとソフトリミッティング（tanh）適用済み。
+- name: Mix R
+  type: output
+  desc:
+    en: Stereo right mix output with spread panning and soft limiting (tanh).
+    zh: Stereo 右聲道 Mix 輸出，含 Spread Panning 與 Soft Limiting（tanh）。
+    ja: ステレオ右ミックス出力、スプレッドパンニングとソフトリミッティング（tanh）適用済み。

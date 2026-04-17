@@ -23,3 +23,7 @@ CLAUDE.md
 
 # 其他
 *.log
+
+# Manual pipeline
+Manual/__pycache__/
+Manual/verify_cpp_report.txt

@@ -1,0 +1,461 @@
+slug: KEN
+name: KEN
+hp: 4
+wide: false
+alt: KEN panel
+description:
+  en: 8-channel binaural processor using HRTF with independent azimuth/elevation per channel and ILD/ITD modeling
+  zh: 使用 HRTF 處理的 8 聲道 Binaural Processor，具備各聲道獨立 Azimuth/Elevation 與 ILD/ITD 模擬
+  ja: HRTF処理を使用した8チャンネルバイノーラルプロセッサー、チャンネル別独立方位角・仰角とILD/ITDモデリング
+features:
+  en:
+  - 8-channel binaural panner
+  - Independent angle/elevation per channel
+  - HRTF-based 3D processing
+  - Master level control with percentage display
+  - Part of Pyramid Series
+  zh:
+  - 8 聲道 Binaural Panner
+  - 各聲道獨立 Angle/Elevation
+  - 基於 HRTF 的 3D 處理
+  - Master Level 控制（含百分比顯示）
+  - Pyramid Series 系列成員
+  ja:
+  - 8チャンネルバイノーラルパンナー
+  - チャンネル別独立アングル・仰角
+  - HRTFベース3D処理
+  - マスターレベル制御（パーセンテージ表示付き）
+  - Pyramid Seriesシリーズメンバー
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">8-to-2 binaural processor using synthesized HRTF (Head-Related Transfer Function) to convert 8-channel spatial audio into stereo headphone output. Part of the Pyramid Series - designed to receive spatial audio from Pyramid or DECAPyramid 8-speaker outputs. Implements ITD (Interaural Time Difference), ILD (Interaural Level Difference), distance-based filtering, elevation spectral shaping, and reverb simulation.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+    <p style="margin-bottom: 1rem;">Per-channel: Input → [ITD Delay] → [Distance Filter] → [Elevation Filter] → [Reverb Mix] → [HRTF Gain] → Sum to L/R.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ITD (Interaural Time Difference)</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Head Width</b>: 0.18m (18cm anthropometric model)</li>
+    <li><b>Sound Speed</b>: 343 m/s (at sea level, 20°C)</li>
+    <li><b>ITD Calculation</b>: Delay based on head width divided by sound speed, scaled by azimuth sine</li>
+    <li><b>Sample Delay</b>: ITD converted to samples at current sample rate</li>
+    <li><b>Delay Buffer</b>: 128 samples per ear per channel (circular buffer)</li>
+    <li><b>Application</b>: Positive azimuth delays left ear, negative azimuth delays right ear</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ILD (Interaural Level Difference)</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Azimuth Effect</b>: Sources on opposite side attenuated up to 80%</li>
+    <li><b>Same-Side Boost</b>: Sources on same side boosted up to 30%</li>
+    <li><b>Head Shadow</b>: Rear sources (|azimuth| > 90°) attenuated by 40%</li>
+    <li><b>Elevation Effect</b>: Above horizon boosted up to 80%, below horizon attenuated up to 70%</li>
+    <li><b>Distance Attenuation</b>: Inverse-square law with offset for smooth falloff</li>
+    <li><b>Final Gain</b>: Clamped to range 0.1 to 1.5</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Distance Filtering</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Type</b>: Lowpass biquad filter per channel per ear</li>
+    <li><b>Cutoff Behavior</b>: Higher frequencies attenuated with increasing distance</li>
+    <li><b>Range</b>: 1kHz to 20kHz (clamped)</li>
+    <li><b>Q Factor</b>: 0.8</li>
+    <li><b>Purpose</b>: Simulates high-frequency attenuation over distance (air absorption)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Elevation Filtering</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Above Horizon (elevation > 0)</b>: Peak filter at 8kHz + elevation×40Hz, gain 2.0, Q=1.5. Boosts high frequencies for "above" perception.</li>
+    <li><b>Below Horizon (elevation < 0)</b>: Lowpass filter at 7kHz - |elevation|×30Hz, gain 0.3, Q=2.0. Attenuates highs for "below" perception.</li>
+    <li><b>Purpose</b>: Simulates pinna filtering based on vertical angle</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Reverb Simulation</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Type</b>: Highpass filter at 3kHz, Q=0.7</li>
+    <li><b>Gain</b>: Increases with distance (base 0.1 plus distance scaling)</li>
+    <li><b>Mix</b>: Proportional to distance (distant sources have more reverb)</li>
+    <li><b>Purpose</b>: Distant sources have more high-frequency reverb content</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Speaker Configuration</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Input 1</b>: FL Upper (azimuth -45°, elevation +30°, distance 0.5)</li>
+    <li><b>Input 2</b>: FR Upper (azimuth +45°, elevation +30°, distance 0.5)</li>
+    <li><b>Input 3</b>: BL Upper (azimuth -135°, elevation +30°, distance 2.0)</li>
+    <li><b>Input 4</b>: BR Upper (azimuth +135°, elevation +30°, distance 2.0)</li>
+    <li><b>Input 5</b>: FL Lower (azimuth -45°, elevation -30°, distance 0.5)</li>
+    <li><b>Input 6</b>: FR Lower (azimuth +45°, elevation -30°, distance 0.5)</li>
+    <li><b>Input 7</b>: BL Lower (azimuth -135°, elevation -30°, distance 2.0)</li>
+    <li><b>Input 8</b>: BR Lower (azimuth +135°, elevation -30°, distance 2.0)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Level</b>: Master output level (0.0 to 1.0, default: 0.7). Applied after all HRTF processing.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Gain Smoothing</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Coefficient</b>: 0.001 per sample</li>
+    <li><b>Behavior</b>: Exponential smoothing with 0.001 coefficient per sample</li>
+    <li><b>Purpose</b>: Prevents clicks when input connections change</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>1</b>: Input 1 - FL Upper spatial audio from Pyramid or DECAPyramid</li>
+    <li><b>2</b>: Input 2 - FR Upper spatial audio</li>
+    <li><b>3</b>: Input 3 - BL Upper spatial audio</li>
+    <li><b>4</b>: Input 4 - BR Upper spatial audio</li>
+    <li><b>5</b>: Input 5 - FL Lower spatial audio</li>
+    <li><b>6</b>: Input 6 - FR Lower spatial audio</li>
+    <li><b>7</b>: Input 7 - BL Lower spatial audio</li>
+    <li><b>8</b>: Input 8 - BR Lower spatial audio</li>
+    <li><b>Left</b>: Left ear binaural output</li>
+    <li><b>Right</b>: Right ear binaural output</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Input/Output voltage: ±10V</li>
+    <li>Head model: 18cm width (anthropometric average)</li>
+    <li>ITD delay buffer: 128 samples per ear per channel</li>
+    <li>Filters per channel: 3 biquads (distance, elevation, reverb)</li>
+    <li>Gain smoothing: 0.001 coefficient</li>
+    <li>Processing: 32-bit floating point</li>
+    <li>Module width: 4HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Related Modules</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Pyramid</b>: Single-source 3D panner with 8 outputs</li>
+    <li><b>DECAPyramid</b>: 8-channel 3D mixer with 8 outputs</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">使用合成 HRTF（頭部相關傳輸函數）的 8-to-2 Binaural Processor，將 8 聲道空間 Audio 轉換為 Stereo 耳機輸出。Pyramid Series 成員 - 設計用於接收來自 Pyramid 或 DECAPyramid 8 Speaker 輸出的空間 Audio。實作 ITD（雙耳時間差）、ILD（雙耳音量差）、基於距離的 Filtering、Elevation 頻譜造型與 Reverb 模擬。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+    <p style="margin-bottom: 1rem;">各聲道：Input → [ITD Delay] → [Distance Filter] → [Elevation Filter] → [Reverb Mix] → [HRTF Gain] → 加總至 L/R。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ITD（雙耳時間差）</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>頭部寬度</b>：0.18m（18cm 人體測量模型）</li>
+    <li><b>音速</b>：343 m/s（海平面，20°C）</li>
+    <li><b>ITD 計算</b>：根據頭部寬度除以音速，以方位角正弦縮放的 Delay</li>
+    <li><b>Sample Delay</b>：ITD 轉換為當前 Sample Rate 的 Samples</li>
+    <li><b>Delay Buffer</b>：每耳每聲道 128 Samples（環形 Buffer）</li>
+    <li><b>應用</b>：正方位角延遲左耳，負方位角延遲右耳</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ILD（雙耳音量差）</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>方位角效果</b>：對側來源衰減最高 80%</li>
+    <li><b>同側增強</b>：同側來源增強最高 30%</li>
+    <li><b>頭部遮蔽</b>：後方來源（|azimuth| > 90°）衰減 40%</li>
+    <li><b>Elevation 效果</b>：水平面以上增強最高 80%，以下衰減最高 70%</li>
+    <li><b>距離衰減</b>：帶偏移的平方反比定律，提供平滑衰減</li>
+    <li><b>最終 Gain</b>：限制在 0.1 至 1.5 範圍</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Distance Filtering</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>類型</b>：每聲道每耳 Lowpass Biquad Filter</li>
+    <li><b>Cutoff 行為</b>：距離增加時衰減高頻</li>
+    <li><b>範圍</b>：1kHz 至 20kHz（限制）</li>
+    <li><b>Q 因子</b>：0.8</li>
+    <li><b>用途</b>：模擬距離造成的高頻衰減（空氣吸收）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Elevation Filtering</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>水平面以上（elevation > 0）</b>：Peak Filter 於 8kHz + elevation×40Hz，Gain 2.0，Q=1.5。增強高頻產生「上方」感知。</li>
+    <li><b>水平面以下（elevation < 0）</b>：Lowpass Filter 於 7kHz - |elevation|×30Hz，Gain 0.3，Q=2.0。衰減高頻產生「下方」感知。</li>
+    <li><b>用途</b>：模擬基於垂直角度的耳廓 Filtering</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Reverb 模擬</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>類型</b>：3kHz Highpass Filter，Q=0.7</li>
+    <li><b>Gain</b>：隨距離增加（基值 0.1 加上距離縮放）</li>
+    <li><b>Mix</b>：與距離成比例（遠距離來源有更多 Reverb）</li>
+    <li><b>用途</b>：遠距離來源有更多高頻 Reverb 成分</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Speaker 配置</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Input 1</b>：FL Upper（方位角 -45°，仰角 +30°，距離 0.5）</li>
+    <li><b>Input 2</b>：FR Upper（方位角 +45°，仰角 +30°，距離 0.5）</li>
+    <li><b>Input 3</b>：BL Upper（方位角 -135°，仰角 +30°，距離 2.0）</li>
+    <li><b>Input 4</b>：BR Upper（方位角 +135°，仰角 +30°，距離 2.0）</li>
+    <li><b>Input 5</b>：FL Lower（方位角 -45°，仰角 -30°，距離 0.5）</li>
+    <li><b>Input 6</b>：FR Lower（方位角 +45°，仰角 -30°，距離 0.5）</li>
+    <li><b>Input 7</b>：BL Lower（方位角 -135°，仰角 -30°，距離 2.0）</li>
+    <li><b>Input 8</b>：BR Lower（方位角 +135°，仰角 -30°，距離 2.0）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Level</b>：Master Output Level（0.0 至 1.0，預設：0.7）。在所有 HRTF 處理後套用。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Gain 平滑化</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>係數</b>：每 Sample 0.001</li>
+    <li><b>行為</b>：每 Sample 0.001 係數的指數平滑化</li>
+    <li><b>用途</b>：防止輸入連接變更時的 Click</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>1</b>：Input 1 - FL Upper 空間 Audio（來自 Pyramid 或 DECAPyramid）</li>
+    <li><b>2</b>：Input 2 - FR Upper 空間 Audio</li>
+    <li><b>3</b>：Input 3 - BL Upper 空間 Audio</li>
+    <li><b>4</b>：Input 4 - BR Upper 空間 Audio</li>
+    <li><b>5</b>：Input 5 - FL Lower 空間 Audio</li>
+    <li><b>6</b>：Input 6 - FR Lower 空間 Audio</li>
+    <li><b>7</b>：Input 7 - BL Lower 空間 Audio</li>
+    <li><b>8</b>：Input 8 - BR Lower 空間 Audio</li>
+    <li><b>Left</b>：左耳 Binaural 輸出</li>
+    <li><b>Right</b>：右耳 Binaural 輸出</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>輸入/輸出電壓：±10V</li>
+    <li>頭部模型：18cm 寬度（人體測量平均值）</li>
+    <li>ITD Delay Buffer：每耳每聲道 128 Samples</li>
+    <li>每聲道 Filter：3 個 Biquad（距離、Elevation、Reverb）</li>
+    <li>Gain 平滑化：0.001 係數</li>
+    <li>處理：32-bit 浮點運算</li>
+    <li>模組寬度：4HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">相關模組</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Pyramid</b>：單一來源 3D Panner，8 輸出</li>
+    <li><b>DECAPyramid</b>：8 聲道 3D Mixer，8 輸出</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Head Width</b>: 0.18m（18cm 人體測量模型）</li>
+    <li><b>Sound Speed</b>: 343 m/s（海平面，20 C）</li>
+    <li><b>ITD Calculation</b>: 根據頭部寬度除以音速，以方位角正弦縮放的 Delay</li>
+    <li><b>Application</b>: 正方位角延遲左耳，負方位角延遲右耳</li>
+    <li><b>Azimuth Effect</b>: 對側來源衰減最高 80%</li>
+    <li><b>Same-Side Boost</b>: 同側來源增強最高 30%</li>
+    <li><b>Head Shadow</b>: 後方來源（|方位角| > 90 度）衰減 40%</li>
+    <li><b>Elevation Effect</b>: 地平線以上增強最高 80%，以下衰減最高 70%</li>
+    <li><b>Distance Attenuation</b>: 含偏移的反平方定律，提供平滑衰減</li>
+    <li><b>Final Gain</b>: 限制範圍 0.1 至 1.5</li>
+    <li><b>Type</b>: 每聲道每耳的 Lowpass Biquad Filter</li>
+    <li><b>Cutoff Behavior</b>: 距離增加時高頻衰減</li>
+    <li><b>Range</b>: 1kHz 至 20kHz（限制）</li>
+    <li><b>Q Factor</b>: 0.8</li>
+    <li><b>Purpose</b>: 模擬距離造成的高頻衰減（空氣吸收）</li>
+    <li><b>Above Horizon (elevation > 0)</b>: 8kHz + elevation x 40Hz 的 Peak Filter，Gain 2.0，Q=1.5。增強高頻模擬仰角聽感</li>
+    <li><b>Coefficient</b>: 每 Sample 0.001</li>
+    <li><b>Behavior</b>: 指數平滑，每 Sample 0.001 係數</li>
+    </ul></div>
+    <div style="display:none"><ul>
+    <li><b>Q Factor</b>：KEN 距離濾波器 Q 值：0.8</li>
+    </ul></div>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">合成HRTF（頭部伝達関数）を使用した8-to-2バイノーラルプロセッサー、8チャンネル空間オーディオをステレオヘッドフォン出力に変換。Pyramid Seriesメンバー - PyramidまたはDECAPyramidの8スピーカー出力から空間オーディオを受信するよう設計。ITD（両耳間時間差）、ILD（両耳間音圧差）、距離ベースフィルタリング、仰角スペクトルシェイピング、リバーブシミュレーションを実装。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+    <p style="margin-bottom: 1rem;">チャンネル別：Input → [ITD Delay] → [Distance Filter] → [Elevation Filter] → [Reverb Mix] → [HRTF Gain] → L/Rに合算。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ITD（両耳間時間差）</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>頭部幅</b>：0.18m（18cm人体計測モデル）</li>
+    <li><b>音速</b>：343 m/s（海面、20°C）</li>
+    <li><b>ITD計算</b>：頭部幅を音速で割り、方位角サインでスケールしたディレイ</li>
+    <li><b>サンプルディレイ</b>：現在のサンプルレートでITDをサンプルに変換</li>
+    <li><b>ディレイバッファ</b>：耳別チャンネル別128サンプル（リングバッファ）</li>
+    <li><b>適用</b>：正の方位角で左耳を遅延、負の方位角で右耳を遅延</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ILD（両耳間音圧差）</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>方位角効果</b>：反対側ソースを最大80%減衰</li>
+    <li><b>同側ブースト</b>：同側ソースを最大30%増強</li>
+    <li><b>ヘッドシャドウ</b>：後方ソース（|azimuth| > 90°）を40%減衰</li>
+    <li><b>仰角効果</b>：水平面上を最大80%増強、水平面下を最大70%減衰</li>
+    <li><b>距離減衰</b>：オフセット付き逆二乗則でスムースな減衰</li>
+    <li><b>最終ゲイン</b>：0.1〜1.5範囲にクランプ</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Distance Filtering</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>タイプ</b>：チャンネル別耳別ローパスBiquadフィルター</li>
+    <li><b>カットオフ動作</b>：距離が増すと高周波が減衰</li>
+    <li><b>範囲</b>：1kHz〜20kHz（クランプ）</li>
+    <li><b>Qファクター</b>：0.8</li>
+    <li><b>目的</b>：距離による高周波減衰をシミュレート（空気吸収）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Elevation Filtering</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>水平面上（elevation > 0）</b>：8kHz + elevation×40HzでPeakフィルター、ゲイン2.0、Q=1.5。高周波を増強し「上方」知覚を生成。</li>
+    <li><b>水平面下（elevation < 0）</b>：7kHz - |elevation|×30Hzでローパスフィルター、ゲイン0.3、Q=2.0。高周波を減衰し「下方」知覚を生成。</li>
+    <li><b>目的</b>：垂直角度に基づく耳介フィルタリングをシミュレート</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">リバーブシミュレーション</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>タイプ</b>：3kHzハイパスフィルター、Q=0.7</li>
+    <li><b>ゲイン</b>：距離に応じて増加（基本値0.1に距離スケーリング加算）</li>
+    <li><b>ミックス</b>：距離に比例（遠距離ソースはリバーブが多い）</li>
+    <li><b>目的</b>：遠距離ソースはより多くの高周波リバーブ成分を持つ</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">スピーカー構成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Input 1</b>：FL Upper（方位角-45°、仰角+30°、距離0.5）</li>
+    <li><b>Input 2</b>：FR Upper（方位角+45°、仰角+30°、距離0.5）</li>
+    <li><b>Input 3</b>：BL Upper（方位角-135°、仰角+30°、距離2.0）</li>
+    <li><b>Input 4</b>：BR Upper（方位角+135°、仰角+30°、距離2.0）</li>
+    <li><b>Input 5</b>：FL Lower（方位角-45°、仰角-30°、距離0.5）</li>
+    <li><b>Input 6</b>：FR Lower（方位角+45°、仰角-30°、距離0.5）</li>
+    <li><b>Input 7</b>：BL Lower（方位角-135°、仰角-30°、距離2.0）</li>
+    <li><b>Input 8</b>：BR Lower（方位角+135°、仰角-30°、距離2.0）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Level</b>：マスター出力レベル（0.0〜1.0、デフォルト：0.7）。全HRTF処理後に適用。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ゲインスムージング</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>係数</b>：サンプルあたり0.001</li>
+    <li><b>動作</b>：サンプルあたり0.001係数の指数平滑化</li>
+    <li><b>目的</b>：入力接続変更時のクリックを防止</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>1</b>：Input 1 - FL Upper 空間オーディオ（PyramidまたはDECAPyramidから）</li>
+    <li><b>2</b>：Input 2 - FR Upper 空間オーディオ</li>
+    <li><b>3</b>：Input 3 - BL Upper 空間オーディオ</li>
+    <li><b>4</b>：Input 4 - BR Upper 空間オーディオ</li>
+    <li><b>5</b>：Input 5 - FL Lower 空間オーディオ</li>
+    <li><b>6</b>：Input 6 - FR Lower 空間オーディオ</li>
+    <li><b>7</b>：Input 7 - BL Lower 空間オーディオ</li>
+    <li><b>8</b>：Input 8 - BR Lower 空間オーディオ</li>
+    <li><b>Left</b>：左耳バイノーラル出力</li>
+    <li><b>Right</b>：右耳バイノーラル出力</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>入出力電圧：±10V</li>
+    <li>頭部モデル：18cm幅（人体計測平均値）</li>
+    <li>ITDディレイバッファ：耳別チャンネル別128サンプル</li>
+    <li>チャンネル別フィルター：3つのBiquad（距離、仰角、リバーブ）</li>
+    <li>ゲインスムージング：0.001係数</li>
+    <li>処理：32ビット浮動小数点</li>
+    <li>モジュール幅：4HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">関連モジュール</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Pyramid</b>：単一ソース3Dパンナー、8出力</li>
+    <li><b>DECAPyramid</b>：8チャンネル3Dミキサー、8出力</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Head Width</b>: 0.18m（18cm人体測定モデル）</li>
+    <li><b>Sound Speed</b>: 343 m/s（海面、20 C）</li>
+    <li><b>ITD Calculation</b>: 頭部幅を音速で割り、方位角のサインでスケーリングしたディレイ</li>
+    <li><b>Application</b>: 正の方位角で左耳を遅延、負の方位角で右耳を遅延</li>
+    <li><b>Azimuth Effect</b>: 反対側の音源は最大80%減衰</li>
+    <li><b>Same-Side Boost</b>: 同側の音源は最大30%ブースト</li>
+    <li><b>Head Shadow</b>: 後方音源（|方位角| > 90度）は40%減衰</li>
+    <li><b>Elevation Effect</b>: 水平線より上は最大80%ブースト、下は最大70%減衰</li>
+    <li><b>Distance Attenuation</b>: スムーズな減衰のためオフセット付き逆二乗則</li>
+    <li><b>Final Gain</b>: 範囲 0.1〜1.5 にクランプ</li>
+    <li><b>Type</b>: チャンネルごと・耳ごとのローパスバイクアッドフィルター</li>
+    <li><b>Cutoff Behavior</b>: 距離増加で高周波数が減衰</li>
+    <li><b>Range</b>: 1kHz〜20kHz（クランプ）</li>
+    <li><b>Q Factor</b>: 0.8</li>
+    <li><b>Purpose</b>: 距離による高周波減衰をシミュレート（空気吸収）</li>
+    <li><b>Above Horizon (elevation > 0)</b>: 8kHz + elevation x 40HzのピークフィルターでGain 2.0、Q=1.5。仰角聴感の高周波をブースト</li>
+    <li><b>Coefficient</b>: サンプルあたり0.001</li>
+    <li><b>Behavior</b>: 指数平滑化、サンプルあたり係数0.001</li>
+    <li><b>Sample Delay</b>: ITDを現在のサンプルレートのサンプル数に変換</li>
+    <li><b>Delay Buffer</b>: 耳・チャンネルあたり128サンプルの循環バッファ</li>
+    <li><b>Gain</b>: 距離に応じて増加（ベース0.1＋距離スケーリング）</li>
+    <li><b>Mix</b>: 距離に比例（遠い音源ほどリバーブが多い）</li>
+    </ul></div>
+    <div style="display:none"><ul>
+    <li><b>Q Factor</b>：KENディスタンスフィルターQ値：0.8</li>
+    </ul></div>
+controls:
+- name: Level
+  type: param
+  desc:
+    en: Master output Level, range 0.0 to 1.0, default 0.7, displayed as percentage. Applied after all HRTF processing.
+    zh: Master 輸出 Level，範圍 0.0 至 1.0，預設 0.7，以百分比顯示。於所有 HRTF 處理後套用。
+    ja: マスター出力レベル、範囲 0.0〜1.0、デフォルト 0.7、パーセンテージ表示。全HRTF処理後に適用。
+- name: '1'
+  type: input
+  desc:
+    en: Channel 1 input - FL Upper, Azimuth -45°, Elevation +30°, distance 0.5
+    zh: 聲道 1 輸入 - FL Upper，Azimuth -45°，Elevation +30°，距離 0.5
+    ja: チャンネル1入力 - FL Upper、Azimuth -45°、Elevation +30°、距離 0.5
+- name: '2'
+  type: input
+  desc:
+    en: Channel 2 input - FR Upper, Azimuth +45°, Elevation +30°, distance 0.5
+    zh: 聲道 2 輸入 - FR Upper，Azimuth +45°，Elevation +30°，距離 0.5
+    ja: チャンネル2入力 - FR Upper、Azimuth +45°、Elevation +30°、距離 0.5
+- name: '3'
+  type: input
+  desc:
+    en: Channel 3 input - BL Upper, Azimuth -135°, Elevation +30°, distance 2.0
+    zh: 聲道 3 輸入 - BL Upper，Azimuth -135°，Elevation +30°，距離 2.0
+    ja: チャンネル3入力 - BL Upper、Azimuth -135°、Elevation +30°、距離 2.0
+- name: '4'
+  type: input
+  desc:
+    en: Channel 4 input - BR Upper, Azimuth +135°, Elevation +30°, distance 2.0
+    zh: 聲道 4 輸入 - BR Upper，Azimuth +135°，Elevation +30°，距離 2.0
+    ja: チャンネル4入力 - BR Upper、Azimuth +135°、Elevation +30°、距離 2.0
+- name: '5'
+  type: input
+  desc:
+    en: Channel 5 input - FL Lower, Azimuth -45°, Elevation -30°, distance 0.5
+    zh: 聲道 5 輸入 - FL Lower，Azimuth -45°，Elevation -30°，距離 0.5
+    ja: チャンネル5入力 - FL Lower、Azimuth -45°、Elevation -30°、距離 0.5
+- name: '6'
+  type: input
+  desc:
+    en: Channel 6 input - FR Lower, Azimuth +45°, Elevation -30°, distance 0.5
+    zh: 聲道 6 輸入 - FR Lower，Azimuth +45°，Elevation -30°，距離 0.5
+    ja: チャンネル6入力 - FR Lower、Azimuth +45°、Elevation -30°、距離 0.5
+- name: '7'
+  type: input
+  desc:
+    en: Channel 7 input - BL Lower, Azimuth -135°, Elevation -30°, distance 2.0
+    zh: 聲道 7 輸入 - BL Lower，Azimuth -135°，Elevation -30°，距離 2.0
+    ja: チャンネル7入力 - BL Lower、Azimuth -135°、Elevation -30°、距離 2.0
+- name: '8'
+  type: input
+  desc:
+    en: Channel 8 input - BR Lower, Azimuth +135°, Elevation -30°, distance 2.0
+    zh: 聲道 8 輸入 - BR Lower，Azimuth +135°，Elevation -30°，距離 2.0
+    ja: チャンネル8入力 - BR Lower、Azimuth +135°、Elevation -30°、距離 2.0
+- name: Left
+  type: output
+  desc:
+    en: Left ear Binaural output, sum of all 8 channels after HRTF processing
+    zh: 左耳 Binaural 輸出，所有 8 聲道 HRTF 處理後加總
+    ja: 左耳Binaural出力、全8チャンネルHRTF処理後の合算
+- name: Right
+  type: output
+  desc:
+    en: Right ear Binaural output, sum of all 8 channels after HRTF processing
+    zh: 右耳 Binaural 輸出，所有 8 聲道 HRTF 處理後加總
+    ja: 右耳Binaural出力、全8チャンネルHRTF処理後の合算

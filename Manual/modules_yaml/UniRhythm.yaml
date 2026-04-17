@@ -1,0 +1,1104 @@
+slug: UniRhythm
+name: Uni Rhythm
+hp: 32
+wide: true
+alt: UniRhythm
+description:
+  en: Compact 4-track rhythm generator with 10 world music styles, 8-voice drum synthesis, primary-priority merged outputs, master isolator and drive, and 16-channel poly output for Portal
+  zh: 精簡 4 軌節奏生成器，具備 10 種世界音樂風格、8 聲 Drum Synthesis、Primary-Priority 合併輸出、Master Isolator + Drive，以及 16 聲道 Poly Output 供 Portal 使用
+  ja: 10種のワールドミュージックスタイル、8ボイスドラム合成、プライマリプライオリティ統合出力、マスターアイソレーター+ドライブ、Portal用16チャンネルポリ出力を備えたコンパクト4トラックリズムジェネレーター
+features:
+  en:
+  - 10 world music rhythm styles with per-role selection
+  - '4 rhythmic roles: Timeline, Foundation, Groove, Lead'
+  - 8-voice ExtendedDrumSynth (2 voices per role)
+  - Per-role FREQ/DECAY/VEL controls with CV
+  - EXT IN for external sound sources per role
+  - Master 3-band isolator (LOW/MID/HIGH) and tube drive
+  - Stereo MIX L/R output with SPREAD control
+  - 16-channel POLY output for Portal crossfading
+  zh:
+  - 10 種世界音樂節奏風格，各角色可獨立選擇
+  - 4 種節奏角色：Timeline、Foundation、Groove、Lead
+  - 8 聲 ExtendedDrumSynth（每角色 2 聲）
+  - 各角色 FREQ/DECAY/VEL 控制，帶 CV 輸入
+  - 各角色 EXT IN 外部音源輸入
+  - Master 3 頻段 Isolator（LOW/MID/HIGH）與 Tube Drive
+  - Stereo MIX L/R 輸出，帶 SPREAD 控制
+  - 16 聲道 POLY 輸出，供 Portal Crossfading 使用
+  ja:
+  - 10種のワールドミュージックリズムスタイル、ロール別選択可能
+  - 4つのリズムロール：タイムライン、ファウンデーション、グルーヴ、リード
+  - 8ボイスExtendedDrumSynth（ロールあたり2ボイス）
+  - ロール別FREQ/DECAY/VELコントロール、CV入力対応
+  - ロール別EXT IN外部音源入力
+  - マスター3バンドアイソレーター（LOW/MID/HIGH）とチューブドライブ
+  - ステレオMIX L/R出力、SPREADコントロール付き
+  - Portal用16チャンネルポリ出力
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Compact 4-track cross-cultural rhythm generator with 10 world music styles and 8-voice integrated drum synthesis. Each of the 4 roles (Timeline, Foundation, Groove, Lead) features independent pattern sequencing with 2 synthesized voices, supporting per-role style selection, density and length control, external audio input mixing, and fill patterns. The master section provides a 3-band isolator, tube drive, stereo spread, and a 16-channel polyphonic output designed for seamless crossfading with the Portal module.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">4-Role System</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline</b> (Voices 0-1): Time-keeping layer. Bells, hi-hats, and ride cymbals in the 3-12kHz range.</li>
+    <li><b>Foundation</b> (Voices 2-3): Bass layer at 40-150Hz. Kick drums and low-frequency bass drums.</li>
+    <li><b>Groove</b> (Voices 4-5): Mid-range 250-700Hz. Snare drums, claps, and congas.</li>
+    <li><b>Lead</b> (Voices 6-7): High-frequency embellishments and accents. Ghost notes and fills.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Role Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE</b>: Rhythm style (0-9, snapped to integers). Each role can have a different style. CV: ±5V selects style.</li>
+    <li><b>DENSITY</b>: Pattern density (0-100%). Foundation default 20%, Timeline 40%, others 50%. CV: ±5V modulation.</li>
+    <li><b>LENGTH</b>: Pattern length (4-32 steps, integer snap).</li>
+    <li><b>FREQ</b>: Frequency modifier (-1 to +1 octave). CV: ±1V = ±0.2 octave.</li>
+    <li><b>DECAY</b>: Decay multiplier (0.2x to 2.0x). CV: ±1V = ±0.18x (±5V = ±0.9x).</li>
+    <li><b>MIX</b>: Blend between internal synth (0%) and external audio (100%).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">External Audio Inputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>EXT IN 1/2</b>: Two external audio inputs per role, corresponding to voice 1 and voice 2.</li>
+    <li><b>VCA Envelope</b>: External audio volume responds to hit velocity with natural dynamics. Decay is faster for louder hits.</li>
+    <li><b>MIX Knob</b>: Crossfades between internal drum synthesis and external audio sources.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Global Parameters</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Variation</b>: Pattern variation amount (default 30%). Controls how much patterns evolve over time.</li>
+    <li><b>Humanize</b>: Humanize timing and velocity (default 50%). Adds organic feel to rhythms.</li>
+    <li><b>Swing</b>: Swing amount (default 50%). Adjusts timing of off-beat notes.</li>
+    <li><b>Rest</b>: Rest probability with CV input. Removes hits from patterns probabilistically.</li>
+    <li><b>Fill</b>: Combined fill probability and intensity (default 30%). Pre-determined at bar start.</li>
+    <li><b>Articulation</b>: Articulation amount. Enables Ghost, Accent, Rim, Flam, Drag, Buzz, Ruff articulations.</li>
+    <li><b>Ghost Notes</b>: Ghost note probability.</li>
+    <li><b>Accent</b>: Accent probability.</li>
+    <li><b>Spread</b>: Stereo spread for mix output (default 50%).</li>
+    <li><b>Regenerate</b>: Generate new patterns based on current settings.</li>
+    <li><b>Reset</b>: Reset all step counters to zero.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Master Section</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Isolator Low</b>: 3-band isolator low band (250Hz crossover). Bipolar: -1 = kill, 0 = unity, +1 = +12dB boost.</li>
+    <li><b>Isolator Mid</b>: 3-band isolator mid band (250Hz-4kHz). Same bipolar control.</li>
+    <li><b>Isolator High</b>: 3-band isolator high band (4kHz crossover). Same bipolar control.</li>
+    <li><b>Master Drive</b>: Asymmetric tube saturation (0-100%). Creates warm even harmonics with DC blocker.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Primary-Priority Merged Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Audio</b>: Sum of both voices per role (primary + secondary).</li>
+    <li><b>Gate</b>: Merged gate output. When both voices trigger simultaneously, primary voice takes priority.</li>
+    <li><b>Pitch CV</b>: 1V/Oct pitch output from the last triggered voice (primary priority). C4 = 0V.</li>
+    <li><b>Vel/Env</b>: Velocity envelope CV (0-10V) from the priority voice.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Clock and Timing</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: External clock input. Required for pattern playback.</li>
+    <li><b>RST</b>: Reset input. Returns all step counters to zero.</li>
+    <li><b>REGEN</b>: Regenerate trigger input. Generates new patterns based on current settings.</li>
+    <li><b>PPQN</b>: 1 (quarter), 2 (8th), or 4 (16th note) pulses per quarter. Set via right-click menu.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Per-Role Audio</b>: Individual role audio output (sum of 2 voices).</li>
+    <li><b>Per-Role Gate</b>: Merged trigger output per role.</li>
+    <li><b>Per-Role Pitch</b>: 1V/Oct CV output per role.</li>
+    <li><b>Per-Role Vel/Env</b>: Velocity envelope CV output per role.</li>
+    <li><b>MIX L/R</b>: Stereo master mix with isolator, drive, and spread applied.</li>
+    <li><b>POLY</b>: 16-channel polyphonic output. 4 roles x 4 channels (Audio, Gate, Pitch, VelEnv). Designed for Portal.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Role Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline Style</b>: Timeline role rhythm style (0-9, integer snap).</li>
+    <li><b>Timeline Density</b>: Timeline role pattern density (0-100%, default 40%).</li>
+    <li><b>Timeline Length</b>: Timeline role pattern length (4-32 steps, integer snap).</li>
+    <li><b>Timeline Freq</b>: Timeline role frequency modifier (-1 to +1 octave).</li>
+    <li><b>Timeline Decay</b>: Timeline role decay multiplier (0.2x to 2.0x).</li>
+    <li><b>Timeline Mix (Int/Ext)</b>: Timeline role internal synth (0%) to external audio (100%).</li>
+    <li><b>Foundation Style</b>: Foundation role rhythm style (0-9, integer snap).</li>
+    <li><b>Foundation Density</b>: Foundation role pattern density (0-100%, default 20%).</li>
+    <li><b>Foundation Length</b>: Foundation role pattern length (4-32 steps, integer snap).</li>
+    <li><b>Foundation Freq</b>: Foundation role frequency modifier (-1 to +1 octave).</li>
+    <li><b>Foundation Decay</b>: Foundation role decay multiplier (0.2x to 2.0x).</li>
+    <li><b>Foundation Mix (Int/Ext)</b>: Foundation role internal synth (0%) to external audio (100%).</li>
+    <li><b>Groove Style</b>: Groove role rhythm style (0-9, integer snap).</li>
+    <li><b>Groove Density</b>: Groove role pattern density (0-100%, default 50%).</li>
+    <li><b>Groove Length</b>: Groove role pattern length (4-32 steps, integer snap).</li>
+    <li><b>Groove Freq</b>: Groove role frequency modifier (-1 to +1 octave).</li>
+    <li><b>Groove Decay</b>: Groove role decay multiplier (0.2x to 2.0x).</li>
+    <li><b>Groove Mix (Int/Ext)</b>: Groove role internal synth (0%) to external audio (100%).</li>
+    <li><b>Lead Style</b>: Lead role rhythm style (0-9, integer snap).</li>
+    <li><b>Lead Density</b>: Lead role pattern density (0-100%, default 50%).</li>
+    <li><b>Lead Length</b>: Lead role pattern length (4-32 steps, integer snap).</li>
+    <li><b>Lead Freq</b>: Lead role frequency modifier (-1 to +1 octave).</li>
+    <li><b>Lead Decay</b>: Lead role decay multiplier (0.2x to 2.0x).</li>
+    <li><b>Lead Mix (Int/Ext)</b>: Lead role internal synth (0%) to external audio (100%).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: Clock input for pattern playback.</li>
+    <li><b>Reset</b>: Reset input. Returns all step counters to zero.</li>
+    <li><b>Regenerate</b>: Trigger input to generate new patterns.</li>
+    <li><b>Rest CV</b>: CV input for rest probability modulation.</li>
+    <li><b>Fill Trigger</b>: Trigger input for fill activation.</li>
+    <li><b>Timeline Style CV</b>: CV input for Timeline style modulation.</li>
+    <li><b>Timeline Density CV</b>: CV input for Timeline density modulation.</li>
+    <li><b>Timeline Freq CV</b>: CV input for Timeline frequency modulation.</li>
+    <li><b>Timeline Decay CV</b>: CV input for Timeline decay modulation.</li>
+    <li><b>Foundation Style CV</b>: CV input for Foundation style modulation.</li>
+    <li><b>Foundation Density CV</b>: CV input for Foundation density modulation.</li>
+    <li><b>Foundation Freq CV</b>: CV input for Foundation frequency modulation.</li>
+    <li><b>Foundation Decay CV</b>: CV input for Foundation decay modulation.</li>
+    <li><b>Groove Style CV</b>: CV input for Groove style modulation.</li>
+    <li><b>Groove Density CV</b>: CV input for Groove density modulation.</li>
+    <li><b>Groove Freq CV</b>: CV input for Groove frequency modulation.</li>
+    <li><b>Groove Decay CV</b>: CV input for Groove decay modulation.</li>
+    <li><b>Lead Style CV</b>: CV input for Lead style modulation.</li>
+    <li><b>Lead Density CV</b>: CV input for Lead density modulation.</li>
+    <li><b>Lead Freq CV</b>: CV input for Lead frequency modulation.</li>
+    <li><b>Lead Decay CV</b>: CV input for Lead decay modulation.</li>
+    <li><b>Timeline Audio Input 1</b>: External audio input 1 for Timeline role.</li>
+    <li><b>Timeline Audio Input 2</b>: External audio input 2 for Timeline role.</li>
+    <li><b>Foundation Audio Input 1</b>: External audio input 1 for Foundation role.</li>
+    <li><b>Foundation Audio Input 2</b>: External audio input 2 for Foundation role.</li>
+    <li><b>Groove Audio Input 1</b>: External audio input 1 for Groove role.</li>
+    <li><b>Groove Audio Input 2</b>: External audio input 2 for Groove role.</li>
+    <li><b>Lead Audio Input 1</b>: External audio input 1 for Lead role.</li>
+    <li><b>Lead Audio Input 2</b>: External audio input 2 for Lead role.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline Audio</b>: Timeline role merged audio output (sum of 2 voices).</li>
+    <li><b>Timeline Gate</b>: Timeline role merged gate/trigger output (primary priority).</li>
+    <li><b>Timeline Pitch CV (1V/Oct, C4=0V)</b>: Timeline role pitch CV output.</li>
+    <li><b>Timeline Velocity Envelope</b>: Timeline role velocity envelope CV output.</li>
+    <li><b>Foundation Audio</b>: Foundation role merged audio output (sum of 2 voices).</li>
+    <li><b>Foundation Gate</b>: Foundation role merged gate/trigger output (primary priority).</li>
+    <li><b>Foundation Pitch CV (1V/Oct, C4=0V)</b>: Foundation role pitch CV output.</li>
+    <li><b>Foundation Velocity Envelope</b>: Foundation role velocity envelope CV output.</li>
+    <li><b>Groove Audio</b>: Groove role merged audio output (sum of 2 voices).</li>
+    <li><b>Groove Gate</b>: Groove role merged gate/trigger output (primary priority).</li>
+    <li><b>Groove Pitch CV (1V/Oct, C4=0V)</b>: Groove role pitch CV output.</li>
+    <li><b>Groove Velocity Envelope</b>: Groove role velocity envelope CV output.</li>
+    <li><b>Lead Audio</b>: Lead role merged audio output (sum of 2 voices).</li>
+    <li><b>Lead Gate</b>: Lead role merged gate/trigger output (primary priority).</li>
+    <li><b>Lead Pitch CV (1V/Oct, C4=0V)</b>: Lead role pitch CV output.</li>
+    <li><b>Lead Velocity Envelope</b>: Lead role velocity envelope CV output.</li>
+    <li><b>Mix L</b>: Left stereo master mix output (with isolator, drive, spread).</li>
+    <li><b>Mix R</b>: Right stereo master mix output (with isolator, drive, spread).</li>
+    <li><b>Poly Out (16ch for Portal)</b>: 16-channel polyphonic output (4 roles x 4 channels).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Module width: 32HP</li>
+    <li>Voice count: 8 (2 per role)</li>
+    <li>Synth modes: SINE (pitched), NOISE (unpitched)</li>
+    <li>Pattern length: 4-32 steps per role</li>
+    <li>Isolator crossovers: 250Hz / 4kHz (Linkwitz-Riley 4th order)</li>
+    <li>Drive: Asymmetric tube saturation with DC blocker</li>
+    <li>Poly output: 16 channels (4 roles x 4 data types)</li>
+    <li>Processing: 32-bit floating point</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">精簡的 4 軌跨文化節奏生成器，具備 10 種世界音樂風格與 8 聲整合 Drum Synthesis。4 個角色（Timeline、Foundation、Groove、Lead）各自擁有獨立的 Pattern 序列器與 2 個合成聲部，支援各角色獨立風格選擇、Density 與 Length 控制、外部 Audio 輸入混合及 Fill Pattern。Master 區段提供 3 頻段 Isolator、Tube Drive、Stereo Spread，以及專為 Portal 模組設計的 16 聲道 Polyphonic 輸出。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">4 角色系統</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline</b>（Voice 0-1）: 計時層。鈴鐺、Hi-hat、Ride 鈸，頻率範圍 3-12kHz。</li>
+    <li><b>Foundation</b>（Voice 2-3）: Bass 層，40-150Hz。Kick 鼓與低頻 Bass 鼓。</li>
+    <li><b>Groove</b>（Voice 4-5）: 中頻 250-700Hz。Snare、Clap、Congas。</li>
+    <li><b>Lead</b>（Voice 6-7）: 高頻裝飾與重音。Ghost Note 與 Fill。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">各角色控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE</b>: 節奏風格（0-9，整數對齊）。各角色可選不同風格。CV: ±5V 選擇風格。</li>
+    <li><b>DENSITY</b>: Pattern 密度（0-100%）。Foundation 預設 20%、Timeline 40%、其他 50%。CV: ±5V 調變。</li>
+    <li><b>LENGTH</b>: Pattern 長度（4-32 步，整數對齊）。</li>
+    <li><b>FREQ</b>: 頻率修正（-1 至 +1 八度）。CV: ±1V = ±0.2 八度。</li>
+    <li><b>DECAY</b>: Decay 倍數（0.2x 至 2.0x）。CV: ±1V = ±0.18x（±5V = ±0.9x）。</li>
+    <li><b>MIX</b>: 內部合成（0%）與外部 Audio（100%）之間的混合。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">外部 Audio 輸入</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>EXT IN 1/2</b>: 各角色兩個外部 Audio 輸入，分別對應 Voice 1 與 Voice 2。</li>
+    <li><b>VCA Envelope</b>: 外部 Audio 音量以自然動態響應 Hit Velocity。力度越大，Decay 越快。</li>
+    <li><b>MIX Knob</b>: 在內部 Drum Synthesis 與外部 Audio 之間做 Crossfade。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">全域參數</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Variation</b>: Pattern 變化量（預設 30%）。控制 Pattern 隨時間演化的程度。</li>
+    <li><b>Humanize</b>: 時序與 Velocity Humanize（預設 50%）。為節奏添加有機感。</li>
+    <li><b>Swing</b>: Swing 量（預設 50%）。調整 Off-beat 音符的時序。</li>
+    <li><b>Rest</b>: 休止機率，帶 CV 輸入。以機率方式移除 Pattern 中的 Hit。</li>
+    <li><b>Fill</b>: 結合 Fill 機率與強度（預設 30%）。在小節開始時預先決定。</li>
+    <li><b>Articulation</b>: Articulation 量。啟用 Ghost、Accent、Rim、Flam、Drag、Buzz、Ruff 演奏技法。</li>
+    <li><b>Ghost Notes</b>: Ghost Note 機率。</li>
+    <li><b>Accent</b>: Accent 機率。</li>
+    <li><b>Spread</b>: Mix 輸出的 Stereo Spread（預設 50%）。</li>
+    <li><b>Regenerate</b>: 依據目前設定生成新 Pattern。</li>
+    <li><b>Reset</b>: 將所有步數計數器歸零。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Master 區段</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Isolator Low</b>: 3 頻段 Isolator 低頻（250Hz 分頻點）。雙極: -1 = Kill、0 = Unity、+1 = +12dB Boost。</li>
+    <li><b>Isolator Mid</b>: 3 頻段 Isolator 中頻（250Hz-4kHz）。相同雙極控制。</li>
+    <li><b>Isolator High</b>: 3 頻段 Isolator 高頻（4kHz 分頻點）。相同雙極控制。</li>
+    <li><b>Master Drive</b>: 非對稱 Tube Saturation（0-100%）。產生溫暖的偶次諧波，帶 DC Blocker。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Primary-Priority 合併輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Audio</b>: 各角色兩個 Voice 的音訊總和（Primary + Secondary）。</li>
+    <li><b>Gate</b>: 合併的 Gate 輸出。兩個 Voice 同時觸發時，Primary Voice 優先。</li>
+    <li><b>Pitch CV</b>: 來自最後觸發 Voice 的 1V/Oct Pitch 輸出（Primary 優先）。C4 = 0V。</li>
+    <li><b>Vel/Env</b>: 來自優先 Voice 的 Velocity Envelope CV（0-10V）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Clock 與時序</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: 外部 Clock 輸入。Pattern 播放所必需。</li>
+    <li><b>RST</b>: Reset 輸入。將所有步數計數器歸零。</li>
+    <li><b>REGEN</b>: Regenerate 觸發輸入。依據目前設定生成新 Pattern。</li>
+    <li><b>PPQN</b>: 1（四分音符）、2（八分音符）或 4（十六分音符）每四分音符脈衝數。透過右鍵選單設定。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Per-Role Audio</b>: 個別角色 Audio 輸出（2 Voice 總和）。</li>
+    <li><b>Per-Role Gate</b>: 各角色合併的 Trigger 輸出。</li>
+    <li><b>Per-Role Pitch</b>: 各角色 1V/Oct CV 輸出。</li>
+    <li><b>Per-Role Vel/Env</b>: 各角色 Velocity Envelope CV 輸出。</li>
+    <li><b>MIX L/R</b>: Stereo Master Mix，含 Isolator、Drive 與 Spread。</li>
+    <li><b>POLY</b>: 16 聲道 Polyphonic 輸出。4 角色 x 4 聲道（Audio、Gate、Pitch、VelEnv）。專為 Portal 設計。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Role Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline Style</b>: Timeline 角色節奏風格（0-9，整數對齊）。</li>
+    <li><b>Timeline Density</b>: Timeline 角色 Pattern 密度（0-100%，預設 40%）。</li>
+    <li><b>Timeline Length</b>: Timeline 角色 Pattern 長度（4-32 步，整數對齊）。</li>
+    <li><b>Timeline Freq</b>: Timeline 角色頻率修正（-1 至 +1 八度）。</li>
+    <li><b>Timeline Decay</b>: Timeline 角色 Decay 倍數（0.2x 至 2.0x）。</li>
+    <li><b>Timeline Mix (Int/Ext)</b>: Timeline 角色內部合成（0%）至外部 Audio（100%）。</li>
+    <li><b>Foundation Style</b>: Foundation 角色節奏風格（0-9，整數對齊）。</li>
+    <li><b>Foundation Density</b>: Foundation 角色 Pattern 密度（0-100%，預設 20%）。</li>
+    <li><b>Foundation Length</b>: Foundation 角色 Pattern 長度（4-32 步，整數對齊）。</li>
+    <li><b>Foundation Freq</b>: Foundation 角色頻率修正（-1 至 +1 八度）。</li>
+    <li><b>Foundation Decay</b>: Foundation 角色 Decay 倍數（0.2x 至 2.0x）。</li>
+    <li><b>Foundation Mix (Int/Ext)</b>: Foundation 角色內部合成（0%）至外部 Audio（100%）。</li>
+    <li><b>Groove Style</b>: Groove 角色節奏風格（0-9，整數對齊）。</li>
+    <li><b>Groove Density</b>: Groove 角色 Pattern 密度（0-100%，預設 50%）。</li>
+    <li><b>Groove Length</b>: Groove 角色 Pattern 長度（4-32 步，整數對齊）。</li>
+    <li><b>Groove Freq</b>: Groove 角色頻率修正（-1 至 +1 八度）。</li>
+    <li><b>Groove Decay</b>: Groove 角色 Decay 倍數（0.2x 至 2.0x）。</li>
+    <li><b>Groove Mix (Int/Ext)</b>: Groove 角色內部合成（0%）至外部 Audio（100%）。</li>
+    <li><b>Lead Style</b>: Lead 角色節奏風格（0-9，整數對齊）。</li>
+    <li><b>Lead Density</b>: Lead 角色 Pattern 密度（0-100%，預設 50%）。</li>
+    <li><b>Lead Length</b>: Lead 角色 Pattern 長度（4-32 步，整數對齊）。</li>
+    <li><b>Lead Freq</b>: Lead 角色頻率修正（-1 至 +1 八度）。</li>
+    <li><b>Lead Decay</b>: Lead 角色 Decay 倍數（0.2x 至 2.0x）。</li>
+    <li><b>Lead Mix (Int/Ext)</b>: Lead 角色內部合成（0%）至外部 Audio（100%）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: Pattern 播放用 Clock 輸入。</li>
+    <li><b>Reset</b>: Reset 輸入。將所有步數計數器歸零。</li>
+    <li><b>Regenerate</b>: 生成新 Pattern 的 Trigger 輸入。</li>
+    <li><b>Rest CV</b>: 休止機率調變 CV 輸入。</li>
+    <li><b>Fill Trigger</b>: Fill 啟動 Trigger 輸入。</li>
+    <li><b>Timeline Style CV</b>: Timeline 風格調變 CV 輸入。</li>
+    <li><b>Timeline Density CV</b>: Timeline 密度調變 CV 輸入。</li>
+    <li><b>Timeline Freq CV</b>: Timeline 頻率調變 CV 輸入。</li>
+    <li><b>Timeline Decay CV</b>: Timeline Decay 調變 CV 輸入。</li>
+    <li><b>Foundation Style CV</b>: Foundation 風格調變 CV 輸入。</li>
+    <li><b>Foundation Density CV</b>: Foundation 密度調變 CV 輸入。</li>
+    <li><b>Foundation Freq CV</b>: Foundation 頻率調變 CV 輸入。</li>
+    <li><b>Foundation Decay CV</b>: Foundation Decay 調變 CV 輸入。</li>
+    <li><b>Groove Style CV</b>: Groove 風格調變 CV 輸入。</li>
+    <li><b>Groove Density CV</b>: Groove 密度調變 CV 輸入。</li>
+    <li><b>Groove Freq CV</b>: Groove 頻率調變 CV 輸入。</li>
+    <li><b>Groove Decay CV</b>: Groove Decay 調變 CV 輸入。</li>
+    <li><b>Lead Style CV</b>: Lead 風格調變 CV 輸入。</li>
+    <li><b>Lead Density CV</b>: Lead 密度調變 CV 輸入。</li>
+    <li><b>Lead Freq CV</b>: Lead 頻率調變 CV 輸入。</li>
+    <li><b>Lead Decay CV</b>: Lead Decay 調變 CV 輸入。</li>
+    <li><b>Timeline Audio Input 1</b>: Timeline 角色外部 Audio 輸入 1。</li>
+    <li><b>Timeline Audio Input 2</b>: Timeline 角色外部 Audio 輸入 2。</li>
+    <li><b>Foundation Audio Input 1</b>: Foundation 角色外部 Audio 輸入 1。</li>
+    <li><b>Foundation Audio Input 2</b>: Foundation 角色外部 Audio 輸入 2。</li>
+    <li><b>Groove Audio Input 1</b>: Groove 角色外部 Audio 輸入 1。</li>
+    <li><b>Groove Audio Input 2</b>: Groove 角色外部 Audio 輸入 2。</li>
+    <li><b>Lead Audio Input 1</b>: Lead 角色外部 Audio 輸入 1。</li>
+    <li><b>Lead Audio Input 2</b>: Lead 角色外部 Audio 輸入 2。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline Audio</b>: Timeline 角色合併 Audio 輸出（2 Voice 總和）。</li>
+    <li><b>Timeline Gate</b>: Timeline 角色合併 Gate/Trigger 輸出（Primary 優先）。</li>
+    <li><b>Timeline Pitch CV (1V/Oct, C4=0V)</b>: Timeline 角色 Pitch CV 輸出。</li>
+    <li><b>Timeline Velocity Envelope</b>: Timeline 角色 Velocity Envelope CV 輸出。</li>
+    <li><b>Foundation Audio</b>: Foundation 角色合併 Audio 輸出（2 Voice 總和）。</li>
+    <li><b>Foundation Gate</b>: Foundation 角色合併 Gate/Trigger 輸出（Primary 優先）。</li>
+    <li><b>Foundation Pitch CV (1V/Oct, C4=0V)</b>: Foundation 角色 Pitch CV 輸出。</li>
+    <li><b>Foundation Velocity Envelope</b>: Foundation 角色 Velocity Envelope CV 輸出。</li>
+    <li><b>Groove Audio</b>: Groove 角色合併 Audio 輸出（2 Voice 總和）。</li>
+    <li><b>Groove Gate</b>: Groove 角色合併 Gate/Trigger 輸出（Primary 優先）。</li>
+    <li><b>Groove Pitch CV (1V/Oct, C4=0V)</b>: Groove 角色 Pitch CV 輸出。</li>
+    <li><b>Groove Velocity Envelope</b>: Groove 角色 Velocity Envelope CV 輸出。</li>
+    <li><b>Lead Audio</b>: Lead 角色合併 Audio 輸出（2 Voice 總和）。</li>
+    <li><b>Lead Gate</b>: Lead 角色合併 Gate/Trigger 輸出（Primary 優先）。</li>
+    <li><b>Lead Pitch CV (1V/Oct, C4=0V)</b>: Lead 角色 Pitch CV 輸出。</li>
+    <li><b>Lead Velocity Envelope</b>: Lead 角色 Velocity Envelope CV 輸出。</li>
+    <li><b>Mix L</b>: 左聲道 Stereo Master Mix 輸出（含 Isolator、Drive、Spread）。</li>
+    <li><b>Mix R</b>: 右聲道 Stereo Master Mix 輸出（含 Isolator、Drive、Spread）。</li>
+    <li><b>Poly Out (16ch for Portal)</b>: 16 聲道 Polyphonic 輸出（4 角色 x 4 聲道）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>模組寬度: 32HP</li>
+    <li>Voice 數量: 8（每角色 2）</li>
+    <li>合成模式: SINE（音高）、NOISE（無音高）</li>
+    <li>Pattern 長度: 各角色 4-32 步</li>
+    <li>Isolator 分頻點: 250Hz / 4kHz（Linkwitz-Riley 4 階）</li>
+    <li>Drive: 非對稱 Tube Saturation，含 DC Blocker</li>
+    <li>Poly 輸出: 16 聲道（4 角色 x 4 資料類型）</li>
+    <li>處理: 32 位元浮點</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">10種のワールドミュージックスタイルと8ボイス統合ドラム合成を備えたコンパクト4トラッククロスカルチャーリズムジェネレーター。4つのロール（タイムライン、ファウンデーション、グルーヴ、リード）はそれぞれ独立したパターンシーケンサーと2つの合成ボイスを備え、ロール別スタイル選択、Density・Lengthコントロール、外部オーディオ入力ミキシング、フィルパターンをサポート。マスターセクションは3バンドアイソレーター、チューブドライブ、ステレオスプレッド、Portal用16チャンネルポリフォニック出力を搭載。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">4ロールシステム</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline</b>（ボイス0-1）: タイムキーピングレイヤー。ベル、ハイハット、ライドシンバル。3-12kHz帯域。</li>
+    <li><b>Foundation</b>（ボイス2-3）: ベースレイヤー、40-150Hz。キックドラムと低域ベースドラム。</li>
+    <li><b>Groove</b>（ボイス4-5）: 中域250-700Hz。スネアドラム、クラップ、コンガ。</li>
+    <li><b>Lead</b>（ボイス6-7）: 高域装飾音とアクセント。ゴーストノートとフィル。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ロール別コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>STYLE</b>: リズムスタイル（0-9、整数スナップ）。各ロールで異なるスタイル選択可能。CV: ±5Vでスタイル選択。</li>
+    <li><b>DENSITY</b>: パターン密度（0-100%）。Foundationデフォルト20%、Timeline 40%、その他50%。CV: ±5V変調。</li>
+    <li><b>LENGTH</b>: パターン長（4-32ステップ、整数スナップ）。</li>
+    <li><b>FREQ</b>: 周波数修正（-1～+1オクターブ）。CV: ±1V = ±0.2オクターブ。</li>
+    <li><b>DECAY</b>: ディケイ倍率（0.2x～2.0x）。CV: ±1V = ±0.18x（±5V = ±0.9x）。</li>
+    <li><b>MIX</b>: 内部シンセ（0%）と外部オーディオ（100%）のブレンド。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">外部オーディオ入力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>EXT IN 1/2</b>: ロールごとに2つの外部オーディオ入力、ボイス1とボイス2に対応。</li>
+    <li><b>VCA Envelope</b>: 外部オーディオの音量がヒットベロシティに応じて変化。強いヒットほどディケイが速い。</li>
+    <li><b>MIX Knob</b>: 内部ドラムシンセと外部オーディオソースのクロスフェード。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">グローバルパラメータ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Variation</b>: パターンバリエーション量（デフォルト30%）。パターンの時間経過に伴う変化を制御。</li>
+    <li><b>Humanize</b>: タイミング・ベロシティヒューマナイズ（デフォルト50%）。リズムにオーガニック感を付加。</li>
+    <li><b>Swing</b>: スウィング量（デフォルト50%）。オフビートノートのタイミングを調整。</li>
+    <li><b>Rest</b>: 休符確率、CV入力対応。確率的にパターンからヒットを除去。</li>
+    <li><b>Fill</b>: フィル確率+強度の統合パラメータ（デフォルト30%）。小節開始時に事前決定。</li>
+    <li><b>Articulation</b>: アーティキュレーション量。Ghost、Accent、Rim、Flam、Drag、Buzz、Ruff技法を有効化。</li>
+    <li><b>Ghost Notes</b>: ゴーストノート確率。</li>
+    <li><b>Accent</b>: アクセント確率。</li>
+    <li><b>Spread</b>: ミックス出力のステレオスプレッド（デフォルト50%）。</li>
+    <li><b>Regenerate</b>: 現在の設定に基づいて新パターンを生成。</li>
+    <li><b>Reset</b>: 全ステップカウンターをゼロにリセット。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">マスターセクション</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Isolator Low</b>: 3バンドアイソレーター低域（250Hzクロスオーバー）。バイポーラ: -1 = Kill、0 = Unity、+1 = +12dBブースト。</li>
+    <li><b>Isolator Mid</b>: 3バンドアイソレーター中域（250Hz-4kHz）。同じバイポーラコントロール。</li>
+    <li><b>Isolator High</b>: 3バンドアイソレーター高域（4kHzクロスオーバー）。同じバイポーラコントロール。</li>
+    <li><b>Master Drive</b>: 非対称チューブサチュレーション（0-100%）。DCブロッカー付きの暖かい偶数倍音を生成。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">プライマリプライオリティ統合出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Audio</b>: ロールあたり両ボイスのオーディオ合計（プライマリ+セカンダリ）。</li>
+    <li><b>Gate</b>: 統合ゲート出力。両ボイスが同時トリガーの場合、プライマリボイスが優先。</li>
+    <li><b>Pitch CV</b>: 最後にトリガーされたボイスの1V/Octピッチ出力（プライマリ優先）。C4 = 0V。</li>
+    <li><b>Vel/Env</b>: 優先ボイスのベロシティエンベロープCV（0-10V）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クロックとタイミング</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: 外部クロック入力。パターン再生に必須。</li>
+    <li><b>RST</b>: リセット入力。全ステップカウンターをゼロに戻す。</li>
+    <li><b>REGEN</b>: リジェネレートトリガー入力。現在の設定に基づいて新パターンを生成。</li>
+    <li><b>PPQN</b>: 1（四分音符）、2（八分音符）、または4（十六分音符）の四分音符あたりパルス数。右クリックメニューで設定。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Per-Role Audio</b>: 個別ロールオーディオ出力（2ボイス合計）。</li>
+    <li><b>Per-Role Gate</b>: ロール別統合トリガー出力。</li>
+    <li><b>Per-Role Pitch</b>: ロール別1V/Oct CV出力。</li>
+    <li><b>Per-Role Vel/Env</b>: ロール別ベロシティエンベロープCV出力。</li>
+    <li><b>MIX L/R</b>: ステレオマスターミックス（アイソレーター、ドライブ、スプレッド適用済み）。</li>
+    <li><b>POLY</b>: 16チャンネルポリフォニック出力。4ロール×4チャンネル（Audio、Gate、Pitch、VelEnv）。Portal用に設計。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Role Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline Style</b>: Timelineロールリズムスタイル（0-9、整数スナップ）。</li>
+    <li><b>Timeline Density</b>: Timelineロールパターン密度（0-100%、デフォルト40%）。</li>
+    <li><b>Timeline Length</b>: Timelineロールパターン長（4-32ステップ、整数スナップ）。</li>
+    <li><b>Timeline Freq</b>: Timelineロール周波数修正（-1～+1オクターブ）。</li>
+    <li><b>Timeline Decay</b>: Timelineロールディケイ倍率（0.2x～2.0x）。</li>
+    <li><b>Timeline Mix (Int/Ext)</b>: Timelineロール内部シンセ（0%）から外部オーディオ（100%）。</li>
+    <li><b>Foundation Style</b>: Foundationロールリズムスタイル（0-9、整数スナップ）。</li>
+    <li><b>Foundation Density</b>: Foundationロールパターン密度（0-100%、デフォルト20%）。</li>
+    <li><b>Foundation Length</b>: Foundationロールパターン長（4-32ステップ、整数スナップ）。</li>
+    <li><b>Foundation Freq</b>: Foundationロール周波数修正（-1～+1オクターブ）。</li>
+    <li><b>Foundation Decay</b>: Foundationロールディケイ倍率（0.2x～2.0x）。</li>
+    <li><b>Foundation Mix (Int/Ext)</b>: Foundationロール内部シンセ（0%）から外部オーディオ（100%）。</li>
+    <li><b>Groove Style</b>: Grooveロールリズムスタイル（0-9、整数スナップ）。</li>
+    <li><b>Groove Density</b>: Grooveロールパターン密度（0-100%、デフォルト50%）。</li>
+    <li><b>Groove Length</b>: Grooveロールパターン長（4-32ステップ、整数スナップ）。</li>
+    <li><b>Groove Freq</b>: Grooveロール周波数修正（-1～+1オクターブ）。</li>
+    <li><b>Groove Decay</b>: Grooveロールディケイ倍率（0.2x～2.0x）。</li>
+    <li><b>Groove Mix (Int/Ext)</b>: Grooveロール内部シンセ（0%）から外部オーディオ（100%）。</li>
+    <li><b>Lead Style</b>: Leadロールリズムスタイル（0-9、整数スナップ）。</li>
+    <li><b>Lead Density</b>: Leadロールパターン密度（0-100%、デフォルト50%）。</li>
+    <li><b>Lead Length</b>: Leadロールパターン長（4-32ステップ、整数スナップ）。</li>
+    <li><b>Lead Freq</b>: Leadロール周波数修正（-1～+1オクターブ）。</li>
+    <li><b>Lead Decay</b>: Leadロールディケイ倍率（0.2x～2.0x）。</li>
+    <li><b>Lead Mix (Int/Ext)</b>: Leadロール内部シンセ（0%）から外部オーディオ（100%）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Clock</b>: パターン再生用クロック入力。</li>
+    <li><b>Reset</b>: リセット入力。全ステップカウンターをゼロに戻す。</li>
+    <li><b>Regenerate</b>: 新パターン生成トリガー入力。</li>
+    <li><b>Rest CV</b>: 休符確率変調CV入力。</li>
+    <li><b>Fill Trigger</b>: フィル発動トリガー入力。</li>
+    <li><b>Timeline Style CV</b>: Timelineスタイル変調CV入力。</li>
+    <li><b>Timeline Density CV</b>: Timeline密度変調CV入力。</li>
+    <li><b>Timeline Freq CV</b>: Timeline周波数変調CV入力。</li>
+    <li><b>Timeline Decay CV</b>: Timelineディケイ変調CV入力。</li>
+    <li><b>Foundation Style CV</b>: Foundationスタイル変調CV入力。</li>
+    <li><b>Foundation Density CV</b>: Foundation密度変調CV入力。</li>
+    <li><b>Foundation Freq CV</b>: Foundation周波数変調CV入力。</li>
+    <li><b>Foundation Decay CV</b>: Foundationディケイ変調CV入力。</li>
+    <li><b>Groove Style CV</b>: Grooveスタイル変調CV入力。</li>
+    <li><b>Groove Density CV</b>: Groove密度変調CV入力。</li>
+    <li><b>Groove Freq CV</b>: Groove周波数変調CV入力。</li>
+    <li><b>Groove Decay CV</b>: Grooveディケイ変調CV入力。</li>
+    <li><b>Lead Style CV</b>: Leadスタイル変調CV入力。</li>
+    <li><b>Lead Density CV</b>: Lead密度変調CV入力。</li>
+    <li><b>Lead Freq CV</b>: Lead周波数変調CV入力。</li>
+    <li><b>Lead Decay CV</b>: Leadディケイ変調CV入力。</li>
+    <li><b>Timeline Audio Input 1</b>: Timelineロール外部オーディオ入力1。</li>
+    <li><b>Timeline Audio Input 2</b>: Timelineロール外部オーディオ入力2。</li>
+    <li><b>Foundation Audio Input 1</b>: Foundationロール外部オーディオ入力1。</li>
+    <li><b>Foundation Audio Input 2</b>: Foundationロール外部オーディオ入力2。</li>
+    <li><b>Groove Audio Input 1</b>: Grooveロール外部オーディオ入力1。</li>
+    <li><b>Groove Audio Input 2</b>: Grooveロール外部オーディオ入力2。</li>
+    <li><b>Lead Audio Input 1</b>: Leadロール外部オーディオ入力1。</li>
+    <li><b>Lead Audio Input 2</b>: Leadロール外部オーディオ入力2。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Timeline Audio</b>: Timelineロール統合オーディオ出力（2ボイス合計）。</li>
+    <li><b>Timeline Gate</b>: Timelineロール統合ゲート/トリガー出力（プライマリ優先）。</li>
+    <li><b>Timeline Pitch CV (1V/Oct, C4=0V)</b>: TimelineロールピッチCV出力。</li>
+    <li><b>Timeline Velocity Envelope</b>: TimelineロールベロシティエンベロープCV出力。</li>
+    <li><b>Foundation Audio</b>: Foundationロール統合オーディオ出力（2ボイス合計）。</li>
+    <li><b>Foundation Gate</b>: Foundationロール統合ゲート/トリガー出力（プライマリ優先）。</li>
+    <li><b>Foundation Pitch CV (1V/Oct, C4=0V)</b>: FoundationロールピッチCV出力。</li>
+    <li><b>Foundation Velocity Envelope</b>: FoundationロールベロシティエンベロープCV出力。</li>
+    <li><b>Groove Audio</b>: Grooveロール統合オーディオ出力（2ボイス合計）。</li>
+    <li><b>Groove Gate</b>: Grooveロール統合ゲート/トリガー出力（プライマリ優先）。</li>
+    <li><b>Groove Pitch CV (1V/Oct, C4=0V)</b>: GrooveロールピッチCV出力。</li>
+    <li><b>Groove Velocity Envelope</b>: GrooveロールベロシティエンベロープCV出力。</li>
+    <li><b>Lead Audio</b>: Leadロール統合オーディオ出力（2ボイス合計）。</li>
+    <li><b>Lead Gate</b>: Leadロール統合ゲート/トリガー出力（プライマリ優先）。</li>
+    <li><b>Lead Pitch CV (1V/Oct, C4=0V)</b>: LeadロールピッチCV出力。</li>
+    <li><b>Lead Velocity Envelope</b>: LeadロールベロシティエンベロープCV出力。</li>
+    <li><b>Mix L</b>: 左ステレオマスターミックス出力（アイソレーター、ドライブ、スプレッド適用済み）。</li>
+    <li><b>Mix R</b>: 右ステレオマスターミックス出力（アイソレーター、ドライブ、スプレッド適用済み）。</li>
+    <li><b>Poly Out (16ch for Portal)</b>: 16チャンネルポリフォニック出力（4ロール×4チャンネル）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>モジュール幅: 32HP</li>
+    <li>ボイス数: 8（ロールあたり2）</li>
+    <li>シンセモード: SINE（ピッチあり）、NOISE（ピッチなし）</li>
+    <li>パターン長: ロールあたり4-32ステップ</li>
+    <li>アイソレータークロスオーバー: 250Hz / 4kHz（リンクウィッツ・ライリー4次）</li>
+    <li>ドライブ: 非対称チューブサチュレーション、DCブロッカー付き</li>
+    <li>ポリ出力: 16チャンネル（4ロール×4データタイプ）</li>
+    <li>処理: 32ビット浮動小数点</li>
+    </ul>
+controls:
+- name: Timeline Style
+  type: param
+  desc:
+    en: Timeline role rhythm style (0-9, integer snap).
+    zh: Timeline 角色節奏風格（0-9，整數對齊）。
+    ja: Timelineロールリズムスタイル（0-9、整数スナップ）。
+- name: Foundation Style
+  type: param
+  desc:
+    en: Foundation role rhythm style (0-9, integer snap).
+    zh: Foundation 角色節奏風格（0-9，整數對齊）。
+    ja: Foundationロールリズムスタイル（0-9、整数スナップ）。
+- name: Groove Style
+  type: param
+  desc:
+    en: Groove role rhythm style (0-9, integer snap).
+    zh: Groove 角色節奏風格（0-9，整數對齊）。
+    ja: Grooveロールリズムスタイル（0-9、整数スナップ）。
+- name: Lead Style
+  type: param
+  desc:
+    en: Lead role rhythm style (0-9, integer snap).
+    zh: Lead 角色節奏風格（0-9，整數對齊）。
+    ja: Leadロールリズムスタイル（0-9、整数スナップ）。
+- name: Timeline Density
+  type: param
+  desc:
+    en: Timeline role Pattern density (0-90%, default 40%).
+    zh: Timeline 角色 Pattern 密度（0-90%，預設 40%）。
+    ja: Timelineロールパターン密度（0-90%、デフォルト40%）。
+- name: Foundation Density
+  type: param
+  desc:
+    en: Foundation role Pattern density (0-90%, default 20%).
+    zh: Foundation 角色 Pattern 密度（0-90%，預設 20%）。
+    ja: Foundationロールパターン密度（0-90%、デフォルト20%）。
+- name: Groove Density
+  type: param
+  desc:
+    en: Groove role Pattern density (0-90%, default 50%).
+    zh: Groove 角色 Pattern 密度（0-90%，預設 50%）。
+    ja: Grooveロールパターン密度（0-90%、デフォルト50%）。
+- name: Lead Density
+  type: param
+  desc:
+    en: Lead role Pattern density (0-90%, default 50%).
+    zh: Lead 角色 Pattern 密度（0-90%，預設 50%）。
+    ja: Leadロールパターン密度（0-90%、デフォルト50%）。
+- name: Timeline Length
+  type: param
+  desc:
+    en: Timeline role pattern length (4-32 steps, integer snap).
+    zh: Timeline 角色 Pattern 長度（4-32 步，整數對齊）。
+    ja: Timelineロールパターン長（4-32ステップ、整数スナップ）。
+- name: Foundation Length
+  type: param
+  desc:
+    en: Foundation role pattern length (4-32 steps, integer snap).
+    zh: Foundation 角色 Pattern 長度（4-32 步，整數對齊）。
+    ja: Foundationロールパターン長（4-32ステップ、整数スナップ）。
+- name: Groove Length
+  type: param
+  desc:
+    en: Groove role pattern length (4-32 steps, integer snap).
+    zh: Groove 角色 Pattern 長度（4-32 步，整數對齊）。
+    ja: Grooveロールパターン長（4-32ステップ、整数スナップ）。
+- name: Lead Length
+  type: param
+  desc:
+    en: Lead role pattern length (4-32 steps, integer snap).
+    zh: Lead 角色 Pattern 長度（4-32 步，整數對齊）。
+    ja: Leadロールパターン長（4-32ステップ、整数スナップ）。
+- name: Timeline Freq
+  type: param
+  desc:
+    en: Timeline role frequency modifier (-1 to +1 octave).
+    zh: Timeline 角色頻率修正（-1 至 +1 八度）。
+    ja: Timelineロール周波数修正（-1～+1オクターブ）。
+- name: Foundation Freq
+  type: param
+  desc:
+    en: Foundation role frequency modifier (-1 to +1 octave).
+    zh: Foundation 角色頻率修正（-1 至 +1 八度）。
+    ja: Foundationロール周波数修正（-1～+1オクターブ）。
+- name: Groove Freq
+  type: param
+  desc:
+    en: Groove role frequency modifier (-1 to +1 octave).
+    zh: Groove 角色頻率修正（-1 至 +1 八度）。
+    ja: Grooveロール周波数修正（-1～+1オクターブ）。
+- name: Lead Freq
+  type: param
+  desc:
+    en: Lead role frequency modifier (-1 to +1 octave).
+    zh: Lead 角色頻率修正（-1 至 +1 八度）。
+    ja: Leadロール周波数修正（-1～+1オクターブ）。
+- name: Timeline Decay
+  type: param
+  desc:
+    en: Timeline role decay multiplier (0.2x to 2.0x).
+    zh: Timeline 角色 Decay 倍數（0.2x 至 2.0x）。
+    ja: Timelineロールディケイ倍率（0.2x～2.0x）。
+- name: Foundation Decay
+  type: param
+  desc:
+    en: Foundation role decay multiplier (0.2x to 2.0x).
+    zh: Foundation 角色 Decay 倍數（0.2x 至 2.0x）。
+    ja: Foundationロールディケイ倍率（0.2x～2.0x）。
+- name: Groove Decay
+  type: param
+  desc:
+    en: Groove role decay multiplier (0.2x to 2.0x).
+    zh: Groove 角色 Decay 倍數（0.2x 至 2.0x）。
+    ja: Grooveロールディケイ倍率（0.2x～2.0x）。
+- name: Lead Decay
+  type: param
+  desc:
+    en: Lead role decay multiplier (0.2x to 2.0x).
+    zh: Lead 角色 Decay 倍數（0.2x 至 2.0x）。
+    ja: Leadロールディケイ倍率（0.2x～2.0x）。
+- name: Variation
+  type: param
+  desc:
+    en: Pattern variation amount (default 30%). Controls how much patterns evolve over time.
+    zh: Pattern 變化量（預設 30%）。控制 Pattern 隨時間演化的程度。
+    ja: パターンバリエーション量（デフォルト30%）。パターンの時間経過に伴う変化を制御。
+- name: Humanize
+  type: param
+  desc:
+    en: Humanize timing and velocity (default 50%). Adds organic feel to rhythms.
+    zh: 時序與 Velocity Humanize（預設 50%）。為節奏添加有機感。
+    ja: タイミング・ベロシティヒューマナイズ（デフォルト50%）。リズムにオーガニック感を付加。
+- name: Swing
+  type: param
+  desc:
+    en: Swing amount (default 50%). Adjusts timing of off-beat notes.
+    zh: Swing 量（預設 50%）。調整 Off-beat 音符的時序。
+    ja: スウィング量（デフォルト50%）。オフビートノートのタイミングを調整。
+- name: Rest
+  type: param
+  desc:
+    en: Rest probability with CV input. Removes hits from patterns probabilistically.
+    zh: 休止機率，帶 CV 輸入。以機率方式移除 Pattern 中的 Hit。
+    ja: 休符確率、CV入力対応。確率的にパターンからヒットを除去。
+- name: Fill
+  type: param
+  desc:
+    en: Combined fill probability and intensity (default 30%). Pre-determined at bar start.
+    zh: 結合 Fill 機率與強度（預設 30%）。在小節開始時預先決定。
+    ja: フィル確率+強度の統合パラメータ（デフォルト30%）。小節開始時に事前決定。
+- name: Articulation
+  type: param
+  desc:
+    en: Articulation amount. Enables Ghost, Accent, Rim, Flam, Drag, Buzz, Ruff articulations.
+    zh: Articulation 量。啟用 Ghost、Accent、Rim、Flam、Drag、Buzz、Ruff 演奏技法。
+    ja: アーティキュレーション量。Ghost、Accent、Rim、Flam、Drag、Buzz、Ruff技法を有効化。
+- name: Ghost Notes
+  type: param
+  desc:
+    en: Ghost note probability.
+    zh: Ghost Note 機率。
+    ja: ゴーストノート確率。
+- name: Accent
+  type: param
+  desc:
+    en: Accent probability.
+    zh: Accent 機率。
+    ja: アクセント確率。
+- name: Spread
+  type: param
+  desc:
+    en: Stereo spread for mix output (default 50%).
+    zh: Mix 輸出的 Stereo Spread（預設 50%）。
+    ja: ミックス出力のステレオスプレッド（デフォルト50%）。
+- name: Regenerate
+  type: param
+  desc:
+    en: Regenerate button. Generates new Patterns based on current settings.
+    zh: Regenerate 按鈕。依據目前設定生成新 Pattern。
+    ja: Regenerateボタン。現在の設定に基づいて新パターンを生成。
+- name: Reset
+  type: param
+  desc:
+    en: Reset button. Returns all step counters to zero.
+    zh: Reset 按鈕。將所有步數計數器歸零。
+    ja: Resetボタン。全ステップカウンターをゼロに戻す。
+- name: Timeline Mix (Int/Ext)
+  type: param
+  desc:
+    en: Timeline role internal synth (0%) to external audio (100%).
+    zh: Timeline 角色內部合成（0%）至外部 Audio（100%）。
+    ja: Timelineロール内部シンセ（0%）から外部オーディオ（100%）。
+- name: Foundation Mix (Int/Ext)
+  type: param
+  desc:
+    en: Foundation role internal synth (0%) to external audio (100%).
+    zh: Foundation 角色內部合成（0%）至外部 Audio（100%）。
+    ja: Foundationロール内部シンセ（0%）から外部オーディオ（100%）。
+- name: Groove Mix (Int/Ext)
+  type: param
+  desc:
+    en: Groove role internal synth (0%) to external audio (100%).
+    zh: Groove 角色內部合成（0%）至外部 Audio（100%）。
+    ja: Grooveロール内部シンセ（0%）から外部オーディオ（100%）。
+- name: Lead Mix (Int/Ext)
+  type: param
+  desc:
+    en: Lead role internal synth (0%) to external audio (100%).
+    zh: Lead 角色內部合成（0%）至外部 Audio（100%）。
+    ja: Leadロール内部シンセ（0%）から外部オーディオ（100%）。
+- name: Clock
+  type: input
+  desc:
+    en: Clock input for Pattern playback.
+    zh: Pattern 播放用 Clock 輸入。
+    ja: パターン再生用クロック入力。
+- name: Reset
+  type: input
+  desc:
+    en: Reset Trigger input. Returns all step counters to zero.
+    zh: Reset Trigger 輸入。將所有步數計數器歸零。
+    ja: リセットトリガー入力。全ステップカウンターをゼロに戻す。
+- name: Regenerate
+  type: input
+  desc:
+    en: Regenerate Trigger input. Generates new Patterns based on current settings.
+    zh: Regenerate Trigger 輸入。依據目前設定生成新 Pattern。
+    ja: リジェネレートトリガー入力。現在の設定に基づいて新パターンを生成。
+- name: Rest CV
+  type: input
+  desc:
+    en: CV input for rest probability modulation.
+    zh: 休止機率調變 CV 輸入。
+    ja: 休符確率変調CV入力。
+- name: Fill Trigger
+  type: input
+  desc:
+    en: Trigger input for fill activation.
+    zh: Fill 啟動 Trigger 輸入。
+    ja: フィル発動トリガー入力。
+- name: Timeline Style CV
+  type: input
+  desc:
+    en: CV input for Timeline style modulation.
+    zh: Timeline 風格調變 CV 輸入。
+    ja: Timelineスタイル変調CV入力。
+- name: Foundation Style CV
+  type: input
+  desc:
+    en: CV input for Foundation style modulation.
+    zh: Foundation 風格調變 CV 輸入。
+    ja: Foundationスタイル変調CV入力。
+- name: Groove Style CV
+  type: input
+  desc:
+    en: CV input for Groove style modulation.
+    zh: Groove 風格調變 CV 輸入。
+    ja: Grooveスタイル変調CV入力。
+- name: Lead Style CV
+  type: input
+  desc:
+    en: CV input for Lead style modulation.
+    zh: Lead 風格調變 CV 輸入。
+    ja: Leadスタイル変調CV入力。
+- name: Timeline Density CV
+  type: input
+  desc:
+    en: CV input for Timeline density modulation.
+    zh: Timeline 密度調變 CV 輸入。
+    ja: Timeline密度変調CV入力。
+- name: Foundation Density CV
+  type: input
+  desc:
+    en: CV input for Foundation density modulation.
+    zh: Foundation 密度調變 CV 輸入。
+    ja: Foundation密度変調CV入力。
+- name: Groove Density CV
+  type: input
+  desc:
+    en: CV input for Groove density modulation.
+    zh: Groove 密度調變 CV 輸入。
+    ja: Groove密度変調CV入力。
+- name: Lead Density CV
+  type: input
+  desc:
+    en: CV input for Lead density modulation.
+    zh: Lead 密度調變 CV 輸入。
+    ja: Lead密度変調CV入力。
+- name: Timeline Freq CV
+  type: input
+  desc:
+    en: CV input for Timeline frequency modulation.
+    zh: Timeline 頻率調變 CV 輸入。
+    ja: Timeline周波数変調CV入力。
+- name: Foundation Freq CV
+  type: input
+  desc:
+    en: CV input for Foundation frequency modulation.
+    zh: Foundation 頻率調變 CV 輸入。
+    ja: Foundation周波数変調CV入力。
+- name: Groove Freq CV
+  type: input
+  desc:
+    en: CV input for Groove frequency modulation.
+    zh: Groove 頻率調變 CV 輸入。
+    ja: Groove周波数変調CV入力。
+- name: Lead Freq CV
+  type: input
+  desc:
+    en: CV input for Lead frequency modulation.
+    zh: Lead 頻率調變 CV 輸入。
+    ja: Lead周波数変調CV入力。
+- name: Timeline Decay CV
+  type: input
+  desc:
+    en: CV input for Timeline decay modulation.
+    zh: Timeline Decay 調變 CV 輸入。
+    ja: Timelineディケイ変調CV入力。
+- name: Foundation Decay CV
+  type: input
+  desc:
+    en: CV input for Foundation decay modulation.
+    zh: Foundation Decay 調變 CV 輸入。
+    ja: Foundationディケイ変調CV入力。
+- name: Groove Decay CV
+  type: input
+  desc:
+    en: CV input for Groove decay modulation.
+    zh: Groove Decay 調變 CV 輸入。
+    ja: Grooveディケイ変調CV入力。
+- name: Lead Decay CV
+  type: input
+  desc:
+    en: CV input for Lead decay modulation.
+    zh: Lead Decay 調變 CV 輸入。
+    ja: Leadディケイ変調CV入力。
+- name: Timeline Audio Input 1
+  type: input
+  desc:
+    en: Timeline role external Audio input 1 (Voice 1).
+    zh: Timeline 角色外部 Audio 輸入 1（Voice 1）。
+    ja: Timelineロール外部オーディオ入力1（Voice 1）。
+- name: Foundation Audio Input 1
+  type: input
+  desc:
+    en: Foundation role external Audio input 1 (Voice 1).
+    zh: Foundation 角色外部 Audio 輸入 1（Voice 1）。
+    ja: Foundationロール外部オーディオ入力1（Voice 1）。
+- name: Groove Audio Input 1
+  type: input
+  desc:
+    en: Groove role external Audio input 1 (Voice 1).
+    zh: Groove 角色外部 Audio 輸入 1（Voice 1）。
+    ja: Grooveロール外部オーディオ入力1（Voice 1）。
+- name: Lead Audio Input 1
+  type: input
+  desc:
+    en: Lead role external Audio input 1 (Voice 1).
+    zh: Lead 角色外部 Audio 輸入 1（Voice 1）。
+    ja: Leadロール外部オーディオ入力1（Voice 1）。
+- name: Timeline Audio Input 2
+  type: input
+  desc:
+    en: Timeline role external Audio input 2 (Voice 2).
+    zh: Timeline 角色外部 Audio 輸入 2（Voice 2）。
+    ja: Timelineロール外部オーディオ入力2（Voice 2）。
+- name: Foundation Audio Input 2
+  type: input
+  desc:
+    en: Foundation role external Audio input 2 (Voice 2).
+    zh: Foundation 角色外部 Audio 輸入 2（Voice 2）。
+    ja: Foundationロール外部オーディオ入力2（Voice 2）。
+- name: Groove Audio Input 2
+  type: input
+  desc:
+    en: Groove role external Audio input 2 (Voice 2).
+    zh: Groove 角色外部 Audio 輸入 2（Voice 2）。
+    ja: Grooveロール外部オーディオ入力2（Voice 2）。
+- name: Lead Audio Input 2
+  type: input
+  desc:
+    en: Lead role external Audio input 2 (Voice 2).
+    zh: Lead 角色外部 Audio 輸入 2（Voice 2）。
+    ja: Leadロール外部オーディオ入力2（Voice 2）。
+- name: Timeline Audio
+  type: output
+  desc:
+    en: Timeline role merged Audio output (sum of 2 Voices).
+    zh: Timeline 角色合併 Audio 輸出（2 Voice 總和）。
+    ja: Timelineロール統合オーディオ出力（2ボイス合計）。
+- name: Foundation Audio
+  type: output
+  desc:
+    en: Foundation role merged Audio output (sum of 2 Voices).
+    zh: Foundation 角色合併 Audio 輸出（2 Voice 總和）。
+    ja: Foundationロール統合オーディオ出力（2ボイス合計）。
+- name: Groove Audio
+  type: output
+  desc:
+    en: Groove role merged Audio output (sum of 2 Voices).
+    zh: Groove 角色合併 Audio 輸出（2 Voice 總和）。
+    ja: Grooveロール統合オーディオ出力（2ボイス合計）。
+- name: Lead Audio
+  type: output
+  desc:
+    en: Lead role merged Audio output (sum of 2 Voices).
+    zh: Lead 角色合併 Audio 輸出（2 Voice 總和）。
+    ja: Leadロール統合オーディオ出力（2ボイス合計）。
+- name: Timeline Gate
+  type: output
+  desc:
+    en: Timeline role merged Gate/Trigger output (Primary priority).
+    zh: Timeline 角色合併 Gate/Trigger 輸出（Primary 優先）。
+    ja: Timelineロール統合ゲート/トリガー出力（プライマリ優先）。
+- name: Foundation Gate
+  type: output
+  desc:
+    en: Foundation role merged Gate/Trigger output (Primary priority).
+    zh: Foundation 角色合併 Gate/Trigger 輸出（Primary 優先）。
+    ja: Foundationロール統合ゲート/トリガー出力（プライマリ優先）。
+- name: Groove Gate
+  type: output
+  desc:
+    en: Groove role merged Gate/Trigger output (Primary priority).
+    zh: Groove 角色合併 Gate/Trigger 輸出（Primary 優先）。
+    ja: Grooveロール統合ゲート/トリガー出力（プライマリ優先）。
+- name: Lead Gate
+  type: output
+  desc:
+    en: Lead role merged Gate/Trigger output (Primary priority).
+    zh: Lead 角色合併 Gate/Trigger 輸出（Primary 優先）。
+    ja: Leadロール統合ゲート/トリガー出力（プライマリ優先）。
+- name: Timeline Pitch CV (1V/Oct, C4=0V)
+  type: output
+  desc:
+    en: Timeline role Pitch CV output (1V/Oct, C4=0V).
+    zh: Timeline 角色 Pitch CV 輸出（1V/Oct，C4=0V）。
+    ja: TimelineロールピッチCV出力（1V/Oct、C4=0V）。
+- name: Foundation Pitch CV (1V/Oct, C4=0V)
+  type: output
+  desc:
+    en: Foundation role Pitch CV output (1V/Oct, C4=0V).
+    zh: Foundation 角色 Pitch CV 輸出（1V/Oct，C4=0V）。
+    ja: FoundationロールピッチCV出力（1V/Oct、C4=0V）。
+- name: Groove Pitch CV (1V/Oct, C4=0V)
+  type: output
+  desc:
+    en: Groove role Pitch CV output (1V/Oct, C4=0V).
+    zh: Groove 角色 Pitch CV 輸出（1V/Oct，C4=0V）。
+    ja: GrooveロールピッチCV出力（1V/Oct、C4=0V）。
+- name: Lead Pitch CV (1V/Oct, C4=0V)
+  type: output
+  desc:
+    en: Lead role Pitch CV output (1V/Oct, C4=0V).
+    zh: Lead 角色 Pitch CV 輸出（1V/Oct，C4=0V）。
+    ja: LeadロールピッチCV出力（1V/Oct、C4=0V）。
+- name: Timeline Velocity Envelope
+  type: output
+  desc:
+    en: Timeline role velocity envelope CV output.
+    zh: Timeline 角色 Velocity Envelope CV 輸出。
+    ja: TimelineロールベロシティエンベロープCV出力。
+- name: Foundation Velocity Envelope
+  type: output
+  desc:
+    en: Foundation role velocity envelope CV output.
+    zh: Foundation 角色 Velocity Envelope CV 輸出。
+    ja: FoundationロールベロシティエンベロープCV出力。
+- name: Groove Velocity Envelope
+  type: output
+  desc:
+    en: Groove role velocity envelope CV output.
+    zh: Groove 角色 Velocity Envelope CV 輸出。
+    ja: GrooveロールベロシティエンベロープCV出力。
+- name: Lead Velocity Envelope
+  type: output
+  desc:
+    en: Lead role velocity envelope CV output.
+    zh: Lead 角色 Velocity Envelope CV 輸出。
+    ja: LeadロールベロシティエンベロープCV出力。
+- name: Mix L
+  type: output
+  desc:
+    en: Left Stereo Master Mix output (with Isolator, Drive, Spread).
+    zh: 左聲道 Stereo Master Mix 輸出（含 Isolator、Drive、Spread）。
+    ja: 左ステレオマスターミックス出力（アイソレーター、ドライブ、スプレッド適用済み）。
+- name: Mix R
+  type: output
+  desc:
+    en: Right Stereo Master Mix output (with Isolator, Drive, Spread).
+    zh: 右聲道 Stereo Master Mix 輸出（含 Isolator、Drive、Spread）。
+    ja: 右ステレオマスターミックス出力（アイソレーター、ドライブ、スプレッド適用済み）。
+- name: Poly Out (16ch for Portal)
+  type: output
+  desc:
+    en: 16-channel polyphonic output for Portal crossfading (4 roles x 4 channels).
+    zh: 16 聲道 Polyphonic 輸出，供 Portal Crossfading 使用（4 角色 x 4 聲道）。
+    ja: Portalクロスフェード用16チャンネルポリフォニック出力（4ロール×4チャンネル）。
+- name: Isolator Low
+  type: param
+  desc:
+    en: '3-band isolator low band (250Hz crossover). Bipolar: -1 = kill, 0 = unity, +1 = +12dB boost.'
+    zh: '3 頻段 Isolator 低頻（250Hz 分頻點）。雙極: -1 = Kill、0 = Unity、+1 = +12dB Boost。'
+    ja: '3バンドアイソレーター低域（250Hzクロスオーバー）。バイポーラ: -1 = Kill、0 = Unity、+1 = +12dBブースト。'
+- name: Isolator Mid
+  type: param
+  desc:
+    en: 3-band isolator mid band (250Hz-4kHz). Same bipolar control.
+    zh: 3 頻段 Isolator 中頻（250Hz-4kHz）。相同雙極控制。
+    ja: 3バンドアイソレーター中域（250Hz-4kHz）。同じバイポーラコントロール。
+- name: Isolator High
+  type: param
+  desc:
+    en: 3-band isolator high band (4kHz crossover). Same bipolar control.
+    zh: 3 頻段 Isolator 高頻（4kHz 分頻點）。相同雙極控制。
+    ja: 3バンドアイソレーター高域（4kHzクロスオーバー）。同じバイポーラコントロール。
+- name: Master Drive
+  type: param
+  desc:
+    en: Asymmetric tube saturation (0-100%). Creates warm even harmonics with DC blocker.
+    zh: 非對稱 Tube Saturation（0-100%）。產生溫暖的偶次諧波，帶 DC Blocker。
+    ja: 非対称チューブサチュレーション（0-100%）。DCブロッカー付きの暖かい偶数倍音を生成。
+- name: Timeline Mix
+  type: param
+  desc:
+    en: Internal/External mix for Timeline role (0-1, default 0 = internal synth, 1 = external audio input)
+    zh: Timeline 聲部的 Internal/External 混音（0-1，預設 0 = 內部合成器，1 = 外部音訊輸入）
+    ja: Timelineロールの内部/外部ミックス（0-1、デフォルト0 = 内部シンセ、1 = 外部オーディオ入力）
+- name: Foundation Mix
+  type: param
+  desc:
+    en: Internal/External mix for Foundation role (0-1, default 0 = internal synth, 1 = external audio input)
+    zh: Foundation 聲部的 Internal/External 混音（0-1，預設 0 = 內部合成器，1 = 外部音訊輸入）
+    ja: Foundationロールの内部/外部ミックス（0-1、デフォルト0 = 内部シンセ、1 = 外部オーディオ入力）
+- name: Groove Mix
+  type: param
+  desc:
+    en: Internal/External mix for Groove role (0-1, default 0 = internal synth, 1 = external audio input)
+    zh: Groove 聲部的 Internal/External 混音（0-1，預設 0 = 內部合成器，1 = 外部音訊輸入）
+    ja: Grooveロールの内部/外部ミックス（0-1、デフォルト0 = 内部シンセ、1 = 外部オーディオ入力）
+- name: Lead Mix
+  type: param
+  desc:
+    en: Internal/External mix for Lead role (0-1, default 0 = internal synth, 1 = external audio input)
+    zh: Lead 聲部的 Internal/External 混音（0-1，預設 0 = 內部合成器，1 = 外部音訊輸入）
+    ja: Leadロールの内部/外部ミックス（0-1、デフォルト0 = 内部シンセ、1 = 外部オーディオ入力）

@@ -1,0 +1,1129 @@
+slug: EnvVCA6
+name: Env VCA 6
+hp: 12
+wide: false
+alt: Env VCA 6
+description:
+  en: 'Six stereo envelope-controlled VCAs with independent attack/release, three gate output modes, and sum bus routing (collab: offthesky)'
+  zh: 六聲道立體聲 Envelope 控制 VCA，具備獨立 Attack/Release、三種 Gate 輸出模式與 Sum Bus 路由（與 offthesky 合作開發）
+  ja: 独立したアタック/リリース、3つのゲート出力モード、サムバスルーティングを備えた6チャンネルステレオエンベロープ制御VCA（offtheskyとのコラボレーション）
+features:
+  en:
+  - Six stereo envelope-controlled VCAs
+  - Independent attack/release per channel
+  - Manual gate trigger buttons
+  - Sum bus routing to Channel 6
+  - Three gate output modes
+  zh:
+  - 6 組 Stereo Envelope 控制 VCA
+  - 各聲道獨立 Attack/Release
+  - 手動 Gate Trigger 按鈕
+  - Channel 6 Sum Bus 路由
+  - 三種 Gate Output 模式
+  ja:
+  - 6組ステレオエンベロープ制御VCA
+  - チャンネル別独立アタック/リリース
+  - 手動ゲートトリガーボタン
+  - チャンネル6サムバスルーティング
+  - 3種類のゲート出力モード
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Six-channel envelope-controlled VCA system developed in collaboration with offthesky. Each channel provides independent AD or AHR envelope with stereo VCA, manual gate triggers, and configurable gate outputs. Channels 1-5 can be routed to Channel 6's sum bus for submixing.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow (per channel)</h3>
+    <p style="margin-bottom: 1rem;">Gate → Envelope Generator → [× Audio In × Vol CV × Out Vol] → Audio Out. Gate Out derived from envelope state based on selected mode.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope Behavior</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Time Range</b>: Exponential scaling from ~1ms (knob at 0) to ~1000s (knob at 1.0). Center position: ~1s.</li>
+    <li><b>Minimum Time</b>: Clamped to 1ms to prevent clicks</li>
+    <li><b>Curve Shape</b>: S-curve for natural-sounding transitions</li>
+    <li><b>Attack Phase</b>: Ramps from 0 to 1 over attack time with curve applied</li>
+    <li><b>Decay/Release Phase</b>: Ramps from 1 to 0 over decay time with inverted curve</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope Modes</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>AD Mode (HOLD off)</b>: Attack → Decay. Envelope starts on rising edge, completes full cycle regardless of gate length.</li>
+    <li><b>AHR Mode (HOLD on)</b>: Attack → Hold → Release. Attack phase on rising edge, holds at peak while gate is high, release begins on gate falling edge.</li>
+    <li><b>Trigger Detection</b>: Schmitt trigger with 0.1V low / 2.0V high thresholds</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Channel Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Attack</b>: Attack time (0.0-1.0, exponential scaling ~1ms to ~1000s)</li>
+    <li><b>Release</b>: Release/Decay time (0.0-1.0, same scaling)</li>
+    <li><b>Out Vol</b>: Output volume multiplier (0.0-1.0, default: 0.8)</li>
+    <li><b>Manual Button (pink)</b>: Momentary gate - generates 10V while pressed</li>
+    <li><b>HOLD Button (pink)</b>: Toggles between AD and AHR envelope modes</li>
+    <li><b>Sum Button (pink)</b>: Routes this channel's output to Channel 6 sum bus (CH1-5 only)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Channel I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>In L</b>: Left/mono audio input. If R is unconnected, L is copied to both channels.</li>
+    <li><b>In R</b>: Right audio input (optional)</li>
+    <li><b>Gate</b>: Trigger/gate input. Combined with manual button (max of both).</li>
+    <li><b>Vol Ctrl</b>: Volume CV (0-10V maps to 0-1 multiplier). Defaults to 1.0 if unconnected.</li>
+    <li><b>Gate Out</b>: Configurable gate/trigger output (see Gate Output Modes)</li>
+    <li><b>Env Out</b>: Raw envelope output (0-10V)</li>
+    <li><b>Out L/R</b>: Stereo VCA output = input × envelope × volCV × outVol</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Gate Output Modes (via right-click menu)</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Full Cycle Gate</b>: Output stays high (10V) from gate rising edge until envelope returns to zero. Useful for chaining sequences.</li>
+    <li><b>End of Cycle Trigger</b>: 1ms pulse when envelope completes (falls below 0.001). Useful for triggering next stage.</li>
+    <li><b>Start + End Triggers</b>: 1ms pulses at both gate rising edge AND envelope completion. Useful for clock multiplication.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sum Bus System</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Routing</b>: CH1-5 can route to CH6 via Sum buttons (CH6 has no sum button)</li>
+    <li><b>Audio Summing</b>: Each channel is attenuated before summing to prevent overload</li>
+    <li><b>Envelope Summing</b>: RMS-based calculation of summed channel envelopes; CH6 envelope output uses max(CH6 own envelope, RMS envelope) to preserve the larger value</li>
+    <li><b>Combination</b>: Audio sum is ADDED to CH6's own output; envelope uses max() not add</li>
+    <li><b>Use Case</b>: Submix multiple channels through CH6 for unified processing</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">VCA Light</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Green LED</b>: Shows current VCA gain level (envelope × volCV × outVol)</li>
+    <li><b>Brightness</b>: Proportional to final gain multiplier</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Audio I/O: ±10V (not limited to ±5V)</li>
+    <li>Envelope output: 0-10V unipolar</li>
+    <li>Volume CV: 0-10V (clamped)</li>
+    <li>Gate trigger threshold: Schmitt 0.1V/2.0V</li>
+    <li>Gate output pulse width: 1ms (trigger modes)</li>
+    <li>Envelope curve: Fixed k=-0.9</li>
+    <li>Sum scaling: 0.3x per channel</li>
+    <li>Processing: 32-bit floating point</li>
+    <li>Module width: 12HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Collaboration</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Developed in collaboration with offthesky</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Ch 1 Attack</b>: Channel 1 attack time (0.0-1.0, exponential ~1ms to ~1000s). Default: 0.1.</li>
+    <li><b>Ch 1 Release</b>: Channel 1 release/decay time (0.0-1.0, same scaling). Default: 0.5.</li>
+    <li><b>Ch 1 Out Volume</b>: Channel 1 output volume multiplier 0-1 (default: 0.8).</li>
+    <li><b>Ch 1 Manual Gate (Momentary)</b>: Channel 1 momentary gate button. Generates 10V while pressed.</li>
+    <li><b>Ch 1 Sum to Ch6</b>: Channel 1 sum bus routing toggle. Routes output to Channel 6.</li>
+    <li><b>Ch 1 Env Mode (AD/AHR)</b>: Channel 1 envelope mode. Off = AD, On = AHR (Attack-Hold-Release).</li>
+    <li><b>Ch 2 Attack</b>: Channel 2 attack time.</li>
+    <li><b>Ch 2 Release</b>: Channel 2 release/decay time.</li>
+    <li><b>Ch 2 Out Volume</b>: Channel 2 output volume multiplier.</li>
+    <li><b>Ch 2 Manual Gate (Momentary)</b>: Channel 2 momentary gate button.</li>
+    <li><b>Ch 2 Sum to Ch6</b>: Channel 2 sum bus routing toggle.</li>
+    <li><b>Ch 2 Env Mode (AD/AHR)</b>: Channel 2 envelope mode.</li>
+    <li><b>Ch 3 Attack</b>: Channel 3 attack time.</li>
+    <li><b>Ch 3 Release</b>: Channel 3 release/decay time.</li>
+    <li><b>Ch 3 Out Volume</b>: Channel 3 output volume multiplier.</li>
+    <li><b>Ch 3 Manual Gate (Momentary)</b>: Channel 3 momentary gate button.</li>
+    <li><b>Ch 3 Sum to Ch6</b>: Channel 3 sum bus routing toggle.</li>
+    <li><b>Ch 3 Env Mode (AD/AHR)</b>: Channel 3 envelope mode.</li>
+    <li><b>Ch 4 Attack</b>: Channel 4 attack time.</li>
+    <li><b>Ch 4 Release</b>: Channel 4 release/decay time.</li>
+    <li><b>Ch 4 Out Volume</b>: Channel 4 output volume multiplier.</li>
+    <li><b>Ch 4 Manual Gate (Momentary)</b>: Channel 4 momentary gate button.</li>
+    <li><b>Ch 4 Sum to Ch6</b>: Channel 4 sum bus routing toggle.</li>
+    <li><b>Ch 4 Env Mode (AD/AHR)</b>: Channel 4 envelope mode.</li>
+    <li><b>Ch 5 Attack</b>: Channel 5 attack time.</li>
+    <li><b>Ch 5 Release</b>: Channel 5 release/decay time.</li>
+    <li><b>Ch 5 Out Volume</b>: Channel 5 output volume multiplier.</li>
+    <li><b>Ch 5 Manual Gate (Momentary)</b>: Channel 5 momentary gate button.</li>
+    <li><b>Ch 5 Sum to Ch6</b>: Channel 5 sum bus routing toggle.</li>
+    <li><b>Ch 5 Env Mode (AD/AHR)</b>: Channel 5 envelope mode.</li>
+    <li><b>Ch 6 Attack</b>: Channel 6 attack time.</li>
+    <li><b>Ch 6 Release</b>: Channel 6 release/decay time.</li>
+    <li><b>Ch 6 Out Volume</b>: Channel 6 output volume multiplier.</li>
+    <li><b>Ch 6 Manual Gate (Momentary)</b>: Channel 6 momentary gate button.</li>
+    <li><b>Ch 6 Env Mode (AD/AHR)</b>: Channel 6 envelope mode.</li>
+    <li><b>Gate Output Mode</b>: Gate output behavior (right-click menu). 0=Full Cycle Gate, 1=End Trigger, 2=Start+End Triggers.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O Reference</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Ch 1 In L</b>: Channel 1 left/mono audio input.</li>
+    <li><b>Ch 1 In R</b>: Channel 1 right audio input (optional, L copied if unconnected).</li>
+    <li><b>Ch 1 Gate</b>: Channel 1 gate/trigger input.</li>
+    <li><b>Ch 1 Vol Ctrl</b>: Channel 1 volume CV (0-10V).</li>
+    <li><b>Ch 2 In L</b>: Channel 2 left/mono audio input.</li>
+    <li><b>Ch 2 In R</b>: Channel 2 right audio input.</li>
+    <li><b>Ch 2 Gate</b>: Channel 2 gate/trigger input.</li>
+    <li><b>Ch 2 Vol Ctrl</b>: Channel 2 volume CV.</li>
+    <li><b>Ch 3 In L</b>: Channel 3 left/mono audio input.</li>
+    <li><b>Ch 3 In R</b>: Channel 3 right audio input.</li>
+    <li><b>Ch 3 Gate</b>: Channel 3 gate/trigger input.</li>
+    <li><b>Ch 3 Vol Ctrl</b>: Channel 3 volume CV.</li>
+    <li><b>Ch 4 In L</b>: Channel 4 left/mono audio input.</li>
+    <li><b>Ch 4 In R</b>: Channel 4 right audio input.</li>
+    <li><b>Ch 4 Gate</b>: Channel 4 gate/trigger input.</li>
+    <li><b>Ch 4 Vol Ctrl</b>: Channel 4 volume CV.</li>
+    <li><b>Ch 5 In L</b>: Channel 5 left/mono audio input.</li>
+    <li><b>Ch 5 In R</b>: Channel 5 right audio input.</li>
+    <li><b>Ch 5 Gate</b>: Channel 5 gate/trigger input.</li>
+    <li><b>Ch 5 Vol Ctrl</b>: Channel 5 volume CV.</li>
+    <li><b>Ch 6 In L</b>: Channel 6 left/mono audio input.</li>
+    <li><b>Ch 6 In R</b>: Channel 6 right audio input.</li>
+    <li><b>Ch 6 Gate</b>: Channel 6 gate/trigger input.</li>
+    <li><b>Ch 6 Vol Ctrl</b>: Channel 6 volume CV.</li>
+    <li><b>Ch 1 Gate</b>: Channel 1 gate/trigger output (mode-dependent).</li>
+    <li><b>Ch 1 Envelope</b>: Channel 1 envelope output (0-10V).</li>
+    <li><b>Ch 1 Out L</b>: Channel 1 left audio output.</li>
+    <li><b>Ch 1 Out R</b>: Channel 1 right audio output.</li>
+    <li><b>Ch 2 Gate</b>: Channel 2 gate/trigger output.</li>
+    <li><b>Ch 2 Envelope</b>: Channel 2 envelope output.</li>
+    <li><b>Ch 2 Out L</b>: Channel 2 left audio output.</li>
+    <li><b>Ch 2 Out R</b>: Channel 2 right audio output.</li>
+    <li><b>Ch 3 Gate</b>: Channel 3 gate/trigger output.</li>
+    <li><b>Ch 3 Envelope</b>: Channel 3 envelope output.</li>
+    <li><b>Ch 3 Out L</b>: Channel 3 left audio output.</li>
+    <li><b>Ch 3 Out R</b>: Channel 3 right audio output.</li>
+    <li><b>Ch 4 Gate</b>: Channel 4 gate/trigger output.</li>
+    <li><b>Ch 4 Envelope</b>: Channel 4 envelope output.</li>
+    <li><b>Ch 4 Out L</b>: Channel 4 left audio output.</li>
+    <li><b>Ch 4 Out R</b>: Channel 4 right audio output.</li>
+    <li><b>Ch 5 Gate</b>: Channel 5 gate/trigger output.</li>
+    <li><b>Ch 5 Envelope</b>: Channel 5 envelope output.</li>
+    <li><b>Ch 5 Out L</b>: Channel 5 left audio output.</li>
+    <li><b>Ch 5 Out R</b>: Channel 5 right audio output.</li>
+    <li><b>Ch 6 Gate</b>: Channel 6 gate/trigger output.</li>
+    <li><b>Ch 6 Envelope / Sum Envelope</b>: Channel 6 envelope output / sum envelope.</li>
+    <li><b>Ch 6 Out L / Sum L</b>: Channel 6 left audio output / sum left.</li>
+    <li><b>Ch 6 Out R / Sum R</b>: Channel 6 right audio output / sum right.</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">與 offthesky 共同開發的六聲道 Envelope 控制 VCA 系統。每個聲道提供獨立的 AD 或 AHR Envelope 搭配 Stereo VCA、手動 Gate Trigger，以及可配置的 Gate Output。Channel 1-5 可路由至 Channel 6 的 Sum Bus 進行 Submixing。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流（各聲道）</h3>
+    <p style="margin-bottom: 1rem;">Gate → Envelope Generator → [× Audio In × Vol CV × Out Vol] → Audio Out。Gate Out 依所選模式從 Envelope 狀態衍生。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope 行為</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>時間範圍</b>: 指數縮放從 ~1ms（旋鈕在 0）至 ~1000s（旋鈕在 1.0）。中間位置: ~1s。</li>
+    <li><b>最小時間</b>: 限制在 1ms 以防止 Click 聲</li>
+    <li><b>曲線形狀</b>: S 曲線提供自然的過渡效果</li>
+    <li><b>Attack 階段</b>: 在 Attack 時間內從 0 升至 1，套用曲線</li>
+    <li><b>Decay/Release 階段</b>: 在 Decay 時間內從 1 降至 0，套用反向曲線</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope 模式</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>AD 模式（HOLD 關閉）</b>: Attack → Decay。Envelope 在上升邊緣開始，無論 Gate 長度如何完成完整週期。</li>
+    <li><b>AHR 模式（HOLD 開啟）</b>: Attack → Hold → Release。上升邊緣觸發 Attack 階段，Gate 為高時維持峰值，Gate 下降邊緣開始 Release。</li>
+    <li><b>Trigger 偵測</b>: Schmitt Trigger，0.1V 低 / 2.0V 高閾值</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">各聲道控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Attack</b>: Attack 時間（0.0-1.0，指數縮放 ~1ms 至 ~1000s）</li>
+    <li><b>Release</b>: Release/Decay 時間（0.0-1.0，相同縮放）</li>
+    <li><b>Out Vol</b>: Output 音量乘數（0.0-1.0，預設: 0.8）</li>
+    <li><b>Manual 按鈕（粉紅色）</b>: 瞬時 Gate - 按住時產生 10V</li>
+    <li><b>HOLD 按鈕（粉紅色）</b>: 切換 AD 與 AHR Envelope 模式</li>
+    <li><b>Sum 按鈕（粉紅色）</b>: 將此聲道的 Output 路由至 Channel 6 Sum Bus（僅 CH1-5）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">各聲道 I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>In L</b>: Left/Mono Audio 輸入。若 R 未連接，L 複製至兩聲道。</li>
+    <li><b>In R</b>: Right Audio 輸入（選用）</li>
+    <li><b>Gate</b>: Trigger/Gate 輸入。與手動按鈕結合（兩者取最大值）。</li>
+    <li><b>Vol Ctrl</b>: 音量 CV（0-10V 映射至 0-1 乘數）。未連接時預設為 1.0。</li>
+    <li><b>Gate Out</b>: 可配置的 Gate/Trigger Output（見 Gate Output 模式）</li>
+    <li><b>Env Out</b>: 原始 Envelope Output（0-10V）</li>
+    <li><b>Out L/R</b>: Stereo VCA Output = input × envelope × volCV × outVol</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Gate Output 模式（透過右鍵選單）</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Full Cycle Gate</b>: 從 Gate 上升邊緣至 Envelope 回到零期間 Output 維持高電位（10V）。適用於串接序列。</li>
+    <li><b>End of Cycle Trigger</b>: Envelope 完成時（降至 0.001 以下）產生 1ms 脈衝。適用於觸發下一階段。</li>
+    <li><b>Start + End Triggers</b>: 在 Gate 上升邊緣與 Envelope 完成時皆產生 1ms 脈衝。適用於 Clock 倍增。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sum Bus 系統</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>路由</b>: CH1-5 可透過 Sum 按鈕路由至 CH6（CH6 無 Sum 按鈕）</li>
+    <li><b>Audio 加總</b>: 各聲道在加總前衰減以防止過載</li>
+    <li><b>Envelope 加總</b>: 基於 RMS 計算加總聲道的 Envelope；CH6 Envelope Output 使用 max(CH6 自身 Envelope, RMS Envelope) 保留較大值</li>
+    <li><b>組合</b>: Audio Sum 加入至 CH6 自身的 Output；Envelope 使用 max() 而非 add</li>
+    <li><b>使用情境</b>: 將多個聲道透過 CH6 Submix 以進行統一處理</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">VCA Light</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>綠色 LED</b>: 顯示目前 VCA Gain 等級（envelope × volCV × outVol）</li>
+    <li><b>亮度</b>: 與最終 Gain 乘數成正比</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Audio I/O: ±10V（不限於 ±5V）</li>
+    <li>Envelope Output: 0-10V Unipolar</li>
+    <li>Volume CV: 0-10V（限制範圍）</li>
+    <li>Gate Trigger 閾值: Schmitt 0.1V/2.0V</li>
+    <li>Gate Output 脈衝寬度: 1ms（Trigger 模式）</li>
+    <li>Envelope 曲線: 固定 k=-0.9</li>
+    <li>Sum 縮放: 每聲道 0.3x</li>
+    <li>處理: 32-bit 浮點運算</li>
+    <li>模組寬度: 12HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">合作</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>與 offthesky 共同開發</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Ch 1 Attack</b>: Channel 1 Attack 時間（0.0-1.0，指數縮放 ~1ms 至 ~1000s）。預設: 0.1。</li>
+    <li><b>Ch 1 Release</b>: Channel 1 Release/Decay 時間（0.0-1.0，相同縮放）。預設: 0.5。</li>
+    <li><b>Ch 1 Out Volume</b>: Channel 1 Output 音量乘數 0-1（預設: 0.8）。</li>
+    <li><b>Ch 1 Manual Gate (Momentary)</b>: Channel 1 瞬時 Gate 按鈕。按住時產生 10V。</li>
+    <li><b>Ch 1 Sum to Ch6</b>: Channel 1 Sum Bus 路由切換。將 Output 路由至 Channel 6。</li>
+    <li><b>Ch 1 Env Mode (AD/AHR)</b>: Channel 1 Envelope 模式。Off = AD，On = AHR（Attack-Hold-Release）。</li>
+    <li><b>Ch 2 Attack</b>: Channel 2 Attack 時間。</li>
+    <li><b>Ch 2 Release</b>: Channel 2 Release/Decay 時間。</li>
+    <li><b>Ch 2 Out Volume</b>: Channel 2 Output 音量乘數。</li>
+    <li><b>Ch 2 Manual Gate (Momentary)</b>: Channel 2 瞬時 Gate 按鈕。</li>
+    <li><b>Ch 2 Sum to Ch6</b>: Channel 2 Sum Bus 路由切換。</li>
+    <li><b>Ch 2 Env Mode (AD/AHR)</b>: Channel 2 Envelope 模式。</li>
+    <li><b>Ch 3 Attack</b>: Channel 3 Attack 時間。</li>
+    <li><b>Ch 3 Release</b>: Channel 3 Release/Decay 時間。</li>
+    <li><b>Ch 3 Out Volume</b>: Channel 3 Output 音量乘數。</li>
+    <li><b>Ch 3 Manual Gate (Momentary)</b>: Channel 3 瞬時 Gate 按鈕。</li>
+    <li><b>Ch 3 Sum to Ch6</b>: Channel 3 Sum Bus 路由切換。</li>
+    <li><b>Ch 3 Env Mode (AD/AHR)</b>: Channel 3 Envelope 模式。</li>
+    <li><b>Ch 4 Attack</b>: Channel 4 Attack 時間。</li>
+    <li><b>Ch 4 Release</b>: Channel 4 Release/Decay 時間。</li>
+    <li><b>Ch 4 Out Volume</b>: Channel 4 Output 音量乘數。</li>
+    <li><b>Ch 4 Manual Gate (Momentary)</b>: Channel 4 瞬時 Gate 按鈕。</li>
+    <li><b>Ch 4 Sum to Ch6</b>: Channel 4 Sum Bus 路由切換。</li>
+    <li><b>Ch 4 Env Mode (AD/AHR)</b>: Channel 4 Envelope 模式。</li>
+    <li><b>Ch 5 Attack</b>: Channel 5 Attack 時間。</li>
+    <li><b>Ch 5 Release</b>: Channel 5 Release/Decay 時間。</li>
+    <li><b>Ch 5 Out Volume</b>: Channel 5 Output 音量乘數。</li>
+    <li><b>Ch 5 Manual Gate (Momentary)</b>: Channel 5 瞬時 Gate 按鈕。</li>
+    <li><b>Ch 5 Sum to Ch6</b>: Channel 5 Sum Bus 路由切換。</li>
+    <li><b>Ch 5 Env Mode (AD/AHR)</b>: Channel 5 Envelope 模式。</li>
+    <li><b>Ch 6 Attack</b>: Channel 6 Attack 時間。</li>
+    <li><b>Ch 6 Release</b>: Channel 6 Release/Decay 時間。</li>
+    <li><b>Ch 6 Out Volume</b>: Channel 6 Output 音量乘數。</li>
+    <li><b>Ch 6 Manual Gate (Momentary)</b>: Channel 6 瞬時 Gate 按鈕。</li>
+    <li><b>Ch 6 Env Mode (AD/AHR)</b>: Channel 6 Envelope 模式。</li>
+    <li><b>Gate Output Mode</b>: Gate Output 行為（右鍵選單）。0=Full Cycle Gate，1=End Trigger，2=Start+End Triggers。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O Reference</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Ch 1 In L</b>: Channel 1 Left/Mono Audio 輸入。</li>
+    <li><b>Ch 1 In R</b>: Channel 1 Right Audio 輸入（選用，未連接時複製 L）。</li>
+    <li><b>Ch 1 Gate</b>: Channel 1 Gate/Trigger 輸入。</li>
+    <li><b>Ch 1 Vol Ctrl</b>: Channel 1 音量 CV（0-10V）。</li>
+    <li><b>Ch 2 In L</b>: Channel 2 Left/Mono Audio 輸入。</li>
+    <li><b>Ch 2 In R</b>: Channel 2 Right Audio 輸入。</li>
+    <li><b>Ch 2 Gate</b>: Channel 2 Gate/Trigger 輸入。</li>
+    <li><b>Ch 2 Vol Ctrl</b>: Channel 2 音量 CV。</li>
+    <li><b>Ch 3 In L</b>: Channel 3 Left/Mono Audio 輸入。</li>
+    <li><b>Ch 3 In R</b>: Channel 3 Right Audio 輸入。</li>
+    <li><b>Ch 3 Gate</b>: Channel 3 Gate/Trigger 輸入。</li>
+    <li><b>Ch 3 Vol Ctrl</b>: Channel 3 音量 CV。</li>
+    <li><b>Ch 4 In L</b>: Channel 4 Left/Mono Audio 輸入。</li>
+    <li><b>Ch 4 In R</b>: Channel 4 Right Audio 輸入。</li>
+    <li><b>Ch 4 Gate</b>: Channel 4 Gate/Trigger 輸入。</li>
+    <li><b>Ch 4 Vol Ctrl</b>: Channel 4 音量 CV。</li>
+    <li><b>Ch 5 In L</b>: Channel 5 Left/Mono Audio 輸入。</li>
+    <li><b>Ch 5 In R</b>: Channel 5 Right Audio 輸入。</li>
+    <li><b>Ch 5 Gate</b>: Channel 5 Gate/Trigger 輸入。</li>
+    <li><b>Ch 5 Vol Ctrl</b>: Channel 5 音量 CV。</li>
+    <li><b>Ch 6 In L</b>: Channel 6 Left/Mono Audio 輸入。</li>
+    <li><b>Ch 6 In R</b>: Channel 6 Right Audio 輸入。</li>
+    <li><b>Ch 6 Gate</b>: Channel 6 Gate/Trigger 輸入。</li>
+    <li><b>Ch 6 Vol Ctrl</b>: Channel 6 音量 CV。</li>
+    <li><b>Ch 1 Gate</b>: Channel 1 Gate/Trigger Output（依模式而定）。</li>
+    <li><b>Ch 1 Envelope</b>: Channel 1 Envelope Output（0-10V）。</li>
+    <li><b>Ch 1 Out L</b>: Channel 1 Left Audio Output。</li>
+    <li><b>Ch 1 Out R</b>: Channel 1 Right Audio Output。</li>
+    <li><b>Ch 2 Gate</b>: Channel 2 Gate/Trigger Output。</li>
+    <li><b>Ch 2 Envelope</b>: Channel 2 Envelope Output。</li>
+    <li><b>Ch 2 Out L</b>: Channel 2 Left Audio Output。</li>
+    <li><b>Ch 2 Out R</b>: Channel 2 Right Audio Output。</li>
+    <li><b>Ch 3 Gate</b>: Channel 3 Gate/Trigger Output。</li>
+    <li><b>Ch 3 Envelope</b>: Channel 3 Envelope Output。</li>
+    <li><b>Ch 3 Out L</b>: Channel 3 Left Audio Output。</li>
+    <li><b>Ch 3 Out R</b>: Channel 3 Right Audio Output。</li>
+    <li><b>Ch 4 Gate</b>: Channel 4 Gate/Trigger Output。</li>
+    <li><b>Ch 4 Envelope</b>: Channel 4 Envelope Output。</li>
+    <li><b>Ch 4 Out L</b>: Channel 4 Left Audio Output。</li>
+    <li><b>Ch 4 Out R</b>: Channel 4 Right Audio Output。</li>
+    <li><b>Ch 5 Gate</b>: Channel 5 Gate/Trigger Output。</li>
+    <li><b>Ch 5 Envelope</b>: Channel 5 Envelope Output。</li>
+    <li><b>Ch 5 Out L</b>: Channel 5 Left Audio Output。</li>
+    <li><b>Ch 5 Out R</b>: Channel 5 Right Audio Output。</li>
+    <li><b>Ch 6 Gate</b>: Channel 6 Gate/Trigger Output。</li>
+    <li><b>Ch 6 Envelope / Sum Envelope</b>: Channel 6 Envelope Output / Sum Envelope。</li>
+    <li><b>Ch 6 Out L / Sum L</b>: Channel 6 Left Audio Output / Sum Left。</li>
+    <li><b>Ch 6 Out R / Sum R</b>: Channel 6 Right Audio Output / Sum Right。</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Time Range</b>: 指數縮放從 ~1ms（旋鈕在 0）至 ~1000s（旋鈕在 1.0）。中間位置：~1s</li>
+    <li><b>Minimum Time</b>: 限制在 1ms 以防止 Click 聲</li>
+    <li><b>Curve Shape</b>: S 曲線提供自然的過渡效果</li>
+    <li><b>Attack Phase</b>: 在 Attack 時間內從 0 升至 1，套用曲線</li>
+    <li><b>Decay/Release Phase</b>: 在 Decay 時間內從 1 降至 0，套用反向曲線</li>
+    <li><b>AD Mode (HOLD off)</b>: Attack → Decay。Envelope 在上升邊緣開始，無論 Gate 長度如何完成完整週期</li>
+    <li><b>AHR Mode (HOLD on)</b>: Attack → Hold → Release。上升邊緣觸發 Attack，Gate 高時維持峰值，Gate 下降時釋放</li>
+    <li><b>Trigger Detection</b>: Schmitt Trigger，0.1V 低 / 2.0V 高閾值</li>
+    <li><b>Manual Button (pink)</b>: 瞬間 Gate - 按下時產生 10V</li>
+    <li><b>HOLD Button (pink)</b>: 切換 AD 與 AHR Envelope 模式</li>
+    <li><b>Sum Button (pink)</b>: 將此聲道輸出路由至 CH6 加總匯流排（僅 CH1-5）</li>
+    <li><b>Routing</b>: CH1-5 可透過 Sum 按鈕路由至 CH6（CH6 無 Sum 按鈕）</li>
+    <li><b>Audio Summing</b>: 加總前各聲道衰減以防止過載</li>
+    <li><b>Envelope Summing</b>: 加總聲道 Envelope 的 RMS 計算；CH6 Envelope 輸出使用 max() 而非加法</li>
+    <li><b>Combination</b>: 音訊加總添加至 CH6 本身輸出；Envelope 使用 max() 非加法</li>
+    <li><b>Use Case</b>: 透過 CH6 將多個聲道的子混音進行統一處理</li>
+    <li><b>Green LED</b>: 顯示目前 VCA Gain 等級（Envelope x volCV x outVol）</li>
+    <li><b>Brightness</b>: 與最終 Gain 乘數成正比</li>
+    </ul></div>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">offtheskyと共同開発した6チャンネルエンベロープ制御VCAシステム。各チャンネルはステレオVCAを備えた独立したADまたはAHRエンベロープ、手動ゲートトリガー、構成可能なゲート出力を提供。チャンネル1-5はサブミックス用にチャンネル6のサムバスにルーティング可能。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー（チャンネル別）</h3>
+    <p style="margin-bottom: 1rem;">Gate → エンベロープジェネレーター → [× Audio In × Vol CV × Out Vol] → Audio Out。ゲート出力は選択されたモードに基づいてエンベロープ状態から導出。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">エンベロープ動作</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>時間範囲</b>: 指数スケーリングで ~1ms（ノブ 0）から ~1000s（ノブ 1.0）まで。中央位置: ~1s。</li>
+    <li><b>最小時間</b>: クリック防止のため1msにクランプ</li>
+    <li><b>カーブ形状</b>: 自然なサウンドの遷移のためのSカーブ</li>
+    <li><b>アタックフェーズ</b>: アタック時間にわたって0から1へランプ、カーブ適用</li>
+    <li><b>ディケイ/リリースフェーズ</b>: ディケイ時間にわたって1から0へランプ、反転カーブ適用</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">エンベロープモード</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>ADモード（HOLD オフ）</b>: アタック → ディケイ。立ち上がりエッジでエンベロープ開始、ゲート長に関わらず完全サイクル完了。</li>
+    <li><b>AHRモード（HOLD オン）</b>: アタック → ホールド → リリース。立ち上がりエッジでアタックフェーズ、ゲートがハイの間ピークでホールド、ゲート立ち下がりエッジでリリース開始。</li>
+    <li><b>トリガー検出</b>: シュミットトリガー、0.1V ロー / 2.0V ハイ閾値</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">チャンネル別コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Attack</b>: アタック時間（0.0-1.0、指数スケーリング ~1ms〜~1000s）</li>
+    <li><b>Release</b>: リリース/ディケイ時間（0.0-1.0、同スケーリング）</li>
+    <li><b>Out Vol</b>: 出力音量乗数（0.0-1.0、デフォルト: 0.8）</li>
+    <li><b>Manualボタン（ピンク）</b>: モーメンタリーゲート - 押している間10V生成</li>
+    <li><b>HOLDボタン（ピンク）</b>: ADとAHRエンベロープモード切替</li>
+    <li><b>Sumボタン（ピンク）</b>: このチャンネルの出力をチャンネル6サムバスにルーティング（CH1-5のみ）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">チャンネル別I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>In L</b>: 左/モノオーディオ入力。Rが未接続の場合、Lが両チャンネルにコピーされる。</li>
+    <li><b>In R</b>: 右オーディオ入力（オプション）</li>
+    <li><b>Gate</b>: トリガー/ゲート入力。手動ボタンと結合（両方の最大値）。</li>
+    <li><b>Vol Ctrl</b>: 音量CV（0-10Vを0-1乗数にマップ）。未接続時は1.0がデフォルト。</li>
+    <li><b>Gate Out</b>: 構成可能なゲート/トリガー出力（ゲート出力モード参照）</li>
+    <li><b>Env Out</b>: 生エンベロープ出力（0-10V）</li>
+    <li><b>Out L/R</b>: ステレオVCA出力 = input × envelope × volCV × outVol</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ゲート出力モード（右クリックメニュー経由）</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Full Cycle Gate</b>: ゲート立ち上がりエッジからエンベロープがゼロに戻るまで出力がハイ（10V）を維持。シーケンス連鎖に有用。</li>
+    <li><b>End of Cycle Trigger</b>: エンベロープ完了時（0.001以下に低下）に1msパルス。次ステージトリガーに有用。</li>
+    <li><b>Start + End Triggers</b>: ゲート立ち上がりエッジとエンベロープ完了の両方で1msパルス。クロック倍増に有用。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">サムバスシステム</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>ルーティング</b>: CH1-5はSumボタンでCH6にルーティング可能（CH6にはSumボタンなし）</li>
+    <li><b>オーディオ加算</b>: 各チャンネルはオーバーロード防止のため加算前に減衰</li>
+    <li><b>エンベロープ加算</b>: RMSベースの計算で加算チャンネルのエンベロープを算出；CH6エンベロープ出力はmax(CH6自身のエンベロープ, RMSエンベロープ)で大きい方を保持</li>
+    <li><b>組み合わせ</b>: オーディオSumはCH6自身の出力に追加；エンベロープはaddではなくmax()を使用</li>
+    <li><b>使用例</b>: CH6経由で複数チャンネルをサブミックスして統一処理</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">VCA Light</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>グリーンLED</b>: 現在のVCAゲインレベル（envelope × volCV × outVol）を表示</li>
+    <li><b>明るさ</b>: 最終ゲイン乗数に比例</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>オーディオI/O: ±10V（±5Vに限定されない）</li>
+    <li>エンベロープ出力: 0-10V ユニポーラ</li>
+    <li>音量CV: 0-10V（クランプ）</li>
+    <li>ゲートトリガー閾値: シュミット 0.1V/2.0V</li>
+    <li>ゲート出力パルス幅: 1ms（トリガーモード）</li>
+    <li>エンベロープカーブ: 固定 k=-0.9</li>
+    <li>サムスケーリング: チャンネルあたり0.3x</li>
+    <li>処理: 32ビット浮動小数点</li>
+    <li>モジュール幅: 12HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">コラボレーション</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>offtheskyと共同開発</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Ch 1 Attack</b>: チャンネル1アタック時間（0.0-1.0、指数スケーリング ~1ms〜~1000s）。デフォルト: 0.1。</li>
+    <li><b>Ch 1 Release</b>: チャンネル1リリース/ディケイ時間（0.0-1.0、同スケーリング）。デフォルト: 0.5。</li>
+    <li><b>Ch 1 Out Volume</b>: チャンネル1出力音量乗数 0-1（デフォルト: 0.8）。</li>
+    <li><b>Ch 1 Manual Gate (Momentary)</b>: チャンネル1モーメンタリーゲートボタン。押下中10V生成。</li>
+    <li><b>Ch 1 Sum to Ch6</b>: チャンネル1サムバスルーティング切替。出力をチャンネル6にルーティング。</li>
+    <li><b>Ch 1 Env Mode (AD/AHR)</b>: チャンネル1エンベロープモード。Off = AD、On = AHR（アタック-ホールド-リリース）。</li>
+    <li><b>Ch 2 Attack</b>: チャンネル2アタック時間。</li>
+    <li><b>Ch 2 Release</b>: チャンネル2リリース/ディケイ時間。</li>
+    <li><b>Ch 2 Out Volume</b>: チャンネル2出力音量乗数。</li>
+    <li><b>Ch 2 Manual Gate (Momentary)</b>: チャンネル2モーメンタリーゲートボタン。</li>
+    <li><b>Ch 2 Sum to Ch6</b>: チャンネル2サムバスルーティング切替。</li>
+    <li><b>Ch 2 Env Mode (AD/AHR)</b>: チャンネル2エンベロープモード。</li>
+    <li><b>Ch 3 Attack</b>: チャンネル3アタック時間。</li>
+    <li><b>Ch 3 Release</b>: チャンネル3リリース/ディケイ時間。</li>
+    <li><b>Ch 3 Out Volume</b>: チャンネル3出力音量乗数。</li>
+    <li><b>Ch 3 Manual Gate (Momentary)</b>: チャンネル3モーメンタリーゲートボタン。</li>
+    <li><b>Ch 3 Sum to Ch6</b>: チャンネル3サムバスルーティング切替。</li>
+    <li><b>Ch 3 Env Mode (AD/AHR)</b>: チャンネル3エンベロープモード。</li>
+    <li><b>Ch 4 Attack</b>: チャンネル4アタック時間。</li>
+    <li><b>Ch 4 Release</b>: チャンネル4リリース/ディケイ時間。</li>
+    <li><b>Ch 4 Out Volume</b>: チャンネル4出力音量乗数。</li>
+    <li><b>Ch 4 Manual Gate (Momentary)</b>: チャンネル4モーメンタリーゲートボタン。</li>
+    <li><b>Ch 4 Sum to Ch6</b>: チャンネル4サムバスルーティング切替。</li>
+    <li><b>Ch 4 Env Mode (AD/AHR)</b>: チャンネル4エンベロープモード。</li>
+    <li><b>Ch 5 Attack</b>: チャンネル5アタック時間。</li>
+    <li><b>Ch 5 Release</b>: チャンネル5リリース/ディケイ時間。</li>
+    <li><b>Ch 5 Out Volume</b>: チャンネル5出力音量乗数。</li>
+    <li><b>Ch 5 Manual Gate (Momentary)</b>: チャンネル5モーメンタリーゲートボタン。</li>
+    <li><b>Ch 5 Sum to Ch6</b>: チャンネル5サムバスルーティング切替。</li>
+    <li><b>Ch 5 Env Mode (AD/AHR)</b>: チャンネル5エンベロープモード。</li>
+    <li><b>Ch 6 Attack</b>: チャンネル6アタック時間。</li>
+    <li><b>Ch 6 Release</b>: チャンネル6リリース/ディケイ時間。</li>
+    <li><b>Ch 6 Out Volume</b>: チャンネル6出力音量乗数。</li>
+    <li><b>Ch 6 Manual Gate (Momentary)</b>: チャンネル6モーメンタリーゲートボタン。</li>
+    <li><b>Ch 6 Env Mode (AD/AHR)</b>: チャンネル6エンベロープモード。</li>
+    <li><b>Gate Output Mode</b>: ゲート出力動作（右クリックメニュー）。0=Full Cycle Gate、1=End Trigger、2=Start+End Triggers。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O Reference</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Ch 1 In L</b>: チャンネル1左/モノオーディオ入力。</li>
+    <li><b>Ch 1 In R</b>: チャンネル1右オーディオ入力（オプション、未接続時Lをコピー）。</li>
+    <li><b>Ch 1 Gate</b>: チャンネル1ゲート/トリガー入力。</li>
+    <li><b>Ch 1 Vol Ctrl</b>: チャンネル1音量CV（0-10V）。</li>
+    <li><b>Ch 2 In L</b>: チャンネル2左/モノオーディオ入力。</li>
+    <li><b>Ch 2 In R</b>: チャンネル2右オーディオ入力。</li>
+    <li><b>Ch 2 Gate</b>: チャンネル2ゲート/トリガー入力。</li>
+    <li><b>Ch 2 Vol Ctrl</b>: チャンネル2音量CV。</li>
+    <li><b>Ch 3 In L</b>: チャンネル3左/モノオーディオ入力。</li>
+    <li><b>Ch 3 In R</b>: チャンネル3右オーディオ入力。</li>
+    <li><b>Ch 3 Gate</b>: チャンネル3ゲート/トリガー入力。</li>
+    <li><b>Ch 3 Vol Ctrl</b>: チャンネル3音量CV。</li>
+    <li><b>Ch 4 In L</b>: チャンネル4左/モノオーディオ入力。</li>
+    <li><b>Ch 4 In R</b>: チャンネル4右オーディオ入力。</li>
+    <li><b>Ch 4 Gate</b>: チャンネル4ゲート/トリガー入力。</li>
+    <li><b>Ch 4 Vol Ctrl</b>: チャンネル4音量CV。</li>
+    <li><b>Ch 5 In L</b>: チャンネル5左/モノオーディオ入力。</li>
+    <li><b>Ch 5 In R</b>: チャンネル5右オーディオ入力。</li>
+    <li><b>Ch 5 Gate</b>: チャンネル5ゲート/トリガー入力。</li>
+    <li><b>Ch 5 Vol Ctrl</b>: チャンネル5音量CV。</li>
+    <li><b>Ch 6 In L</b>: チャンネル6左/モノオーディオ入力。</li>
+    <li><b>Ch 6 In R</b>: チャンネル6右オーディオ入力。</li>
+    <li><b>Ch 6 Gate</b>: チャンネル6ゲート/トリガー入力。</li>
+    <li><b>Ch 6 Vol Ctrl</b>: チャンネル6音量CV。</li>
+    <li><b>Ch 1 Gate</b>: チャンネル1ゲート/トリガー出力（モード依存）。</li>
+    <li><b>Ch 1 Envelope</b>: チャンネル1エンベロープ出力（0-10V）。</li>
+    <li><b>Ch 1 Out L</b>: チャンネル1左オーディオ出力。</li>
+    <li><b>Ch 1 Out R</b>: チャンネル1右オーディオ出力。</li>
+    <li><b>Ch 2 Gate</b>: チャンネル2ゲート/トリガー出力。</li>
+    <li><b>Ch 2 Envelope</b>: チャンネル2エンベロープ出力。</li>
+    <li><b>Ch 2 Out L</b>: チャンネル2左オーディオ出力。</li>
+    <li><b>Ch 2 Out R</b>: チャンネル2右オーディオ出力。</li>
+    <li><b>Ch 3 Gate</b>: チャンネル3ゲート/トリガー出力。</li>
+    <li><b>Ch 3 Envelope</b>: チャンネル3エンベロープ出力。</li>
+    <li><b>Ch 3 Out L</b>: チャンネル3左オーディオ出力。</li>
+    <li><b>Ch 3 Out R</b>: チャンネル3右オーディオ出力。</li>
+    <li><b>Ch 4 Gate</b>: チャンネル4ゲート/トリガー出力。</li>
+    <li><b>Ch 4 Envelope</b>: チャンネル4エンベロープ出力。</li>
+    <li><b>Ch 4 Out L</b>: チャンネル4左オーディオ出力。</li>
+    <li><b>Ch 4 Out R</b>: チャンネル4右オーディオ出力。</li>
+    <li><b>Ch 5 Gate</b>: チャンネル5ゲート/トリガー出力。</li>
+    <li><b>Ch 5 Envelope</b>: チャンネル5エンベロープ出力。</li>
+    <li><b>Ch 5 Out L</b>: チャンネル5左オーディオ出力。</li>
+    <li><b>Ch 5 Out R</b>: チャンネル5右オーディオ出力。</li>
+    <li><b>Ch 6 Gate</b>: チャンネル6ゲート/トリガー出力。</li>
+    <li><b>Ch 6 Envelope / Sum Envelope</b>: チャンネル6エンベロープ出力 / サムエンベロープ。</li>
+    <li><b>Ch 6 Out L / Sum L</b>: チャンネル6左オーディオ出力 / サム左。</li>
+    <li><b>Ch 6 Out R / Sum R</b>: チャンネル6右オーディオ出力 / サム右。</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Time Range</b>: 指数スケーリングで約1ms（ノブ0）から約1000s（ノブ1.0）まで。中間位置：約1s</li>
+    <li><b>Minimum Time</b>: クリックノイズ防止のため1msにクランプ</li>
+    <li><b>Curve Shape</b>: 自然なトランジションのためのSカーブ</li>
+    <li><b>Attack Phase</b>: アタック時間にわたって0から1にランプ、カーブを適用</li>
+    <li><b>Decay/Release Phase</b>: ディケイ時間にわたって1から0にランプ、逆カーブを適用</li>
+    <li><b>AD Mode (HOLD off)</b>: アタック→ディケイ。立ち上がりエッジでエンベロープ開始、ゲート長に関わらず完全サイクル完了</li>
+    <li><b>AHR Mode (HOLD on)</b>: アタック→ホールド→リリース。立ち上がりエッジでアタック開始、ゲート高時にピークホールド、ゲート下降でリリース</li>
+    <li><b>Trigger Detection</b>: シュミットトリガー、0.1V低 / 2.0V高閾値</li>
+    <li><b>Manual Button (pink)</b>: モメンタリーゲート - 押している間10Vを生成</li>
+    <li><b>HOLD Button (pink)</b>: ADとAHRエンベロープモードを切り替え</li>
+    <li><b>Sum Button (pink)</b>: このチャンネルの出力をCH6サムバスにルーティング（CH1〜5のみ）</li>
+    <li><b>Routing</b>: CH1〜5はSumボタンでCH6へルーティング可能（CH6にSumボタンなし）</li>
+    <li><b>Audio Summing</b>: 過負荷防止のため合計前に各チャンネルを減衰</li>
+    <li><b>Envelope Summing</b>: 合計チャンネルエンベロープのRMSベース計算；CH6エンベロープ出力はmax(CH6自身のエンベロープ, RMSエンベロープ)を使用して大きい方の値を保持</li>
+    <li><b>Combination</b>: オーディオ合計はCH6自身の出力に加算；エンベロープはmax()を使用</li>
+    <li><b>Use Case</b>: CH6を通じて複数チャンネルのサブミックスを統一処理</li>
+    <li><b>Green LED</b>: 現在のVCAゲインレベルを表示（エンベロープ x volCV x outVol）</li>
+    <li><b>Brightness</b>: 最終ゲイン乗数に比例</li>
+    </ul></div>
+controls:
+- name: Ch 1 Attack
+  type: param
+  desc:
+    en: 'Channel 1 attack time (0.0-1.0, exponential ~1ms to ~1000s). Default: 0.1.'
+    zh: 'Channel 1 Attack 時間（0.0-1.0，指數縮放 ~1ms 至 ~1000s）。預設: 0.1。'
+    ja: 'チャンネル1アタック時間（0.0-1.0、指数スケーリング ~1ms〜~1000s）。デフォルト: 0.1。'
+- name: Ch 1 Release
+  type: param
+  desc:
+    en: 'Channel 1 release/decay time (0.0-1.0, same scaling). Default: 0.5.'
+    zh: 'Channel 1 Release/Decay 時間（0.0-1.0，相同縮放）。預設: 0.5。'
+    ja: 'チャンネル1リリース/ディケイ時間（0.0-1.0、同スケーリング）。デフォルト: 0.5。'
+- name: Ch 1 Out Volume
+  type: param
+  desc:
+    en: 'Channel 1 output volume multiplier 0-1 (default: 0.8).'
+    zh: 'Channel 1 Output 音量乘數 0-1（預設: 0.8）。'
+    ja: 'チャンネル1出力音量乗数 0-1（デフォルト: 0.8）。'
+- name: Ch 1 Manual Gate (Momentary)
+  type: param
+  desc:
+    en: Channel 1 momentary gate button. Generates 10V while pressed.
+    zh: Channel 1 瞬時 Gate 按鈕。按住時產生 10V。
+    ja: チャンネル1モーメンタリーゲートボタン。押下中10V生成。
+- name: Ch 1 Sum to Ch6
+  type: param
+  desc:
+    en: Channel 1 sum bus routing toggle. Routes output to Channel 6.
+    zh: Channel 1 Sum Bus 路由切換。將 Output 路由至 Channel 6。
+    ja: チャンネル1サムバスルーティング切替。出力をチャンネル6にルーティング。
+- name: Ch 1 Env Mode (AD/AHR)
+  type: param
+  desc:
+    en: Channel 1 envelope mode. Off = AD, On = AHR (Attack-Hold-Release).
+    zh: Channel 1 Envelope 模式。Off = AD，On = AHR（Attack-Hold-Release）。
+    ja: チャンネル1エンベロープモード。Off = AD、On = AHR（アタック-ホールド-リリース）。
+- name: Ch 2 Attack
+  type: param
+  desc:
+    en: Channel 2 attack time.
+    zh: Channel 2 Attack 時間。
+    ja: チャンネル2アタック時間。
+- name: Ch 2 Release
+  type: param
+  desc:
+    en: Channel 2 release/decay time.
+    zh: Channel 2 Release/Decay 時間。
+    ja: チャンネル2リリース/ディケイ時間。
+- name: Ch 2 Out Volume
+  type: param
+  desc:
+    en: Channel 2 output volume multiplier.
+    zh: Channel 2 Output 音量乘數。
+    ja: チャンネル2出力音量乗数。
+- name: Ch 2 Manual Gate (Momentary)
+  type: param
+  desc:
+    en: Channel 2 momentary gate button.
+    zh: Channel 2 瞬時 Gate 按鈕。
+    ja: チャンネル2モーメンタリーゲートボタン。
+- name: Ch 2 Sum to Ch6
+  type: param
+  desc:
+    en: Channel 2 sum bus routing toggle.
+    zh: Channel 2 Sum Bus 路由切換。
+    ja: チャンネル2サムバスルーティング切替。
+- name: Ch 2 Env Mode (AD/AHR)
+  type: param
+  desc:
+    en: Channel 2 envelope mode.
+    zh: Channel 2 Envelope 模式。
+    ja: チャンネル2エンベロープモード。
+- name: Ch 3 Attack
+  type: param
+  desc:
+    en: Channel 3 attack time.
+    zh: Channel 3 Attack 時間。
+    ja: チャンネル3アタック時間。
+- name: Ch 3 Release
+  type: param
+  desc:
+    en: Channel 3 release/decay time.
+    zh: Channel 3 Release/Decay 時間。
+    ja: チャンネル3リリース/ディケイ時間。
+- name: Ch 3 Out Volume
+  type: param
+  desc:
+    en: Channel 3 output volume multiplier.
+    zh: Channel 3 Output 音量乘數。
+    ja: チャンネル3出力音量乗数。
+- name: Ch 3 Manual Gate (Momentary)
+  type: param
+  desc:
+    en: Channel 3 momentary gate button.
+    zh: Channel 3 瞬時 Gate 按鈕。
+    ja: チャンネル3モーメンタリーゲートボタン。
+- name: Ch 3 Sum to Ch6
+  type: param
+  desc:
+    en: Channel 3 sum bus routing toggle.
+    zh: Channel 3 Sum Bus 路由切換。
+    ja: チャンネル3サムバスルーティング切替。
+- name: Ch 3 Env Mode (AD/AHR)
+  type: param
+  desc:
+    en: Channel 3 envelope mode.
+    zh: Channel 3 Envelope 模式。
+    ja: チャンネル3エンベロープモード。
+- name: Ch 4 Attack
+  type: param
+  desc:
+    en: Channel 4 attack time.
+    zh: Channel 4 Attack 時間。
+    ja: チャンネル4アタック時間。
+- name: Ch 4 Release
+  type: param
+  desc:
+    en: Channel 4 release/decay time.
+    zh: Channel 4 Release/Decay 時間。
+    ja: チャンネル4リリース/ディケイ時間。
+- name: Ch 4 Out Volume
+  type: param
+  desc:
+    en: Channel 4 output volume multiplier.
+    zh: Channel 4 Output 音量乘數。
+    ja: チャンネル4出力音量乗数。
+- name: Ch 4 Manual Gate (Momentary)
+  type: param
+  desc:
+    en: Channel 4 momentary gate button.
+    zh: Channel 4 瞬時 Gate 按鈕。
+    ja: チャンネル4モーメンタリーゲートボタン。
+- name: Ch 4 Sum to Ch6
+  type: param
+  desc:
+    en: Channel 4 sum bus routing toggle.
+    zh: Channel 4 Sum Bus 路由切換。
+    ja: チャンネル4サムバスルーティング切替。
+- name: Ch 4 Env Mode (AD/AHR)
+  type: param
+  desc:
+    en: Channel 4 envelope mode.
+    zh: Channel 4 Envelope 模式。
+    ja: チャンネル4エンベロープモード。
+- name: Ch 5 Attack
+  type: param
+  desc:
+    en: Channel 5 attack time.
+    zh: Channel 5 Attack 時間。
+    ja: チャンネル5アタック時間。
+- name: Ch 5 Release
+  type: param
+  desc:
+    en: Channel 5 release/decay time.
+    zh: Channel 5 Release/Decay 時間。
+    ja: チャンネル5リリース/ディケイ時間。
+- name: Ch 5 Out Volume
+  type: param
+  desc:
+    en: Channel 5 output volume multiplier.
+    zh: Channel 5 Output 音量乘數。
+    ja: チャンネル5出力音量乗数。
+- name: Ch 5 Manual Gate (Momentary)
+  type: param
+  desc:
+    en: Channel 5 momentary gate button.
+    zh: Channel 5 瞬時 Gate 按鈕。
+    ja: チャンネル5モーメンタリーゲートボタン。
+- name: Ch 5 Sum to Ch6
+  type: param
+  desc:
+    en: Channel 5 sum bus routing toggle.
+    zh: Channel 5 Sum Bus 路由切換。
+    ja: チャンネル5サムバスルーティング切替。
+- name: Ch 5 Env Mode (AD/AHR)
+  type: param
+  desc:
+    en: Channel 5 envelope mode.
+    zh: Channel 5 Envelope 模式。
+    ja: チャンネル5エンベロープモード。
+- name: Ch 6 Attack
+  type: param
+  desc:
+    en: Channel 6 attack time.
+    zh: Channel 6 Attack 時間。
+    ja: チャンネル6アタック時間。
+- name: Ch 6 Release
+  type: param
+  desc:
+    en: Channel 6 release/decay time.
+    zh: Channel 6 Release/Decay 時間。
+    ja: チャンネル6リリース/ディケイ時間。
+- name: Ch 6 Out Volume
+  type: param
+  desc:
+    en: Channel 6 output volume multiplier.
+    zh: Channel 6 Output 音量乘數。
+    ja: チャンネル6出力音量乗数。
+- name: Ch 6 Manual Gate (Momentary)
+  type: param
+  desc:
+    en: Channel 6 momentary gate button.
+    zh: Channel 6 瞬時 Gate 按鈕。
+    ja: チャンネル6モーメンタリーゲートボタン。
+- name: Disabled
+  type: param
+  desc:
+    en: Channel 6 sum button is disabled (Channel 6 cannot route to itself).
+    zh: Channel 6 Sum 按鈕已停用（Channel 6 無法 Route 至自身）。
+    ja: チャンネル6サムボタンは無効（チャンネル6は自身にルーティング不可）。
+- name: Ch 6 Env Mode (AD/AHR)
+  type: param
+  desc:
+    en: Channel 6 envelope mode.
+    zh: Channel 6 Envelope 模式。
+    ja: チャンネル6エンベロープモード。
+- name: Gate Output Mode
+  type: param
+  desc:
+    en: Gate output behavior (right-click menu). 0=Full Cycle Gate, 1=End Trigger, 2=Start+End Triggers.
+    zh: Gate Output 行為（右鍵選單）。0=Full Cycle Gate，1=End Trigger，2=Start+End Triggers。
+    ja: ゲート出力動作（右クリックメニュー）。0=Full Cycle Gate、1=End Trigger、2=Start+End Triggers。
+- name: Ch 1 In L
+  type: input
+  desc:
+    en: Channel 1 left/mono audio input.
+    zh: Channel 1 Left/Mono Audio 輸入。
+    ja: チャンネル1左/モノオーディオ入力。
+- name: Ch 1 In R
+  type: input
+  desc:
+    en: Channel 1 right audio input (optional, L copied if unconnected).
+    zh: Channel 1 Right Audio 輸入（選用，未連接時複製 L）。
+    ja: チャンネル1右オーディオ入力（オプション、未接続時Lをコピー）。
+- name: Ch 1 Gate
+  type: input
+  desc:
+    en: Channel 1 gate/trigger input.
+    zh: Channel 1 Gate/Trigger 輸入。
+    ja: チャンネル1ゲート/トリガー入力。
+- name: Ch 1 Vol Ctrl
+  type: input
+  desc:
+    en: Channel 1 volume CV (0-10V).
+    zh: Channel 1 音量 CV（0-10V）。
+    ja: チャンネル1音量CV（0-10V）。
+- name: Ch 2 In L
+  type: input
+  desc:
+    en: Channel 2 left/mono audio input.
+    zh: Channel 2 Left/Mono Audio 輸入。
+    ja: チャンネル2左/モノオーディオ入力。
+- name: Ch 2 In R
+  type: input
+  desc:
+    en: Channel 2 right audio input.
+    zh: Channel 2 Right Audio 輸入。
+    ja: チャンネル2右オーディオ入力。
+- name: Ch 2 Gate
+  type: input
+  desc:
+    en: Channel 2 gate/trigger input.
+    zh: Channel 2 Gate/Trigger 輸入。
+    ja: チャンネル2ゲート/トリガー入力。
+- name: Ch 2 Vol Ctrl
+  type: input
+  desc:
+    en: Channel 2 volume CV.
+    zh: Channel 2 音量 CV。
+    ja: チャンネル2音量CV。
+- name: Ch 3 In L
+  type: input
+  desc:
+    en: Channel 3 left/mono audio input.
+    zh: Channel 3 Left/Mono Audio 輸入。
+    ja: チャンネル3左/モノオーディオ入力。
+- name: Ch 3 In R
+  type: input
+  desc:
+    en: Channel 3 right audio input.
+    zh: Channel 3 Right Audio 輸入。
+    ja: チャンネル3右オーディオ入力。
+- name: Ch 3 Gate
+  type: input
+  desc:
+    en: Channel 3 gate/trigger input.
+    zh: Channel 3 Gate/Trigger 輸入。
+    ja: チャンネル3ゲート/トリガー入力。
+- name: Ch 3 Vol Ctrl
+  type: input
+  desc:
+    en: Channel 3 volume CV.
+    zh: Channel 3 音量 CV。
+    ja: チャンネル3音量CV。
+- name: Ch 4 In L
+  type: input
+  desc:
+    en: Channel 4 left/mono audio input.
+    zh: Channel 4 Left/Mono Audio 輸入。
+    ja: チャンネル4左/モノオーディオ入力。
+- name: Ch 4 In R
+  type: input
+  desc:
+    en: Channel 4 right audio input.
+    zh: Channel 4 Right Audio 輸入。
+    ja: チャンネル4右オーディオ入力。
+- name: Ch 4 Gate
+  type: input
+  desc:
+    en: Channel 4 gate/trigger input.
+    zh: Channel 4 Gate/Trigger 輸入。
+    ja: チャンネル4ゲート/トリガー入力。
+- name: Ch 4 Vol Ctrl
+  type: input
+  desc:
+    en: Channel 4 volume CV.
+    zh: Channel 4 音量 CV。
+    ja: チャンネル4音量CV。
+- name: Ch 5 In L
+  type: input
+  desc:
+    en: Channel 5 left/mono audio input.
+    zh: Channel 5 Left/Mono Audio 輸入。
+    ja: チャンネル5左/モノオーディオ入力。
+- name: Ch 5 In R
+  type: input
+  desc:
+    en: Channel 5 right audio input.
+    zh: Channel 5 Right Audio 輸入。
+    ja: チャンネル5右オーディオ入力。
+- name: Ch 5 Gate
+  type: input
+  desc:
+    en: Channel 5 gate/trigger input.
+    zh: Channel 5 Gate/Trigger 輸入。
+    ja: チャンネル5ゲート/トリガー入力。
+- name: Ch 5 Vol Ctrl
+  type: input
+  desc:
+    en: Channel 5 volume CV.
+    zh: Channel 5 音量 CV。
+    ja: チャンネル5音量CV。
+- name: Ch 6 In L
+  type: input
+  desc:
+    en: Channel 6 left/mono audio input.
+    zh: Channel 6 Left/Mono Audio 輸入。
+    ja: チャンネル6左/モノオーディオ入力。
+- name: Ch 6 In R
+  type: input
+  desc:
+    en: Channel 6 right audio input.
+    zh: Channel 6 Right Audio 輸入。
+    ja: チャンネル6右オーディオ入力。
+- name: Ch 6 Gate
+  type: input
+  desc:
+    en: Channel 6 gate/trigger input.
+    zh: Channel 6 Gate/Trigger 輸入。
+    ja: チャンネル6ゲート/トリガー入力。
+- name: Ch 6 Vol Ctrl
+  type: input
+  desc:
+    en: Channel 6 volume CV.
+    zh: Channel 6 音量 CV。
+    ja: チャンネル6音量CV。
+- name: Ch 1 Gate
+  type: output
+  desc:
+    en: Channel 1 gate/trigger output (mode-dependent).
+    zh: Channel 1 Gate/Trigger Output（依模式而定）。
+    ja: チャンネル1ゲート/トリガー出力（モード依存）。
+- name: Ch 1 Envelope
+  type: output
+  desc:
+    en: Channel 1 envelope output (0-10V).
+    zh: Channel 1 Envelope Output（0-10V）。
+    ja: チャンネル1エンベロープ出力（0-10V）。
+- name: Ch 1 Out L
+  type: output
+  desc:
+    en: Channel 1 left audio output.
+    zh: Channel 1 Left Audio Output。
+    ja: チャンネル1左オーディオ出力。
+- name: Ch 1 Out R
+  type: output
+  desc:
+    en: Channel 1 right audio output.
+    zh: Channel 1 Right Audio Output。
+    ja: チャンネル1右オーディオ出力。
+- name: Ch 2 Gate
+  type: output
+  desc:
+    en: Channel 2 gate/trigger output (mode-dependent).
+    zh: Channel 2 Gate/Trigger Output（依模式而定）。
+    ja: チャンネル2ゲート/トリガー出力（モード依存）。
+- name: Ch 2 Envelope
+  type: output
+  desc:
+    en: Channel 2 envelope output.
+    zh: Channel 2 Envelope Output。
+    ja: チャンネル2エンベロープ出力。
+- name: Ch 2 Out L
+  type: output
+  desc:
+    en: Channel 2 left audio output.
+    zh: Channel 2 Left Audio Output。
+    ja: チャンネル2左オーディオ出力。
+- name: Ch 2 Out R
+  type: output
+  desc:
+    en: Channel 2 right audio output.
+    zh: Channel 2 Right Audio Output。
+    ja: チャンネル2右オーディオ出力。
+- name: Ch 3 Gate
+  type: output
+  desc:
+    en: Channel 3 gate/trigger output (mode-dependent).
+    zh: Channel 3 Gate/Trigger Output（依模式而定）。
+    ja: チャンネル3ゲート/トリガー出力（モード依存）。
+- name: Ch 3 Envelope
+  type: output
+  desc:
+    en: Channel 3 envelope output.
+    zh: Channel 3 Envelope Output。
+    ja: チャンネル3エンベロープ出力。
+- name: Ch 3 Out L
+  type: output
+  desc:
+    en: Channel 3 left audio output.
+    zh: Channel 3 Left Audio Output。
+    ja: チャンネル3左オーディオ出力。
+- name: Ch 3 Out R
+  type: output
+  desc:
+    en: Channel 3 right audio output.
+    zh: Channel 3 Right Audio Output。
+    ja: チャンネル3右オーディオ出力。
+- name: Ch 4 Gate
+  type: output
+  desc:
+    en: Channel 4 gate/trigger output (mode-dependent).
+    zh: Channel 4 Gate/Trigger Output（依模式而定）。
+    ja: チャンネル4ゲート/トリガー出力（モード依存）。
+- name: Ch 4 Envelope
+  type: output
+  desc:
+    en: Channel 4 envelope output.
+    zh: Channel 4 Envelope Output。
+    ja: チャンネル4エンベロープ出力。
+- name: Ch 4 Out L
+  type: output
+  desc:
+    en: Channel 4 left audio output.
+    zh: Channel 4 Left Audio Output。
+    ja: チャンネル4左オーディオ出力。
+- name: Ch 4 Out R
+  type: output
+  desc:
+    en: Channel 4 right audio output.
+    zh: Channel 4 Right Audio Output。
+    ja: チャンネル4右オーディオ出力。
+- name: Ch 5 Gate
+  type: output
+  desc:
+    en: Channel 5 gate/trigger output (mode-dependent).
+    zh: Channel 5 Gate/Trigger Output（依模式而定）。
+    ja: チャンネル5ゲート/トリガー出力（モード依存）。
+- name: Ch 5 Envelope
+  type: output
+  desc:
+    en: Channel 5 envelope output.
+    zh: Channel 5 Envelope Output。
+    ja: チャンネル5エンベロープ出力。
+- name: Ch 5 Out L
+  type: output
+  desc:
+    en: Channel 5 left audio output.
+    zh: Channel 5 Left Audio Output。
+    ja: チャンネル5左オーディオ出力。
+- name: Ch 5 Out R
+  type: output
+  desc:
+    en: Channel 5 right audio output.
+    zh: Channel 5 Right Audio Output。
+    ja: チャンネル5右オーディオ出力。
+- name: Ch 6 Gate
+  type: output
+  desc:
+    en: Channel 6 gate/trigger output (mode-dependent).
+    zh: Channel 6 Gate/Trigger Output（依模式而定）。
+    ja: チャンネル6ゲート/トリガー出力（モード依存）。
+- name: Ch 6 Envelope / Sum Envelope
+  type: output
+  desc:
+    en: Channel 6 envelope output / sum envelope.
+    zh: Channel 6 Envelope Output / Sum Envelope。
+    ja: チャンネル6エンベロープ出力 / サムエンベロープ。
+- name: Ch 6 Out L / Sum L
+  type: output
+  desc:
+    en: Channel 6 left audio output / sum left.
+    zh: Channel 6 Left Audio Output / Sum Left。
+    ja: チャンネル6左オーディオ出力 / サム左。
+- name: Ch 6 Out R / Sum R
+  type: output
+  desc:
+    en: Channel 6 right audio output / sum right.
+    zh: Channel 6 Right Audio Output / Sum Right。
+    ja: チャンネル6右オーディオ出力 / サム右。
+- name: Ch 6 Sum to Ch6
+  type: param
+  desc:
+    en: CH6 cannot sum to itself; this button is disabled in practice (range 0-1, default 0)
+    zh: CH6 無法加總至自身，此按鈕在實際使用上為停用狀態（範圍 0-1，預設 0）
+    ja: CH6は自身にサムできないため、このボタンは実質的に無効（範囲0-1、デフォルト0）
+- name: Ch 6 Envelope
+  type: output
+  desc:
+    en: CH6 VCA envelope output, also serves as sum envelope when other channels route to CH6
+    zh: CH6 VCA Envelope 輸出，當其他聲道加總至 CH6 時亦作為 Sum Envelope
+    ja: CH6 VCAエンベロープ出力、他チャンネルがCH6にサムされる場合はサムエンベロープとしても機能
+- name: Ch 6 Out L
+  type: output
+  desc:
+    en: CH6 left audio output, also carries summed L audio from other channels routed to CH6
+    zh: CH6 左聲道音訊輸出，同時承載由其他聲道加總至 CH6 的左聲道訊號
+    ja: CH6左オーディオ出力、他チャンネルからCH6にサムされた左信号も含む
+- name: Ch 6 Out R
+  type: output
+  desc:
+    en: CH6 right audio output, also carries summed R audio from other channels routed to CH6
+    zh: CH6 右聲道音訊輸出，同時承載由其他聲道加總至 CH6 的右聲道訊號
+    ja: CH6右オーディオ出力、他チャンネルからCH6にサムされた右信号も含む

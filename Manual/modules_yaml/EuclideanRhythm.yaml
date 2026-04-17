@@ -1,0 +1,603 @@
+slug: EuclideanRhythm
+name: Euclidean Rhythm
+hp: 8
+wide: false
+alt: Euclidean Rhythm
+description:
+  en: Three independent Euclidean rhythm tracks with per-track clock division/multiplication and chain outputs for sequential switching
+  zh: 三軌獨立 Euclidean Rhythm，具備各軌 Clock Division/Multiplication 與 Chain 輸出，用於順序切換
+  ja: トラック別クロック分割/倍増とシーケンシャル切替用チェーン出力を備えた3トラック独立ユークリッドリズム
+features:
+  en:
+  - Three independent Euclidean tracks
+  - Clock division/multiplication per track
+  - Pattern rotation offset
+  - Chain outputs for track switching
+  - Sync and reset inputs
+  zh:
+  - 三軌獨立 Euclidean
+  - 各軌 Clock Division/Multiplication
+  - Pattern Rotation 偏移
+  - Chain 輸出用於軌道切換
+  - Sync 與 Reset 輸入
+  ja:
+  - 3トラック独立ユークリッド
+  - トラック別クロック分割/倍増
+  - パターンローテーションオフセット
+  - トラック切替用チェーン出力
+  - シンクとリセット入力
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Three-track Euclidean rhythm generator with per-track clock division/multiplication, CV modulation, and chain outputs for sequential track switching. Uses a floor-based even distribution algorithm to spread beats evenly across sequence length - a mathematical approach that produces patterns found in traditional music from Africa, Latin America, and the Middle East.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Euclidean Rhythm</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Principle</b>: Distributes hits as evenly as possible across the pattern length</li>
+    <li><b>FILL</b>: Determines the number of hits in the pattern. Higher fill = more hits.</li>
+    <li><b>SHIFT</b>: Rotates the pattern starting point without changing rhythm density</li>
+    <li><b>Recalculation</b>: Pattern updates immediately when FILL, LEN, or SHIFT changes</li>
+    <li><b>Example</b>: E(5,8) = [xx.xx.x.] distributes 5 hits evenly across 8 steps</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Clock Division/Multiplication</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Range</b>: -3 to +3 (snapped to integers)</li>
+    <li><b>Negative Values</b>: Division. -1 = /2x, -2 = /3x, -3 = /4x</li>
+    <li><b>Positive Values</b>: Multiplication. +1 = 2x, +2 = 3x, +3 = 4x</li>
+    <li><b>Zero</b>: 1:1 ratio (no change)</li>
+    <li><b>Implementation</b>: Tracks elapsed time since last global clock, generates internal triggers at multiplied rate or counts down for division</li>
+    <li><b>Gate Length</b>: 50% of the effective clock period, minimum 1ms</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Global Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: Global clock input. Period is measured between rising edges (Schmitt trigger). Valid range: 10ms to 10s.</li>
+    <li><b>RST</b>: Reset input + manual button. Rising edge resets all tracks to step 0 and clears all state.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Per-Track Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>LEN</b>: Sequence length (1-32 steps, snapped). Default: 16. CV adds volts × attenuverter to base value.</li>
+    <li><b>FILL</b>: Active steps as percentage (0-100%). Default: T1=100%, T2=50%, T3=25%. CV adds volts × attenuverter × 10.</li>
+    <li><b>SHFT</b>: Pattern rotation (0 to 31 steps, snapped; clamped to length-1 in processing). Rotates pattern left by shift amount.</li>
+    <li><b>D/M</b>: Clock division/multiplication (-3 to +3). Default: T1=0, T2=+1 (2x), T3=+2 (3x).</li>
+    <li><b>Attenuverters</b>: ±1.0 range for each CV input (Length, Fill, Shift).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Chain Outputs</h3>
+    <p style="margin-bottom: 1rem;">Chain outputs play tracks sequentially, switching to the next track after the current track completes one full cycle.</p>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>1+2</b>: Alternates T1 → T2 → T1 → T2...</li>
+    <li><b>2+3</b>: Alternates T2 → T3 → T2 → T3...</li>
+    <li><b>1213 (1+2+3)</b>: Sequence T1 → T2 → T1 → T3 → repeat. This creates an A-B-A-C pattern.</li>
+    <li><b>Cycle Length</b>: Each track completes one cycle based on its length and clock division/multiplication settings</li>
+    <li><b>LED Indicators</b>: Show which track is currently active in each chain</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">OR (Master) Output</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Function</b>: Outputs 10V when ANY of the three tracks fires</li>
+    <li><b>RGB LED</b>: Red = T1 active, Green = T2 active, Blue = T3 active (30ms hold)</li>
+    <li><b>Use Case</b>: Composite trigger for driving external modules</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>OUT 1/2/3</b>: Individual track triggers (0V or 10V, 10ms pulse)</li>
+    <li><b>1+2</b>: Chain output for tracks 1 and 2</li>
+    <li><b>2+3</b>: Chain output for tracks 2 and 3</li>
+    <li><b>1213</b>: Chain output following T1→T2→T1→T3 pattern</li>
+    <li><b>OR</b>: Logical OR of all three track outputs</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Clock input: Rising edge at Schmitt trigger threshold</li>
+    <li>Clock period range: 10ms to 10s (clamped)</li>
+    <li>Pattern length: 1-32 steps per track</li>
+    <li>Clock div/mult: /4x to 4x per track</li>
+    <li>Trigger pulse width: 10ms</li>
+    <li>Trigger voltage: 10V</li>
+    <li>CV input range: ±10V</li>
+    <li>Processing: 32-bit floating point</li>
+    <li>Module width: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Global Clock</b>: Global clock input. Period measured between rising edges. Valid range 10ms-10s.</li>
+    <li><b>Global Reset</b>: Reset input. Rising edge resets all tracks to step 0.</li>
+    <li><b>Manual Reset</b>: Manual reset button. Same function as Global Reset input.</li>
+    <li><b>T1 Length</b>: Track 1 sequence length (1-32 steps, snapped). Default: 16.</li>
+    <li><b>T1 Fill</b>: Track 1 active steps percentage (0-100%). Default: 100%.</li>
+    <li><b>T1 Shift</b>: Track 1 pattern rotation (0-31 steps, snapped). Default: 0.</li>
+    <li><b>T1 Div/Mult</b>: Track 1 clock division/multiplication (-3 to +3). Default: 0 (1x).</li>
+    <li><b>T1 Length CV</b>: Track 1 length CV attenuverter/input (-1.0 to +1.0).</li>
+    <li><b>T1 Fill CV</b>: Track 1 fill CV attenuverter/input (-1.0 to +1.0).</li>
+    <li><b>T1 Shift CV</b>: Track 1 shift CV attenuverter/input (-1.0 to +1.0).</li>
+    <li><b>T2 Length</b>: Track 2 sequence length (1-32 steps). Default: 16.</li>
+    <li><b>T2 Fill</b>: Track 2 active steps percentage (0-100%). Default: 50%.</li>
+    <li><b>T2 Shift</b>: Track 2 pattern rotation (0-31 steps). Default: 0.</li>
+    <li><b>T2 Div/Mult</b>: Track 2 clock division/multiplication. Default: +1 (2x).</li>
+    <li><b>T2 Length CV</b>: Track 2 length CV attenuverter/input.</li>
+    <li><b>T2 Fill CV</b>: Track 2 fill CV attenuverter/input.</li>
+    <li><b>T2 Shift CV</b>: Track 2 shift CV attenuverter/input.</li>
+    <li><b>T3 Length</b>: Track 3 sequence length (1-32 steps). Default: 16.</li>
+    <li><b>T3 Fill</b>: Track 3 active steps percentage (0-100%). Default: 25%.</li>
+    <li><b>T3 Shift</b>: Track 3 pattern rotation (0-31 steps). Default: 0.</li>
+    <li><b>T3 Div/Mult</b>: Track 3 clock division/multiplication. Default: +2 (3x).</li>
+    <li><b>T3 Length CV</b>: Track 3 length CV attenuverter/input.</li>
+    <li><b>T3 Fill CV</b>: Track 3 fill CV attenuverter/input.</li>
+    <li><b>T3 Shift CV</b>: Track 3 shift CV attenuverter/input.</li>
+    <li><b>T1 Trigger</b>: Track 1 trigger output (0V or 10V, 10ms pulse).</li>
+    <li><b>T2 Trigger</b>: Track 2 trigger output (0V or 10V, 10ms pulse).</li>
+    <li><b>T3 Trigger</b>: Track 3 trigger output (0V or 10V, 10ms pulse).</li>
+    <li><b>Master Trigger Sum</b>: OR output, 10V when any track fires.</li>
+    <li><b>Chain 1+2</b>: Chain output alternating T1 and T2.</li>
+    <li><b>Chain 2+3</b>: Chain output alternating T2 and T3.</li>
+    <li><b>Chain 1+2+3</b>: Chain output following T1-T2-T1-T3 pattern.</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">三軌 Euclidean Rhythm 生成器，具備各軌 Clock Division/Multiplication、CV Modulation 與順序軌道切換的 Chain 輸出。使用 Floor-based 均勻分佈演算法將 Beat 均勻分佈於序列長度 - 這是一種數學方法，產生的 Pattern 可在非洲、拉丁美洲與中東傳統音樂中發現。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Euclidean Rhythm</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Principle</b>: 將 Hit 盡可能均勻分佈於 Pattern 長度內</li>
+    <li><b>FILL</b>: 決定 Pattern 中的 Hit 數量。Fill 越高 = Hit 越多。</li>
+    <li><b>SHIFT</b>: 旋轉 Pattern 起始點，不改變節奏密度</li>
+    <li><b>Recalculation</b>: 當 FILL、LEN 或 SHIFT 改變時，Pattern 立即更新</li>
+    <li><b>Example</b>: E(5,8) = [xx.xx.x.] 將 5 個 Hit 均勻分佈於 8 步</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Clock Division/Multiplication</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Range</b>: -3 至 +3（對齊至整數）</li>
+    <li><b>Negative Values</b>: Division。-1 = /2x，-2 = /3x，-3 = /4x</li>
+    <li><b>Positive Values</b>: Multiplication。+1 = 2x，+2 = 3x，+3 = 4x</li>
+    <li><b>Zero</b>: 1:1 比例（無變化）</li>
+    <li><b>Implementation</b>: 追蹤上次全域 Clock 以來經過的時間，以倍增速率產生內部 Trigger，或為 Division 倒數計時</li>
+    <li><b>Gate Length</b>: 有效 Clock 週期的 50%，最小 1ms</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">全域控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: 全域 Clock 輸入。週期以上升緣間測量（Schmitt Trigger）。有效範圍: 10ms 至 10s。</li>
+    <li><b>RST</b>: Reset 輸入 + 手動按鈕。上升緣重置所有軌道至步進 0 並清除所有狀態。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">各軌控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>LEN</b>: 序列長度（1-32 步，對齊）。預設: 16。CV 加 Volts × Attenuverter 至基礎值。</li>
+    <li><b>FILL</b>: 活躍步進百分比（0-100%）。預設: T1=100%，T2=50%，T3=25%。CV 加 Volts × Attenuverter × 10。</li>
+    <li><b>SHFT</b>: Pattern 旋轉（0 至 31 步，對齊；處理時 Clamp 至 Length-1）。向左旋轉 Pattern Shift 量。</li>
+    <li><b>D/M</b>: Clock Division/Multiplication（-3 至 +3）。預設: T1=0，T2=+1 (2x)，T3=+2 (3x)。</li>
+    <li><b>Attenuverters</b>: 各 CV 輸入（Length、Fill、Shift）±1.0 範圍。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Chain 輸出</h3>
+    <p style="margin-bottom: 1rem;">Chain 輸出順序播放軌道，在目前軌道完成一個完整週期後切換至下一軌道。</p>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>1+2</b>: 交替 T1 → T2 → T1 → T2...</li>
+    <li><b>2+3</b>: 交替 T2 → T3 → T2 → T3...</li>
+    <li><b>1213 (1+2+3)</b>: 序列 T1 → T2 → T1 → T3 → 重複。創造 A-B-A-C Pattern。</li>
+    <li><b>Cycle Length</b>: 各軌道根據其長度與 Clock Division/Multiplication 設定完成一個週期</li>
+    <li><b>LED Indicators</b>: 顯示各 Chain 中目前活躍的軌道</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">OR（Master）輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Function</b>: 當三軌中任一軌道觸發時輸出 10V</li>
+    <li><b>RGB LED</b>: 紅 = T1 活躍，綠 = T2 活躍，藍 = T3 活躍（30ms 保持）</li>
+    <li><b>Use Case</b>: 驅動外部模組的複合 Trigger</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>OUT 1/2/3</b>: 獨立軌道 Trigger（0V 或 10V，10ms Pulse）</li>
+    <li><b>1+2</b>: 軌道 1 與 2 的 Chain 輸出</li>
+    <li><b>2+3</b>: 軌道 2 與 3 的 Chain 輸出</li>
+    <li><b>1213</b>: 遵循 T1→T2→T1→T3 Pattern 的 Chain 輸出</li>
+    <li><b>OR</b>: 所有三軌輸出的邏輯 OR</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Clock 輸入: Schmitt Trigger 閾值的上升緣</li>
+    <li>Clock 週期範圍: 10ms 至 10s（鉗制）</li>
+    <li>Pattern 長度: 各軌 1-32 步</li>
+    <li>Clock Div/Mult: 各軌 /4x 至 4x</li>
+    <li>Trigger Pulse 寬度: 10ms</li>
+    <li>Trigger 電壓: 10V</li>
+    <li>CV 輸入範圍: ±10V</li>
+    <li>處理: 32-bit 浮點</li>
+    <li>模組寬度: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">參數對照</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Global Clock</b>: 全域 Clock 輸入。週期以上升緣間測量。有效範圍 10ms-10s。</li>
+    <li><b>Global Reset</b>: Reset 輸入。上升緣重置所有軌道至步進 0。</li>
+    <li><b>Manual Reset</b>: 手動 Reset 按鈕。功能與 Global Reset 輸入相同。</li>
+    <li><b>T1 Length</b>: 軌道 1 序列長度（1-32 步，對齊）。預設: 16。</li>
+    <li><b>T1 Fill</b>: 軌道 1 活躍步進百分比（0-100%）。預設: 100%。</li>
+    <li><b>T1 Shift</b>: 軌道 1 Pattern 旋轉（0-31 步，對齊）。預設: 0。</li>
+    <li><b>T1 Div/Mult</b>: 軌道 1 Clock Division/Multiplication（-3 至 +3）。預設: 0 (1x)。</li>
+    <li><b>T1 Length CV</b>: 軌道 1 Length CV Attenuverter/輸入（-1.0 至 +1.0）。</li>
+    <li><b>T1 Fill CV</b>: 軌道 1 Fill CV Attenuverter/輸入（-1.0 至 +1.0）。</li>
+    <li><b>T1 Shift CV</b>: 軌道 1 Shift CV Attenuverter/輸入（-1.0 至 +1.0）。</li>
+    <li><b>T2 Length</b>: 軌道 2 序列長度（1-32 步）。預設: 16。</li>
+    <li><b>T2 Fill</b>: 軌道 2 活躍步進百分比（0-100%）。預設: 50%。</li>
+    <li><b>T2 Shift</b>: 軌道 2 Pattern 旋轉（0-31 步）。預設: 0。</li>
+    <li><b>T2 Div/Mult</b>: 軌道 2 Clock Division/Multiplication。預設: +1 (2x)。</li>
+    <li><b>T2 Length CV</b>: 軌道 2 Length CV Attenuverter/輸入。</li>
+    <li><b>T2 Fill CV</b>: 軌道 2 Fill CV Attenuverter/輸入。</li>
+    <li><b>T2 Shift CV</b>: 軌道 2 Shift CV Attenuverter/輸入。</li>
+    <li><b>T3 Length</b>: 軌道 3 序列長度（1-32 步）。預設: 16。</li>
+    <li><b>T3 Fill</b>: 軌道 3 活躍步進百分比（0-100%）。預設: 25%。</li>
+    <li><b>T3 Shift</b>: 軌道 3 Pattern 旋轉（0-31 步）。預設: 0。</li>
+    <li><b>T3 Div/Mult</b>: 軌道 3 Clock Division/Multiplication。預設: +2 (3x)。</li>
+    <li><b>T3 Length CV</b>: 軌道 3 Length CV Attenuverter/輸入。</li>
+    <li><b>T3 Fill CV</b>: 軌道 3 Fill CV Attenuverter/輸入。</li>
+    <li><b>T3 Shift CV</b>: 軌道 3 Shift CV Attenuverter/輸入。</li>
+    <li><b>T1 Trigger</b>: 軌道 1 Trigger 輸出（0V 或 10V，10ms Pulse）。</li>
+    <li><b>T2 Trigger</b>: 軌道 2 Trigger 輸出（0V 或 10V，10ms Pulse）。</li>
+    <li><b>T3 Trigger</b>: 軌道 3 Trigger 輸出（0V 或 10V，10ms Pulse）。</li>
+    <li><b>Master Trigger Sum</b>: OR 輸出，任一軌道觸發時輸出 10V。</li>
+    <li><b>Chain 1+2</b>: 交替 T1 與 T2 的 Chain 輸出。</li>
+    <li><b>Chain 2+3</b>: 交替 T2 與 T3 的 Chain 輸出。</li>
+    <li><b>Chain 1+2+3</b>: 遵循 T1-T2-T1-T3 Pattern 的 Chain 輸出。</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">トラック別クロック分割/倍増、CV変調、順次トラック切替用チェーン出力を備えた3トラックユークリッドリズム生成器。フロアベースの均等配分アルゴリズムを使用してビートをシーケンス長に均等分配 - アフリカ、ラテンアメリカ、中東の伝統音楽に見られるパターンを生成する数学的アプローチです。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Euclidean Rhythm</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Principle</b>: ヒットをパターン長にできるだけ均等に分配</li>
+    <li><b>FILL</b>: パターン内のヒット数を決定。Fill が高い = ヒットが多い。</li>
+    <li><b>SHIFT</b>: リズム密度を変えずにパターンの開始点を回転</li>
+    <li><b>Recalculation</b>: FILL、LEN、または SHIFT が変更されると、パターンは即座に更新</li>
+    <li><b>Example</b>: E(5,8) = [xx.xx.x.] 5つのヒットを8ステップに均等配分</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クロック分割/倍増</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Range</b>: -3〜+3（整数にスナップ）</li>
+    <li><b>Negative Values</b>: 分割。-1 = /2x、-2 = /3x、-3 = /4x</li>
+    <li><b>Positive Values</b>: 倍増。+1 = 2x、+2 = 3x、+3 = 4x</li>
+    <li><b>Zero</b>: 1:1比率（変更なし）</li>
+    <li><b>Implementation</b>: 最後のグローバルクロック以降の経過時間を追跡し、倍増レートで内部トリガーを生成、または分割のためにカウントダウン</li>
+    <li><b>Gate Length</b>: 有効クロック周期の50%、最小1ms</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">グローバルコントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: グローバルクロック入力。周期は立ち上がりエッジ間で測定（シュミットトリガー）。有効範囲: 10ms〜10s。</li>
+    <li><b>RST</b>: リセット入力 + 手動ボタン。立ち上がりエッジで全トラックをステップ0にリセットし、全ての状態をクリア。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">トラック別コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>LEN</b>: シーケンス長（1-32ステップ、スナップ）。デフォルト: 16。CVはボルト × アッテヌバーターをベース値に加算。</li>
+    <li><b>FILL</b>: アクティブステップの割合（0-100%）。デフォルト: T1=100%、T2=50%、T3=25%。CVはボルト × アッテヌバーター × 10を加算。</li>
+    <li><b>SHFT</b>: パターンローテーション（0〜31ステップ、スナップ；処理時にLength-1にクランプ）。パターンを左にShift量だけローテーション。</li>
+    <li><b>D/M</b>: クロック分割/倍増（-3〜+3）。デフォルト: T1=0、T2=+1 (2x)、T3=+2 (3x)。</li>
+    <li><b>Attenuverters</b>: 各CV入力（Length、Fill、Shift）±1.0範囲。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">チェーン出力</h3>
+    <p style="margin-bottom: 1rem;">チェーン出力はトラックを順次再生し、現在のトラックが1サイクル完了後に次のトラックに切り替わります。</p>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>1+2</b>: T1 → T2 → T1 → T2... と交互</li>
+    <li><b>2+3</b>: T2 → T3 → T2 → T3... と交互</li>
+    <li><b>1213 (1+2+3)</b>: T1 → T2 → T1 → T3 → 繰り返しのシーケンス。A-B-A-Cパターンを作成。</li>
+    <li><b>Cycle Length</b>: 各トラックは長さとクロック分割/倍増設定に基づいて1サイクルを完了</li>
+    <li><b>LED Indicators</b>: 各チェーンで現在アクティブなトラックを表示</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">OR（マスター）出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Function</b>: 3つのトラックのいずれかが発火すると10Vを出力</li>
+    <li><b>RGB LED</b>: 赤 = T1アクティブ、緑 = T2アクティブ、青 = T3アクティブ（30ms保持）</li>
+    <li><b>Use Case</b>: 外部モジュール駆動用の複合トリガー</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>OUT 1/2/3</b>: 個別トラックトリガー（0Vまたは10V、10msパルス）</li>
+    <li><b>1+2</b>: トラック1と2のチェーン出力</li>
+    <li><b>2+3</b>: トラック2と3のチェーン出力</li>
+    <li><b>1213</b>: T1→T2→T1→T3パターンに従うチェーン出力</li>
+    <li><b>OR</b>: 全3トラック出力の論理OR</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>クロック入力: シュミットトリガー閾値での立ち上がりエッジ</li>
+    <li>クロック周期範囲: 10ms〜10s（クランプ）</li>
+    <li>パターン長: トラックあたり1-32ステップ</li>
+    <li>クロック分割/倍増: トラックあたり/4x〜4x</li>
+    <li>トリガーパルス幅: 10ms</li>
+    <li>トリガー電圧: 10V</li>
+    <li>CV入力範囲: ±10V</li>
+    <li>処理: 32ビット浮動小数点</li>
+    <li>モジュール幅: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">パラメータリファレンス</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Global Clock</b>: グローバルクロック入力。立ち上がりエッジ間で周期測定。有効範囲10ms-10s。</li>
+    <li><b>Global Reset</b>: リセット入力。立ち上がりエッジで全トラックをステップ0にリセット。</li>
+    <li><b>Manual Reset</b>: 手動リセットボタン。Global Reset入力と同じ機能。</li>
+    <li><b>T1 Length</b>: トラック1シーケンス長（1-32ステップ、スナップ）。デフォルト: 16。</li>
+    <li><b>T1 Fill</b>: トラック1アクティブステップ割合（0-100%）。デフォルト: 100%。</li>
+    <li><b>T1 Shift</b>: トラック1パターンローテーション（0-31ステップ、スナップ）。デフォルト: 0。</li>
+    <li><b>T1 Div/Mult</b>: トラック1クロック分割/倍増（-3〜+3）。デフォルト: 0 (1x)。</li>
+    <li><b>T1 Length CV</b>: トラック1 Length CVアッテヌバーター/入力（-1.0〜+1.0）。</li>
+    <li><b>T1 Fill CV</b>: トラック1 Fill CVアッテヌバーター/入力（-1.0〜+1.0）。</li>
+    <li><b>T1 Shift CV</b>: トラック1 Shift CVアッテヌバーター/入力（-1.0〜+1.0）。</li>
+    <li><b>T2 Length</b>: トラック2シーケンス長（1-32ステップ）。デフォルト: 16。</li>
+    <li><b>T2 Fill</b>: トラック2アクティブステップ割合（0-100%）。デフォルト: 50%。</li>
+    <li><b>T2 Shift</b>: トラック2パターンローテーション（0-31ステップ）。デフォルト: 0。</li>
+    <li><b>T2 Div/Mult</b>: トラック2クロック分割/倍増。デフォルト: +1 (2x)。</li>
+    <li><b>T2 Length CV</b>: トラック2 Length CVアッテヌバーター/入力。</li>
+    <li><b>T2 Fill CV</b>: トラック2 Fill CVアッテヌバーター/入力。</li>
+    <li><b>T2 Shift CV</b>: トラック2 Shift CVアッテヌバーター/入力。</li>
+    <li><b>T3 Length</b>: トラック3シーケンス長（1-32ステップ）。デフォルト: 16。</li>
+    <li><b>T3 Fill</b>: トラック3アクティブステップ割合（0-100%）。デフォルト: 25%。</li>
+    <li><b>T3 Shift</b>: トラック3パターンローテーション（0-31ステップ）。デフォルト: 0。</li>
+    <li><b>T3 Div/Mult</b>: トラック3クロック分割/倍増。デフォルト: +2 (3x)。</li>
+    <li><b>T3 Length CV</b>: トラック3 Length CVアッテヌバーター/入力。</li>
+    <li><b>T3 Fill CV</b>: トラック3 Fill CVアッテヌバーター/入力。</li>
+    <li><b>T3 Shift CV</b>: トラック3 Shift CVアッテヌバーター/入力。</li>
+    <li><b>T1 Trigger</b>: トラック1トリガー出力（0Vまたは10V、10msパルス）。</li>
+    <li><b>T2 Trigger</b>: トラック2トリガー出力（0Vまたは10V、10msパルス）。</li>
+    <li><b>T3 Trigger</b>: トラック3トリガー出力（0Vまたは10V、10msパルス）。</li>
+    <li><b>Master Trigger Sum</b>: OR出力、いずれかのトラックが発火すると10V。</li>
+    <li><b>Chain 1+2</b>: T1とT2を交互に切替えるチェーン出力。</li>
+    <li><b>Chain 2+3</b>: T2とT3を交互に切替えるチェーン出力。</li>
+    <li><b>Chain 1+2+3</b>: T1-T2-T1-T3パターンに従うチェーン出力。</li>
+    </ul>
+controls:
+- name: Global Clock
+  type: input
+  desc:
+    en: Global clock input. Period measured between rising edges. Valid range 10ms-10s.
+    zh: 全域 Clock 輸入。週期以上升緣間測量。有效範圍 10ms-10s。
+    ja: グローバルクロック入力。立ち上がりエッジ間で周期測定。有効範囲10ms-10s。
+- name: Global Reset
+  type: input
+  desc:
+    en: Reset input. Rising edge resets all tracks to step 0.
+    zh: Reset 輸入。上升緣重置所有軌道至步進 0。
+    ja: リセット入力。立ち上がりエッジで全トラックをステップ0にリセット。
+- name: Manual Reset
+  type: param
+  desc:
+    en: Manual reset button. Same function as Global Reset input.
+    zh: 手動 Reset 按鈕。功能與 Global Reset 輸入相同。
+    ja: 手動リセットボタン。Global Reset入力と同じ機能。
+- name: T1 Div/Mult
+  type: param
+  desc:
+    en: 'Track 1 clock division/multiplication (-3 to +3). Default: 0 (1x).'
+    zh: '軌道 1 Clock Division/Multiplication（-3 至 +3）。預設: 0 (1x)。'
+    ja: 'トラック1クロック分割/倍増（-3〜+3）。デフォルト: 0 (1x)。'
+- name: T1 Length
+  type: param
+  desc:
+    en: 'Track 1 sequence length (1-32 steps, snapped). Default: 16.'
+    zh: '軌道 1 序列長度（1-32 步，對齊）。預設: 16。'
+    ja: 'トラック1シーケンス長（1-32ステップ、スナップ）。デフォルト: 16。'
+- name: T1 Fill
+  type: param
+  desc:
+    en: 'Track 1 active steps percentage (0-100%). Default: 100%.'
+    zh: '軌道 1 活躍步進百分比（0-100%）。預設: 100%。'
+    ja: 'トラック1アクティブステップ割合（0-100%）。デフォルト: 100%。'
+- name: T1 Shift
+  type: param
+  desc:
+    en: 'Track 1 pattern rotation (0-31 steps, snapped). Default: 0.'
+    zh: '軌道 1 Pattern 旋轉（0-31 步，對齊）。預設: 0。'
+    ja: 'トラック1パターンローテーション（0-31ステップ、スナップ）。デフォルト: 0。'
+- name: T1 Length CV
+  type: param
+  desc:
+    en: CV Attenuverter for T1 Length (-1.0 to +1.0, default 0)
+    zh: T1 Length 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T1 LengthのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T1 Fill CV
+  type: param
+  desc:
+    en: CV Attenuverter for T1 Fill (-1.0 to +1.0, default 0)
+    zh: T1 Fill 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T1 FillのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T1 Shift CV
+  type: param
+  desc:
+    en: CV Attenuverter for T1 Shift (-1.0 to +1.0, default 0)
+    zh: T1 Shift 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T1 ShiftのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T2 Div/Mult
+  type: param
+  desc:
+    en: 'Track 2 clock division/multiplication. Default: +1 (2x).'
+    zh: '軌道 2 Clock Division/Multiplication。預設: +1 (2x)。'
+    ja: 'トラック2クロック分割/倍増。デフォルト: +1 (2x)。'
+- name: T2 Length
+  type: param
+  desc:
+    en: 'Track 2 sequence length (1-32 steps). Default: 16.'
+    zh: '軌道 2 序列長度（1-32 步）。預設: 16。'
+    ja: 'トラック2シーケンス長（1-32ステップ）。デフォルト: 16。'
+- name: T2 Fill
+  type: param
+  desc:
+    en: 'Track 2 active steps percentage (0-100%). Default: 50%.'
+    zh: '軌道 2 活躍步進百分比（0-100%）。預設: 50%。'
+    ja: 'トラック2アクティブステップ割合（0-100%）。デフォルト: 50%。'
+- name: T2 Shift
+  type: param
+  desc:
+    en: 'Track 2 pattern rotation (0-31 steps). Default: 0.'
+    zh: '軌道 2 Pattern 旋轉（0-31 步）。預設: 0。'
+    ja: 'トラック2パターンローテーション（0-31ステップ）。デフォルト: 0。'
+- name: T2 Length CV
+  type: param
+  desc:
+    en: CV Attenuverter for T2 Length (-1.0 to +1.0, default 0)
+    zh: T2 Length 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T2 LengthのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T2 Fill CV
+  type: param
+  desc:
+    en: CV Attenuverter for T2 Fill (-1.0 to +1.0, default 0)
+    zh: T2 Fill 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T2 FillのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T2 Shift CV
+  type: param
+  desc:
+    en: CV Attenuverter for T2 Shift (-1.0 to +1.0, default 0)
+    zh: T2 Shift 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T2 ShiftのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T3 Div/Mult
+  type: param
+  desc:
+    en: 'Track 3 clock division/multiplication. Default: +2 (3x).'
+    zh: '軌道 3 Clock Division/Multiplication。預設: +2 (3x)。'
+    ja: 'トラック3クロック分割/倍増。デフォルト: +2 (3x)。'
+- name: T3 Length
+  type: param
+  desc:
+    en: 'Track 3 sequence length (1-32 steps). Default: 16.'
+    zh: '軌道 3 序列長度（1-32 步）。預設: 16。'
+    ja: 'トラック3シーケンス長（1-32ステップ）。デフォルト: 16。'
+- name: T3 Fill
+  type: param
+  desc:
+    en: 'Track 3 active steps percentage (0-100%). Default: 25%.'
+    zh: '軌道 3 活躍步進百分比（0-100%）。預設: 25%。'
+    ja: 'トラック3アクティブステップ割合（0-100%）。デフォルト: 25%。'
+- name: T3 Shift
+  type: param
+  desc:
+    en: 'Track 3 pattern rotation (0-31 steps). Default: 0.'
+    zh: '軌道 3 Pattern 旋轉（0-31 步）。預設: 0。'
+    ja: 'トラック3パターンローテーション（0-31ステップ）。デフォルト: 0。'
+- name: T3 Length CV
+  type: param
+  desc:
+    en: CV Attenuverter for T3 Length (-1.0 to +1.0, default 0)
+    zh: T3 Length 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T3 LengthのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T3 Fill CV
+  type: param
+  desc:
+    en: CV Attenuverter for T3 Fill (-1.0 to +1.0, default 0)
+    zh: T3 Fill 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T3 FillのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T3 Shift CV
+  type: param
+  desc:
+    en: CV Attenuverter for T3 Shift (-1.0 to +1.0, default 0)
+    zh: T3 Shift 的 CV Attenuverter（-1.0 至 +1.0，預設 0）
+    ja: T3 ShiftのCVアッテヌバーター（-1.0〜+1.0、デフォルト0）
+- name: T1 Trigger
+  type: output
+  desc:
+    en: Track 1 trigger output (0V or 10V, 10ms pulse).
+    zh: 軌道 1 Trigger 輸出（0V 或 10V，10ms Pulse）。
+    ja: トラック1トリガー出力（0Vまたは10V、10msパルス）。
+- name: T2 Trigger
+  type: output
+  desc:
+    en: Track 2 trigger output (0V or 10V, 10ms pulse).
+    zh: 軌道 2 Trigger 輸出（0V 或 10V，10ms Pulse）。
+    ja: トラック2トリガー出力（0Vまたは10V、10msパルス）。
+- name: T3 Trigger
+  type: output
+  desc:
+    en: Track 3 trigger output (0V or 10V, 10ms pulse).
+    zh: 軌道 3 Trigger 輸出（0V 或 10V，10ms Pulse）。
+    ja: トラック3トリガー出力（0Vまたは10V、10msパルス）。
+- name: Master Trigger Sum
+  type: output
+  desc:
+    en: OR output, 10V when any track fires.
+    zh: OR 輸出，任一軌道觸發時輸出 10V。
+    ja: OR出力、いずれかのトラックが発火すると10V。
+- name: Chain 1+2
+  type: output
+  desc:
+    en: Chain output alternating T1 and T2.
+    zh: 交替 T1 與 T2 的 Chain 輸出。
+    ja: T1とT2を交互に切替えるチェーン出力。
+- name: Chain 2+3
+  type: output
+  desc:
+    en: Chain output alternating T2 and T3.
+    zh: 交替 T2 與 T3 的 Chain 輸出。
+    ja: T2とT3を交互に切替えるチェーン出力。
+- name: Chain 1+2+3
+  type: output
+  desc:
+    en: Chain output following T1-T2-T1-T3 pattern.
+    zh: 遵循 T1-T2-T1-T3 Pattern 的 Chain 輸出。
+    ja: T1-T2-T1-T3パターンに従うチェーン出力。
+- name: T1 Length CV
+  type: input
+  desc:
+    en: CV input for T1 Length (±10V, attenuated by T1 Length CV knob)
+    zh: T1 Length 的 CV 輸入（±10V，經 T1 Length CV 衰減旋鈕處理）
+    ja: T1 LengthのCV入力（±10V、T1 Length CVノブでアッテネート）
+- name: T1 Fill CV
+  type: input
+  desc:
+    en: CV input for T1 Fill (±10V, attenuated by T1 Fill CV knob)
+    zh: T1 Fill 的 CV 輸入（±10V，經 T1 Fill CV 衰減旋鈕處理）
+    ja: T1 FillのCV入力（±10V、T1 Fill CVノブでアッテネート）
+- name: T1 Shift CV
+  type: input
+  desc:
+    en: CV input for T1 Shift (±10V, attenuated by T1 Shift CV knob)
+    zh: T1 Shift 的 CV 輸入（±10V，經 T1 Shift CV 衰減旋鈕處理）
+    ja: T1 ShiftのCV入力（±10V、T1 Shift CVノブでアッテネート）
+- name: T2 Length CV
+  type: input
+  desc:
+    en: CV input for T2 Length (±10V, attenuated by T2 Length CV knob)
+    zh: T2 Length 的 CV 輸入（±10V，經 T2 Length CV 衰減旋鈕處理）
+    ja: T2 LengthのCV入力（±10V、T2 Length CVノブでアッテネート）
+- name: T2 Fill CV
+  type: input
+  desc:
+    en: CV input for T2 Fill (±10V, attenuated by T2 Fill CV knob)
+    zh: T2 Fill 的 CV 輸入（±10V，經 T2 Fill CV 衰減旋鈕處理）
+    ja: T2 FillのCV入力（±10V、T2 Fill CVノブでアッテネート）
+- name: T2 Shift CV
+  type: input
+  desc:
+    en: CV input for T2 Shift (±10V, attenuated by T2 Shift CV knob)
+    zh: T2 Shift 的 CV 輸入（±10V，經 T2 Shift CV 衰減旋鈕處理）
+    ja: T2 ShiftのCV入力（±10V、T2 Shift CVノブでアッテネート）
+- name: T3 Length CV
+  type: input
+  desc:
+    en: CV input for T3 Length (±10V, attenuated by T3 Length CV knob)
+    zh: T3 Length 的 CV 輸入（±10V，經 T3 Length CV 衰減旋鈕處理）
+    ja: T3 LengthのCV入力（±10V、T3 Length CVノブでアッテネート）
+- name: T3 Fill CV
+  type: input
+  desc:
+    en: CV input for T3 Fill (±10V, attenuated by T3 Fill CV knob)
+    zh: T3 Fill 的 CV 輸入（±10V，經 T3 Fill CV 衰減旋鈕處理）
+    ja: T3 FillのCV入力（±10V、T3 Fill CVノブでアッテネート）
+- name: T3 Shift CV
+  type: input
+  desc:
+    en: CV input for T3 Shift (±10V, attenuated by T3 Shift CV knob)
+    zh: T3 Shift 的 CV 輸入（±10V，經 T3 Shift CV 衰減旋鈕處理）
+    ja: T3 ShiftのCV入力（±10V、T3 Shift CVノブでアッテネート）

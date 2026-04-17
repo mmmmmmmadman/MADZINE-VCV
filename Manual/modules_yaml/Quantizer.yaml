@@ -1,0 +1,785 @@
+slug: Quantizer
+name: Quanti2er
+hp: 4
+wide: false
+alt: 2-Octave Quantizer
+description:
+  en: 24-note (2-octave) chromatic quantizer with per-note microtune control, 28 world tuning presets, and 3 directional presets for ascending/descending scale differences
+  zh: 24 音（2 八度）Chromatic Quantizer，具備各音符 Microtune 控制、28 種世界調音預設，以及 3 種方向性預設（上行/下行音階差異）
+  ja: 24音（2オクターブ）クロマチッククオンタイザー。ノート別マイクロチューン制御、28種の世界調律プリセット、3種の方向性プリセット（上行/下行差異）を搭載
+features:
+  en:
+  - 24-note (2-octave) chromatic quantizer
+  - Per-note microtune sliders (±50 cents)
+  - 28 world tuning presets with 2-Oct markers
+  - 3 directional presets (↑↓) for Raga/Makam/Miyako-bushi
+  - Automatic pitch direction detection
+  - Amount & Offset with CV inputs
+  zh:
+  - 24 音（2 八度）Chromatic Quantizer
+  - 各音符 Microtune 滑桿（±50 音分）
+  - 28 種世界調音預設（含 2-Oct 標記）
+  - 3 種方向性預設（↑↓）支援 Raga/Makam/都節
+  - 自動音高方向偵測
+  - Amount 與 Offset 含 CV 輸入
+  ja:
+  - 24音（2オクターブ）クロマチッククオンタイザー
+  - ノート別マイクロチューンスライダー（±50セント）
+  - 28種の世界調律プリセット（2-Octマーカー付き）
+  - 3種の方向性プリセット（↑↓）Raga/Makam/都節対応
+  - 自動ピッチ方向検出
+  - Amount・Offset（CV入力対応）
+manual_html_raw:
+  en: '<h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+
+    <p style="margin-bottom: 1rem;">24-note (2-octave) chromatic quantizer with per-note microtune control, 28 world tuning presets, and 3 directional presets. Features automatic pitch direction detection for ascending/descending scale differences used in Raga, Makam, and Miyako-bushi scales.</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+
+    <p style="margin-bottom: 1rem;">CV Input → [+ Offset + Offset CV] → [× Amount] → [Direction Detection] → [Quantize to enabled notes] → [+ Microtune] → CV Output. Three independent polyphonic channels with direction-aware quantization.</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Two-Octave System</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>24 Notes</b>: Two complete octaves for independent upper/lower octave tuning</li>
+
+    <li><b>24 Microtune Sliders</b>: Per-note tuning (±50 cents) for both octaves</li>
+
+    <li><b>2-Oct Presets</b>: Marked with (2-Oct) - Arabic Maqam, Turkish Makam, Persian Dastgah, Indian Raga, Japanese scales</li>
+
+    <li><b>Single-Octave Presets</b>: Automatically mirror to both octaves</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Direction Detection</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Algorithm</b>: Compares current note with previous note</li>
+
+    <li><b>Threshold</b>: ±0.5 semitones to avoid quantization jitter</li>
+
+    <li><b>Directional Presets (↑↓)</b>: Turkish Rast, Arabic Hijaz, Miyako-bushi</li>
+
+    <li><b>Usage</b>: Ascending melodies use upper octave tuning, descending use lower octave</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Controls</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Scale</b>: Pitch multiplier (0-2, default: 1). Values <1 compress, >1 expand</li>
+
+    <li><b>Pre-offset</b>: Pre-quantization pitch offset (±12 semitones displayed, raw ±1V)</li>
+
+    <li><b>Microtune</b>: Per-note tuning sliders (±50 cents) for all 24 notes across 2 octaves</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">World Tuning Presets (28 total)</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Western (4)</b>: Equal Temperament, Just Intonation, Pythagorean, Quarter-tone</li>
+
+    <li><b>Arabic Maqam (6)</b>: Rast, Bayati, Hijaz, Saba, Nahawand, Kurd - all 2-Oct</li>
+
+    <li><b>Turkish Makam (4)</b>: Rast, Ussak, Hicaz, Segah - all 2-Oct</li>
+
+    <li><b>Persian (2)</b>: Dastgah Shur, Dastgah Segah - all 2-Oct</li>
+
+    <li><b>Indian (4)</b>: Shruti, Raga Bhairav, Yaman, Bhairavi - all 2-Oct</li>
+
+    <li><b>Japanese (4)</b>: Gagaku, In Scale, Yo Scale, Ryukyu - all 2-Oct</li>
+
+    <li><b>Southeast Asian (3)</b>: Slendro, Pelog, Thai 7-TET</li>
+
+    <li><b>Chinese (1)</b>: Pentatonic</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Directional Presets (3)</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Turkish Rast (↑↓)</b>: F# ascending, F natural descending</li>
+
+    <li><b>Arabic Hijaz (↑↓)</b>: Different intervals for melodic direction</li>
+
+    <li><b>Miyako-bushi (↑↓)</b>: 6th degree changes with direction (D↑, C↓)</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Scale Presets (16 total)</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Chromatic</b>: All 24 notes enabled</li>
+
+    <li><b>Major/Minor</b>: Ionian, Aeolian modes</li>
+
+    <li><b>Pentatonic</b>: Major, Minor (5 notes)</li>
+
+    <li><b>Modes</b>: Dorian, Phrygian, Lydian, Mixolydian, Locrian</li>
+
+    <li><b>Triads</b>: Major (C-E-G), Minor (C-Eb-G)</li>
+
+    <li><b>World</b>: Blues, Arabic, Japanese, Whole Tone</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>CV1</b>: Pitch CV input 1 (polyphonic, 16 ch)</li>
+
+    <li><b>CV2</b>: Pitch CV input 2 (polyphonic, 16 ch)</li>
+
+    <li><b>CV3</b>: Pitch CV input 3 (polyphonic, 16 ch)</li>
+
+    <li><b>Pitch</b>: Quantized output 1</li>
+
+    <li><b>Pitch 2</b>: Quantized output 2</li>
+
+    <li><b>Pitch 3</b>: Quantized output 3</li>
+
+    <li><b>Scale CV</b>: Modulates pitch multiplier</li>
+
+    <li><b>Offset CV</b>: Modulates pre-quantization offset</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+
+    <ul style="padding-left: 1.5rem;">
+
+    <li>CV input/output: 1V/octave standard</li>
+
+    <li>Polyphony: Up to 16 channels per input</li>
+
+    <li>Note range: 24 notes (2 octaves)</li>
+
+    <li>Microtune range: ±50 cents per note</li>
+
+    <li>Tuning presets: 28 world + 3 directional</li>
+
+    <li>Direction threshold: ±0.5 semitones</li>
+
+    <li>Processing: 32-bit floating point</li>
+
+    <li>Module width: 4HP</li>
+
+    </ul>'
+  zh: '<h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+
+    <p style="margin-bottom: 1rem;">24 音（2 八度）Chromatic Quantizer，具備各音符 Microtune 控制、28 種世界調音預設及 3 種方向性預設。支援 Raga、Makam、都節音階等上行/下行差異的自動音高方向偵測。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+
+    <p style="margin-bottom: 1rem;">CV Input → [+ Offset + Offset CV] → [× Amount] → [方向偵測] → [Quantize 至啟用音符] → [+ Microtune] → CV Output。三個獨立 Polyphonic 通道，支援方向感知 Quantization。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">雙八度系統</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>24 音</b>: 完整兩個八度，支援上下八度獨立調音</li>
+
+    <li><b>24 Microtune 滑桿</b>: 各音符調音（±50 Cent）涵蓋兩個八度</li>
+
+    <li><b>2-Oct 預設</b>: 標記 (2-Oct) - 阿拉伯 Maqam、土耳其 Makam、波斯 Dastgah、印度 Raga、日本音階</li>
+
+    <li><b>單八度預設</b>: 自動鏡射至兩個八度</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">方向偵測</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>演算法</b>: 比較目前音符與前一音符</li>
+
+    <li><b>閾值</b>: ±0.5 半音，避免 Quantization 抖動</li>
+
+    <li><b>方向性預設 (↑↓)</b>: Turkish Rast、Arabic Hijaz、都節音階</li>
+
+    <li><b>用途</b>: 上行旋律使用上八度調音，下行使用下八度</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">控制</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Scale</b>: Pitch 倍數（0-2，預設: 1）。值 <1 壓縮，>1 擴展</li>
+
+    <li><b>Pre-offset</b>: Quantize 前 Pitch Offset（顯示 ±12 半音，原始 ±1V）</li>
+
+    <li><b>Microtune</b>: 各音符調音滑桿（±50 Cent），涵蓋 2 八度共 24 音</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">世界調音預設（共 28 種）</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>西方 (4)</b>: 平均律、純律、畢達哥拉斯、四分音</li>
+
+    <li><b>阿拉伯 Maqam (6)</b>: Rast、Bayati、Hijaz、Saba、Nahawand、Kurd - 全部 2-Oct</li>
+
+    <li><b>土耳其 Makam (4)</b>: Rast、Ussak、Hicaz、Segah - 全部 2-Oct</li>
+
+    <li><b>波斯 (2)</b>: Dastgah Shur、Dastgah Segah - 全部 2-Oct</li>
+
+    <li><b>印度 (4)</b>: Shruti、Raga Bhairav、Yaman、Bhairavi - 全部 2-Oct</li>
+
+    <li><b>日本 (4)</b>: 雅樂、陰旋、陽旋、琉球 - 全部 2-Oct</li>
+
+    <li><b>東南亞 (3)</b>: Slendro、Pelog、泰國 7-TET</li>
+
+    <li><b>中國 (1)</b>: 五聲音階</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">方向性預設（共 3 種）</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Turkish Rast (↑↓)</b>: 上行用 F#，下行用 F</li>
+
+    <li><b>Arabic Hijaz (↑↓)</b>: 旋律方向有不同音程</li>
+
+    <li><b>都節音階 (↑↓)</b>: 第六度隨方向變化（上行 D，下行 C）</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Scale Preset（共 16 種）</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Chromatic</b>: 全部 24 音啟用</li>
+
+    <li><b>Major/Minor</b>: Ionian、Aeolian 調式</li>
+
+    <li><b>Pentatonic</b>: 大調、小調（5 音）</li>
+
+    <li><b>Modes</b>: Dorian、Phrygian、Lydian、Mixolydian、Locrian</li>
+
+    <li><b>Triads</b>: Major (C-E-G)、Minor (C-Eb-G)</li>
+
+    <li><b>World</b>: Blues、Arabic、Japanese、Whole Tone</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>CV1</b>: Pitch CV 輸入 1（Polyphonic，16 通道）</li>
+
+    <li><b>CV2</b>: Pitch CV 輸入 2（Polyphonic，16 通道）</li>
+
+    <li><b>CV3</b>: Pitch CV 輸入 3（Polyphonic，16 通道）</li>
+
+    <li><b>Pitch</b>: Quantized 輸出 1</li>
+
+    <li><b>Pitch 2</b>: Quantized 輸出 2</li>
+
+    <li><b>Pitch 3</b>: Quantized 輸出 3</li>
+
+    <li><b>Scale CV</b>: 調變 Pitch 倍數</li>
+
+    <li><b>Offset CV</b>: 調變 Quantize 前 Offset</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+
+    <ul style="padding-left: 1.5rem;">
+
+    <li>CV 輸入/輸出: 1V/Octave 標準</li>
+
+    <li>Polyphony: 各輸入最多 16 通道</li>
+
+    <li>音符範圍: 24 音（2 八度）</li>
+
+    <li>Microtune 範圍: 各音符 ±50 Cent</li>
+
+    <li>調音預設: 28 世界 + 3 方向性</li>
+
+    <li>方向閾值: ±0.5 半音</li>
+
+    <li>處理: 32-bit 浮點運算</li>
+
+    <li>模組寬度: 4HP</li>
+
+    </ul>
+
+    <div style="display:none"><ul>
+
+    <li><b>24 Notes</b>: 完整兩個八度，支援上下八度獨立調音</li>
+
+    <li><b>24 Microtune Sliders</b>: 各音符調音（+/-50 Cent）涵蓋兩個八度</li>
+
+    <li><b>2-Oct Presets</b>: 標記 (2-Oct) - 阿拉伯 Maqam、土耳其 Makam、波斯 Dastgah、印度 Raga、日本音階</li>
+
+    <li><b>Single-Octave Presets</b>: 自動鏡射至兩個八度</li>
+
+    <li><b>Algorithm</b>: 比較目前音符與前一音符</li>
+
+    <li><b>Threshold</b>: +/-0.5 半音，避免 Quantization 抖動</li>
+
+    <li><b>Directional Presets</b>: Turkish Rast、Arabic Hijaz、都節音階</li>
+
+    <li><b>Usage</b>: 上行旋律使用高八度的調音設定，下行旋律則使用低八度的調音設定</li>
+
+    <li><b>Western (4)</b>: 十二平均律、純律、畢達哥拉斯律制、四分音</li>
+
+    <li><b>Arabic Maqam (6)</b>: Rast、Bayati、Hijaz、Saba、Nahawand、Kurd - 全部 2-Oct</li>
+
+    <li><b>Turkish Makam (4)</b>: Rast、Ussak、Hicaz、Segah - 全部 2-Oct</li>
+
+    <li><b>Persian (2)</b>: Dastgah Shur、Dastgah Segah - 全部 2-Oct</li>
+
+    <li><b>Indian (4)</b>: Shruti、Raga Bhairav、Yaman、Bhairavi - 全部 2-Oct</li>
+
+    <li><b>Japanese (4)</b>: Gagaku、In Scale、Yo Scale、Ryukyu - 全部 2-Oct</li>
+
+    <li><b>Southeast Asian (3)</b>: Slendro、Pelog、Thai 7-TET</li>
+
+    <li><b>Chinese (1)</b>: 五聲音階</li>
+
+    <li><b>Miyako-bushi</b>: 第 6 音隨方向改變（上行 D，下行 C）</li>
+
+    </ul></div>
+
+    <div style="display:none"><ul>
+
+    <li><b>Directional Presets (↑↓)</b>：Turkish Rast、Arabic Hijaz、都節音階</li>
+
+    <li><b>Miyako-bushi (↑↓)</b>：第 6 音隨方向改變（上行 D，下行 C）</li>
+
+    </ul></div>'
+  ja: '<h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+
+    <p style="margin-bottom: 1rem;">24音（2オクターブ）クロマチッククオンタイザー。ノート別マイクロチューン制御、28種の世界調律プリセット、3種の方向性プリセットを搭載。Raga、Makam、都節音階で使われる上行/下行スケール差異のための自動ピッチ方向検出機能付き。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+
+    <p style="margin-bottom: 1rem;">CV Input → [+ Offset + Offset CV] → [× Amount] → [方向検出] → [有効ノートへクオンタイズ] → [+ Microtune] → CV Output。3つの独立したポリフォニックチャンネルで方向認識クオンタイゼーション。</p>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">2オクターブシステム</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>24ノート</b>: 完全な2オクターブで上下オクターブ独立調律が可能</li>
+
+    <li><b>24 Microtuneスライダー</b>: 両オクターブのノート別チューニング（±50セント）</li>
+
+    <li><b>2-Octプリセット</b>: (2-Oct)表記付き - アラビアMaqam、トルコMakam、ペルシャDastgah、インドRaga、日本音階</li>
+
+    <li><b>単オクターブプリセット</b>: 自動的に両オクターブにミラーリング</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">方向検出</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>アルゴリズム</b>: 現在のノートと前のノートを比較</li>
+
+    <li><b>閾値</b>: ±0.5半音でクオンタイズジッターを回避</li>
+
+    <li><b>方向性プリセット (↑↓)</b>: Turkish Rast、Arabic Hijaz、都節音階</li>
+
+    <li><b>用途</b>: 上行メロディは上オクターブ調律、下行は下オクターブを使用</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">コントロール</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Scale</b>: ピッチ乗数（0-2、デフォルト: 1）。値<1で圧縮、>1で拡張</li>
+
+    <li><b>Pre-offset</b>: プリクオンタイズピッチオフセット（表示±12半音、生値±1V）</li>
+
+    <li><b>Microtune</b>: ノート別チューニングスライダー（±50セント）、2オクターブ全24音</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">世界調律プリセット（全28種）</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>西洋 (4)</b>: 平均律、純正律、ピタゴラス、四分音</li>
+
+    <li><b>アラビアMaqam (6)</b>: Rast、Bayati、Hijaz、Saba、Nahawand、Kurd - 全て2-Oct</li>
+
+    <li><b>トルコMakam (4)</b>: Rast、Ussak、Hicaz、Segah - 全て2-Oct</li>
+
+    <li><b>ペルシャ (2)</b>: Dastgah Shur、Dastgah Segah - 全て2-Oct</li>
+
+    <li><b>インド (4)</b>: Shruti、Raga Bhairav、Yaman、Bhairavi - 全て2-Oct</li>
+
+    <li><b>日本 (4)</b>: 雅楽、陰旋、陽旋、琉球 - 全て2-Oct</li>
+
+    <li><b>東南アジア (3)</b>: スレンドロ、ペロッグ、タイ7-TET</li>
+
+    <li><b>中国 (1)</b>: 五声音階</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">方向性プリセット（全3種）</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Turkish Rast (↑↓)</b>: 上行でF#、下行でFナチュラル</li>
+
+    <li><b>Arabic Hijaz (↑↓)</b>: メロディ方向で異なる音程</li>
+
+    <li><b>都節音階 (↑↓)</b>: 第6度が方向で変化（上行D、下行C）</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Scaleプリセット（全16種）</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>Chromatic</b>: 全24音有効</li>
+
+    <li><b>Major/Minor</b>: イオニアン、エオリアンモード</li>
+
+    <li><b>Pentatonic</b>: メジャー、マイナー（5音）</li>
+
+    <li><b>Modes</b>: ドリアン、フリジアン、リディアン、ミクソリディアン、ロクリアン</li>
+
+    <li><b>Triads</b>: Major (C-E-G)、Minor (C-Eb-G)</li>
+
+    <li><b>World</b>: ブルース、アラビック、ジャパニーズ、ホールトーン</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+
+    <li><b>CV1</b>: ピッチCV入力1（ポリフォニック、16ch）</li>
+
+    <li><b>CV2</b>: ピッチCV入力2（ポリフォニック、16ch）</li>
+
+    <li><b>CV3</b>: ピッチCV入力3（ポリフォニック、16ch）</li>
+
+    <li><b>Pitch</b>: クオンタイズ出力1</li>
+
+    <li><b>Pitch 2</b>: クオンタイズ出力2</li>
+
+    <li><b>Pitch 3</b>: クオンタイズ出力3</li>
+
+    <li><b>Scale CV</b>: ピッチ乗数を変調</li>
+
+    <li><b>Offset CV</b>: プリクオンタイズオフセットを変調</li>
+
+    </ul>
+
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+
+    <ul style="padding-left: 1.5rem;">
+
+    <li>CV入出力: 1V/Octave標準</li>
+
+    <li>ポリフォニー: 入力あたり最大16チャンネル</li>
+
+    <li>ノート範囲: 24音（2オクターブ）</li>
+
+    <li>Microtune範囲: ノートあたり±50セント</li>
+
+    <li>調律プリセット: 28世界 + 3方向性</li>
+
+    <li>方向閾値: ±0.5半音</li>
+
+    <li>処理: 32ビット浮動小数点</li>
+
+    <li>モジュール幅: 4HP</li>
+
+    </ul>
+
+    <div style="display:none"><ul>
+
+    <li><b>24 Notes</b>: 完全な2オクターブ、上下オクターブ独立チューニング対応</li>
+
+    <li><b>24 Microtune Sliders</b>: 両オクターブの音符ごとのチューニング（+/-50セント）</li>
+
+    <li><b>2-Oct Presets</b>: (2-Oct)でマーク - アラビアマカーム、トルコマカーム、ペルシャダスタガー、インドラーガ、日本音階</li>
+
+    <li><b>Single-Octave Presets</b>: 自動的に両オクターブにミラーリング</li>
+
+    <li><b>Algorithm</b>: 現在の音符と前の音符を比較</li>
+
+    <li><b>Threshold</b>: クォンタイゼーションジッターを避けるため+/-0.5半音</li>
+
+    <li><b>Directional Presets</b>: Turkish Rast、Arabic Hijaz、都節音階</li>
+
+    <li><b>Usage</b>: 上行メロディーは上オクターブチューニング、下行は下オクターブを使用</li>
+
+    <li><b>Western (4)</b>: 平均律、純正律、ピタゴラス律、四分音</li>
+
+    <li><b>Arabic Maqam (6)</b>: ラスト、バヤティ、ヒジャーズ、サバ、ナハワンド、クルド - すべて2-Oct</li>
+
+    <li><b>Turkish Makam (4)</b>: ラスト、ウシャク、ヒジャズ、セガー - すべて2-Oct</li>
+
+    <li><b>Persian (2)</b>: ダスタガー・シュール、ダスタガー・セガー - すべて2-Oct</li>
+
+    <li><b>Indian (4)</b>: シュルティ、ラーガ・バイラヴ、ヤマン、バイラヴィー - すべて2-Oct</li>
+
+    <li><b>Japanese (4)</b>: 雅楽、陰音階、陽音階、琉球音階 - すべて2-Oct</li>
+
+    <li><b>Southeast Asian (3)</b>: スレンドロ、ペロッグ、タイ7平均律</li>
+
+    <li><b>Chinese (1)</b>: 五音音階</li>
+
+    <li><b>Miyako-bushi</b>: 第6音が方向で変化（上行D、下行C）</li>
+
+    </ul></div>
+
+    <div style="display:none"><ul>
+
+    <li><b>Directional Presets (↑↓)</b>：Turkish Rast、Arabic Hijaz、都節音階</li>
+
+    <li><b>Miyako-bushi (↑↓)</b>：第6音が方向で変化（上行D、下行C）</li>
+
+    </ul></div>'
+controls:
+- name: Scale
+  type: param
+  desc:
+    en: 'Pitch multiplier (0-2, default: 1). Values below 1 compress, above 1 expand'
+    zh: 'Pitch 倍數（0-2，預設：1）。小於 1 壓縮，大於 1 擴展'
+    ja: 'ピッチ乗数（0-2、デフォルト: 1）。1未満で圧縮、1超で拡張'
+- name: Pre-offset
+  type: param
+  desc:
+    en: Pre-quantization pitch offset (±12 semitones displayed, raw ±1V)
+    zh: Quantize 前 Pitch Offset（顯示 ±12 半音，原始 ±1V）
+    ja: プリクオンタイズピッチオフセット（表示±12半音、生値±1V）
+- name: C1 Microtune
+  type: param
+  desc:
+    en: 'C1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: C1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: C1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: C#1 Microtune
+  type: param
+  desc:
+    en: 'C#1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: C#1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: C#1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: D1 Microtune
+  type: param
+  desc:
+    en: 'D1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: D1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: D1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: D#1 Microtune
+  type: param
+  desc:
+    en: 'D#1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: D#1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: D#1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: E1 Microtune
+  type: param
+  desc:
+    en: 'E1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: E1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: E1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: F1 Microtune
+  type: param
+  desc:
+    en: 'F1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: F1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: F1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: F#1 Microtune
+  type: param
+  desc:
+    en: 'F#1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: F#1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: F#1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: G1 Microtune
+  type: param
+  desc:
+    en: 'G1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: G1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: G1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: G#1 Microtune
+  type: param
+  desc:
+    en: 'G#1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: G#1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: G#1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: A1 Microtune
+  type: param
+  desc:
+    en: 'A1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: A1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: A1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: A#1 Microtune
+  type: param
+  desc:
+    en: 'A#1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: A#1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: A#1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: B1 Microtune
+  type: param
+  desc:
+    en: 'B1 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: B1 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: B1 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: C2 Microtune
+  type: param
+  desc:
+    en: 'C2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: C2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: C2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: C#2 Microtune
+  type: param
+  desc:
+    en: 'C#2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: C#2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: C#2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: D2 Microtune
+  type: param
+  desc:
+    en: 'D2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: D2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: D2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: D#2 Microtune
+  type: param
+  desc:
+    en: 'D#2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: D#2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: D#2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: E2 Microtune
+  type: param
+  desc:
+    en: 'E2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: E2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: E2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: F2 Microtune
+  type: param
+  desc:
+    en: 'F2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: F2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: F2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: F#2 Microtune
+  type: param
+  desc:
+    en: 'F#2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: F#2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: F#2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: G2 Microtune
+  type: param
+  desc:
+    en: 'G2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: G2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: G2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: G#2 Microtune
+  type: param
+  desc:
+    en: 'G#2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: G#2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: G#2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: A2 Microtune
+  type: param
+  desc:
+    en: 'A2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: A2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: A2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: A#2 Microtune
+  type: param
+  desc:
+    en: 'A#2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: A#2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: A#2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: B2 Microtune
+  type: param
+  desc:
+    en: 'B2 Microtune offset in cents (-50 to +50, default: 0)'
+    zh: B2 Microtune 偏移量，單位 Cent（-50 至 +50，預設：0）
+    ja: B2 Microtuneオフセット、単位セント（-50〜+50、デフォルト：0）
+- name: CV1
+  type: input
+  desc:
+    en: Pitch CV input 1 (polyphonic, 16 ch)
+    zh: Pitch CV 輸入 1（Polyphonic，16 通道）
+    ja: ピッチCV入力1（ポリフォニック、16ch）
+- name: CV2
+  type: input
+  desc:
+    en: Pitch CV input 2 (polyphonic, 16 ch)
+    zh: Pitch CV 輸入 2（Polyphonic，16 通道）
+    ja: ピッチCV入力2（ポリフォニック、16ch）
+- name: CV3
+  type: input
+  desc:
+    en: Pitch CV input 3 (polyphonic, 16 ch)
+    zh: Pitch CV 輸入 3（Polyphonic，16 通道）
+    ja: ピッチCV入力3（ポリフォニック、16ch）
+- name: Scale CV
+  type: input
+  desc:
+    en: Modulates pitch multiplier
+    zh: 調變 Pitch 倍數
+    ja: ピッチ乗数を変調
+- name: Offset CV
+  type: input
+  desc:
+    en: Modulates pre-quantization offset
+    zh: 調變 Quantize 前 Offset
+    ja: プリクオンタイズオフセットを変調
+- name: Pitch
+  type: output
+  desc:
+    en: Quantized output 1
+    zh: Quantized 輸出 1
+    ja: クオンタイズ出力1
+- name: Pitch 2
+  type: output
+  desc:
+    en: Quantized output 2
+    zh: Quantized 輸出 2
+    ja: クオンタイズ出力2
+- name: Pitch 3
+  type: output
+  desc:
+    en: Quantized output 3
+    zh: Quantized 輸出 3
+    ja: クオンタイズ出力3

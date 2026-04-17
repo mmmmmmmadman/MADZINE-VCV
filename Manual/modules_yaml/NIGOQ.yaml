@@ -1,0 +1,648 @@
+slug: NIGOQ
+name: NIGOQ
+hp: 12
+wide: false
+alt: NIGOQ
+description:
+  en: Buchla-inspired complex oscillator with parallel modulation architecture, waveshaping, and integrated AD envelope
+  zh: Buchla 風格 Complex Oscillator，平行調變架構、Waveshaping 與整合 AD Envelope
+  ja: Buchla風コンプレックスオシレーター、並列モジュレーション構造、ウェーブシェイピング、統合ADエンベロープ
+features:
+  en:
+  - Complex oscillator architecture (MOD + FINAL)
+  - Through-zero FM, wavefolding, rectification
+  - MOD controls FM, TM, and RECT simultaneously
+  - Integrated AD envelope with drone mode
+  - Dual-track oscilloscope display
+  zh:
+  - Complex Oscillator 架構（MOD + FINAL）
+  - Through-zero FM、Wavefolding、Rectification
+  - MOD 同時控制 FM、TM、RECT
+  - 整合 AD Envelope 含 Drone 模式
+  - 雙軌 Oscilloscope 顯示
+  ja:
+  - コンプレックスオシレーター構造（MOD + FINAL）
+  - スルーゼロFM、ウェーブフォールディング、レクティファイ
+  - MODがFM、TM、RECTを同時制御
+  - ドローンモード付き統合ADエンベロープ
+  - デュアルトラックオシロスコープ表示
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">NIGOQ is a complex oscillator inspired by Buchla designs. It features two oscillators working in parallel: MOD (modulation source) and FINAL (carrier/main voice). The MOD oscillator provides modulation signals that shape the FINAL oscillator's timbre through FM, wavefolding, and rectification. An integrated AD envelope makes it a self-contained synthesizer voice.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Architecture</h3>
+    <p style="margin-bottom: 1rem;">Unlike traditional signal chains, NIGOQ uses a parallel modulation architecture:</p>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>MOD Oscillator</b>: Runs independently and provides modulation signals</li>
+    <li><b>FINAL Signal Path</b>: FINAL Oscillator → Wavefolding → Rectification → LPF → VCA → Output</li>
+    <li><b>Modulation Routing</b>: MOD simultaneously controls FM amount, TM (timbre/fold depth), and RECT modulation</li>
+    <li><b>SYNC</b>: When enabled, MOD oscillator resets its phase when FINAL completes a cycle, locking MOD to FINAL's frequency for harmonic timbres</li>
+    <li><b>BASS</b>: Adds unprocessed sine wave from FINAL to the output for low-end weight</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">MOD Oscillator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>MOD FREQ</b>: Frequency from 0.001Hz (slow LFO) to 6kHz (audio rate). Use as LFO for evolving textures or at audio rate for FM timbres.</li>
+    <li><b>WAVE</b>: Smoothly morphs through waveforms. Turn clockwise: Sine → Triangle → Sawtooth → Pulse (wide to narrow).</li>
+    <li><b>MOD 1V/OCT</b>: Pitch tracking input. Connect to play MOD at musical intervals.</li>
+    <li><b>MOD FM IN</b>: External signal to modulate MOD's frequency. Attenuator controls depth.</li>
+    <li><b>EXT MOD IN</b>: Replace internal MOD with any external signal for custom modulation sources.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">FINAL Oscillator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FINAL FREQ</b>: Main pitch from 20Hz to 8kHz. Default knob position 0.3 (~121Hz).</li>
+    <li><b>FINAL 1V/OCT</b>: Primary pitch input for playing melodies.</li>
+    <li><b>FINAL FM IN</b>: External FM source with attenuator. Independent from internal MOD→FINAL FM.</li>
+    <li><b>EXT FINAL IN</b>: Replace internal FINAL with external audio. Useful for processing other sound sources through the waveshaping chain.</li>
+    <li><b>SYNC</b>: Off = independent oscillators. Soft = gentle phase correction. Hard = full phase reset. Sync locks MOD to FINAL's cycle.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">FM Section</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FM</b>: Linear FM Index (0-4, default: 0.2). Controls how much MOD affects FINAL's pitch. Through-zero FM allows the frequency to go negative, creating the characteristic metallic, bell-like timbres of FM synthesis.</li>
+    <li><b>FM CV</b>: External control of FM depth with attenuator.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Waveshaping Section</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FOLD</b>: Wavefolding adds harmonics by "folding" the waveform back on itself when it exceeds a threshold. Higher settings create increasingly complex, buzzy overtones.</li>
+    <li><b>TM (Timbre Modulation)</b>: MOD signal dynamically controls the fold amount. Creates evolving, animated timbres as MOD sweeps the fold depth.</li>
+    <li><b>RECTIFY</b>: Asymmetric rectification progressively removes negative portions of the waveform. At 50%, negative values are halved. At 100%, full half-wave rectification. Adds odd harmonics and changes the tonal character. Automatic DC blocking prevents speaker damage.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Filter & Output</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>LPF</b>: 12dB/octave lowpass filter. Range 10Hz to 20kHz. Tames harsh harmonics from waveshaping or creates muffled textures.</li>
+    <li><b>LPF CV</b>: External cutoff control for filter sweeps.</li>
+    <li><b>BASS</b>: Blends clean sine wave (at FINAL's pitch) into the output. Adds fundamental weight underneath complex harmonics. Soft saturation prevents harsh clipping.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>DECAY</b>: AD envelope with fixed 10ms attack for punchy transients. First half of knob: short decays (0-300ms). Second half: longer decays (300ms-3s). At maximum: Drone mode keeps the envelope fully open.</li>
+    <li><b>TRIG</b>: Trigger input. Any signal crossing the threshold starts the envelope. Retriggerable for repeated notes.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Modulation Signal</b>: Raw modulation oscillator output (0-10V). Useful for modulating other modules.</li>
+    <li><b>Final Sine</b>: Clean sine wave at FINAL's pitch (±5V). Unaffected by waveshaping.</li>
+    <li><b>Final Output</b>: Main output with all processing applied (±5V).</li>
+    <li>All outputs pass through the envelope VCA.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Oscilloscope Display</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>Top trace: MOD oscillator waveform</li>
+    <li>Bottom trace: FINAL output waveform</li>
+    <li>Helps visualize how MOD shapes the FINAL output in real-time</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>MOD frequency: 0.001Hz - 6kHz</li>
+    <li>FINAL frequency: 20Hz - 8kHz</li>
+    <li>LPF cutoff: 10Hz - 20kHz, 12dB/octave</li>
+    <li>Envelope: 10ms attack, 0-3s decay, drone mode</li>
+    <li>Oversampling: 2x (default) for reduced aliasing</li>
+    <li>Module width: 12HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Right-Click Menu</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark panel appearance</li>
+    <li><b>2x Oversample</b>: Toggle oversampling. ON reduces aliasing, OFF saves CPU.</li>
+    <li><b>Randomize Amount</b>: How much parameters change when randomizing (0-100%).</li>
+    <li><b>Randomize Glide Time</b>: How smoothly parameters morph during randomization.</li>
+    <li><b>Exclude FINAL_FREQ from Random</b>: Preserve pitch when randomizing (default: ON).</li>
+    <li><b>Exclude DECAY from Random</b>: Preserve envelope time when randomizing.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Modulation Frequency</b>: MOD oscillator frequency 0.001Hz-6kHz (exponential). Default knob: 0.25 (~8Hz).</li>
+    <li><b>Final Frequency</b>: FINAL oscillator pitch 20Hz-8kHz (exponential). Default knob: 0.3 (~121Hz).</li>
+    <li><b>LPF Cutoff</b>: 12dB/oct lowpass filter cutoff 10Hz-20kHz (exponential). Default: ~3kHz.</li>
+    <li><b>Rectify Amount</b>: Asymmetric rectification 0-100% (default: 15%). Removes negative waveform portions.</li>
+    <li><b>Wavefolding</b>: Wavefolding amount 0-100% (default: 25%). Adds harmonics by folding waveform.</li>
+    <li><b>Modulation Wave Shape</b>: MOD waveform morph. Sine-Triangle-Saw-Pulse(wide to narrow). Default: 0.15.</li>
+    <li><b>FM CV Attenuator</b>: Attenuator for FM Amount CV input 0-100% (default: 70%).</li>
+    <li><b>TM CV Attenuator</b>: Attenuator for TM (Timbre Mod) CV input 0-100% (default: 70%).</li>
+    <li><b>RECT CV Attenuator</b>: Attenuator for Rectify CV input 0-100% (default: 70%).</li>
+    <li><b>Mod FM Attenuator</b>: Attenuator for MOD FM external input 0-100% (default: 0%).</li>
+    <li><b>Final FM Attenuator</b>: Attenuator for FINAL FM external input 0-100% (default: 0%).</li>
+    <li><b>Decay Time</b>: AD envelope decay. First half: 0-300ms, second half: 300ms-3s, max: Drone mode. Default: 0.73 (~1.3s).</li>
+    <li><b>Bass/Sine Mix</b>: Clean sine wave blend into output 0-100% (default: 30%). Adds fundamental weight.</li>
+    <li><b>Linear FM Index</b>: FM depth 0-4 (display multiplier). Through-zero FM. Default: 0.05.</li>
+    <li><b>TM Amount</b>: Timbre modulation depth 0-100% (default: 50%). MOD dynamically controls fold amount.</li>
+    <li><b>RECT Mod Amount</b>: Rectification modulation by MOD 0-100% (default: 20%).</li>
+    <li><b>Sync Mode</b>: Off / Soft / Hard. Syncs MOD phase to FINAL cycle.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O Reference</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Trigger</b>: Trigger input to start AD envelope. Retriggerable.</li>
+    <li><b>Modulation Wave CV</b>: CV input for MOD waveform shape.</li>
+    <li><b>External Modulation Input</b>: Replace internal MOD with external signal.</li>
+    <li><b>External Final Input</b>: Replace internal FINAL with external audio for waveshaping processing.</li>
+    <li><b>LPF Cutoff CV</b>: CV modulation for lowpass filter cutoff.</li>
+    <li><b>Rectify CV</b>: CV modulation for rectification amount.</li>
+    <li><b>FM Amount CV</b>: CV modulation for FM depth.</li>
+    <li><b>Harmonics CV</b>: CV modulation for wavefolding amount.</li>
+    <li><b>Fold Amount CV</b>: CV modulation for TM (timbre modulation) depth.</li>
+    <li><b>RECT Mod Amount CV</b>: CV modulation for rectification modulation amount.</li>
+    <li><b>Modulation FM</b>: External FM signal for MOD oscillator frequency modulation.</li>
+    <li><b>Modulation 1V/Oct</b>: 1V/Oct pitch tracking for MOD oscillator.</li>
+    <li><b>Final FM</b>: External FM signal for FINAL oscillator frequency modulation.</li>
+    <li><b>Final 1V/Oct</b>: 1V/Oct pitch tracking for FINAL oscillator.</li>
+    <li><b>Modulation Signal</b>: Raw MOD oscillator output (0-10V). For modulating other modules.</li>
+    <li><b>Final Sine</b>: Clean sine at FINAL pitch (+-5V). Unaffected by waveshaping.</li>
+    <li><b>Final Output</b>: Main output with all processing applied (+-5V).</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">NIGOQ 是一個受 Buchla 設計啟發的 Complex Oscillator。具備兩個平行運作的振盪器：MOD（調變源）與 FINAL（載波/主聲音）。MOD 振盪器提供調變訊號，透過 FM、Wavefolding 與 Rectification 來塑造 FINAL 振盪器的音色。內建 AD Envelope 使其成為完整的合成器聲音。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">架構</h3>
+    <p style="margin-bottom: 1rem;">有別於傳統的線性訊號鏈，NIGOQ 採用平行調變架構：</p>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>MOD Oscillator</b>：獨立運行並提供調變訊號</li>
+    <li><b>FINAL Signal Path</b>：訊號路徑：FINAL Oscillator → Wavefolding → Rectification → LPF → VCA → 輸出</li>
+    <li><b>Modulation Routing</b>：MOD 同時控制 FM 量、TM（音色/折疊深度）與 RECT 調變</li>
+    <li><b>SYNC</b>：啟用時，MOD 振盪器在 FINAL 完成一個週期時重置相位，將 MOD 鎖定到 FINAL 的頻率以產生諧波音色</li>
+    <li><b>BASS</b>：將 FINAL 振盪器未經處理的正弦波混合至輸出，為整體聲音增加低頻的厚度與份量</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">MOD Oscillator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>MOD FREQ</b>：頻率從 0.001Hz（慢速 LFO）到 6kHz（音頻速率）。作為 LFO 可創造演化的紋理，音頻速率則用於 FM 音色。</li>
+    <li><b>WAVE</b>：平滑變形的波形。順時針旋轉：Sine → Triangle → Sawtooth → Pulse（寬到窄）。</li>
+    <li><b>MOD 1V/OCT</b>：音高追蹤輸入。連接後可以音樂音程演奏 MOD。</li>
+    <li><b>MOD FM IN</b>：接收外部訊號來調變 MOD 振盪器的頻率。內建衰減器可控制調變深度。</li>
+    <li><b>EXT MOD IN</b>：可使用任何外部訊號取代內部 MOD 振盪器，作為自訂的調變來源。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">FINAL Oscillator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FINAL FREQ</b>：主音高從 20Hz 到 8kHz。預設旋鈕位置 0.3（約 121Hz）。</li>
+    <li><b>FINAL 1V/OCT</b>：主要音高輸入，用於演奏旋律。</li>
+    <li><b>FINAL FM IN</b>：外部 FM 源含衰減器。獨立於內部 MOD→FINAL FM。</li>
+    <li><b>EXT FINAL IN</b>：以外部音頻取代內部 FINAL。適合將其他聲音源送入 Waveshaping 處理鏈。</li>
+    <li><b>SYNC</b>：Off = 獨立振盪器。Soft = 溫和相位校正。Hard = 完整相位重置。Sync 將 MOD 鎖定到 FINAL 的週期。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">FM 區段</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FM</b>：Linear FM Index（0-4，預設: 0.2）。控制 MOD 對 FINAL 音高的影響程度。Through-zero FM 允許頻率變為負值，創造 FM 合成特有的金屬、鐘聲般的音色。</li>
+    <li><b>FM CV</b>：外部控制 FM 深度，含衰減器。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Waveshaping 區段</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FOLD</b>：Wavefolding 在波形超過閾值時將其「折回」自身，藉此增加諧波成分。設定越高，產生的泛音越複雜且帶有嗡鳴感。</li>
+    <li><b>TM (Timbre Modulation)</b>：MOD 訊號動態控制 Wavefolding 的折疊量。當 MOD 掃過不同的折疊深度時，會創造出持續演化且富有動態的音色變化。</li>
+    <li><b>RECTIFY</b>：非對稱整流會漸進地移除波形的負值部分。設定 50% 時負值減半，設定 100% 時進行完整的半波整流。此處理會增加奇次諧波並改變音色特性。內建自動 DC Blocking 可防止喇叭損壞。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Filter 與 Output</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>LPF</b>：12dB/octave 低通濾波器。範圍 10Hz 到 20kHz。馴服 Waveshaping 的刺耳諧波或創造悶濁的質感。</li>
+    <li><b>LPF CV</b>：外部截止頻率控制，用於濾波器掃頻。</li>
+    <li><b>BASS</b>：將乾淨的正弦波（FINAL 的音高）混入輸出。在複雜諧波下增加基頻的份量。柔和飽和防止刺耳的削波。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>DECAY</b>：AD Envelope 具有固定 10ms 起音，產生有力的瞬態。旋鈕前半：短衰減（0-300ms）。後半：長衰減（300ms-3s）。最大值：Drone 模式保持 Envelope 完全開啟。</li>
+    <li><b>TRIG</b>：Trigger 輸入端口。任何超過閾值的訊號都會啟動 Envelope。支援重複觸發，可用於連續演奏重複音符。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Modulation Signal</b>：原始調變振盪器輸出（0-10V）。適合調變其他模組。</li>
+    <li><b>Final Sine</b>：FINAL 音高的乾淨正弦波（±5V）。不受 Waveshaping 影響。</li>
+    <li><b>Final Output</b>：套用所有處理的主輸出（±5V）。</li>
+    <li>所有輸出都通過 Envelope VCA。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Oscilloscope 顯示</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>上軌：MOD 振盪器波形</li>
+    <li>下軌：FINAL 輸出波形</li>
+    <li>幫助即時視覺化 MOD 如何塑造 FINAL 輸出</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>MOD 頻率：0.001Hz - 6kHz</li>
+    <li>FINAL 頻率：20Hz - 8kHz</li>
+    <li>LPF 截止：10Hz - 20kHz，12dB/octave</li>
+    <li>Envelope：10ms 起音，0-3s 衰減，Drone 模式</li>
+    <li>Oversampling：2x（預設）以減少混疊</li>
+    <li>模組寬度：12HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右鍵選單</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark 面板外觀</li>
+    <li><b>2x Oversample</b>：切換 Oversampling。ON 減少混疊，OFF 節省 CPU。</li>
+    <li><b>Randomize Amount</b>：隨機化時參數變化的幅度（0-100%）。</li>
+    <li><b>Randomize Glide Time</b>：隨機化時參數變化的平滑程度。</li>
+    <li><b>Exclude FINAL_FREQ from Random</b>：隨機化時保留音高（預設：ON）。</li>
+    <li><b>Exclude DECAY from Random</b>：隨機化時保留 Envelope 時間。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Modulation Frequency</b>: MOD 振盪器頻率 0.001Hz-6kHz（指數）。預設旋鈕: 0.25（約 8Hz）。</li>
+    <li><b>Final Frequency</b>: FINAL 振盪器音高 20Hz-8kHz（指數）。預設旋鈕: 0.3（約 121Hz）。</li>
+    <li><b>LPF Cutoff</b>: 12dB/oct 低通濾波器截止 10Hz-20kHz（指數）。預設: 約 3kHz。</li>
+    <li><b>Rectify Amount</b>: 非對稱整流 0-100%（預設: 15%）。移除波形負值部分。</li>
+    <li><b>Wavefolding</b>: Wavefolding 量 0-100%（預設: 25%）。透過折疊波形增加諧波。</li>
+    <li><b>Modulation Wave Shape</b>: MOD 波形變形。Sine-Triangle-Saw-Pulse（寬至窄）。預設: 0.15。</li>
+    <li><b>FM CV Attenuator</b>: FM Amount CV 輸入衰減器 0-100%（預設: 70%）。</li>
+    <li><b>TM CV Attenuator</b>: TM（Timbre Mod）CV 輸入衰減器 0-100%（預設: 70%）。</li>
+    <li><b>RECT CV Attenuator</b>: Rectify CV 輸入衰減器 0-100%（預設: 70%）。</li>
+    <li><b>Mod FM Attenuator</b>: MOD FM 外部輸入衰減器 0-100%（預設: 0%）。</li>
+    <li><b>Final FM Attenuator</b>: FINAL FM 外部輸入衰減器 0-100%（預設: 0%）。</li>
+    <li><b>Decay Time</b>: AD Envelope 衰減。前半: 0-300ms，後半: 300ms-3s，最大: Drone 模式。預設: 0.73（約 1.3s）。</li>
+    <li><b>Bass/Sine Mix</b>: 乾淨正弦波混入輸出 0-100%（預設: 30%）。增加基頻份量。</li>
+    <li><b>Linear FM Index</b>: FM 深度 0-4（顯示乘數）。Through-zero FM。預設: 0.05。</li>
+    <li><b>TM Amount</b>: Timbre Modulation 深度 0-100%（預設: 50%）。MOD 動態控制折疊量。</li>
+    <li><b>RECT Mod Amount</b>: MOD 對整流的調變量 0-100%（預設: 20%）。</li>
+    <li><b>Sync Mode</b>: Off / Soft / Hard。將 MOD 相位同步到 FINAL 週期。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O Reference</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Trigger</b>: 觸發輸入，啟動 AD Envelope。可重複觸發。</li>
+    <li><b>Modulation Wave CV</b>: MOD 波形形狀 CV 輸入。</li>
+    <li><b>External Modulation Input</b>: 以外部訊號取代內部 MOD。</li>
+    <li><b>External Final Input</b>: 以外部音頻取代內部 FINAL，進行 Waveshaping 處理。</li>
+    <li><b>LPF Cutoff CV</b>: 低通濾波器截止 CV 調變。</li>
+    <li><b>Rectify CV</b>: 整流量 CV 調變。</li>
+    <li><b>FM Amount CV</b>: FM 深度 CV 調變。</li>
+    <li><b>Harmonics CV</b>: Wavefolding 量 CV 調變。</li>
+    <li><b>Fold Amount CV</b>: TM（Timbre Modulation）深度 CV 調變。</li>
+    <li><b>RECT Mod Amount CV</b>: 整流調變量 CV 調變。</li>
+    <li><b>Modulation FM</b>: MOD 振盪器頻率調變的外部 FM 訊號。</li>
+    <li><b>Modulation 1V/Oct</b>: MOD 振盪器 1V/Oct 音高追蹤。</li>
+    <li><b>Final FM</b>: FINAL 振盪器頻率調變的外部 FM 訊號。</li>
+    <li><b>Final 1V/Oct</b>: FINAL 振盪器 1V/Oct 音高追蹤。</li>
+    <li><b>Modulation Signal</b>: 原始 MOD 振盪器輸出（0-10V）。適合調變其他模組。</li>
+    <li><b>Final Sine</b>: FINAL 音高的乾淨正弦波（±5V）。不受 Waveshaping 影響。</li>
+    <li><b>Final Output</b>: 套用所有處理的主輸出（±5V）。</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">NIGOQはBuchla設計にインスパイアされたコンプレックスオシレーターです。並列動作する2つのオシレーター、MOD（モジュレーションソース）とFINAL（キャリア/メインボイス）を搭載。MODオシレーターがFM、ウェーブフォールディング、レクティファイを通じてFINALオシレーターのティンバーを形成するモジュレーション信号を提供します。統合ADエンベロープにより、完結型シンセサイザーボイスとして機能します。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">アーキテクチャ</h3>
+    <p style="margin-bottom: 1rem;">従来のシグナルチェーンとは異なり、NIGOQは並列モジュレーション構造を採用：</p>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>MOD Oscillator</b>：独立動作しモジュレーション信号を提供</li>
+    <li><b>FINAL Signal Path</b>：FINALオシレーター → ウェーブフォールディング → レクティファイ → LPF → VCA → 出力</li>
+    <li><b>Modulation Routing</b>：MODがFM量、TM（ティンバー/フォールド深度）、RECTモジュレーションを同時制御</li>
+    <li><b>SYNC</b>：有効時、FINALが1サイクル完了するとMODオシレーターの位相がリセットされ、MODがFINALの周波数にロックされハーモニックティンバーを生成</li>
+    <li><b>BASS</b>：FINALの未処理サイン波を出力に追加し、低域の厚みを増強</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">MODオシレーター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>MOD FREQ</b>：0.001Hz（スローLFO）から6kHz（オーディオレート）。LFOとして進化するテクスチャ、オーディオレートではFMティンバーに。</li>
+    <li><b>WAVE</b>：スムーズにモーフする波形。時計回りに：サイン → 三角 → ノコギリ → パルス（広から狭）。</li>
+    <li><b>MOD 1V/OCT</b>：ピッチトラッキング入力。接続するとMODを音楽的インターバルで演奏可能。</li>
+    <li><b>MOD FM IN</b>：MODの周波数をモジュレートする外部信号。アッテヌエーターで深度を制御。</li>
+    <li><b>EXT MOD IN</b>：任意の外部信号で内部MODを置換。カスタムモジュレーションソースに。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">FINALオシレーター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FINAL FREQ</b>：メインピッチ20Hzから8kHz。デフォルトノブ位置0.3（約121Hz）。</li>
+    <li><b>FINAL 1V/OCT</b>：メロディ演奏用のメインピッチ入力。</li>
+    <li><b>FINAL FM IN</b>：アッテヌエーター付き外部FMソース。内部MOD→FINAL FMとは独立。</li>
+    <li><b>EXT FINAL IN</b>：外部オーディオで内部FINALを置換。他のサウンドソースをウェーブシェイピングチェーンに通すのに便利。</li>
+    <li><b>SYNC</b>：Off = 独立オシレーター。Soft = 穏やかな位相補正。Hard = 完全な位相リセット。SyncはMODをFINALのサイクルにロック。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">FMセクション</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FM</b>：リニアFMインデックス（0-4、デフォルト: 0.2）。MODがFINALのピッチに与える影響を制御。スルーゼロFMは周波数が負になることを許容し、FM合成特有のメタリックでベルのようなティンバーを生成。</li>
+    <li><b>FM CV</b>：アッテヌエーター付きFM深度の外部制御。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ウェーブシェイピングセクション</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FOLD</b>：ウェーブフォールディングは波形が閾値を超えると「折り返す」ことでハーモニクスを追加。高い設定では複雑でバジーな倍音を生成。</li>
+    <li><b>TM (Timbre Modulation)</b>：MOD信号がフォールド量を動的に制御。MODがフォールド深度をスイープすることで進化し生き生きとしたティンバーを生成。</li>
+    <li><b>RECTIFY</b>：非対称レクティファイは波形の負の部分を徐々に除去。50%で負値が半減、100%で完全半波整流。奇数次ハーモニクスを追加しトーンキャラクターを変化。自動DCブロッキングでスピーカー損傷を防止。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">フィルターと出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>LPF</b>：12dB/オクターブローパスフィルター。範囲10Hzから20kHz。ウェーブシェイピングの刺激的なハーモニクスを抑えるか、こもったテクスチャを作成。</li>
+    <li><b>LPF CV</b>：フィルタースイープ用外部カットオフ制御。</li>
+    <li><b>BASS</b>：クリーンなサイン波（FINALのピッチ）を出力にブレンド。複雑なハーモニクスの下に基音の重みを追加。ソフトサチュレーションで刺激的なクリッピングを防止。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">エンベロープ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>DECAY</b>：パンチの効いたトランジェント用に10ms固定アタックのADエンベロープ。ノブ前半：短いディケイ（0-300ms）。後半：長いディケイ（300ms-3s）。最大値：ドローンモードでエンベロープを完全に開放維持。</li>
+    <li><b>TRIG</b>：トリガー入力ポート。閾値を超える信号がエンベロープを開始します。リトリガーに対応しており、繰り返しノートの演奏が可能です。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Modulation Signal</b>：生のモジュレーションオシレーター出力（0-10V）。他のモジュールのモジュレーションに便利。</li>
+    <li><b>Final Sine</b>：FINALのピッチのクリーンなサイン波（±5V）。ウェーブシェイピングの影響なし。</li>
+    <li><b>Final Output</b>：全処理適用後のメイン出力（±5V）。</li>
+    <li>全出力はエンベロープVCAを通過。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">オシロスコープ表示</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>上トレース：MODオシレーター波形</li>
+    <li>下トレース：FINAL出力波形</li>
+    <li>MODがFINAL出力をどのように形成するかをリアルタイムで視覚化</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>MOD周波数：0.001Hz - 6kHz</li>
+    <li>FINAL周波数：20Hz - 8kHz</li>
+    <li>LPFカットオフ：10Hz - 20kHz、12dB/オクターブ</li>
+    <li>エンベロープ：10msアタック、0-3sディケイ、ドローンモード</li>
+    <li>オーバーサンプリング：2x（デフォルト）でエイリアシング削減</li>
+    <li>モジュール幅：12HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右クリックメニュー</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark パネル外観</li>
+    <li><b>2x Oversample</b>：オーバーサンプリング切替。ONでエイリアシング削減、OFFでCPU節約。</li>
+    <li><b>Randomize Amount</b>：ランダム化時のパラメータ変化量（0-100%）。</li>
+    <li><b>Randomize Glide Time</b>：ランダム化時のパラメータ変化の滑らかさ。</li>
+    <li><b>Exclude FINAL_FREQ from Random</b>：ランダム化時にピッチを保持（デフォルト：ON）。</li>
+    <li><b>Exclude DECAY from Random</b>：ランダム化時にエンベロープ時間を保持。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Modulation Frequency</b>: MODオシレーター周波数 0.001Hz-6kHz（指数）。デフォルトノブ: 0.25（約8Hz）。</li>
+    <li><b>Final Frequency</b>: FINALオシレーターピッチ 20Hz-8kHz（指数）。デフォルトノブ: 0.3（約121Hz）。</li>
+    <li><b>LPF Cutoff</b>: 12dB/octローパスフィルターカットオフ 10Hz-20kHz（指数）。デフォルト: 約3kHz。</li>
+    <li><b>Rectify Amount</b>: 非対称レクティファイ 0-100%（デフォルト: 15%）。波形の負の部分を除去。</li>
+    <li><b>Wavefolding</b>: ウェーブフォールディング量 0-100%（デフォルト: 25%）。波形を折り返してハーモニクスを追加。</li>
+    <li><b>Modulation Wave Shape</b>: MOD波形モーフ。Sine-Triangle-Saw-Pulse（広から狭）。デフォルト: 0.15。</li>
+    <li><b>FM CV Attenuator</b>: FM Amount CV入力アッテヌエーター 0-100%（デフォルト: 70%）。</li>
+    <li><b>TM CV Attenuator</b>: TM（ティンバーモジュレーション）CV入力アッテヌエーター 0-100%（デフォルト: 70%）。</li>
+    <li><b>RECT CV Attenuator</b>: レクティファイCV入力アッテヌエーター 0-100%（デフォルト: 70%）。</li>
+    <li><b>Mod FM Attenuator</b>: MOD FM外部入力アッテヌエーター 0-100%（デフォルト: 0%）。</li>
+    <li><b>Final FM Attenuator</b>: FINAL FM外部入力アッテヌエーター 0-100%（デフォルト: 0%）。</li>
+    <li><b>Decay Time</b>: ADエンベロープディケイ。前半: 0-300ms、後半: 300ms-3s、最大: ドローンモード。デフォルト: 0.73（約1.3s）。</li>
+    <li><b>Bass/Sine Mix</b>: クリーンサイン波の出力ブレンド 0-100%（デフォルト: 30%）。基音の重み追加。</li>
+    <li><b>Linear FM Index</b>: FM深度 0-4（表示乗数）。スルーゼロFM。デフォルト: 0.05。</li>
+    <li><b>TM Amount</b>: ティンバーモジュレーション深度 0-100%（デフォルト: 50%）。MODがフォールド量を動的制御。</li>
+    <li><b>RECT Mod Amount</b>: MODによるレクティファイモジュレーション量 0-100%（デフォルト: 20%）。</li>
+    <li><b>Sync Mode</b>: Off / Soft / Hard。MOD位相をFINALサイクルに同期。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O Reference</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Trigger</b>: ADエンベロープ開始用トリガー入力。リトリガー可能。</li>
+    <li><b>Modulation Wave CV</b>: MOD波形シェイプCV入力。</li>
+    <li><b>External Modulation Input</b>: 外部信号で内部MODを置換。</li>
+    <li><b>External Final Input</b>: 外部オーディオで内部FINALを置換、ウェーブシェイピング処理用。</li>
+    <li><b>LPF Cutoff CV</b>: ローパスフィルターカットオフCV変調。</li>
+    <li><b>Rectify CV</b>: レクティファイ量CV変調。</li>
+    <li><b>FM Amount CV</b>: FM深度CV変調。</li>
+    <li><b>Harmonics CV</b>: ウェーブフォールディング量CV変調。</li>
+    <li><b>Fold Amount CV</b>: TM（ティンバーモジュレーション）深度CV変調。</li>
+    <li><b>RECT Mod Amount CV</b>: レクティファイモジュレーション量CV変調。</li>
+    <li><b>Modulation FM</b>: MODオシレーター周波数変調用外部FM信号。</li>
+    <li><b>Modulation 1V/Oct</b>: MODオシレーター1V/Octピッチトラッキング。</li>
+    <li><b>Final FM</b>: FINALオシレーター周波数変調用外部FM信号。</li>
+    <li><b>Final 1V/Oct</b>: FINALオシレーター1V/Octピッチトラッキング。</li>
+    <li><b>Modulation Signal</b>: 生MODオシレーター出力（0-10V）。他モジュールの変調に便利。</li>
+    <li><b>Final Sine</b>: FINALピッチのクリーンサイン波（±5V）。ウェーブシェイピング影響なし。</li>
+    <li><b>Final Output</b>: 全処理適用後のメイン出力（±5V）。</li>
+    </ul>
+controls:
+- name: Modulation Frequency
+  type: param
+  desc:
+    en: 'MOD oscillator frequency 0.001Hz-6kHz (exponential). Default knob: 0.25 (~8Hz).'
+    zh: 'MOD 振盪器頻率 0.001Hz-6kHz（指數）。預設旋鈕: 0.25（約 8Hz）。'
+    ja: 'MODオシレーター周波数 0.001Hz-6kHz（指数）。デフォルトノブ: 0.25（約8Hz）。'
+- name: Final Frequency
+  type: param
+  desc:
+    en: 'FINAL oscillator pitch 20Hz-8kHz (exponential). Default knob: 0.3 (~121Hz).'
+    zh: 'FINAL 振盪器音高 20Hz-8kHz（指數）。預設旋鈕: 0.3（約 121Hz）。'
+    ja: 'FINALオシレーターピッチ 20Hz-8kHz（指数）。デフォルトノブ: 0.3（約121Hz）。'
+- name: LPF Cutoff
+  type: param
+  desc:
+    en: '12dB/oct lowpass filter cutoff 10Hz-20kHz (exponential). Default: ~3kHz.'
+    zh: '12dB/oct 低通濾波器截止 10Hz-20kHz（指數）。預設: 約 3kHz。'
+    ja: '12dB/octローパスフィルターカットオフ 10Hz-20kHz（指数）。デフォルト: 約3kHz。'
+- name: Rectify Amount
+  type: param
+  desc:
+    en: 'Asymmetric rectification 0-100% (default: 15%). Removes negative waveform portions.'
+    zh: '非對稱整流 0-100%（預設: 15%）。移除波形負值部分。'
+    ja: '非対称レクティファイ 0-100%（デフォルト: 15%）。波形の負の部分を除去。'
+- name: Wavefolding
+  type: param
+  desc:
+    en: 'Wavefolding amount 0-100% (default: 25%). Adds harmonics by folding waveform.'
+    zh: 'Wavefolding 量 0-100%（預設: 25%）。透過折疊波形增加諧波。'
+    ja: 'ウェーブフォールディング量 0-100%（デフォルト: 25%）。波形を折り返してハーモニクスを追加。'
+- name: Modulation Wave Shape
+  type: param
+  desc:
+    en: 'MOD waveform morph. Sine-Triangle-Saw-Pulse(wide to narrow). Default: 0.15.'
+    zh: 'MOD 波形變形。Sine-Triangle-Saw-Pulse（寬至窄）。預設: 0.15。'
+    ja: 'MOD波形モーフ。Sine-Triangle-Saw-Pulse（広から狭）。デフォルト: 0.15。'
+- name: FM CV Attenuator
+  type: param
+  desc:
+    en: 'Attenuator for FM Amount CV input 0-100% (default: 70%).'
+    zh: 'FM Amount CV 輸入衰減器 0-100%（預設: 70%）。'
+    ja: 'FM Amount CV入力アッテヌエーター 0-100%（デフォルト: 70%）。'
+- name: TM CV Attenuator
+  type: param
+  desc:
+    en: 'Attenuator for TM (Timbre Mod) CV input 0-100% (default: 70%).'
+    zh: 'TM（Timbre Mod）CV 輸入衰減器 0-100%（預設: 70%）。'
+    ja: 'TM（ティンバーモジュレーション）CV入力アッテヌエーター 0-100%（デフォルト: 70%）。'
+- name: RECT CV Attenuator
+  type: param
+  desc:
+    en: 'Attenuator for Rectify CV input 0-100% (default: 70%).'
+    zh: 'Rectify CV 輸入衰減器 0-100%（預設: 70%）。'
+    ja: 'レクティファイCV入力アッテヌエーター 0-100%（デフォルト: 70%）。'
+- name: Mod FM Attenuator
+  type: param
+  desc:
+    en: 'Attenuator for MOD FM external input 0-100% (default: 0%).'
+    zh: 'MOD FM 外部輸入衰減器 0-100%（預設: 0%）。'
+    ja: 'MOD FM外部入力アッテヌエーター 0-100%（デフォルト: 0%）。'
+- name: Final FM Attenuator
+  type: param
+  desc:
+    en: 'Attenuator for FINAL FM external input 0-100% (default: 0%).'
+    zh: 'FINAL FM 外部輸入衰減器 0-100%（預設: 0%）。'
+    ja: 'FINAL FM外部入力アッテヌエーター 0-100%（デフォルト: 0%）。'
+- name: Decay Time
+  type: param
+  desc:
+    en: 'AD envelope decay. First half: 0-300ms, second half: 300ms-3s, max: Drone mode. Default: 0.73 (~1.3s).'
+    zh: 'AD Envelope 衰減。前半: 0-300ms，後半: 300ms-3s，最大: Drone 模式。預設: 0.73（約 1.3s）。'
+    ja: 'ADエンベロープディケイ。前半: 0-300ms、後半: 300ms-3s、最大: ドローンモード。デフォルト: 0.73（約1.3s）。'
+- name: Bass/Sine Mix
+  type: param
+  desc:
+    en: 'Clean sine wave blend into output 0-100% (default: 30%). Adds fundamental weight.'
+    zh: '乾淨正弦波混入輸出 0-100%（預設: 30%）。增加基頻份量。'
+    ja: 'クリーンサイン波の出力ブレンド 0-100%（デフォルト: 30%）。基音の重み追加。'
+- name: Linear FM Index
+  type: param
+  desc:
+    en: 'FM depth 0-4 (display multiplier). Through-zero FM. Default: 0.05.'
+    zh: 'FM 深度 0-4（顯示乘數）。Through-zero FM。預設: 0.05。'
+    ja: 'FM深度 0-4（表示乗数）。スルーゼロFM。デフォルト: 0.05。'
+- name: TM Amount
+  type: param
+  desc:
+    en: 'Timbre modulation depth 0-100% (default: 50%). MOD dynamically controls fold amount.'
+    zh: 'Timbre Modulation 深度 0-100%（預設: 50%）。MOD 動態控制折疊量。'
+    ja: 'ティンバーモジュレーション深度 0-100%（デフォルト: 50%）。MODがフォールド量を動的制御。'
+- name: RECT Mod Amount
+  type: param
+  desc:
+    en: 'Rectification modulation by MOD 0-100% (default: 20%).'
+    zh: 'MOD 對整流的調變量 0-100%（預設: 20%）。'
+    ja: 'MODによるレクティファイモジュレーション量 0-100%（デフォルト: 20%）。'
+- name: Sync Mode
+  type: param
+  desc:
+    en: 'Sync mode switch: Off / Soft / Hard (default: Off). Syncs MOD phase to FINAL cycle.'
+    zh: 'Sync 模式切換：Off / Soft / Hard（預設：Off）。將 MOD 相位同步到 FINAL 週期。'
+    ja: 'Syncモード切替：Off / Soft / Hard（デフォルト：Off）。MOD位相をFINALサイクルに同期。'
+- name: Time
+  type: param
+  desc:
+    en: 'Oscilloscope time base 5ms-50s per screen (exponential). Default: ~500ms.'
+    zh: 'Oscilloscope 時間基準 5ms-50s/螢幕（指數）。預設：約 500ms。'
+    ja: 'オシロスコープ時間ベース 5ms-50s/画面（指数）。デフォルト：約500ms。'
+- name: Trigger
+  type: param
+  desc:
+    en: 'Trigger enable switch: Enabled / Disabled (default: Disabled).'
+    zh: 'Trigger 啟用切換：Enabled / Disabled（預設：Disabled）。'
+    ja: 'Trigger有効切替：Enabled / Disabled（デフォルト：Disabled）。'
+- name: Trigger
+  type: input
+  desc:
+    en: Trigger input to start AD envelope. Retriggerable.
+    zh: 觸發輸入，啟動 AD Envelope。可重複觸發。
+    ja: ADエンベロープ開始用トリガー入力。リトリガー可能。
+- name: Modulation Wave CV
+  type: input
+  desc:
+    en: CV input for MOD waveform shape.
+    zh: MOD 波形形狀 CV 輸入。
+    ja: MOD波形シェイプCV入力。
+- name: External Modulation Input
+  type: input
+  desc:
+    en: Replace internal MOD with external signal.
+    zh: 以外部訊號取代內部 MOD。
+    ja: 外部信号で内部MODを置換。
+- name: External Final Input
+  type: input
+  desc:
+    en: Replace internal FINAL with external audio for waveshaping processing.
+    zh: 以外部音頻取代內部 FINAL，進行 Waveshaping 處理。
+    ja: 外部オーディオで内部FINALを置換、ウェーブシェイピング処理用。
+- name: LPF Cutoff CV
+  type: input
+  desc:
+    en: CV modulation for lowpass filter cutoff.
+    zh: 低通濾波器截止 CV 調變。
+    ja: ローパスフィルターカットオフCV変調。
+- name: Rectify CV
+  type: input
+  desc:
+    en: CV modulation for rectification amount.
+    zh: 整流量 CV 調變。
+    ja: レクティファイ量CV変調。
+- name: FM Amount CV
+  type: input
+  desc:
+    en: CV modulation for FM depth.
+    zh: FM 深度 CV 調變。
+    ja: FM深度CV変調。
+- name: Harmonics CV
+  type: input
+  desc:
+    en: CV modulation for wavefolding amount.
+    zh: Wavefolding 量 CV 調變。
+    ja: ウェーブフォールディング量CV変調。
+- name: Fold Amount CV
+  type: input
+  desc:
+    en: CV modulation for TM (timbre modulation) depth.
+    zh: TM（Timbre Modulation）深度 CV 調變。
+    ja: TM（ティンバーモジュレーション）深度CV変調。
+- name: RECT Mod Amount CV
+  type: input
+  desc:
+    en: CV modulation for rectification modulation amount.
+    zh: 整流調變量 CV 調變。
+    ja: レクティファイモジュレーション量CV変調。
+- name: Modulation FM
+  type: input
+  desc:
+    en: External FM signal for MOD oscillator frequency modulation.
+    zh: MOD 振盪器頻率調變的外部 FM 訊號。
+    ja: MODオシレーター周波数変調用外部FM信号。
+- name: Modulation 1V/Oct
+  type: input
+  desc:
+    en: 1V/Oct pitch tracking for MOD oscillator.
+    zh: MOD 振盪器 1V/Oct 音高追蹤。
+    ja: MODオシレーター1V/Octピッチトラッキング。
+- name: Final FM
+  type: input
+  desc:
+    en: External FM signal for FINAL oscillator frequency modulation.
+    zh: FINAL 振盪器頻率調變的外部 FM 訊號。
+    ja: FINALオシレーター周波数変調用外部FM信号。
+- name: Final 1V/Oct
+  type: input
+  desc:
+    en: 1V/Oct pitch tracking for FINAL oscillator.
+    zh: FINAL 振盪器 1V/Oct 音高追蹤。
+    ja: FINALオシレーター1V/Octピッチトラッキング。
+- name: Modulation Signal
+  type: output
+  desc:
+    en: Raw modulation oscillator output (0-10V). Useful for modulating other modules.
+    zh: 原始 MOD 振盪器輸出（0-10V）。適合調變其他模組。
+    ja: 生のモジュレーションオシレーター出力（0-10V）。他のモジュールのモジュレーションに便利。
+- name: Final Sine
+  type: output
+  desc:
+    en: Clean sine wave at FINAL's pitch (±5V). Unaffected by waveshaping.
+    zh: FINAL 音高的乾淨正弦波（±5V）。不受 Waveshaping 影響。
+    ja: FINALのピッチのクリーンなサイン波（±5V）。ウェーブシェイピングの影響なし。
+- name: Final Output
+  type: output
+  desc:
+    en: Main output with all processing applied (+-5V).
+    zh: 套用所有處理的主輸出（±5V）。
+    ja: 全処理適用後のメイン出力（±5V）。

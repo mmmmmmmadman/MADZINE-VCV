@@ -1,0 +1,564 @@
+slug: TWNC
+name: TWNC
+hp: 8
+wide: false
+alt: TWNC
+description:
+  en: Dual-track Euclidean drum machine with built-in FM synthesis and accent system
+  zh: 雙軌 Euclidean Drum Machine，具備內建 FM 合成與 Accent 系統
+  ja: 内蔵FM合成とアクセントシステムを備えたデュアルトラックユークリッドドラムマシン
+features:
+  en:
+  - Dual-track Euclidean drum machine
+  - Built-in FM drum synthesis
+  - Quarter-note accent system
+  - 3x oversampling with anti-aliasing
+  zh:
+  - 雙軌 Euclidean Drum Machine
+  - 內建 FM Drum 合成
+  - 四分音符 Accent 系統
+  - 3x Oversampling 抗鋸齒處理
+  ja:
+  - デュアルトラックユークリッドドラムマシン
+  - 内蔵FMドラム合成
+  - 四分音符アクセントシステム
+  - 3xオーバーサンプリングアンチエイリアシング
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Dual-track Euclidean rhythm generator with built-in drum and hi-hat synthesis. Combines rhythm pattern generation with envelope generators and CV modulation. Uses 3x oversampling with 6-stage SOS anti-aliasing filter for clean audio output.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+    <p style="margin-bottom: 1rem;">Clock → [Euclidean Pattern Generator] → [Track Envelope] × [Main VCA Envelope] → [Oscillator with FM] → Audio Output. Each track has independent Bjorklund-distributed patterns that trigger dedicated synthesis engines.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Euclidean Rhythm</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Distribution</b>: Bjorklund algorithm distributes hits as evenly as possible across the pattern length</li>
+    <li><b>Rotation</b>: Pattern shift for offset control</li>
+    <li><b>Length</b>: 1-32 steps (default: 32)</li>
+    <li><b>Fill</b>: 0-100% converted to integer step count</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Track 1 (Drum) Synthesis</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FILL</b>: Active steps percentage (0-100%, default: 84.5%)</li>
+    <li><b>FREQ</b>: Oscillator frequency (20Hz-20kHz logarithmic, default: ~36.7Hz)</li>
+    <li><b>FM</b>: FM amount (0-1, default: 0.65). Envelope modulates pitch exponentially for classic FM drum character</li>
+    <li><b>NOISE</b>: Pink/blue noise mix (0-1, default: 0.152). Blue noise is derived from pink noise via differentiation</li>
+    <li><b>ACCENT</b>: Quarter-note VCA shift (1-7 steps, default: 1)</li>
+    <li><b>DELAY</b>: Main VCA decay time (0.01-2s, default: 0.396s)</li>
+    <li><b>DECAY</b>: Track envelope decay (0.01-2s, default: 0.720s). FM envelope uses half this value (decayParam * 0.5), VCA envelope uses full value.</li>
+    <li><b>SHAPE</b>: Envelope curve (0-0.99, default: 0)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Track 2 (HATs) Synthesis</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>SHIFT</b>: Pattern rotation offset (0-7 steps, default: 2)</li>
+    <li><b>FILL</b>: Active steps percentage (0-100%, default: 25%)</li>
+    <li><b>D/M</b>: Clock div/mult - 0:1/2x, 1:1x, 2:1.5x, 3:2x, 4:3x (default: 1x)</li>
+    <li><b>NOISE</b>: Noise FM modulation (0-1, default: 0.714). Pink when <0.5, blue when ≥0.5</li>
+    <li><b>FREQ</b>: Hi-hat frequency (20Hz-20kHz, default: ~20kHz)</li>
+    <li><b>DECAY</b>: Envelope decay (0.01-2s, default: 0.131s). VCA envelope uses half this value (decayParam * 0.5).</li>
+    <li><b>SHAPE</b>: Envelope curve (0-0.99, default: 0.055)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope Behavior</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Attack</b>: Fixed 1ms linear ramp</li>
+    <li><b>Decay</b>: Variable S-curve with smoothstep transition for natural-sounding decay</li>
+    <li><b>Shape Control</b>: Adjusts the curvature of both attack and decay segments</li>
+    <li><b>Transition</b>: Smooth blending between front and back envelope curves for percussive character</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Oversampling Implementation</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Factor</b>: 3x oversampling</li>
+    <li><b>Filter</b>: 6-stage cascaded Second-Order Sections (SOS)</li>
+    <li><b>Coefficients</b>: Pre-computed for 48kHz × 3 operation</li>
+    <li><b>Processing</b>: Separate up/down filters for clean aliasing rejection</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Pink Noise Generator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: Voss-McCartney with 6 quality stages</li>
+    <li><b>Frame counting</b>: XOR-based bit detection for efficient computation</li>
+    <li><b>Normalization</b>: Scaled to appropriate output level for mixing with oscillator signal</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Inputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>: Global clock (Schmitt trigger)</li>
+    <li><b>RESET</b>: Reset sequence to step 0</li>
+    <li><b>Manual Reset</b>: Button to manually reset sequence (same as RESET input)</li>
+    <li><b>D.F</b>: Drum frequency CV (±10V, 1V/oct)</li>
+    <li><b>D.D</b>: Drum decay CV (±10V, scaled /10)</li>
+    <li><b>H.F</b>: Hats frequency CV (±10V, 1V/oct)</li>
+    <li><b>H.D</b>: Hats decay CV (±10V, scaled /10)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>TRACK 1</b>: Drum audio (scaled by envelope × mainVCA × 1.4)</li>
+    <li><b>TRACK 2</b>: Hi-hat audio (scaled by envelope × 0.7)</li>
+    <li><b>VCA ENV</b>: Main accent envelope (0-10V)</li>
+    <li><b>DRUM FM ENV</b>: Track 1 FM envelope (0-10V)</li>
+    <li><b>HATS VCA ENV</b>: Track 2 VCA envelope (0-10V)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Input: ±10V (CV), Schmitt trigger with 0.1V/2V thresholds</li>
+    <li>Audio output: ±5V nominal</li>
+    <li>Envelope output: 0-10V unipolar</li>
+    <li>Processing: 32-bit floating point</li>
+    <li>Oversampling: 3x with 6-stage SOS anti-aliasing</li>
+    <li>Clock range: 0.01-10 seconds per step</li>
+    <li>Module width: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Global Clock</b>: Clock input (Schmitt trigger, 0.1V/2V thresholds).</li>
+    <li><b>Reset</b>: Reset trigger input, resets all tracks to step 0.</li>
+    <li><b>Global Length</b>: Sequence length (1-32 steps, default: 32, snap).</li>
+    <li><b>Manual Reset</b>: Button to manually reset all tracks.</li>
+    <li><b>Track 1 Fill</b>: Drum track rhythm density (0-100%, default: 84.5%).</li>
+    <li><b>Track 1 Frequency</b>: Drum oscillator frequency (20Hz-20kHz logarithmic, default: ~36.7Hz).</li>
+    <li><b>Track 1 FM Amount</b>: FM modulation depth (0-1, default: 0.65).</li>
+    <li><b>Track 1 Noise Mix</b>: Pink/blue noise mix (0-1, default: 0.152).</li>
+    <li><b>VCA Shift</b>: Quarter-note accent shift (1-7 steps, default: 1, snap).</li>
+    <li><b>VCA Decay</b>: Main VCA envelope decay time (0.01-2s, default: 0.396s).</li>
+    <li><b>Track 1 Decay</b>: Drum envelope decay (0.01-2s, default: 0.720s).</li>
+    <li><b>Track 1 Shape</b>: Drum envelope curve shape (0-0.99, default: 0).</li>
+    <li><b>Track 2 Shift</b>: HATs pattern rotation offset (0-7 steps, default: 2, snap).</li>
+    <li><b>Track 2 Fill</b>: HATs rhythm density (0-100%, default: 25%).</li>
+    <li><b>Track 2 Div/Mult</b>: HATs clock div/mult (0-4, default: 1x, snap).</li>
+    <li><b>Track 2 Frequency</b>: Hi-hat oscillator frequency (20Hz-20kHz, default: ~20kHz).</li>
+    <li><b>Track 2 Decay</b>: HATs envelope decay (0.01-2s, default: 0.131s).</li>
+    <li><b>Track 2 Shape</b>: HATs envelope curve (0-0.99, default: 0.055).</li>
+    <li><b>Track 2 Noise FM</b>: HATs noise FM amount (0-1, default: 0.714).</li>
+    <li><b>Drum Frequency CV</b>: Drum frequency CV input (1V/oct).</li>
+    <li><b>Drum Decay CV</b>: Drum decay CV input (scaled /10).</li>
+    <li><b>Hats Frequency CV</b>: Hats frequency CV input (1V/oct).</li>
+    <li><b>Hats Decay CV</b>: Hats decay CV input (scaled /10).</li>
+    <li><b>Track 1 Audio</b>: Drum audio output (envelope x mainVCA x 1.4).</li>
+    <li><b>Track 2 Audio</b>: Hi-hat audio output (envelope x 0.7).</li>
+    <li><b>Accent VCA Envelope</b>: Main accent VCA envelope output (0-10V).</li>
+    <li><b>Track 1 FM Envelope</b>: Track 1 FM envelope output (0-10V).</li>
+    <li><b>Track 2 VCA Envelope</b>: Track 2 VCA envelope output (0-10V).</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">雙軌 Euclidean Rhythm 生成器，具備內建 Drum 與 Hi-hat 合成。結合節奏 Pattern 生成與 Envelope 生成器及 CV 調變。使用 3x Oversampling 與 6 級 SOS 抗鋸齒濾波器，提供純淨的音訊輸出。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+    <p style="margin-bottom: 1rem;">Clock → [Euclidean Pattern Generator] → [Track Envelope] × [Main VCA Envelope] → [Oscillator with FM] → Audio Output。每個軌道都有獨立的 Bjorklund 分佈 Pattern，觸發專用的合成引擎。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Euclidean Rhythm</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Distribution</b>：Bjorklund 演算法將 Hit 盡可能均勻分布於 Pattern 長度中</li>
+    <li><b>Rotation</b>：Pattern 位移以控制偏移</li>
+    <li><b>Length</b>：1-32 步（預設：32）</li>
+    <li><b>Fill</b>：0-100% 轉換為整數步數</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">軌道 1（Drum）合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FILL</b>：活躍步進百分比（0-100%，預設：84.5%）</li>
+    <li><b>FREQ</b>：Oscillator 頻率（20Hz-20kHz 對數，預設：~36.7Hz）</li>
+    <li><b>FM</b>：FM 量（0-1，預設：0.65）。Envelope 以指數方式調變音高，產生經典 FM Drum 音色</li>
+    <li><b>NOISE</b>：Pink/Blue Noise 混合（0-1，預設：0.152）。Blue Noise 由 Pink Noise 透過微分衍生</li>
+    <li><b>ACCENT</b>：四分音符 VCA 位移（1-7 步，預設：1）</li>
+    <li><b>DELAY</b>：主 VCA Decay 時間（0.01-2s，預設：0.396s）</li>
+    <li><b>DECAY</b>：Track Envelope Decay（0.01-2s，預設：0.720s）。FM Envelope 使用此值的一半（decayParam * 0.5），VCA Envelope 使用完整值。</li>
+    <li><b>SHAPE</b>：Envelope 曲線（0-0.99，預設：0）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">軌道 2（HATs）合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>SHIFT</b>：Pattern 旋轉偏移（0-7 步，預設：2）</li>
+    <li><b>FILL</b>：活躍步進百分比（0-100%，預設：25%）</li>
+    <li><b>D/M</b>：Clock 除/乘 - 0:1/2x, 1:1x, 2:1.5x, 3:2x, 4:3x（預設：1x）</li>
+    <li><b>NOISE</b>：Noise FM 調變（0-1，預設：0.714）。<0.5 時為 Pink，≥0.5 時為 Blue</li>
+    <li><b>FREQ</b>：Hi-hat 頻率（20Hz-20kHz，預設：~20kHz）</li>
+    <li><b>DECAY</b>：Envelope Decay（0.01-2s，預設：0.131s）。VCA Envelope 使用此值的一半（decayParam * 0.5）。</li>
+    <li><b>SHAPE</b>：Envelope 曲線（0-0.99，預設：0.055）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Envelope 行為</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Attack</b>：固定 1ms 線性斜坡</li>
+    <li><b>Decay</b>：可變 S 曲線與 smoothstep 過渡，產生自然的衰減聲音</li>
+    <li><b>Shape Control</b>：調整 Attack 與 Decay 段落的曲線弧度</li>
+    <li><b>Transition</b>：前後 Envelope 曲線之間平滑混合，產生打擊樂特性</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Oversampling 實作</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Factor</b>：3x Oversampling</li>
+    <li><b>Filter</b>：6 級串聯 Second-Order Sections (SOS)</li>
+    <li><b>Coefficients</b>：針對 48kHz × 3 運作預先計算</li>
+    <li><b>Processing</b>：獨立的上/下採樣濾波器，提供純淨的抗鋸齒抑制</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Pink Noise 生成器</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>：Voss-McCartney，6 個品質級別</li>
+    <li><b>Frame counting</b>：基於 XOR 的位元偵測，提升運算效率</li>
+    <li><b>Normalization</b>：縮放至適當的輸出電平，以便與 Oscillator 訊號混合</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸入</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>：全域 Clock（Schmitt Trigger）</li>
+    <li><b>RESET</b>：重置序列至步進 0</li>
+    <li><b>Manual Reset</b>：手動重置按鈕（功能與 RESET 輸入相同）</li>
+    <li><b>D.F</b>：Drum 頻率 CV（±10V，1V/oct）</li>
+    <li><b>D.D</b>：Drum Decay CV（±10V，縮放 /10）</li>
+    <li><b>H.F</b>：Hats 頻率 CV（±10V，1V/oct）</li>
+    <li><b>H.D</b>：Hats Decay CV（±10V，縮放 /10）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>TRACK 1</b>：Drum Audio（由 Envelope × mainVCA × 1.4 縮放）</li>
+    <li><b>TRACK 2</b>：Hi-hat Audio（由 Envelope × 0.7 縮放）</li>
+    <li><b>VCA ENV</b>：主 Accent Envelope（0-10V）</li>
+    <li><b>DRUM FM ENV</b>：Track 1 FM Envelope（0-10V）</li>
+    <li><b>HATS VCA ENV</b>：Track 2 VCA Envelope（0-10V）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Input：±10V（CV），Schmitt Trigger 閾值 0.1V/2V</li>
+    <li>Audio Output：±5V 標稱值</li>
+    <li>Envelope Output：0-10V 單極性</li>
+    <li>處理：32-bit 浮點</li>
+    <li>Oversampling：3x，含 6 級 SOS 抗鋸齒</li>
+    <li>Clock 範圍：每步 0.01-10 秒</li>
+    <li>模組寬度：8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Global Clock</b>：Clock 輸入（Schmitt Trigger，閾值 0.1V/2V）。</li>
+    <li><b>Reset</b>：Reset Trigger 輸入，重置所有軌道至步進 0。</li>
+    <li><b>Global Length</b>：序列長度（1-32 步，預設：32，Snap）。</li>
+    <li><b>Manual Reset</b>：手動重置按鈕。</li>
+    <li><b>Track 1 Fill</b>：Drum 軌道節奏密度（0-100%，預設：84.5%）。</li>
+    <li><b>Track 1 Frequency</b>：Drum Oscillator 頻率（20Hz-20kHz 對數，預設：~36.7Hz）。</li>
+    <li><b>Track 1 FM Amount</b>：FM 調變深度（0-1，預設：0.65）。</li>
+    <li><b>Track 1 Noise Mix</b>：Pink/Blue Noise 混合（0-1，預設：0.152）。</li>
+    <li><b>VCA Shift</b>：四分音符 Accent Shift（1-7 步，預設：1，Snap）。</li>
+    <li><b>VCA Decay</b>：主 VCA Envelope Decay 時間（0.01-2s，預設：0.396s）。</li>
+    <li><b>Track 1 Decay</b>：Drum Envelope Decay（0.01-2s，預設：0.720s）。</li>
+    <li><b>Track 1 Shape</b>：Drum Envelope 曲線形狀（0-0.99，預設：0）。</li>
+    <li><b>Track 2 Shift</b>：HATs Pattern 旋轉偏移（0-7 步，預設：2，Snap）。</li>
+    <li><b>Track 2 Fill</b>：HATs 節奏密度（0-100%，預設：25%）。</li>
+    <li><b>Track 2 Div/Mult</b>：HATs Clock Div/Mult（0-4，預設：1x，Snap）。</li>
+    <li><b>Track 2 Frequency</b>：Hi-hat Oscillator 頻率（20Hz-20kHz，預設：~20kHz）。</li>
+    <li><b>Track 2 Decay</b>：HATs Envelope Decay（0.01-2s，預設：0.131s）。</li>
+    <li><b>Track 2 Shape</b>：HATs Envelope 曲線（0-0.99，預設：0.055）。</li>
+    <li><b>Track 2 Noise FM</b>：HATs Noise FM 量（0-1，預設：0.714）。</li>
+    <li><b>Drum Frequency CV</b>：Drum 頻率 CV 輸入（1V/oct）。</li>
+    <li><b>Drum Decay CV</b>：Drum Decay CV 輸入（縮放 /10）。</li>
+    <li><b>Hats Frequency CV</b>：Hats 頻率 CV 輸入（1V/oct）。</li>
+    <li><b>Hats Decay CV</b>：Hats Decay CV 輸入（縮放 /10）。</li>
+    <li><b>Track 1 Audio</b>：Drum Audio 輸出（Envelope x mainVCA x 1.4）。</li>
+    <li><b>Track 2 Audio</b>：Hi-hat Audio 輸出（Envelope x 0.7）。</li>
+    <li><b>Accent VCA Envelope</b>：主 Accent VCA Envelope 輸出（0-10V）。</li>
+    <li><b>Track 1 FM Envelope</b>：Track 1 FM Envelope 輸出（0-10V）。</li>
+    <li><b>Track 2 VCA Envelope</b>：Track 2 VCA Envelope 輸出（0-10V）。</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">内蔵ドラム・ハイハット合成を備えたデュアルトラックユークリッドリズム生成器。リズムパターン生成とエンベロープ生成器、CV変調を統合。3xオーバーサンプリングと6段SOSアンチエイリアシングフィルターによりクリーンなオーディオ出力を実現。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+    <p style="margin-bottom: 1rem;">Clock → [Euclidean Pattern Generator] → [Track Envelope] × [Main VCA Envelope] → [Oscillator with FM] → Audio Output。各トラックは独立したBjorklund分布パターンを持ち、専用合成エンジンをトリガーします。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ユークリッドリズム</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Distribution</b>：Bjorklundアルゴリズムがヒットをパターン長に可能な限り均等に分布</li>
+    <li><b>Rotation</b>：オフセット制御のためのパターンシフト</li>
+    <li><b>Length</b>：1-32ステップ（デフォルト：32）</li>
+    <li><b>Fill</b>：0-100%を整数ステップ数に変換</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">トラック1（ドラム）合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>FILL</b>：アクティブステップ割合（0-100%、デフォルト：84.5%）</li>
+    <li><b>FREQ</b>：オシレーター周波数（20Hz-20kHz対数、デフォルト：~36.7Hz）</li>
+    <li><b>FM</b>：FM量（0-1、デフォルト：0.65）。エンベロープが指数的にピッチを変調し、クラシックなFMドラムキャラクターを実現</li>
+    <li><b>NOISE</b>：Pink/Blueノイズミックス（0-1、デフォルト：0.152）。BlueノイズはPinkノイズから微分により派生</li>
+    <li><b>ACCENT</b>：四分音符VCAシフト（1-7ステップ、デフォルト：1）</li>
+    <li><b>DELAY</b>：メインVCAディケイ時間（0.01-2s、デフォルト：0.396s）</li>
+    <li><b>DECAY</b>：トラックエンベロープディケイ（0.01-2s、デフォルト：0.720s）。FMエンベロープはこの値の半分を使用（decayParam * 0.5）、VCAエンベロープは完全値を使用。</li>
+    <li><b>SHAPE</b>：エンベロープカーブ（0-0.99、デフォルト：0）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">トラック2（HATs）合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>SHIFT</b>：パターンローテーションオフセット（0-7ステップ、デフォルト：2）</li>
+    <li><b>FILL</b>：アクティブステップ割合（0-100%、デフォルト：25%）</li>
+    <li><b>D/M</b>：クロック除/乗 - 0:1/2x, 1:1x, 2:1.5x, 3:2x, 4:3x（デフォルト：1x）</li>
+    <li><b>NOISE</b>：ノイズFM変調（0-1、デフォルト：0.714）。<0.5でPink、≥0.5でBlue</li>
+    <li><b>FREQ</b>：ハイハット周波数（20Hz-20kHz、デフォルト：~20kHz）</li>
+    <li><b>DECAY</b>：エンベロープディケイ（0.01-2s、デフォルト：0.131s）。VCAエンベロープはこの値の半分を使用（decayParam * 0.5）。</li>
+    <li><b>SHAPE</b>：エンベロープカーブ（0-0.99、デフォルト：0.055）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">エンベロープ動作</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Attack</b>：固定1msリニアランプ</li>
+    <li><b>Decay</b>：自然なサウンドのディケイのためのsmoothstepトランジション付き可変Sカーブ</li>
+    <li><b>Shape Control</b>：アタックとディケイセグメントの曲率を調整</li>
+    <li><b>Transition</b>：パーカッシブなキャラクターのための前後エンベロープカーブ間のスムーズブレンド</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">オーバーサンプリング実装</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Factor</b>：3xオーバーサンプリング</li>
+    <li><b>Filter</b>：6段カスケードSecond-Order Sections (SOS)</li>
+    <li><b>Coefficients</b>：48kHz × 3動作用に事前計算</li>
+    <li><b>Processing</b>：クリーンなアンチエイリアシング抑制のための個別アップ/ダウンフィルター</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ピンクノイズジェネレーター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>：6品質段階のVoss-McCartney</li>
+    <li><b>Frame counting</b>：効率的計算のためのXORベースビット検出</li>
+    <li><b>Normalization</b>：オシレーター信号とのミキシングに適した出力レベルにスケール</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">入力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>CLK</b>：グローバルクロック（シュミットトリガー）</li>
+    <li><b>RESET</b>：シーケンスをステップ0にリセット</li>
+    <li><b>Manual Reset</b>：手動リセットボタン（RESET入力と同じ機能）</li>
+    <li><b>D.F</b>：ドラム周波数CV（±10V、1V/oct）</li>
+    <li><b>D.D</b>：ドラムディケイCV（±10V、スケール/10）</li>
+    <li><b>H.F</b>：ハット周波数CV（±10V、1V/oct）</li>
+    <li><b>H.D</b>：ハットディケイCV（±10V、スケール/10）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>TRACK 1</b>：ドラムオーディオ（Envelope × mainVCA × 1.4でスケール）</li>
+    <li><b>TRACK 2</b>：ハイハットオーディオ（Envelope × 0.7でスケール）</li>
+    <li><b>VCA ENV</b>：メインアクセントエンベロープ（0-10V）</li>
+    <li><b>DRUM FM ENV</b>：トラック1 FMエンベロープ（0-10V）</li>
+    <li><b>HATS VCA ENV</b>：トラック2 VCAエンベロープ（0-10V）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>入力：±10V（CV）、シュミットトリガー閾値0.1V/2V</li>
+    <li>オーディオ出力：±5V公称値</li>
+    <li>エンベロープ出力：0-10V単極性</li>
+    <li>処理：32ビット浮動小数点</li>
+    <li>オーバーサンプリング：6段SOSアンチエイリアシング付き3x</li>
+    <li>クロック範囲：1ステップあたり0.01-10秒</li>
+    <li>モジュール幅：8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Global Clock</b>：クロック入力（シュミットトリガー、閾値0.1V/2V）。</li>
+    <li><b>Reset</b>：リセットトリガー入力、全トラックをステップ0にリセット。</li>
+    <li><b>Global Length</b>：シーケンス長（1-32ステップ、デフォルト：32、スナップ）。</li>
+    <li><b>Manual Reset</b>：手動リセットボタン。</li>
+    <li><b>Track 1 Fill</b>：ドラムトラックリズム密度（0-100%、デフォルト：84.5%）。</li>
+    <li><b>Track 1 Frequency</b>：ドラムオシレーター周波数（20Hz-20kHz対数、デフォルト：~36.7Hz）。</li>
+    <li><b>Track 1 FM Amount</b>：FM変調深度（0-1、デフォルト：0.65）。</li>
+    <li><b>Track 1 Noise Mix</b>：Pink/Blueノイズミックス（0-1、デフォルト：0.152）。</li>
+    <li><b>VCA Shift</b>：四分音符アクセントシフト（1-7ステップ、デフォルト：1、スナップ）。</li>
+    <li><b>VCA Decay</b>：メインVCAエンベロープディケイ時間（0.01-2s、デフォルト：0.396s）。</li>
+    <li><b>Track 1 Decay</b>：ドラムエンベロープディケイ（0.01-2s、デフォルト：0.720s）。</li>
+    <li><b>Track 1 Shape</b>：ドラムエンベロープカーブ形状（0-0.99、デフォルト：0）。</li>
+    <li><b>Track 2 Shift</b>：HATsパターンローテーションオフセット（0-7ステップ、デフォルト：2、スナップ）。</li>
+    <li><b>Track 2 Fill</b>：HATsリズム密度（0-100%、デフォルト：25%）。</li>
+    <li><b>Track 2 Div/Mult</b>：HATsクロックDiv/Mult（0-4、デフォルト：1x、スナップ）。</li>
+    <li><b>Track 2 Frequency</b>：ハイハットオシレーター周波数（20Hz-20kHz、デフォルト：~20kHz）。</li>
+    <li><b>Track 2 Decay</b>：HATsエンベロープディケイ（0.01-2s、デフォルト：0.131s）。</li>
+    <li><b>Track 2 Shape</b>：HATsエンベロープカーブ（0-0.99、デフォルト：0.055）。</li>
+    <li><b>Track 2 Noise FM</b>：HATsノイズFM量（0-1、デフォルト：0.714）。</li>
+    <li><b>Drum Frequency CV</b>：ドラム周波数CV入力（1V/oct）。</li>
+    <li><b>Drum Decay CV</b>：ドラムディケイCV入力（スケール/10）。</li>
+    <li><b>Hats Frequency CV</b>：ハット周波数CV入力（1V/oct）。</li>
+    <li><b>Hats Decay CV</b>：ハットディケイCV入力（スケール/10）。</li>
+    <li><b>Track 1 Audio</b>：ドラムオーディオ出力（Envelope x mainVCA x 1.4）。</li>
+    <li><b>Track 2 Audio</b>：ハイハットオーディオ出力（Envelope x 0.7）。</li>
+    <li><b>Accent VCA Envelope</b>：メインアクセントVCAエンベロープ出力（0-10V）。</li>
+    <li><b>Track 1 FM Envelope</b>：トラック1 FMエンベロープ出力（0-10V）。</li>
+    <li><b>Track 2 VCA Envelope</b>：トラック2 VCAエンベロープ出力（0-10V）。</li>
+    </ul>
+controls:
+- name: Global Clock
+  type: input
+  desc:
+    en: Clock input (Schmitt trigger, 0.1V/2V thresholds).
+    zh: Clock 輸入（Schmitt Trigger，閾值 0.1V/2V）。
+    ja: クロック入力（シュミットトリガー、閾値0.1V/2V）。
+- name: Reset
+  type: input
+  desc:
+    en: Reset trigger input, resets all tracks to step 0.
+    zh: Reset Trigger 輸入，重置所有軌道至步進 0。
+    ja: リセットトリガー入力、全トラックをステップ0にリセット。
+- name: Drum Frequency CV
+  type: input
+  desc:
+    en: Drum frequency CV input (1V/oct).
+    zh: Drum 頻率 CV 輸入（1V/oct）。
+    ja: ドラム周波数CV入力（1V/oct）。
+- name: Drum Decay CV
+  type: input
+  desc:
+    en: Drum decay CV input (scaled /10).
+    zh: Drum Decay CV 輸入（縮放 /10）。
+    ja: ドラムディケイCV入力（スケール/10）。
+- name: Hats Frequency CV
+  type: input
+  desc:
+    en: Hats frequency CV input (1V/oct).
+    zh: Hats 頻率 CV 輸入（1V/oct）。
+    ja: ハット周波数CV入力（1V/oct）。
+- name: Hats Decay CV
+  type: input
+  desc:
+    en: Hats decay CV input (scaled /10).
+    zh: Hats Decay CV 輸入（縮放 /10）。
+    ja: ハットディケイCV入力（スケール/10）。
+- name: Global Length
+  type: param
+  desc:
+    en: 'Sequence length (1-32 steps, default: 32, snap).'
+    zh: 序列長度（1-32 步，預設：32，Snap）。
+    ja: シーケンス長（1-32ステップ、デフォルト：32、スナップ）。
+- name: Manual Reset
+  type: param
+  desc:
+    en: 'Button to manually reset sequence (0-1, default: 0).'
+    zh: 手動重置按鈕（0-1，預設：0）。
+    ja: 手動リセットボタン（0-1、デフォルト：0）。
+- name: Track 1 Fill
+  type: param
+  desc:
+    en: 'Drum track rhythm density (0-100%, default: 84.5%).'
+    zh: Drum 軌道節奏密度（0-100%，預設：84.5%）。
+    ja: ドラムトラックリズム密度（0-100%、デフォルト：84.5%）。
+- name: Track 1 Frequency
+  type: param
+  desc:
+    en: 'Drum oscillator frequency (20Hz-20kHz logarithmic, default: ~36.7Hz).'
+    zh: Drum Oscillator 頻率（20Hz-20kHz 對數，預設：~36.7Hz）。
+    ja: ドラムオシレーター周波数（20Hz-20kHz対数、デフォルト：~36.7Hz）。
+- name: Track 1 FM Amount
+  type: param
+  desc:
+    en: 'FM modulation depth (0-1, default: 0.65).'
+    zh: FM 調變深度（0-1，預設：0.65）。
+    ja: FM変調深度（0-1、デフォルト：0.65）。
+- name: Track 1 Noise Mix
+  type: param
+  desc:
+    en: 'Pink/blue noise mix (0-1, default: 0.152).'
+    zh: Pink/Blue Noise 混合（0-1，預設：0.152）。
+    ja: Pink/Blueノイズミックス（0-1、デフォルト：0.152）。
+- name: VCA Shift
+  type: param
+  desc:
+    en: 'Quarter-note accent shift (1-7 steps, default: 1, snap).'
+    zh: 四分音符 Accent Shift（1-7 步，預設：1，Snap）。
+    ja: 四分音符アクセントシフト（1-7ステップ、デフォルト：1、スナップ）。
+- name: VCA Decay
+  type: param
+  desc:
+    en: 'Main VCA envelope decay time (0.01-2s, default: 0.396s).'
+    zh: 主 VCA Envelope Decay 時間（0.01-2s，預設：0.396s）。
+    ja: メインVCAエンベロープディケイ時間（0.01-2s、デフォルト：0.396s）。
+- name: Track 1 Decay
+  type: param
+  desc:
+    en: 'Drum envelope decay (0.01-2s, default: 0.720s).'
+    zh: Drum Envelope Decay（0.01-2s，預設：0.720s）。
+    ja: ドラムエンベロープディケイ（0.01-2s、デフォルト：0.720s）。
+- name: Track 1 Shape
+  type: param
+  desc:
+    en: 'Drum envelope curve shape (0-0.99, default: 0).'
+    zh: Drum Envelope 曲線形狀（0-0.99，預設：0）。
+    ja: ドラムエンベロープカーブ形状（0-0.99、デフォルト：0）。
+- name: Track 2 Shift
+  type: param
+  desc:
+    en: 'HATs pattern rotation offset (0-7 steps, default: 2, snap).'
+    zh: HATs Pattern 旋轉偏移（0-7 步，預設：2，Snap）。
+    ja: HATsパターンローテーションオフセット（0-7ステップ、デフォルト：2、スナップ）。
+- name: Track 2 Fill
+  type: param
+  desc:
+    en: 'HATs rhythm density (0-100%, default: 25%).'
+    zh: HATs 節奏密度（0-100%，預設：25%）。
+    ja: HATsリズム密度（0-100%、デフォルト：25%）。
+- name: Track 2 Div/Mult
+  type: param
+  desc:
+    en: 'HATs clock div/mult (0-4, default: 1x, snap).'
+    zh: HATs Clock Div/Mult（0-4，預設：1x，Snap）。
+    ja: HATsクロックDiv/Mult（0-4、デフォルト：1x、スナップ）。
+- name: Track 2 Frequency
+  type: param
+  desc:
+    en: 'Hi-hat oscillator frequency (20Hz-20kHz, default: ~20kHz).'
+    zh: Hi-hat Oscillator 頻率（20Hz-20kHz，預設：~20kHz）。
+    ja: ハイハットオシレーター周波数（20Hz-20kHz、デフォルト：~20kHz）。
+- name: Track 2 Decay
+  type: param
+  desc:
+    en: 'HATs envelope decay (0.01-2s, default: 0.131s).'
+    zh: HATs Envelope Decay（0.01-2s，預設：0.131s）。
+    ja: HATsエンベロープディケイ（0.01-2s、デフォルト：0.131s）。
+- name: Track 2 Shape
+  type: param
+  desc:
+    en: 'HATs envelope curve (0-0.99, default: 0.055).'
+    zh: HATs Envelope 曲線（0-0.99，預設：0.055）。
+    ja: HATsエンベロープカーブ（0-0.99、デフォルト：0.055）。
+- name: Track 2 Noise FM
+  type: param
+  desc:
+    en: 'HATs noise FM amount (0-1, default: 0.714).'
+    zh: HATs Noise FM 量（0-1，預設：0.714）。
+    ja: HATsノイズFM量（0-1、デフォルト：0.714）。
+- name: Track 1 Audio
+  type: output
+  desc:
+    en: Drum audio output.
+    zh: Drum Audio 輸出。
+    ja: ドラムオーディオ出力。
+- name: Track 2 Audio
+  type: output
+  desc:
+    en: Hi-hat audio output.
+    zh: Hi-hat Audio 輸出。
+    ja: ハイハットオーディオ出力。
+- name: Accent VCA Envelope
+  type: output
+  desc:
+    en: Main accent VCA envelope output (0-10V).
+    zh: 主 Accent VCA Envelope 輸出（0-10V）。
+    ja: メインアクセントVCAエンベロープ出力（0-10V）。
+- name: Track 1 FM Envelope
+  type: output
+  desc:
+    en: Track 1 FM envelope output (0-10V).
+    zh: Track 1 FM Envelope 輸出（0-10V）。
+    ja: トラック1 FMエンベロープ出力（0-10V）。
+- name: Track 2 VCA Envelope
+  type: output
+  desc:
+    en: Track 2 VCA envelope output (0-10V).
+    zh: Track 2 VCA Envelope 輸出（0-10V）。
+    ja: トラック2 VCAエンベロープ出力（0-10V）。

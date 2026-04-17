@@ -1,0 +1,375 @@
+slug: Ovomorph
+name: Ovomorph
+hp: 4
+wide: false
+alt: Ovomorph
+description:
+  en: Chaos-modulated stereo reverb with Lorenz attractor modulation and sample-and-hold output
+  zh: Chaos 調變 Stereo Reverb，具備 Lorenz Attractor 調變與 Sample-and-Hold 輸出
+  ja: ローレンツアトラクター変調とサンプル&ホールド出力を備えたカオス変調ステレオリバーブ
+features:
+  en:
+    - Freeverb-style stereo reverb
+    - Lorenz attractor chaos modulation
+    - Sample-and-hold chaos output
+    - Auto-patch with YAMANOTE
+    - Polyphonic up to 16 channels
+  zh:
+    - Freeverb 風格 Stereo Reverb
+    - Lorenz Attractor Chaos 調變
+    - Sample-and-Hold Chaos 輸出
+    - 與 YAMANOTE 自動配線
+    - Polyphonic 最多 16 聲道
+  ja:
+    - Freeverbスタイルステレオリバーブ
+    - ローレンツアトラクターカオス変調
+    - サンプル&ホールドカオス出力
+    - YAMANOTEとの自動パッチ
+    - ポリフォニック最大16チャンネル
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Stereo reverb processor with Lorenz attractor chaos modulation. Part of the Alien trilogy effects series (Runner, Facehugger, Ovomorph). Features Freeverb-style algorithm with room size, tone, and decay controls. Chaos modulation creates organic, evolving reverb textures. Designed to work with YAMANOTE for send/return routing.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+    <p style="margin-bottom: 1rem;">Input → Comb Filters → Allpass Diffusers → [Chaos Modulation] → Wet/Dry Mix → Output. Left and right channels are processed independently with slightly different delay times to create stereo width.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Reverb Parameters</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Room</b>: Room size (0-100%, default: 50%). Affects early reflection tap positions. Scale: 0.3-1.7×</li>
+    <li><b>Tone</b>: Damping coefficient (0-100%, default: 40%). Low = dark, warm sound. High = bright, open sound.</li>
+    <li><b>Decay</b>: Feedback amount (0-100%, default: 60%). At maximum, near-infinite reverb tails (10+ seconds).</li>
+    <li><b>Mix</b>: Wet/dry balance (0-100%, default: 50%). CV adds ±10%.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Reverb Architecture</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: Freeverb-style with 8 parallel comb filters + 4 series allpass diffusers</li>
+    <li><b>Comb Filters (L)</b>: 1557, 1617, 1491, 1422 samples (~30-34ms at 48kHz)</li>
+    <li><b>Comb Filters (R)</b>: 1277, 1356, 1188, 1116 samples (~23-28ms at 48kHz)</li>
+    <li><b>Allpass Sizes</b>: 556, 441, 341, 225 samples</li>
+    <li><b>Highpass Filter</b>: 100Hz cutoff removes sub-bass buildup</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Chaos Generator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: Lorenz strange attractor differential equations</li>
+    <li><b>Chaos</b>: Modulation depth (0-100%, default: 0%). Controls chaos effects on reverb parameters.</li>
+    <li><b>Rate</b>: Chaos evolution speed (0.01-2.0x, default: 0.5x). Higher = faster parameter changes.</li>
+    <li><b>Chaos Effects</b>: Feedback ±0.5, room offset ±50-70 samples</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sample & Hold</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>S&H Output</b>: Stepped chaos signal sampled at RATE × 10 Hz</li>
+    <li><b>Range</b>: 0-5V CV output</li>
+    <li><b>Use</b>: External modulation source with quantized, stepped behavior</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Auto-Patch with YAMANOTE</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Detection</b>: When placed directly right of YAMANOTE, auto-connects to send/return</li>
+    <li><b>Channel Selection</b>: Uses Channel A if single effect, Channel B if part of chain</li>
+    <li><b>Chain Support</b>: Multiple effects (Runner, Facehugger, Ovomorph) auto-distribute across channels</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Inputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>L/R Audio</b>: Stereo input (R normalizes to L if disconnected)</li>
+    <li><b>ROOM CV</b>: Room size modulation</li>
+    <li><b>TONE CV</b>: Damping modulation</li>
+    <li><b>DECAY CV</b>: Decay time modulation</li>
+    <li><b>MIX CV</b>: Wet/dry modulation</li>
+    <li><b>CHAOS CV</b>: Chaos depth modulation</li>
+    <li><b>RATE CV</b>: Chaos speed modulation</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>L/R Audio</b>: Stereo processed output (polyphonic)</li>
+    <li><b>Chaos</b>: Raw chaos signal 0-5V (polyphonic)</li>
+    <li><b>S&H</b>: Sample-and-hold chaos 0-5V (polyphonic)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Module width: 4HP</li>
+    <li>Reverb algorithm: Freeverb-style</li>
+    <li>Comb filters: 8 parallel (4 per channel)</li>
+    <li>Allpass diffusers: 4 series</li>
+    <li>Reverb decay: Up to 10+ seconds</li>
+    <li>Highpass filter: 100Hz cutoff</li>
+    <li>Chaos algorithm: Lorenz attractor</li>
+    <li>Polyphony: Up to 16 channels</li>
+    <li>Processing: 32-bit floating point</li>
+    <li><b>Left Audio</b>: Stereo audio left channel input/output. Input feeds the reverb processor; output delivers the processed signal.</li>
+    <li><b>Right Audio</b>: Stereo audio right channel input/output. Input feeds the reverb processor; output delivers the processed signal.</li>
+    <li><b>Sample & Hold CV</b>: Sample & Hold output from Chaos section. Samples random values at Chaos Rate, with slew limiting.</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">具備 Lorenz Attractor Chaos 調變的 Stereo Reverb 處理器。屬於 Alien 三部曲效果器系列（Runner、Facehugger、Ovomorph）。採用 Freeverb 風格演算法，具備 Room Size、Tone 和 Decay 控制。Chaos 調變創造有機、演化的 Reverb 質感。設計用於與 YAMANOTE 配合進行 Send/Return Routing。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+    <p style="margin-bottom: 1rem;">Input → Comb Filter → Allpass Diffuser → [Chaos 調變] → Wet/Dry Mix → Output。左右聲道以略微不同的 Delay 時間獨立處理，創造 Stereo 寬度。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Reverb 參數</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Room</b>: 空間大小（0-100%，預設：50%）。影響早期反射 Tap 位置。縮放：0.3-1.7×</li>
+    <li><b>Tone</b>: Damping 係數（0-100%，預設：40%）。低 = 暗、溫暖的聲音。高 = 亮、開放的聲音。</li>
+    <li><b>Decay</b>: Feedback 量（0-100%，預設：60%）。最大時，近乎無限 Reverb 尾部（10+ 秒）。</li>
+    <li><b>Mix</b>: Wet/Dry 平衡（0-100%，預設：50%）。CV 增加 ±10%。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Reverb 架構</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: Freeverb 風格，8 個並聯 Comb Filter + 4 個串聯 Allpass Diffuser</li>
+    <li><b>Comb Filters (L)</b>: 1557、1617、1491、1422 Sample（48kHz 時約 30-34ms）</li>
+    <li><b>Comb Filters (R)</b>: 1277、1356、1188、1116 Sample（48kHz 時約 23-28ms）</li>
+    <li><b>Allpass Sizes</b>: 556、441、341、225 Sample</li>
+    <li><b>Highpass Filter</b>: 100Hz 截止頻率移除低頻累積</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Chaos Generator</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: Lorenz 奇異吸引子微分方程式</li>
+    <li><b>Chaos</b>: 調變深度（0-100%，預設：0%）。控制 Chaos 對 Reverb 參數的影響。</li>
+    <li><b>Rate</b>: Chaos 演化速度（0.01-2.0x，預設：0.5x）。越高 = 參數變化越快。</li>
+    <li><b>Chaos Effects</b>: Feedback ±0.5、Room 偏移 ±50-70 Sample</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sample & Hold</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>S&H Output</b>: 以 RATE × 10 Hz 取樣的階梯 Chaos 訊號</li>
+    <li><b>Range</b>: 0-5V CV 輸出</li>
+    <li><b>Use</b>: 具有量化、階梯行為的外部調變源</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">與 YAMANOTE 自動配線</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Detection</b>: 當放置在 YAMANOTE 正右方時，自動連接到 Send/Return</li>
+    <li><b>Channel Selection</b>: 單一效果器使用 Channel A，鏈式配置使用 Channel B</li>
+    <li><b>Chain Support</b>: 多個效果器（Runner、Facehugger、Ovomorph）自動分配到各聲道</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸入</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>L/R Audio</b>: Stereo 輸入（R 未連接時正規化至 L）</li>
+    <li><b>ROOM CV</b>: Room Size 調變</li>
+    <li><b>TONE CV</b>: Damping 調變</li>
+    <li><b>DECAY CV</b>: Decay 時間調變</li>
+    <li><b>MIX CV</b>: Wet/Dry 調變</li>
+    <li><b>CHAOS CV</b>: Chaos 深度調變</li>
+    <li><b>RATE CV</b>: Chaos 速度調變</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>L/R Audio</b>: Stereo 處理輸出（Polyphonic）</li>
+    <li><b>Chaos</b>: 原始 Chaos 訊號 0-5V（Polyphonic）</li>
+    <li><b>S&H</b>: Sample-and-Hold Chaos 0-5V（Polyphonic）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>模組寬度：4HP</li>
+    <li>Reverb 演算法：Freeverb 風格</li>
+    <li>Comb Filter：8 個並聯（每聲道 4 個）</li>
+    <li>Allpass Diffuser：4 個串聯</li>
+    <li>Reverb Decay：最多 10+ 秒</li>
+    <li>Highpass Filter：100Hz 截止頻率</li>
+    <li>Chaos 演算法：Lorenz Attractor</li>
+    <li>Polyphony：最多 16 聲道</li>
+    <li>處理：32-bit 浮點</li>
+    <li><b>Left Audio</b>: 立體聲左聲道 Audio 輸入/輸出。輸入饋送 Reverb 處理器；輸出傳遞處理後的訊號。</li>
+    <li><b>Right Audio</b>: 立體聲右聲道 Audio 輸入/輸出。輸入饋送 Reverb 處理器；輸出傳遞處理後的訊號。</li>
+    <li><b>Sample & Hold CV</b>: Chaos 區段的 Sample & Hold 輸出。依 Chaos Rate 取樣隨機值，帶有 Slew 限制。</li>
+    </ul>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">ローレンツアトラクターカオス変調を備えたステレオリバーブプロセッサー。Alienトリロジーエフェクトシリーズ（Runner、Facehugger、Ovomorph）の一つ。Freeverbスタイルアルゴリズムとルームサイズ、トーン、ディケイコントロールを搭載。カオス変調がオーガニックで進化するリバーブテクスチャを生成。YAMANOTEとのセンド/リターンルーティング用に設計。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+    <p style="margin-bottom: 1rem;">Input → Comb Filter → Allpass Diffuser → [Chaos変調] → Wet/Dry Mix → Output。左右チャンネルは若干異なるディレイタイムで独立処理され、ステレオ幅を生成。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">リバーブパラメータ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Room</b>: ルームサイズ（0-100%、デフォルト：50%）。初期反射タップ位置に影響。スケール：0.3-1.7×</li>
+    <li><b>Tone</b>: ダンピング係数（0-100%、デフォルト：40%）。低=暗く暖かいサウンド。高=明るく開放的なサウンド。</li>
+    <li><b>Decay</b>: フィードバック量（0-100%、デフォルト：60%）。最大時、ほぼ無限のリバーブテール（10秒以上）。</li>
+    <li><b>Mix</b>: ウェット/ドライバランス（0-100%、デフォルト：50%）。CVで±10%追加。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">リバーブアーキテクチャ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: Freeverbスタイル、8並列コムフィルター + 4直列オールパスディフューザー</li>
+    <li><b>Comb Filters (L)</b>: 1557、1617、1491、1422サンプル（48kHzで約30-34ms）</li>
+    <li><b>Comb Filters (R)</b>: 1277、1356、1188、1116サンプル（48kHzで約23-28ms）</li>
+    <li><b>Allpass Sizes</b>: 556、441、341、225サンプル</li>
+    <li><b>Highpass Filter</b>: 100Hzカットオフでサブベース蓄積を除去</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">カオスジェネレーター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Algorithm</b>: ローレンツストレンジアトラクター微分方程式</li>
+    <li><b>Chaos</b>: 変調深度（0-100%、デフォルト：0%）。カオスがリバーブパラメータに与える影響を制御。</li>
+    <li><b>Rate</b>: カオス進化速度（0.01-2.0x、デフォルト：0.5x）。高いほどパラメータ変化が速い。</li>
+    <li><b>Chaos Effects</b>: フィードバック±0.5、ルームオフセット±50-70サンプル</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">サンプル&ホールド</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>S&H Output</b>: RATE × 10 Hzでサンプルされたステップカオス信号</li>
+    <li><b>Range</b>: 0-5V CV出力</li>
+    <li><b>Use</b>: クオンタイズされたステップ動作の外部変調ソース</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">YAMANOTEとの自動パッチ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Detection</b>: YAMANOTEの直右に配置するとセンド/リターンに自動接続</li>
+    <li><b>Channel Selection</b>: 単一エフェクトはChannel A、チェーンの一部はChannel Bを使用</li>
+    <li><b>Chain Support</b>: 複数エフェクト（Runner、Facehugger、Ovomorph）が各チャンネルに自動分配</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">入力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>L/R Audio</b>: ステレオ入力（R未接続時はLに正規化）</li>
+    <li><b>ROOM CV</b>: ルームサイズ変調</li>
+    <li><b>TONE CV</b>: ダンピング変調</li>
+    <li><b>DECAY CV</b>: ディケイタイム変調</li>
+    <li><b>MIX CV</b>: ウェット/ドライ変調</li>
+    <li><b>CHAOS CV</b>: カオス深度変調</li>
+    <li><b>RATE CV</b>: カオス速度変調</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>L/R Audio</b>: ステレオ処理出力（ポリフォニック）</li>
+    <li><b>Chaos</b>: 生カオス信号0-5V（ポリフォニック）</li>
+    <li><b>S&H</b>: サンプル&ホールドカオス0-5V（ポリフォニック）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>モジュール幅：4HP</li>
+    <li>リバーブアルゴリズム：Freeverbスタイル</li>
+    <li>コムフィルター：8並列（チャンネル毎4個）</li>
+    <li>オールパスディフューザー：4直列</li>
+    <li>リバーブディケイ：最大10秒以上</li>
+    <li>ハイパスフィルター：100Hzカットオフ</li>
+    <li>カオスアルゴリズム：ローレンツアトラクター</li>
+    <li>ポリフォニー：最大16チャンネル</li>
+    <li>処理：32ビット浮動小数点</li>
+    <li><b>Left Audio</b>: ステレオオーディオ左チャンネル入出力。入力はリバーブプロセッサに送り、出力は処理済み信号を出力。</li>
+    <li><b>Right Audio</b>: ステレオオーディオ右チャンネル入出力。入力はリバーブプロセッサに送り、出力は処理済み信号を出力。</li>
+    <li><b>Sample & Hold CV</b>: Chaosセクションのサンプル＆ホールド出力。Chaos Rateでランダム値をサンプリングし、スルーリミッティング付き。</li>
+    </ul>
+controls:
+  - name: Room
+    type: param
+    desc:
+      en: 'Room size (0-100%, default: 50%). Affects early reflection tap positions. Scale: 0.3-1.7×'
+      zh: 空間大小（0-100%，預設：50%）。影響早期反射 Tap 位置。縮放：0.3-1.7×
+      ja: ルームサイズ（0-100%、デフォルト：50%）。初期反射タップ位置に影響。スケール：0.3-1.7×
+  - name: Tone
+    type: param
+    desc:
+      en: 'Damping coefficient (0-100%, default: 40%). Low = dark, warm sound. High = bright, open sound.'
+      zh: Damping 係數（0-100%，預設：40%）。低 = 暗、溫暖的聲音。高 = 亮、開放的聲音。
+      ja: ダンピング係数（0-100%、デフォルト：40%）。低=暗く暖かいサウンド。高=明るく開放的なサウンド。
+  - name: Decay
+    type: param
+    desc:
+      en: 'Feedback amount (0-100%, default: 60%). At maximum, near-infinite reverb tails (10+ seconds).'
+      zh: Feedback 量（0-100%，預設：60%）。最大時，近乎無限 Reverb 尾部（10+ 秒）。
+      ja: フィードバック量（0-100%、デフォルト：60%）。最大時、ほぼ無限のリバーブテール（10秒以上）。
+  - name: Mix
+    type: param
+    desc:
+      en: 'Wet/dry balance (0-100%, default: 50%). CV adds ±10%.'
+      zh: Wet/Dry 平衡（0-100%，預設：50%）。CV 增加 ±10%。
+      ja: ウェット/ドライバランス（0-100%、デフォルト：50%）。CVで±10%追加。
+  - name: Chaos
+    type: param
+    desc:
+      en: 'Modulation depth (0-100%, default: 0%). Controls chaos effects on reverb parameters.'
+      zh: 調變深度（0-100%，預設：0%）。控制 Chaos 對 Reverb 參數的影響。
+      ja: 変調深度（0-100%、デフォルト：0%）。カオスがリバーブパラメータに与える影響を制御。
+  - name: Rate
+    type: param
+    desc:
+      en: 'Chaos evolution speed (0.01-2.0x, default: 0.5x). Higher = faster parameter changes.'
+      zh: Chaos 演化速度（0.01-2.0x，預設：0.5x）。越高 = 參數變化越快。
+      ja: カオス進化速度（0.01-2.0x、デフォルト：0.5x）。高いほどパラメータ変化が速い。
+  - name: Left Audio
+    type: input
+    desc:
+      en: Stereo audio left channel input. Feeds the reverb processor.
+      zh: 立體聲左聲道 Audio 輸入。饋送 Reverb 處理器。
+      ja: ステレオオーディオ左チャンネル入力。リバーブプロセッサに送られる。
+  - name: Right Audio
+    type: input
+    desc:
+      en: Stereo audio right channel input. Normalizes to Left if disconnected.
+      zh: 立體聲右聲道 Audio 輸入。未連接時正規化至 Left。
+      ja: ステレオオーディオ右チャンネル入力。未接続時はLeftに正規化。
+  - name: Room CV
+    type: input
+    desc:
+      en: Room size modulation. CV adds ±10% to Room parameter.
+      zh: Room 調變。CV 對 Room 參數增加 ±10%。
+      ja: Room変調。CVでRoomパラメータに±10%追加。
+  - name: Tone CV
+    type: input
+    desc:
+      en: Damping modulation. CV adds ±10% to Tone parameter.
+      zh: Damping 調變。CV 對 Tone 參數增加 ±10%。
+      ja: ダンピング変調。CVでToneパラメータに±10%追加。
+  - name: Decay CV
+    type: input
+    desc:
+      en: Decay time modulation. CV adds ±10% to Decay parameter.
+      zh: Decay 時間調變。CV 對 Decay 參數增加 ±10%。
+      ja: ディケイタイム変調。CVでDecayパラメータに±10%追加。
+  - name: Mix CV
+    type: input
+    desc:
+      en: Wet/dry modulation. CV adds ±10% to Mix parameter.
+      zh: Wet/Dry 調變。CV 對 Mix 參數增加 ±10%。
+      ja: ウェット/ドライ変調。CVでMixパラメータに±10%追加。
+  - name: Chaos CV
+    type: input
+    desc:
+      en: Chaos depth modulation. CV adds ±10% to Chaos parameter.
+      zh: Chaos 深度調變。CV 對 Chaos 參數增加 ±10%。
+      ja: カオス深度変調。CVでChaosパラメータに±10%追加。
+  - name: Rate CV
+    type: input
+    desc:
+      en: Chaos speed modulation. CV adds ±20% to Rate parameter.
+      zh: Chaos 速度調變。CV 對 Rate 參數增加 ±20%。
+      ja: カオス速度変調。CVでRateパラメータに±20%追加。
+  - name: Left Audio
+    type: output
+    desc:
+      en: Stereo audio left channel output. Delivers processed signal (polyphonic, up to 16 channels).
+      zh: 立體聲左聲道 Audio 輸出。傳遞處理後的訊號（Polyphonic，最多 16 聲道）。
+      ja: ステレオオーディオ左チャンネル出力。処理済み信号を出力（ポリフォニック、最大16チャンネル）。
+  - name: Right Audio
+    type: output
+    desc:
+      en: Stereo audio right channel output. Delivers processed signal (polyphonic, up to 16 channels).
+      zh: 立體聲右聲道 Audio 輸出。傳遞處理後的訊號（Polyphonic，最多 16 聲道）。
+      ja: ステレオオーディオ右チャンネル出力。処理済み信号を出力（ポリフォニック、最大16チャンネル）。
+  - name: Chaos CV
+    type: output
+    desc:
+      en: Raw chaos signal from Lorenz attractor (0-5V, polyphonic).
+      zh: 來自 Lorenz Attractor 的原始 Chaos 訊號（0-5V，Polyphonic）。
+      ja: ローレンツアトラクターからの生カオス信号（0-5V、ポリフォニック）。
+  - name: Sample & Hold CV
+    type: output
+    desc:
+      en: Sample & Hold chaos output. Samples chaos at Rate × 10 Hz (0-5V, polyphonic).
+      zh: Sample & Hold Chaos 輸出。以 Rate × 10 Hz 取樣 Chaos（0-5V，Polyphonic）。
+      ja: サンプル＆ホールドカオス出力。Rate × 10 Hzでカオスをサンプリング（0-5V、ポリフォニック）。

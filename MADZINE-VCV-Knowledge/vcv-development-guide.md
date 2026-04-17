@@ -4,7 +4,7 @@
 > It captures development experience, conventions, and lessons learned from the MADZINE VCV Rack plugin project.
 > All paths use placeholders — replace them with your actual project directories.
 
-Version: 2.5.1
+Version: 2.5.2
 Last Updated: 2026-02-21
 
 ---

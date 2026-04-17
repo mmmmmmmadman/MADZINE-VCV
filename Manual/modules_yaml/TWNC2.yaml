@@ -1,0 +1,547 @@
+slug: TWNC2
+name: TWNC 2
+hp: 8
+wide: false
+alt: TWNC 2
+description:
+  en: Three-track drum voice module with BD/SN/HH synthesis, 10-bit quantization, and sidechain ducking
+  zh: 三軌 Drum Voice 模組，具備 BD/SN/HH 合成、10-bit 量化與 Sidechain Ducking
+  ja: BD/SN/HH合成、10ビット量子化、サイドチェーンダッキングを備えた3トラックドラムボイスモジュール
+features:
+  en:
+  - Three-track BD/SN/HH synthesis
+  - Envelope-driven (requires external triggers)
+  - Sidechain ducking system
+  - 10-bit vintage quantization
+  - Stereo mix with HH delay spread
+  zh:
+  - 三軌 BD/SN/HH 合成
+  - Envelope 驅動（需外部 Trigger）
+  - Sidechain Ducking 系統
+  - 10-bit 復古量化
+  - Stereo Mix 含 HH Delay Spread
+  ja:
+  - 3トラックBD/SN/HH合成
+  - エンベロープ駆動（外部トリガー必要）
+  - サイドチェーンダッキングシステム
+  - 10ビットビンテージ量子化
+  - HHディレイスプレッド付きステレオミックス
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Envelope-driven drum voice module with BD/SN/HH synthesis engines. Requires external envelope/trigger inputs (from TWNC or other modules). Features 10-bit quantization for vintage lo-fi character and sidechain ducking.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+    <p style="margin-bottom: 1rem;">Envelope CV → [Synthesis Engine] → [10-bit Quantizer] → [Soft Limiter] → Output. Each drum voice has dedicated synthesis and independent output, plus stereo mix with hi-hat delay spread.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Bass Drum (BD) Synthesis</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Kick Volume</b>: Output volume (0-1, default: 1.0)</li>
+    <li><b>Kick Envelope CV</b>: Envelope CV input (0-10V). VCA uses square root response for punchy character</li>
+    <li><b>Kick Accent CV</b>: Accent CV input (0-10V). Also drives sidechain ducking</li>
+    <li><b>Kick Frequency</b>: Frequency (24-500Hz logarithmic, default: ~24Hz)</li>
+    <li><b>Kick FM Amount</b>: FM amount (0-1, default: 0.157). Internally scaled 20x. Envelope squared for pitch sweep</li>
+    <li><b>Kick Punch Amount</b>: Saturation amount (0-1, default: 0.168). Soft-clipping saturation for warm distortion</li>
+    <li><b>Kick Frequency CV</b>: Frequency CV input (±10V, scaled /10)</li>
+    <li><b>Kick FM CV</b>: FM CV input (±10V, scaled /10)</li>
+    <li><b>Kick Punch CV</b>: Punch CV input (±10V, scaled /10)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Snare Drum (SN) Synthesis</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Snare Volume</b>: Output volume (0-1, default: 1.0)</li>
+    <li><b>Snare Envelope CV</b>: Envelope CV input (0-10V). VCA uses square root response</li>
+    <li><b>Snare Frequency</b>: Body frequency (100-300Hz logarithmic, default: ~120Hz)</li>
+    <li><b>Snare Noise Tone</b>: Noise filter tone (0-1, default: 0.717). Filter freq = bodyFreq*5 + tone*5000 + envCV*2000</li>
+    <li><b>Snare Noise Mix</b>: Body/noise crossfade (0-1, default: 0.288). CV modulation available</li>
+    <li><b>Snare Noise Mix CV</b>: Noise mix CV input (±10V, scaled /10)</li>
+    <li><b>Body</b>: Sine oscillator at 75% amplitude</li>
+    <li><b>Noise</b>: White noise through 2-pole biquad bandpass, 4x gain boost</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Bandpass Filter Behavior</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Type</b>: 2-pole biquad bandpass with optional 3rd pole for high Q</li>
+    <li><b>Q behavior</b>: At high Q values, additional filtering stage blends in for sharper resonance</li>
+    <li><b>Frequency range</b>: 20Hz to 45% of sample rate</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Hi-Hat (HH) Synthesis</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Hats Volume</b>: Output volume (0-1, default: 1.0)</li>
+    <li><b>Hats Envelope CV</b>: Envelope CV input (0-10V)</li>
+    <li><b>Hats Tone</b>: Base frequency (0-1, default: 0.965). Range: 1000-5500 Hz</li>
+    <li><b>Hats Decay</b>: Envelope decay shape (0-1, default: 0). Higher values add noise component (noiseAmount = decay * 0.8). CV input available via Hats Decay CV (±10V, scaled /10)</li>
+    <li><b>Hats Decay CV</b>: Decay CV input (±10V, scaled /10)</li>
+    <li><b>VCA curve</b>: Variable decay exponent (2.0 - decay*1.5), creating sharper/softer envelope shapes</li>
+    <li><b>Engine</b>: 6 detuned triangle oscillators (FM synthesis approach)</li>
+    <li><b>Frequency offsets</b>: +100, +250, +400, +550, +600, +1000 Hz from base</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">10-bit Quantization</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Resolution</b>: 1024 levels (10-bit)</li>
+    <li><b>Behavior</b>: Signal rounded to discrete amplitude levels</li>
+    <li><b>Applied to</b>: BD, SN, HH individual outputs and mix</li>
+    <li><b>Character</b>: Adds subtle lo-fi grit reminiscent of vintage samplers</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sidechain Ducking</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Duck Amount</b>: Ducking amount (0-1, default: 0)</li>
+    <li><b>Source</b>: Kick accent CV input</li>
+    <li><b>Behavior</b>: Kick accent attenuates other signals based on duck amount (internally scaled 3x: sidechainCV = 1 - accentCV * duckAmount * 3)</li>
+    <li><b>Affects</b>: Snare (full ducking via 0.02 + sidechain*0.98), external input (full ducking), hi-hat (reduced: 0.8 + sidechain*0.2)</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Stereo Delay</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Max delay</b>: 1440 samples (~30ms @ 48kHz)</li>
+    <li><b>HH spread</b>: Fixed 20ms delay on right channel</li>
+    <li><b>Implementation</b>: Circular buffer delay line</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Soft Limiter</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Threshold</b>: ±5V</li>
+    <li><b>Behavior</b>: Smooth saturation above threshold for warm limiting</li>
+    <li><b>Applied to</b>: L/R mix outputs only</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>External Input</b>: External audio input, affected by sidechain ducking</li>
+    <li><b>Kick Audio</b>: Bass drum output (10-bit quantized)</li>
+    <li><b>Snare Audio</b>: Snare drum output (10-bit quantized)</li>
+    <li><b>Hats Audio 1</b>: Hi-hat output (10-bit quantized)</li>
+    <li><b>Mix Output L</b>: Mix with HH direct</li>
+    <li><b>Mix Output R</b>: Mix with HH delayed 20ms</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Envelope input: 0-10V (normalized to 0-1)</li>
+    <li>CV input: ±10V (scaled /10)</li>
+    <li>Audio output: ±5V nominal (soft limited)</li>
+    <li>Quantization: 10-bit (1024 levels)</li>
+    <li>Processing: 32-bit floating point</li>
+    <li>Module width: 8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Companion Module</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>TWNC</b>: Provides Euclidean rhythm envelopes via VCA ENV, DRUM FM ENV, HATS VCA ENV outputs</li>
+    <li><b>TWNC Light</b>: Provides envelope outputs in 4HP form factor</li>
+    </ul>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">Envelope 驅動的 Drum Voice 模組，具備 BD/SN/HH 合成引擎。需要外部 Envelope/Trigger 輸入（來自 TWNC 或其他模組）。具備 10-bit 量化，提供復古 Lo-fi 特色，並內建 Sidechain Ducking。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+    <p style="margin-bottom: 1rem;">Envelope CV → [合成引擎] → [10-bit 量化器] → [Soft Limiter] → Output。每個 Drum Voice 都有專用合成與獨立輸出，加上 Stereo Mix 與 Hi-hat Delay Spread。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Bass Drum (BD) 合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Kick Volume</b>：輸出音量（0-1，預設：1.0）</li>
+    <li><b>Kick Envelope CV</b>：Envelope CV 輸入（0-10V）。VCA 使用平方根響應提供沖擊感</li>
+    <li><b>Kick Accent CV</b>：Accent CV 輸入（0-10V）。同時驅動 Sidechain Ducking</li>
+    <li><b>Kick Frequency</b>：頻率（24-500Hz 對數，預設：~24Hz）</li>
+    <li><b>Kick FM Amount</b>：FM 量（0-1，預設：0.157）。內部縮放 20 倍。Envelope 平方用於音高掃描</li>
+    <li><b>Kick Punch Amount</b>：飽和量（Saturation Amount，0-1，預設：0.168）。Soft-clipping 飽和處理，產生溫暖的失真效果</li>
+    <li><b>Kick Frequency CV</b>：頻率 CV 輸入（±10V，縮放 /10）</li>
+    <li><b>Kick FM CV</b>：FM CV 輸入（±10V，縮放 /10）</li>
+    <li><b>Kick Punch CV</b>：Punch CV 輸入（±10V，縮放 /10）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Snare Drum (SN) 合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Snare Volume</b>：輸出音量（0-1，預設：1.0）</li>
+    <li><b>Snare Envelope CV</b>：Envelope CV 輸入（0-10V）。VCA 使用平方根響應</li>
+    <li><b>Snare Frequency</b>：Body 頻率（100-300Hz 對數，預設：~120Hz）</li>
+    <li><b>Snare Noise Tone</b>：Noise Filter 音色（0-1，預設：0.717）。Filter 頻率 = bodyFreq*5 + tone*5000 + envCV*2000</li>
+    <li><b>Snare Noise Mix</b>：Body/Noise Crossfade（0-1，預設：0.288）。可接 CV 調變</li>
+    <li><b>Snare Noise Mix CV</b>：Noise Mix CV 輸入（±10V，縮放 /10）</li>
+    <li><b>Body</b>：Sine Oscillator，振幅 75%</li>
+    <li><b>Noise</b>：White Noise 通過 2-pole Biquad Bandpass，4 倍增益提升</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Bandpass Filter 行為</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>類型</b>：2-pole Biquad Bandpass，高 Q 時可選 3rd Pole</li>
+    <li><b>Q 行為</b>：高 Q 值時，額外的濾波階段會混合進來，產生更尖銳的共振效果</li>
+    <li><b>頻率範圍</b>：20Hz 至取樣率的 45%</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Hi-Hat (HH) 合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Hats Volume</b>：輸出音量（0-1，預設：1.0）</li>
+    <li><b>Hats Envelope CV</b>：Envelope CV 輸入（0-10V）</li>
+    <li><b>Hats Tone</b>：基礎頻率（0-1，預設：0.965）。範圍：1000-5500 Hz</li>
+    <li><b>Hats Decay</b>：Envelope Decay 形狀（0-1，預設：0）。較高值加入 Noise 成分（noiseAmount = decay * 0.8）。CV 輸入透過 Hats Decay CV 可用（±10V，縮放 /10）</li>
+    <li><b>Hats Decay CV</b>：Decay CV 輸入（±10V，縮放 /10）</li>
+    <li><b>VCA 曲線</b>：可變 Decay 指數（2.0 - decay*1.5），產生較尖銳/較柔和的 Envelope 形狀</li>
+    <li><b>引擎</b>：6 個失諧 Triangle Oscillator（FM 合成方法）</li>
+    <li><b>頻率偏移</b>：相對基礎頻率 +100、+250、+400、+550、+600、+1000 Hz</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">10-bit 量化</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>解析度</b>：1024 級別（10-bit）</li>
+    <li><b>行為</b>：訊號被四捨五入至離散的振幅階層</li>
+    <li><b>套用至</b>：BD、SN、HH 獨立輸出與 Mix</li>
+    <li><b>特色</b>：增添微妙的 Lo-fi 質感，讓人想起復古採樣機</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sidechain Ducking</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Duck Amount</b>：Ducking 量（0-1，預設：0）</li>
+    <li><b>來源</b>：Kick Accent CV 輸入</li>
+    <li><b>行為</b>：Kick Accent 根據 Duck 量衰減其他訊號（內部縮放 3 倍：sidechainCV = 1 - accentCV * duckAmount * 3）</li>
+    <li><b>影響</b>：Snare（完全 Ducking，0.02 + sidechain*0.98）、外部輸入（完全 Ducking）、Hi-hat（降低：0.8 + sidechain*0.2）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Stereo Delay</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>最大 Delay</b>：1440 Samples（~30ms @ 48kHz）</li>
+    <li><b>HH Spread</b>：右聲道固定 20ms Delay</li>
+    <li><b>實作</b>：循環緩衝 Delay Line</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Soft Limiter</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>閾值</b>：±5V</li>
+    <li><b>行為</b>：超過閾值時進行平滑飽和處理，產生溫暖的 Limiting 效果</li>
+    <li><b>套用至</b>：僅 L/R Mix 輸出</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>External Input</b>：外部音訊輸入，受 Sidechain Ducking 影響</li>
+    <li><b>Kick Audio</b>：Bass Drum 輸出（10-bit 量化）</li>
+    <li><b>Snare Audio</b>：Snare Drum 輸出（10-bit 量化）</li>
+    <li><b>Hats Audio 1</b>：Hi-hat 輸出（10-bit 量化）</li>
+    <li><b>Mix Output L</b>：Mix 含 HH 直接訊號</li>
+    <li><b>Mix Output R</b>：Mix 含 HH 延遲 20ms</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Envelope 輸入：0-10V（正規化為 0-1）</li>
+    <li>CV 輸入：±10V（縮放 /10）</li>
+    <li>Audio 輸出：±5V 標稱值（Soft Limited）</li>
+    <li>量化：10-bit（1024 級別）</li>
+    <li>處理：32-bit 浮點</li>
+    <li>模組寬度：8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">配套模組</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>TWNC</b>：透過 VCA ENV、DRUM FM ENV、HATS VCA ENV 輸出提供 Euclidean Rhythm Envelope</li>
+    <li><b>TWNC Light</b>：提供 4HP 形式的 Envelope 輸出</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Type</b>: 2極 Biquad Bandpass，高 Q 值時可選 3 極</li>
+    <li><b>Q behavior</b>: 高 Q 值時，額外的濾波階段會混合進來，產生更尖銳的共振效果</li>
+    <li><b>Frequency range</b>: 20Hz 至 Sample Rate 的 45%</li>
+    <li><b>VCA curve</b>: 可變 Decay 指數（2.0 - decay x 1.5），產生更銳或更柔的 Envelope 形狀</li>
+    <li><b>Engine</b>: 6 個去諧三角波振盪器（FM 合成方式）</li>
+    <li><b>Frequency offsets</b>: 從基礎頻率偏移 +100、+250、+400、+550、+600、+1000 Hz</li>
+    <li><b>Resolution</b>: 1024 階（10 位元）</li>
+    <li><b>Behavior</b>: 訊號被四捨五入至離散的振幅階層</li>
+    <li><b>Applied to</b>: BD、SN、HH 獨立輸出及混音</li>
+    <li><b>Character</b>: 添加類比復古取樣器風格的細微 Lo-fi 顆粒感</li>
+    <li><b>Source</b>: Kick Accent CV 輸入</li>
+    <li><b>Max delay</b>: 1440 Samples（48kHz 約 30ms）</li>
+    <li><b>Implementation</b>: 循環 Buffer Delay Line</li>
+    <li><b>Threshold</b>: +/-5V</li>
+    </ul></div>
+    <div style="display:none"><ul>
+    <li><b>Affects</b>：Snare（0.02 + sidechain×0.98 完全 Ducking）、外部輸入（完全 Ducking）、HH</li>
+    <li><b>Behavior</b>：Kick Accent 以 Duck 量衰減其他訊號（內部縮放 3 倍）</li>
+    </ul></div>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">BD/SN/HH合成エンジンを備えたエンベロープ駆動ドラムボイスモジュール。外部エンベロープ/トリガー入力（TWNCまたは他のモジュールから）が必要。ビンテージLo-fiキャラクターのための10ビット量子化とサイドチェーンダッキングを搭載。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+    <p style="margin-bottom: 1rem;">Envelope CV → [合成エンジン] → [10ビット量子化] → [ソフトリミッター] → Output。各ドラムボイスは専用合成と独立出力を持ち、ハイハットディレイスプレッド付きステレオミックスを提供。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">バスドラム (BD) 合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Kick Volume</b>：出力音量（0-1、デフォルト：1.0）</li>
+    <li><b>Kick Envelope CV</b>：エンベロープCV入力（0-10V）。VCAは平方根レスポンスでパンチのあるキャラクター</li>
+    <li><b>Kick Accent CV</b>：アクセントCV入力（0-10V）。サイドチェーンダッキングも駆動</li>
+    <li><b>Kick Frequency</b>：周波数（24-500Hz対数、デフォルト：~24Hz）</li>
+    <li><b>Kick FM Amount</b>：FM量（0-1、デフォルト：0.157）。内部で20倍スケール。ピッチスイープ用にエンベロープを二乗</li>
+    <li><b>Kick Punch Amount</b>：サチュレーション量（0-1、デフォルト：0.168）。ソフトクリッピングサチュレーションで温かい歪み</li>
+    <li><b>Kick Frequency CV</b>：周波数CV入力（±10V、スケール/10）</li>
+    <li><b>Kick FM CV</b>：FM CV入力（±10V、スケール/10）</li>
+    <li><b>Kick Punch CV</b>：パンチCV入力（±10V、スケール/10）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">スネアドラム (SN) 合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Snare Volume</b>：出力音量（0-1、デフォルト：1.0）</li>
+    <li><b>Snare Envelope CV</b>：エンベロープCV入力（0-10V）。VCAは平方根レスポンス使用</li>
+    <li><b>Snare Frequency</b>：ボディ周波数（100-300Hz対数、デフォルト：~120Hz）</li>
+    <li><b>Snare Noise Tone</b>：ノイズフィルター音色（0-1、デフォルト：0.717）。フィルター周波数 = bodyFreq*5 + tone*5000 + envCV*2000</li>
+    <li><b>Snare Noise Mix</b>：ボディ/ノイズクロスフェード（0-1、デフォルト：0.288）。CV変調可能</li>
+    <li><b>Snare Noise Mix CV</b>：ノイズミックスCV入力（±10V、スケール/10）</li>
+    <li><b>ボディ</b>：サインオシレーター、振幅75%</li>
+    <li><b>ノイズ</b>：2ポールバイクワッドバンドパス通過ホワイトノイズ、4倍ゲインブースト</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">バンドパスフィルター動作</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>タイプ</b>：2ポールバイクワッドバンドパス、高Q時はオプション3rdポール</li>
+    <li><b>Q動作</b>：高Q値時、追加のフィルタリング段がブレンドされ、より鋭い共振を生成</li>
+    <li><b>周波数範囲</b>：20Hzからサンプルレートの45%</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ハイハット (HH) 合成</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Hats Volume</b>：出力音量（0-1、デフォルト：1.0）</li>
+    <li><b>Hats Envelope CV</b>：エンベロープCV入力（0-10V）</li>
+    <li><b>Hats Tone</b>：基本周波数（0-1、デフォルト：0.965）。範囲：1000-5500 Hz</li>
+    <li><b>Hats Decay</b>：エンベロープディケイ形状（0-1、デフォルト：0）。高い値でノイズ成分追加（noiseAmount = decay * 0.8）。Hats Decay CV経由でCV入力対応（±10V、スケール/10）</li>
+    <li><b>Hats Decay CV</b>：ディケイCV入力（±10V、スケール/10）</li>
+    <li><b>VCAカーブ</b>：可変ディケイ指数（2.0 - decay*1.5）、より鋭い/柔らかいエンベロープ形状を生成</li>
+    <li><b>エンジン</b>：6つのデチューンドトライアングルオシレーター（FM合成アプローチ）</li>
+    <li><b>周波数オフセット</b>：基本から+100、+250、+400、+550、+600、+1000 Hz</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">10ビット量子化</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>解像度</b>：1024レベル（10ビット）</li>
+    <li><b>動作</b>：信号を離散的な振幅レベルに丸め処理</li>
+    <li><b>適用先</b>：BD、SN、HH個別出力とミックス</li>
+    <li><b>キャラクター</b>：ビンテージサンプラーを彷彿とさせる微妙なLo-fiグリットを追加</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">サイドチェーンダッキング</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Duck Amount</b>：ダッキング量（0-1、デフォルト：0）</li>
+    <li><b>ソース</b>：キックアクセントCV入力</li>
+    <li><b>動作</b>：キックアクセントがダック量に応じて他の信号を減衰（内部3倍スケール：sidechainCV = 1 - accentCV * duckAmount * 3）</li>
+    <li><b>影響</b>：スネア（フルダッキング、0.02 + sidechain*0.98）、外部入力（フル）、ハイハット（低減：0.8 + sidechain*0.2）</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ステレオディレイ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>最大ディレイ</b>：1440サンプル（~30ms @ 48kHz）</li>
+    <li><b>HHスプレッド</b>：右チャンネル固定20msディレイ</li>
+    <li><b>実装</b>：サーキュラーバッファーディレイライン</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ソフトリミッター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>閾値</b>：±5V</li>
+    <li><b>動作</b>：閾値を超えるとスムーズなサチュレーションで温かいリミッティング効果</li>
+    <li><b>適用先</b>：L/Rミックス出力のみ</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>External Input</b>：外部オーディオ入力、サイドチェーンダッキングの影響を受ける</li>
+    <li><b>Kick Audio</b>：バスドラム出力（10ビット量子化）</li>
+    <li><b>Snare Audio</b>：スネアドラム出力（10ビット量子化）</li>
+    <li><b>Hats Audio 1</b>：ハイハット出力（10ビット量子化）</li>
+    <li><b>Mix Output L</b>：HH直接信号入りミックス</li>
+    <li><b>Mix Output R</b>：HH 20msディレイ入りミックス</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>エンベロープ入力：0-10V（0-1に正規化）</li>
+    <li>CV入力：±10V（スケール/10）</li>
+    <li>オーディオ出力：±5V公称値（ソフトリミット）</li>
+    <li>量子化：10ビット（1024レベル）</li>
+    <li>処理：32ビット浮動小数点</li>
+    <li>モジュール幅：8HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">コンパニオンモジュール</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>TWNC</b>：VCA ENV、DRUM FM ENV、HATS VCA ENV出力経由でユークリッドリズムエンベロープを提供</li>
+    <li><b>TWNC Light</b>：4HPフォームファクターでエンベロープ出力を提供</li>
+    </ul>
+    <div style="display:none"><ul>
+    <li><b>Type</b>: 2極バイクアッドバンドパス、高Q時オプション3極</li>
+    <li><b>Q behavior</b>: 高Q値時、追加フィルタリングステージが混入してよりシャープな共振</li>
+    <li><b>Frequency range</b>: 20Hz〜サンプルレートの45%</li>
+    <li><b>VCA curve</b>: 可変ディケイ指数（2.0 - decay x 1.5）、よりシャープ/ソフトなエンベロープ形状を生成</li>
+    <li><b>Engine</b>: 6つのデチューンされた三角波オシレーター（FMシンセシスアプローチ）</li>
+    <li><b>Frequency offsets</b>: ベースから+100、+250、+400、+550、+600、+1000 Hzオフセット</li>
+    <li><b>Resolution</b>: 1024レベル（10ビット）</li>
+    <li><b>Behavior</b>: 信号が離散的な振幅レベルに丸められる</li>
+    <li><b>Applied to</b>: BD、SN、HH個別出力およびミックス</li>
+    <li><b>Character</b>: ヴィンテージサンプラーを彷彿とさせる微妙なローファイ感を追加</li>
+    <li><b>Source</b>: キックアクセントCV入力</li>
+    <li><b>Max delay</b>: 1440サンプル（48kHzで約30ms）</li>
+    <li><b>Implementation</b>: 循環バッファディレイライン</li>
+    <li><b>Threshold</b>: +/-5V</li>
+    <li><b>Body</b>: サイン波オシレーター、75%振幅</li>
+    <li><b>Noise</b>: 2極バイクアッドバンドパスを通じたホワイトノイズ、4倍ゲインブースト</li>
+    <li><b>HH spread</b>: 右チャンネルに固定20msディレイ</li>
+    </ul></div>
+    <div style="display:none"><ul>
+    <li><b>Affects</b>：スネア（0.02 + sidechain×0.98で完全ダッキング）、外部入力（完全ダッキング）、HH</li>
+    <li><b>Behavior</b>：キックアクセントがダック量に基づいて他の信号を減衰（内部で3倍スケーリング）</li>
+    </ul></div>
+controls:
+- name: Kick Envelope CV
+  type: input
+  desc:
+    en: Envelope CV input (0-10V). VCA uses square root response for punchy character
+    zh: Envelope CV 輸入（0-10V）。VCA 使用平方根響應提供沖擊感
+    ja: エンベロープCV入力（0-10V）。VCAは平方根レスポンスでパンチのあるキャラクター
+- name: Kick Accent CV
+  type: input
+  desc:
+    en: Accent CV input (0-10V). Also drives sidechain ducking
+    zh: Accent CV 輸入（0-10V）。同時驅動 Sidechain Ducking
+    ja: アクセントCV入力（0-10V）。サイドチェーンダッキングも駆動
+- name: Kick Frequency CV
+  type: input
+  desc:
+    en: Frequency CV input (±10V, scaled /10)
+    zh: 頻率 CV 輸入（±10V，縮放 /10）
+    ja: 周波数CV入力（±10V、スケール/10）
+- name: Kick FM CV
+  type: input
+  desc:
+    en: FM CV input (±10V, scaled /10)
+    zh: FM CV 輸入（±10V，縮放 /10）
+    ja: FM CV入力（±10V、スケール/10）
+- name: Kick Punch CV
+  type: input
+  desc:
+    en: Punch CV input (±10V, scaled /10)
+    zh: Punch CV 輸入（±10V，縮放 /10）
+    ja: パンチCV入力（±10V、スケール/10）
+- name: Snare Envelope CV
+  type: input
+  desc:
+    en: Envelope CV input (0-10V). VCA uses square root response
+    zh: Envelope CV 輸入（0-10V）。VCA 使用平方根響應
+    ja: エンベロープCV入力（0-10V）。VCAは平方根レスポンス使用
+- name: Snare Noise Mix CV
+  type: input
+  desc:
+    en: Noise mix CV input (±10V, scaled /10)
+    zh: Noise Mix CV 輸入（±10V，縮放 /10）
+    ja: ノイズミックスCV入力（±10V、スケール/10）
+- name: Hats Envelope CV
+  type: input
+  desc:
+    en: Envelope CV input (0-10V)
+    zh: Envelope CV 輸入（0-10V）
+    ja: エンベロープCV入力（0-10V）
+- name: External Input
+  type: input
+  desc:
+    en: External audio input, affected by sidechain ducking
+    zh: 外部音訊輸入，受 Sidechain Ducking 影響
+    ja: 外部オーディオ入力、サイドチェーンダッキングの影響を受ける
+- name: Kick Volume
+  type: param
+  desc:
+    en: 'Output volume (0-1, default: 1.0)'
+    zh: 輸出音量（0-1，預設：1.0）
+    ja: 出力音量（0-1、デフォルト：1.0）
+- name: Kick Frequency
+  type: param
+  desc:
+    en: 'Frequency (24-500Hz logarithmic, default: ~24Hz)'
+    zh: 頻率（24-500Hz 對數，預設：~24Hz）
+    ja: 周波数（24-500Hz対数、デフォルト：~24Hz）
+- name: Kick FM Amount
+  type: param
+  desc:
+    en: 'FM amount (0-1, default: 0.157). Internally scaled 20x. Envelope squared for pitch sweep'
+    zh: FM 量（0-1，預設：0.157）。內部縮放 20 倍。Envelope 平方用於音高掃描
+    ja: FM量（0-1、デフォルト：0.157）。内部で20倍スケール。ピッチスイープ用にエンベロープを二乗
+- name: Kick Punch Amount
+  type: param
+  desc:
+    en: 'Saturation amount (0-1, default: 0.168). Soft-clipping saturation for warm distortion'
+    zh: 飽和量（Saturation Amount，0-1，預設：0.168）。Soft-clipping 飽和處理，產生溫暖的失真效果
+    ja: サチュレーション量（0-1、デフォルト：0.168）。ソフトクリッピングサチュレーションで温かい歪み
+- name: Snare Volume
+  type: param
+  desc:
+    en: 'Output volume (0-1, default: 1.0)'
+    zh: 輸出音量（0-1，預設：1.0）
+    ja: 出力音量（0-1、デフォルト：1.0）
+- name: Snare Frequency
+  type: param
+  desc:
+    en: 'Body frequency (100-300Hz logarithmic, default: ~120Hz)'
+    zh: Body 頻率（100-300Hz 對數，預設：~120Hz）
+    ja: ボディ周波数（100-300Hz対数、デフォルト：~120Hz）
+- name: Snare Noise Tone
+  type: param
+  desc:
+    en: 'Noise filter tone (0-1, default: 0.717). Filter freq = bodyFreq*5 + tone*5000 + envCV*2000'
+    zh: Noise Filter 音色（0-1，預設：0.717）。Filter 頻率 = bodyFreq*5 + tone*5000 + envCV*2000
+    ja: ノイズフィルター音色（0-1、デフォルト：0.717）。フィルター周波数 = bodyFreq*5 + tone*5000 + envCV*2000
+- name: Snare Noise Mix
+  type: param
+  desc:
+    en: 'Body/noise crossfade (0-1, default: 0.288). CV modulation available'
+    zh: Body/Noise Crossfade（0-1，預設：0.288）。可接 CV 調變
+    ja: ボディ/ノイズクロスフェード（0-1、デフォルト：0.288）。CV変調可能
+- name: Hats Volume
+  type: param
+  desc:
+    en: 'Output volume (0-1, default: 1.0)'
+    zh: 輸出音量（0-1，預設：1.0）
+    ja: 出力音量（0-1、デフォルト：1.0）
+- name: Hats Tone
+  type: param
+  desc:
+    en: 'Base frequency (0-1, default: 0.965). Range: 1000-5500 Hz'
+    zh: 基礎頻率（0-1，預設：0.965）。範圍：1000-5500 Hz
+    ja: 基本周波数（0-1、デフォルト：0.965）。範囲：1000-5500 Hz
+- name: Hats Decay
+  type: param
+  desc:
+    en: 'Envelope decay shape (0-1, default: 0). Higher values add noise component (noiseAmount = decay * 0.8). CV input available via Hats Decay CV (±10V, scaled /10)'
+    zh: Envelope Decay 形狀（0-1，預設：0）。較高值加入 Noise 成分（noiseAmount = decay * 0.8）。CV 輸入透過 Hats Decay CV 可用（±10V，縮放 /10）
+    ja: エンベロープディケイ形状（0-1、デフォルト：0）。高い値でノイズ成分追加（noiseAmount = decay * 0.8）。Hats Decay CV経由でCV入力対応（±10V、スケール/10）
+- name: Duck Amount
+  type: param
+  desc:
+    en: 'Ducking amount (0-1, default: 0)'
+    zh: Ducking 量（0-1，預設：0）
+    ja: ダッキング量（0-1、デフォルト：0）
+- name: Kick Audio
+  type: output
+  desc:
+    en: Bass drum output (10-bit quantized)
+    zh: Bass Drum 輸出（10-bit 量化）
+    ja: バスドラム出力（10ビット量子化）
+- name: Snare Audio
+  type: output
+  desc:
+    en: Snare drum output (10-bit quantized)
+    zh: Snare Drum 輸出（10-bit 量化）
+    ja: スネアドラム出力（10ビット量子化）
+- name: Hats Audio 1
+  type: output
+  desc:
+    en: Hi-hat output (10-bit quantized)
+    zh: Hi-hat 輸出（10-bit 量化）
+    ja: ハイハット出力（10ビット量子化）
+- name: Mix Output L
+  type: output
+  desc:
+    en: Mix with HH direct
+    zh: Mix 含 HH 直接訊號
+    ja: HH直接信号入りミックス
+- name: Mix Output R
+  type: output
+  desc:
+    en: Mix with HH delayed 20ms
+    zh: Mix 含 HH 延遲 20ms
+    ja: HH 20msディレイ入りミックス
