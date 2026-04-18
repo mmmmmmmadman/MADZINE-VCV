@@ -115,8 +115,11 @@ struct theKICK : Module {
     float fbY1 = 0.f;
     float fbY2 = 0.f;
 
-    // Accent level (sampled on trigger)
-    float accentLevel = 1.f;
+    // Accent (sampled on trigger, TR-808/909 style)
+    // 0V → non-accented, 10V → fully accented; affects volume/sweep/drive
+    float accentVolume = 1.f;      // 0.5 → 1.0 (+6 dB)
+    float accentSweepMult = 1.f;   // 1.0x → 1.8x (pitch env depth)
+    float accentDriveMult = 1.f;   // 1.0x → 1.26x (+2 dB pre-saturation gain)
 
     // LPF state (4-pole, 24dB/oct)
     float lpfState[4] = {};
@@ -218,7 +221,9 @@ struct theKICK : Module {
         active = false;
         fbY1 = 0.f;
         fbY2 = 0.f;
-        accentLevel = 1.f;
+        accentVolume = 1.f;
+        accentSweepMult = 1.f;
+        accentDriveMult = 1.f;
         for (int i = 0; i < 4; i++) lpfState[i] = 0.f;
         samplePlayPos = 0.f;
         modeValue = 0;
@@ -377,8 +382,9 @@ struct theKICK : Module {
         if (!active) return 0.f;
 
         // Pitch envelope: freq = pitch + sweep * exp(-t / (0.015 / bend))
+        // Accent boosts sweep depth up to 1.8x for snappier attack
         float pitchTau = 0.015f / state.bend;
-        float pitchEnv = state.sweep * std::exp(-pitchEnvTime / pitchTau);
+        float pitchEnv = state.sweep * accentSweepMult * std::exp(-pitchEnvTime / pitchTau);
         float freq = state.pitch + pitchEnv;
 
         // Self-feedback PM
@@ -466,8 +472,9 @@ struct theKICK : Module {
         float filtered = lpfState[3];
 
         // Post-LPF Drive: tanh saturation
+        // Accent adds +2 dB pre-saturation gain for more harmonic punch
         if (state.fold > 0.01f) {
-            float g = 1.f + state.fold * 0.5f;  // 1~6x gain
+            float g = (1.f + state.fold * 0.5f) * accentDriveMult;  // 1~6x gain, accent boosts
             float tanhG = std::tanh(g);
             filtered = std::tanh(filtered * g) / tanhG;
         }
@@ -614,11 +621,18 @@ struct theKICK : Module {
             processPosition = BLOCK_SIZE;
             downFilter.reset();
 
-            // Sample accent level on trigger
+            // Sample accent on trigger (TR-808/909 style: multi-parameter)
+            // 0V → non-accented baseline, 10V → fully accented
+            // Affects: volume (+6 dB), pitch sweep depth (+80%), drive (+2 dB)
             if (inputs[ACCENT_INPUT].isConnected()) {
-                accentLevel = clamp(inputs[ACCENT_INPUT].getVoltage() / 10.f, 0.f, 1.f);
+                float cv = clamp(inputs[ACCENT_INPUT].getVoltage() / 10.f, 0.f, 1.f);
+                accentVolume = 0.5f + cv * 0.5f;      // 0.5 → 1.0 (6 dB range)
+                accentSweepMult = 1.f + cv * 0.8f;    // 1.0x → 1.8x
+                accentDriveMult = 1.f + cv * 0.26f;   // 1.0x → 1.26x (+2 dB)
             } else {
-                accentLevel = 1.f;
+                accentVolume = 1.f;
+                accentSweepMult = 1.f;
+                accentDriveMult = 1.f;
             }
         }
 
@@ -662,7 +676,7 @@ struct theKICK : Module {
             processPosition++;
         }
 
-        outputs[OUT_OUTPUT].setVoltage(outputFinal * accentLevel);
+        outputs[OUT_OUTPUT].setVoltage(outputFinal * accentVolume);
     }
 
     // ========================================================================
