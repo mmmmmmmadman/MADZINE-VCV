@@ -711,13 +711,13 @@ struct MADDYPlus : Module {
         float lastUsedDecayParam = 0.3f;
         bool justTriggered = false;
 
-        void reset() {
+        void reset(bool resetShift = true) {
             dividedProgressSeconds = 0.0f;
             dividerCount = 0;
             shouldStep = false;
             prevMultipliedGate = false;
             currentStep = 0;
-            shift = 0;
+            if (resetShift) shift = 0;
             pattern.clear();
             gateState = false;
             envelopePhase = IDLE;
@@ -1399,13 +1399,13 @@ struct MADDYPlus : Module {
         }
     }
 
-    void onReset() override {
+    void resetState(bool resetShift) {
         phase = 0.0f;
         secondPhase = 0.0f;
         prevSwingPulse = 0.0f;
         globalClockSeconds = 0.5f;
         for (int i = 0; i < 3; ++i) {
-            tracks[i].reset();
+            tracks[i].reset(resetShift);
         }
         chain12.reset();
         chain23.reset();
@@ -1441,6 +1441,10 @@ struct MADDYPlus : Module {
         ch3CvdWriteIndex = 0;
         generateCh2Mapping();
         generateCh3Mapping();
+    }
+
+    void onReset() override {
+        resetState(true);
     }
 
 json_t* dataToJson() override {
@@ -1558,7 +1562,7 @@ json_t* dataToJson() override {
         static float resetPulseTimer = 0.0f;
 
         if (params[MANUAL_RESET_PARAM].getValue() > 0.5f) {
-            onReset();
+            resetState(false);
             params[MANUAL_RESET_PARAM].setValue(0.0f);
             resetPulseTimer = 0.1f;
             outputs[RESET_OUTPUT].setVoltage(10.0f);

@@ -257,21 +257,21 @@ struct Ovomorph : Module {
             bool chaosEnabled = chaosAmount > 0.0f;
 
             // Chaos 處理
-            float chaosRaw = 0.0f;
-            float chaosSH = 0.0f;
-            if (chaosEnabled) {
-                chaosRaw = chaosGen[c].process(chaosRate) * chaosAmount;
+            // generator 永遠運作，產生未衰減的原始值供 output 使用
+            float chaosUnscaled = chaosGen[c].process(chaosRate);
+            // 衰減值供 audio 內部處理使用（旋鈕控制擾動深度）
+            float chaosRaw = chaosUnscaled * chaosAmount;
 
-                // S&H 邏輯：根據 rate 取樣
-                float shRate = chaosRate * 10.0f;
-                shPhase[c] += shRate / args.sampleRate;
-                if (shPhase[c] >= 1.0f) {
-                    lastSHValue[c] = chaosRaw;
-                    shPhase[c] = 0.0f;
-                }
-                chaosSH = lastSHValue[c];
+            // S&H 邏輯：根據 rate 取樣，相位永遠推進，存原始未衰減值
+            float shRate = chaosRate * 10.0f;
+            shPhase[c] += shRate / args.sampleRate;
+            if (shPhase[c] >= 1.0f) {
+                lastSHValue[c] = chaosUnscaled;
+                shPhase[c] = 0.0f;
             }
-            outputs[CHAOS_OUTPUT].setVoltage(chaosRaw * 5.0f, c);
+            float chaosSH = lastSHValue[c];
+
+            outputs[CHAOS_OUTPUT].setVoltage(chaosUnscaled * 5.0f, c);
             outputs[SH_OUTPUT].setVoltage(chaosSH * 5.0f, c);
 
             // 取得輸入
