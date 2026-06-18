@@ -24,6 +24,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include "ERBGrouping.hpp"
 
 class FFTCompDSP {
 public:
@@ -143,9 +144,14 @@ public:
         if (sr <= 0.f) return;
         if (sampleRate_ == sr) return;
         sampleRate_ = sr;
+        erb_.rebuild(sampleRate_, NUM_BINS);
         recomputeAll_();
         recomputeAttackRelease_();
     }
+
+    // v2.2: enable ERB-band detection path. Off by default; legacy 4-band
+    // weightBins_ path remains active until v2.3 wires C-3/C-4.
+    void setUseERB(bool e) { useERB_ = e; }
 
     void setBandFrequency(int band, float hz) {
         if (band < 0 || band >= NUM_BANDS) return;
@@ -564,6 +570,8 @@ private:
         recomputePreGainBins_();
         recomputePostGainBins_();
         recomputeScFilterBins_();
+        // v2.2: keep ERB LUT in sync with current sample rate / NUM_BINS.
+        erb_.rebuild(sampleRate_, NUM_BINS);
     }
     void recomputeAttackRelease_() {
         float atkMs = 1.f + attackNorm_  * (500.f  - 1.f);
@@ -636,6 +644,12 @@ private:
     float scHpfHz_;
     float scLpfHz_;
     std::vector<float> scFilterGainBins_;
+
+    // v2.2: ERB band grouping scaffold (C-2). Rebuilt in setSampleRate().
+    // useERB_ flag is reserved for v2.3 detection switch; legacy 4-band path
+    // remains active when false (current default).
+    ERBGrouping erb_;
+    bool useERB_ = false;
 };
 
 // C++14 ODR definition for static constexpr array
