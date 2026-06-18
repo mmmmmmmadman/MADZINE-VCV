@@ -422,10 +422,10 @@ struct FFTCompWidget : ModuleWidget {
         // 12HP white area (box.size.x = 180):
         // 左組往左 5px, 右組往右 5px, 中間 LP/HP knob 維持
         // IN label center X=7 (panel 邊緣對齊, 無法再左)
-        addChild(new FFTCompTextLabel(Vec(0.f,    351.f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
+        addChild(new FFTCompTextLabel(Vec(-3.f,   351.f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
         // SC IN: 垂直堆疊, 中心 X=48 (was 53, 左移 5)
-        addChild(new FFTCompTextLabel(Vec(39.f, 343.5f), Vec(14.f, 9.f), "SC", 7.f, pinkColor, true));
-        addChild(new FFTCompTextLabel(Vec(39.f, 358.5f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
+        addChild(new FFTCompTextLabel(Vec(36.f, 343.5f), Vec(14.f, 9.f), "SC", 7.f, pinkColor, true));
+        addChild(new FFTCompTextLabel(Vec(36.f, 358.5f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
 
         // SC LPF / HPF knob row labels (LP/HP 中心 X=86, 走廊 79-93, 維持原位)
         addChild(new FFTCompTextLabel(Vec(79.f, 338.5f), Vec(14.f, 9.f), "LP", 7.f, pinkColor, true));

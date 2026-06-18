@@ -47,6 +47,7 @@ public:
           attackCoef_(0.5f),
           releaseCoef_(0.1f),
           mix_(1.0f),
+          makeupDb_(0.0f),
           makeupGain_(1.0f),
           olaGain_(1.f / 1.5f)
     {
@@ -125,6 +126,7 @@ public:
         if (band < 0 || band >= NUM_BANDS) return;
         if (dB < -24.f) dB = -24.f;
         if (dB >  24.f) dB =  24.f;
+        if (bandPreDb_[band] == dB) return;
         bandPreDb_[band] = dB;
         recomputePreGainBins_();
     }
@@ -133,6 +135,7 @@ public:
         if (band < 0 || band >= NUM_BANDS) return;
         if (amt01 < 0.f) amt01 = 0.f;
         if (amt01 > 1.f) amt01 = 1.f;
+        if (bandAmount_[band] == amt01) return;
         bandAmount_[band] = amt01;
         recomputeWeightBins_();
     }
@@ -140,6 +143,7 @@ public:
     void setAttack(float norm01) {
         if (norm01 < 0.f) norm01 = 0.f;
         if (norm01 > 1.f) norm01 = 1.f;
+        if (attackNorm_ == norm01) return;
         attackNorm_ = norm01;
         recomputeAttackRelease_();
     }
@@ -147,6 +151,7 @@ public:
     void setRelease(float norm01) {
         if (norm01 < 0.f) norm01 = 0.f;
         if (norm01 > 1.f) norm01 = 1.f;
+        if (releaseNorm_ == norm01) return;
         releaseNorm_ = norm01;
         recomputeAttackRelease_();
     }
@@ -154,18 +159,22 @@ public:
     void setMix(float wet01) {
         if (wet01 < 0.f) wet01 = 0.f;
         if (wet01 > 1.f) wet01 = 1.f;
+        if (mix_ == wet01) return;
         mix_ = wet01;
     }
 
     void setMakeupGain(float dB) {
         if (dB < -12.f) dB = -12.f;
         if (dB >  12.f) dB =  12.f;
+        if (makeupDb_ == dB) return;
+        makeupDb_ = dB;
         makeupGain_ = std::pow(10.f, dB / 20.f);
     }
 
     void setScHpfFreq(float hz) {
         if (hz < 20.f) hz = 20.f;
         if (hz > 2000.f) hz = 2000.f;
+        if (scHpfHz_ == hz) return;
         scHpfHz_ = hz;
         recomputeScFilterBins_();
     }
@@ -175,6 +184,7 @@ public:
         float maxHz = sampleRate_ * 0.45f;
         if (hz > 20000.f) hz = 20000.f;
         if (hz > maxHz) hz = maxHz;
+        if (scLpfHz_ == hz) return;
         scLpfHz_ = hz;
         recomputeScFilterBins_();
     }
@@ -183,6 +193,7 @@ public:
         if (band < 0 || band >= NUM_BANDS) return;
         if (dB < -24.f) dB = -24.f;
         if (dB >  24.f) dB =  24.f;
+        if (bandPostDb_[band] == dB) return;
         bandPostDb_[band] = dB;
         recomputePostGainBins_();
     }
@@ -534,6 +545,7 @@ private:
     float attackCoef_;
     float releaseCoef_;
     float mix_;
+    float makeupDb_;
     float makeupGain_;
 
     std::vector<float> inputRing_;
