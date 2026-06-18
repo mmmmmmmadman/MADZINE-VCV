@@ -86,6 +86,13 @@ public:
         displayMag_.assign(NUM_BINS, 0.f);
         displayGR_.assign(NUM_BINS, 1.f);
 
+        // v2.3: ERB-band noise-floor scratch + IIR state.
+        // floorSmoothedDb_ holds the per-band IIR-smoothed 75th percentile floor
+        // in dB. Initialized to -120 dB (silence floor) so the first frame's IIR
+        // ramp does not introduce a spurious GR transient.
+        erbScratch_.assign(NUM_BINS, 0.f);
+        floorSmoothedDb_.assign(ERBGrouping::NUM_ERB_BANDS, -120.f);
+
         // Analysis window: Hann length FFT_SIZE (unchanged)
         window_.assign(FFT_SIZE, 0.f);
         for (int n = 0; n < FFT_SIZE; ++n) {
@@ -145,6 +152,9 @@ public:
         if (sampleRate_ == sr) return;
         sampleRate_ = sr;
         erb_.rebuild(sampleRate_, NUM_BINS);
+        // v2.3: reset noise-floor IIR state on SR change so we don't carry over
+        // an outdated dB level into the new band layout.
+        std::fill(floorSmoothedDb_.begin(), floorSmoothedDb_.end(), -120.f);
         recomputeAll_();
         recomputeAttackRelease_();
     }
@@ -369,14 +379,61 @@ private:
             logBuf_[k] = 20.f * std::log10(m);
         }
 
-        // local symmetric moving average in log domain (+/- SMOOTH_N bins)
-        constexpr int SMOOTH_N = 9;
-        for (int k = 0; k < NUM_BINS; ++k) {
-            int lo = k - SMOOTH_N; if (lo < 0) lo = 0;
-            int hi = k + SMOOTH_N; if (hi > NUM_BINS - 1) hi = NUM_BINS - 1;
-            float sum = 0.f;
-            for (int j = lo; j <= hi; ++j) sum += logBuf_[j];
-            smoothedLog_[k] = sum / (hi - lo + 1);
+        if (!useERB_) {
+            // Legacy v2.1+v2.2 path: local symmetric moving average in log domain
+            // (+/- SMOOTH_N bins). Kept verbatim so disabling the ERB flag returns
+            // to known-good behavior bit-for-bit.
+            constexpr int SMOOTH_N = 9;
+            for (int k = 0; k < NUM_BINS; ++k) {
+                int lo = k - SMOOTH_N; if (lo < 0) lo = 0;
+                int hi = k + SMOOTH_N; if (hi > NUM_BINS - 1) hi = NUM_BINS - 1;
+                float sum = 0.f;
+                for (int j = lo; j <= hi; ++j) sum += logBuf_[j];
+                smoothedLog_[k] = sum / (hi - lo + 1);
+            }
+        } else {
+            // v2.3 (C-3): Adaptive percentile prominence floor per ERB band.
+            // For each ERB band:
+            //   - copy band's logBuf_ slice into erbScratch_
+            //   - 75th percentile via std::nth_element (O(n) avg) as the
+            //     band noise floor in dB
+            //   - if band has < 4 bins, fall back to band mean (percentile
+            //     unstable on tiny N)
+            //   - 1st-order IIR temporal smoothing on floor_dB so cross-frame
+            //     percentile jumps don't shake GR
+            //   - broadcast smoothed floor_dB back into smoothedLog_[k] for every
+            //     bin k in the band, so the downstream
+            //         prom_dB = logBuf_[k] - smoothedLog_[k] - promThreshold
+            //     formula stays untouched.
+            const int nBands = erb_.numBands();
+            const float a = floorSmoothAlpha_;
+            for (int b = 0; b < nBands; ++b) {
+                int s = erb_.bandStart(b);
+                int e = erb_.bandEnd(b);
+                int n = e - s;
+                if (n <= 0) continue;
+
+                float floor_dB;
+                if (n < 4) {
+                    float sum = 0.f;
+                    for (int k = s; k < e; ++k) sum += logBuf_[k];
+                    floor_dB = sum / (float)n;
+                } else {
+                    for (int k = s; k < e; ++k) erbScratch_[k - s] = logBuf_[k];
+                    int idx = (int)std::floor(0.75f * (float)n);
+                    if (idx < 0) idx = 0;
+                    if (idx >= n) idx = n - 1;
+                    auto first = erbScratch_.begin();
+                    std::nth_element(first, first + idx, first + n);
+                    floor_dB = erbScratch_[idx];
+                }
+
+                float prev = floorSmoothedDb_[b];
+                float sm = a * floor_dB + (1.f - a) * prev;
+                floorSmoothedDb_[b] = sm;
+
+                for (int k = s; k < e; ++k) smoothedLog_[k] = sm;
+            }
         }
 
         // per-bin target GR (linear gain), smoothed across frames.
@@ -650,6 +707,13 @@ private:
     // remains active when false (current default).
     ERBGrouping erb_;
     bool useERB_ = false;
+
+    // v2.3 (C-3): adaptive percentile prominence state.
+    // erbScratch_ is sized NUM_BINS so any ERB band slice fits without realloc.
+    // floorSmoothedDb_ is the per-band 1st-order IIR-smoothed 75th percentile.
+    std::vector<float> erbScratch_;
+    std::vector<float> floorSmoothedDb_;
+    float floorSmoothAlpha_ = 0.3f;
 };
 
 // C++14 ODR definition for static constexpr array
