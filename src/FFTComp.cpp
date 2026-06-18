@@ -98,6 +98,11 @@ struct FFTComp : Module {
     float bandFreqs[4] = {180.f, 350.f, 1100.f, 3000.f};
     float outSelRamp_ = 1.f;  // 0 = monitor, 1 = output, 平滑追蹤 target
 
+    // v2.6: Spectral v2 DSP toggles (right-click menu). Default off = bit-exact baseline.
+    bool useERBMenu = false;
+    bool useMaskingMenu = false;
+    bool useGroupDelayMenu = false;
+
     FFTComp() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -149,6 +154,11 @@ struct FFTComp : Module {
 
     void process(const ProcessArgs& args) override {
         dsp.setSampleRate(args.sampleRate);
+
+        // v2.6: propagate menu toggles to DSP. Setters are dirty-flag guarded.
+        dsp.setUseERB(useERBMenu);
+        dsp.setUseMasking(useMaskingMenu);
+        dsp.setUseGroupDelay(useGroupDelayMenu);
 
         // Pre EQ
         dsp.setPreEqGain(0, params[PRE_EQ_LO_PARAM].getValue());
@@ -205,6 +215,9 @@ struct FFTComp : Module {
             json_array_append_new(freqsJ, json_real(bandFreqs[b]));
         }
         json_object_set_new(rootJ, "bandFreqs", freqsJ);
+        json_object_set_new(rootJ, "useERB", json_boolean(useERBMenu));
+        json_object_set_new(rootJ, "useMasking", json_boolean(useMaskingMenu));
+        json_object_set_new(rootJ, "useGroupDelay", json_boolean(useGroupDelayMenu));
         return rootJ;
     }
 
@@ -214,6 +227,13 @@ struct FFTComp : Module {
 
         json_t* contrastJ = json_object_get(rootJ, "panelContrast");
         if (contrastJ) panelContrast = json_real_value(contrastJ);
+
+        json_t* useERBJ = json_object_get(rootJ, "useERB");
+        if (useERBJ) useERBMenu = json_boolean_value(useERBJ);
+        json_t* useMaskingJ = json_object_get(rootJ, "useMasking");
+        if (useMaskingJ) useMaskingMenu = json_boolean_value(useMaskingJ);
+        json_t* useGroupDelayJ = json_object_get(rootJ, "useGroupDelay");
+        if (useGroupDelayJ) useGroupDelayMenu = json_boolean_value(useGroupDelayJ);
 
         json_t* freqsJ = json_object_get(rootJ, "bandFreqs");
         if (freqsJ && json_is_array(freqsJ)) {
@@ -285,14 +305,39 @@ struct SpectrumGRDisplay : TransparentWidget {
             return box.size.y - t * box.size.y;
         };
 
-        // ----- GR overlay (smooth orange stroke, drawn FIRST) -----
-        // gr[bin]: linear gain 0..1, 1 = no GR. Curve hangs from top:
-        // 0 dB reduction -> y=0 (top), full reduction -> y=box.size.y (bottom).
+        // ----- GR overlay (drawn FIRST so spectrum sits on top) -----
+        // gr[bin]: linear gain 0..1, 1 = no GR. 0 dB reduction -> y=0 (top), full reduction -> y=box.size.y (bottom).
         const float grMaxDb = 24.f;
-        nvgBeginPath(args.vg);
-        nvgStrokeColor(args.vg, nvgRGBA(255, 200, 0, 230));
-        nvgStrokeWidth(args.vg, 0.8f);
-        {
+        if (module->useERBMenu) {
+            // v2.6 ERB ribbon: per band filled bar, height = max GR dB across band's bins.
+            int nBands = module->dsp.numErbBands();
+            nvgFillColor(args.vg, nvgRGBA(255, 200, 0, 200));
+            for (int b = 0; b < nBands; ++b) {
+                int s = module->dsp.erbBandStart(b);
+                int e = module->dsp.erbBandEnd(b);
+                if (s < 1) s = 1;
+                if (e > numBins) e = numBins;
+                if (e <= s) continue;
+                float maxRedDb = 0.f;
+                for (int k = s; k < e; ++k) {
+                    float g = clamp(gr[k], 1e-4f, 1.f);
+                    float redDb = -20.f * std::log10(g);
+                    if (redDb > maxRedDb) maxRedDb = redDb;
+                }
+                float t = clamp(maxRedDb / grMaxDb, 0.f, 1.f);
+                float barH = t * box.size.y;
+                float xL = xForBin(s);
+                float xR = xForBin(e - 1);
+                if (xR <= xL) xR = xL + 1.f;
+                nvgBeginPath(args.vg);
+                nvgRect(args.vg, xL, 0.f, xR - xL, barH);
+                nvgFill(args.vg);
+            }
+        } else {
+            // Baseline per-bin polyline
+            nvgBeginPath(args.vg);
+            nvgStrokeColor(args.vg, nvgRGBA(255, 200, 0, 230));
+            nvgStrokeWidth(args.vg, 0.8f);
             bool started = false;
             for (int bin = 1; bin < numBins; ++bin) {
                 float g = clamp(gr[bin], 1e-4f, 1.f);
@@ -519,6 +564,18 @@ struct FFTCompWidget : ModuleWidget {
             BandFreqSlider* slider = new BandFreqSlider(m, b, ranges[b][0], ranges[b][1]);
             menu->addChild(slider);
         }
+
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("Spectral v2"));
+        menu->addChild(createBoolPtrMenuItem("ERB detection (v2.2/v2.3)",
+            "32 ERB bands + 75th percentile floor",
+            &m->useERBMenu));
+        menu->addChild(createBoolPtrMenuItem("Masking gate (v2.4)",
+            "Psychoacoustic threshold (needs ERB on)",
+            &m->useMaskingMenu));
+        menu->addChild(createBoolPtrMenuItem("Group delay (v2.5)",
+            "Phase-based peak picking (needs ERB on)",
+            &m->useGroupDelayMenu));
 
         menu->addChild(new MenuSeparator);
         addPanelThemeMenu(menu, m);

@@ -331,6 +331,11 @@ public:
     const float* getGainReductionPerBin() const { return displayGR_.data(); }
     int getNumBins() const { return NUM_BINS; }
 
+    // v2.6 UI: ERB band introspection for ribbon display
+    int numErbBands() const { return ERBGrouping::NUM_ERB_BANDS; }
+    int erbBandStart(int b) const { return erb_.bandStart(b); }
+    int erbBandEnd(int b)   const { return erb_.bandEnd(b);   }
+
 private:
     void processFrame_() {
         // assemble windowed frame from ring (oldest first = current writePos_)
