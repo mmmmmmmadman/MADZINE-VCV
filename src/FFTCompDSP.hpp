@@ -103,6 +103,7 @@ public:
 
     void setSampleRate(float sr) {
         if (sr <= 0.f) return;
+        if (sampleRate_ == sr) return;
         sampleRate_ = sr;
         recomputeAll_();
         recomputeAttackRelease_();

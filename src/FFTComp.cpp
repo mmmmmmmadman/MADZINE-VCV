@@ -96,6 +96,7 @@ struct FFTComp : Module {
 
     FFTCompDSP dsp;
     float bandFreqs[4] = {180.f, 350.f, 1100.f, 3000.f};
+    float outSelRamp_ = 1.f;  // 0 = monitor, 1 = output, 平滑追蹤 target
 
     FFTComp() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -107,15 +108,15 @@ struct FFTComp : Module {
         configParam(PRE_EQ_HI_PARAM,   -24.f, 24.f, 0.f, "Pre EQ HI Gain",   " dB");
 
         // Suppression amounts
-        configParam(AMT_LO_PARAM,   0.f, 1.f, 0.f, "Suppression Amount LO");
-        configParam(AMT_LMID_PARAM, 0.f, 1.f, 0.f, "Suppression Amount LMID");
-        configParam(AMT_HMID_PARAM, 0.f, 1.f, 0.f, "Suppression Amount HMID");
-        configParam(AMT_HI_PARAM,   0.f, 1.f, 0.f, "Suppression Amount HI");
+        configParam(AMT_LO_PARAM,   0.f, 1.f, 0.f, "Suppression Amount LO",   " %", 0.f, 100.f);
+        configParam(AMT_LMID_PARAM, 0.f, 1.f, 0.f, "Suppression Amount LMID", " %", 0.f, 100.f);
+        configParam(AMT_HMID_PARAM, 0.f, 1.f, 0.f, "Suppression Amount HMID", " %", 0.f, 100.f);
+        configParam(AMT_HI_PARAM,   0.f, 1.f, 0.f, "Suppression Amount HI",   " %", 0.f, 100.f);
 
         // Envelope / mix / gain
-        configParam(ATTACK_PARAM,  0.f, 1.f, 0.2f, "Attack");
-        configParam(RELEASE_PARAM, 0.f, 1.f, 0.4f, "Release");
-        configParam(MIX_PARAM,     0.f, 1.f, 1.0f, "Mix");
+        configParam(ATTACK_PARAM,  0.f, 1.f, 0.2f, "Attack",  " %", 0.f, 100.f);
+        configParam(RELEASE_PARAM, 0.f, 1.f, 0.4f, "Release", " %", 0.f, 100.f);
+        configParam(MIX_PARAM,     0.f, 1.f, 1.0f, "Mix",     " %", 0.f, 100.f);
         configParam(GAIN_PARAM, -12.f, 12.f, 0.f, "Makeup Gain", " dB");
 
         // Post EQ gains
@@ -141,6 +142,9 @@ struct FFTComp : Module {
         for (int b = 0; b < 4; ++b) {
             dsp.setBandFrequency(b, bandFreqs[b]);
         }
+
+        configBypass(IN_L_INPUT, OUT_L_OUTPUT);
+        configBypass(IN_R_INPUT, OUT_R_OUTPUT);
     }
 
     void process(const ProcessArgs& args) override {
@@ -181,15 +185,15 @@ struct FFTComp : Module {
         float outL = 0.f, outR = 0.f, scMonL = 0.f, scMonR = 0.f;
         dsp.process(inL, inR, scL, scR, outL, outR, scMonL, scMonR);
 
-        // OUT_SEL: 1 = processed output, 0 = sidechain monitor (filtered by SC LPF/HPF)
-        bool selectOutput = params[OUT_SEL_PARAM].getValue() > 0.5f;
-        if (selectOutput) {
-            outputs[OUT_L_OUTPUT].setVoltage(outL);
-            outputs[OUT_R_OUTPUT].setVoltage(outR);
-        } else {
-            outputs[OUT_L_OUTPUT].setVoltage(scMonL);
-            outputs[OUT_R_OUTPUT].setVoltage(scMonR);
-        }
+        // OUT_SEL: 1 = processed output, 0 = sidechain monitor; 5ms linear crossfade 避免切換 pop
+        float outSelTarget = params[OUT_SEL_PARAM].getValue() > 0.5f ? 1.f : 0.f;
+        float rampStep = 1.f / (args.sampleRate * 0.005f);  // 5ms
+        if (outSelRamp_ < outSelTarget) outSelRamp_ = std::min(outSelTarget, outSelRamp_ + rampStep);
+        else if (outSelRamp_ > outSelTarget) outSelRamp_ = std::max(outSelTarget, outSelRamp_ - rampStep);
+        float mixL = outL * outSelRamp_ + scMonL * (1.f - outSelRamp_);
+        float mixR = outR * outSelRamp_ + scMonR * (1.f - outSelRamp_);
+        outputs[OUT_L_OUTPUT].setVoltage(mixL);
+        outputs[OUT_R_OUTPUT].setVoltage(mixR);
     }
 
     json_t* dataToJson() override {
