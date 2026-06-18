@@ -145,4 +145,5 @@ void init(Plugin* p) {
     p->addModel(modelDrummmmmmer);
     p->addModel(modeltheKICK);
     p->addModel(modelManual);
+    p->addModel(modelFFTComp);
 }

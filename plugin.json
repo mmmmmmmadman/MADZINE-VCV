@@ -239,6 +239,12 @@
       "name": "Manual",
       "description": "Interactive help display showing module descriptions when hovering MADZINE modules",
       "tags": ["Utility", "Visual"]
+    },
+    {
+      "slug": "FFTComp",
+      "name": "FFT Compressor",
+      "description": "Spectral resonance suppressor with 4-band phase EQ",
+      "tags": ["Compressor", "Effect"]
     }
   ]
 }

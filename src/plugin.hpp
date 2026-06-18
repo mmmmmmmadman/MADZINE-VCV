@@ -42,6 +42,7 @@ extern Model* modelPortal;
 extern Model* modelDrummmmmmer;
 extern Model* modeltheKICK;
 extern Model* modelManual;
+extern Model* modelFFTComp;
 
 // Declare the Plugin instance
 extern Plugin* pluginInstance;
