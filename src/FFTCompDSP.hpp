@@ -25,6 +25,7 @@
 #include <vector>
 #include <algorithm>
 #include "ERBGrouping.hpp"
+#include "MaskingModel.hpp"
 
 class FFTCompDSP {
 public:
@@ -93,6 +94,15 @@ public:
         erbScratch_.assign(NUM_BINS, 0.f);
         floorSmoothedDb_.assign(ERBGrouping::NUM_ERB_BANDS, -120.f);
 
+        // v2.4 (C-4): masking model state.
+        // bandEnergyDb_ holds per-frame ERB-band mean log mag (dB).
+        // maskDb_ holds the masking threshold (dB) returned by MaskingModel.
+        // bandOfBin_ maps each STFT bin index to its owning ERB band, populated
+        // once erb_ is rebuilt (see setSampleRate / recomputeAll_).
+        bandEnergyDb_.assign(ERBGrouping::NUM_ERB_BANDS, -120.f);
+        maskDb_.assign(ERBGrouping::NUM_ERB_BANDS, -120.f);
+        bandOfBin_.assign(NUM_BINS, 0);
+
         // Analysis window: Hann length FFT_SIZE (unchanged)
         window_.assign(FFT_SIZE, 0.f);
         for (int n = 0; n < FFT_SIZE; ++n) {
@@ -155,6 +165,9 @@ public:
         // v2.3: reset noise-floor IIR state on SR change so we don't carry over
         // an outdated dB level into the new band layout.
         std::fill(floorSmoothedDb_.begin(), floorSmoothedDb_.end(), -120.f);
+        // v2.4: rebuild masking LUTs and binToBand map for new SR.
+        masking_.rebuild(sampleRate_, erb_);
+        recomputeBandOfBin_();
         recomputeAll_();
         recomputeAttackRelease_();
     }
@@ -162,6 +175,11 @@ public:
     // v2.2: enable ERB-band detection path. Off by default; legacy 4-band
     // weightBins_ path remains active until v2.3 wires C-3/C-4.
     void setUseERB(bool e) { useERB_ = e; }
+
+    // v2.4 (C-4): enable psychoacoustic masking gate. Default off; when off the
+    // detection path is bit-for-bit identical to v2.3. Requires useERB_=true
+    // (masking operates on ERB-band aggregates), otherwise it is a no-op.
+    void setUseMasking(bool m) { useMasking_ = m; }
 
     void setBandFrequency(int band, float hz) {
         if (band < 0 || band >= NUM_BANDS) return;
@@ -434,6 +452,25 @@ private:
 
                 for (int k = s; k < e; ++k) smoothedLog_[k] = sm;
             }
+
+            // v2.4 (C-4): masking threshold per ERB band (optional).
+            // Requires useERB_; only runs when useMasking_ is also on. Computes
+            //   bandEnergyDb_[b] = mean(logBuf_[k]) for k in band b
+            //   maskDb_[b]       = MaskingModel(bandEnergyDb_)
+            // The per-bin GR loop below subtracts maskDb_[bandOfBin_[k]] from
+            // prom_dB so masked bins drop out of detection.
+            if (useMasking_) {
+                for (int b = 0; b < nBands; ++b) {
+                    int s = erb_.bandStart(b);
+                    int e = erb_.bandEnd(b);
+                    int n = e - s;
+                    if (n <= 0) { bandEnergyDb_[b] = -120.f; continue; }
+                    float sum = 0.f;
+                    for (int k = s; k < e; ++k) sum += logBuf_[k];
+                    bandEnergyDb_[b] = sum / (float)n;
+                }
+                masking_.computeMaskDb(bandEnergyDb_.data(), maskDb_.data());
+            }
         }
 
         // per-bin target GR (linear gain), smoothed across frames.
@@ -442,8 +479,14 @@ private:
         // weightBins_ comes from per-band amount * shape (0..1).
         const float globalScale = 3.0f;       // 3x prominence -> stronger GR at low Amount
         const float promThreshold = 3.0f;     // dB; prominence below this = no GR
+        const bool maskingActive = (useERB_ && useMasking_);
         for (int k = 0; k < NUM_BINS; ++k) {
             float prom_dB = logBuf_[k] - smoothedLog_[k] - promThreshold;
+            // v2.4 (C-4): masking gate. Subtract per-band masking threshold
+            // (dB) from the raw prominence; bins below mask are clamped to 0.
+            if (maskingActive) {
+                prom_dB -= maskDb_[bandOfBin_[k]];
+            }
             if (prom_dB < 0.f) prom_dB = 0.f;
             float w = weightBins_[k];
             if (w > 1.f) w = 1.f;
@@ -629,6 +672,23 @@ private:
         recomputeScFilterBins_();
         // v2.2: keep ERB LUT in sync with current sample rate / NUM_BINS.
         erb_.rebuild(sampleRate_, NUM_BINS);
+        // v2.4: keep masking LUTs + bin-to-band map in sync.
+        masking_.rebuild(sampleRate_, erb_);
+        recomputeBandOfBin_();
+    }
+
+    // v2.4: build static map from STFT bin index -> owning ERB band index.
+    // Used by detection block when masking gate is on to look up mask threshold.
+    void recomputeBandOfBin_() {
+        const int nBands = erb_.numBands();
+        for (int k = 0; k < NUM_BINS; ++k) bandOfBin_[k] = 0;
+        for (int b = 0; b < nBands; ++b) {
+            int s = erb_.bandStart(b);
+            int e = erb_.bandEnd(b);
+            if (s < 0) s = 0;
+            if (e > NUM_BINS) e = NUM_BINS;
+            for (int k = s; k < e; ++k) bandOfBin_[k] = b;
+        }
     }
     void recomputeAttackRelease_() {
         float atkMs = 1.f + attackNorm_  * (500.f  - 1.f);
@@ -714,6 +774,14 @@ private:
     std::vector<float> erbScratch_;
     std::vector<float> floorSmoothedDb_;
     float floorSmoothAlpha_ = 0.3f;
+
+    // v2.4 (C-4): psychoacoustic masking gate. Default off so detection path
+    // matches v2.3 bit-for-bit when not enabled.
+    MaskingModel masking_;
+    bool useMasking_ = false;
+    std::vector<float> bandEnergyDb_;   // per-band mean log mag (dB)
+    std::vector<float> maskDb_;         // per-band masking threshold (dB)
+    std::vector<int>   bandOfBin_;      // STFT bin -> ERB band map
 };
 
 // C++14 ODR definition for static constexpr array
