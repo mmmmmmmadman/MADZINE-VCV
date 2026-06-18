@@ -28,7 +28,9 @@
 class FFTCompDSP {
 public:
     static constexpr int FFT_SIZE = 2048;
-    static constexpr int HOP_SIZE = 512;
+    static constexpr int HOP_SIZE = 256;            // v2.1.1: standard 75% overlap dual-window OLA
+    static constexpr int SYN_LEN  = 1024;           // v2.1.1: sqrt-Hann length; SYN_LEN/HOP_SIZE = 4x overlap (COLA)
+    static constexpr int OUT_RING_SIZE = 2048;      // v2.1.1: >= SYN_LEN + HOP_SIZE; power of 2 for safety
     static constexpr int NUM_BANDS = 4;
     static constexpr int NUM_BINS = FFT_SIZE / 2 + 1;
 
@@ -49,7 +51,7 @@ public:
           mix_(1.0f),
           makeupDb_(0.0f),
           makeupGain_(1.0f),
-          olaGain_(1.f / 1.5f)
+          olaGain_(1.f)   // v2.1: recomputed in constructor from window pair
     {
         for (int b = 0; b < NUM_BANDS; ++b) {
             bandFreq_[b]    = DEFAULT_FREQS[b];
@@ -59,12 +61,14 @@ public:
         }
 
         // ring + scratch buffers
+        // v2.1.1: output rings = OUT_RING_SIZE (2048). dry delays = SYN_LEN (1024)
+        //         so algorithmic latency of wet/SC monitor/dry are all SYN_LEN samples.
         inputRing_.assign(FFT_SIZE, 0.f);
         scRing_.assign(FFT_SIZE, 0.f);
-        outputRing_.assign(FFT_SIZE * 2, 0.f);
-        scMonRing_.assign(FFT_SIZE * 2, 0.f);
-        dryDelayL_.assign(FFT_SIZE, 0.f);
-        dryDelayR_.assign(FFT_SIZE, 0.f);
+        outputRing_.assign(OUT_RING_SIZE, 0.f);
+        scMonRing_.assign(OUT_RING_SIZE, 0.f);
+        dryDelayL_.assign(SYN_LEN, 0.f);
+        dryDelayR_.assign(SYN_LEN, 0.f);
 
         fftTimeIn_.assign(FFT_SIZE, 0.f);
         fftFreq_.assign(FFT_SIZE, 0.f);
@@ -81,10 +85,43 @@ public:
         displayMag_.assign(NUM_BINS, 0.f);
         displayGR_.assign(NUM_BINS, 1.f);
 
-        // Hann window
+        // Analysis window: Hann length FFT_SIZE (unchanged)
         window_.assign(FFT_SIZE, 0.f);
         for (int n = 0; n < FFT_SIZE; ++n) {
             window_[n] = 0.5f * (1.f - std::cos(2.f * M_PI * n / (FFT_SIZE - 1)));
+        }
+
+        // v2.1: synthesis window — sqrt-Hann length SYN_LEN, zero-padded.
+        // Placed at the tail of the analysis buffer so it covers the most-recent
+        // SYN_LEN input samples. This gives algorithmic latency = HOP_SIZE.
+        synWindow_.assign(FFT_SIZE, 0.f);
+        for (int k = 0; k < SYN_LEN; ++k) {
+            float h = 0.5f * (1.f - std::cos(2.f * M_PI * k / (SYN_LEN - 1)));
+            synWindow_[FFT_SIZE - SYN_LEN + k] = std::sqrt(h);
+        }
+
+        // v2.1.1: OLA gain — proper COLA normalization.
+        // With SYN_LEN=1024 and HOP_SIZE=256 (4x overlap), each output sample receives
+        // contributions from SYN_LEN/HOP_SIZE = 4 frames at synthesis-window positions
+        // k, k+H, k+2H, k+3H. The reconstruction "constant" is
+        //     S(k) = sum_{m=0..3} w_a[base+k+m*H] * w_s[base+k+m*H]   for k in [0, H).
+        // For Hann_2048 (descending half) * sqrt-Hann_1024 this is nearly (but not
+        // exactly) constant; we use the mean over the hop as the normalizer so the
+        // residual ripple averages out and overall level is unity-gain.
+        {
+            const int frameBase = FFT_SIZE - SYN_LEN;
+            const int nOverlap = SYN_LEN / HOP_SIZE;   // = 4
+            double accum = 0.0;
+            for (int k = 0; k < HOP_SIZE; ++k) {
+                double Sk = 0.0;
+                for (int m = 0; m < nOverlap; ++m) {
+                    int idx = frameBase + k + m * HOP_SIZE;
+                    Sk += (double)window_[idx] * (double)synWindow_[idx];
+                }
+                accum += Sk;
+            }
+            double meanS = accum / (double)HOP_SIZE;
+            olaGain_ = (meanS > 1e-12) ? (float)(1.0 / meanS) : 1.f;
         }
 
         // EQ gain tables
@@ -212,7 +249,7 @@ public:
         scRing_[writePos_]    = scMono;
 
         writePos_    = (writePos_ + 1) % FFT_SIZE;
-        dryWritePos_ = (dryWritePos_ + 1) % FFT_SIZE;
+        dryWritePos_ = (dryWritePos_ + 1) % SYN_LEN;    // v2.1.1: dry latency = SYN_LEN (1024)
         hopCounter_++;
 
         if (hopCounter_ >= HOP_SIZE) {
@@ -225,9 +262,10 @@ public:
         outputRing_[readPos_] = 0.f;
         float scMonMono = scMonRing_[readPos_];
         scMonRing_[readPos_] = 0.f;
-        readPos_ = (readPos_ + 1) % (FFT_SIZE * 2);
+        readPos_ = (readPos_ + 1) % OUT_RING_SIZE;     // v2.1.1: ring size = OUT_RING_SIZE (2048)
 
-        // dry aligned to FFT_SIZE latency: oldest in ring is at dryWritePos_
+        // v2.1.1: dry aligned to SYN_LEN latency (1024).
+        // Oldest sample in dry ring sits at dryWritePos_ after the post-increment.
         float dryL = dryDelayL_[dryWritePos_];
         float dryR = dryDelayR_[dryWritePos_];
 
@@ -235,7 +273,7 @@ public:
         outR = (dryR * (1.f - mix_) + wetMono * mix_) * makeupGain_;
 
         // SC monitor: filtered sidechain, mono -> both channels.
-        // Naturally FFT_SIZE delayed to align with main wet path.
+        // Naturally SYN_LEN delayed to align with main wet path.
         scMonL = scMonMono;
         scMonR = scMonMono;
     }
@@ -296,12 +334,17 @@ private:
         // IFFT filtered SC into monitor OLA ring (independent of main wet path).
         rfft_.irfft(fftScFreq_.data(), fftScTimeOut_.data());
         rfft_.scale(fftScTimeOut_.data());
+        // v2.1.1: write only the SYN_LEN samples in [FFT_SIZE-SYN_LEN, FFT_SIZE)
+        //         weighted by synWindow_ (sqrt-Hann tail). 4x overlap accumulates
+        //         into outputRing_ via += ; samples are cleared only after being read.
         {
             int olaStart = readPos_;
-            const int ringSz = FFT_SIZE * 2;
-            for (int n = 0; n < FFT_SIZE; ++n) {
-                int idx = (olaStart + n) % ringSz;
-                scMonRing_[idx] += fftScTimeOut_[n] * window_[n] * olaGain_;
+            const int ringSz = OUT_RING_SIZE;
+            const int frameBase = FFT_SIZE - SYN_LEN;
+            for (int k = 0; k < SYN_LEN; ++k) {
+                int n = frameBase + k;
+                int idx = (olaStart + k) % ringSz;
+                scMonRing_[idx] += fftScTimeOut_[n] * synWindow_[n] * olaGain_;
             }
         }
 
@@ -386,12 +429,18 @@ private:
         rfft_.irfft(fftFreq_.data(), fftTimeOut_.data());
         rfft_.scale(fftTimeOut_.data());
 
-        // OLA into outputRing_ starting at readPos_
+        // v2.1.1: dual-window OLA — 75% overlap.
+        // SYN_LEN/HOP_SIZE = 4 frames contribute to each output sample at synthesis
+        // window positions {0, H, 2H, 3H}. The clear-on-read pattern preserves the
+        // forward-projected tail (past readPos_) of earlier frames so they accumulate
+        // with the current frame. olaGain_ = 1/mean(S(k)) for unity reconstruction.
         int olaStart = readPos_;
-        const int ringSz = FFT_SIZE * 2;
-        for (int n = 0; n < FFT_SIZE; ++n) {
-            int idx = (olaStart + n) % ringSz;
-            outputRing_[idx] += fftTimeOut_[n] * window_[n] * olaGain_;
+        const int ringSz = OUT_RING_SIZE;
+        const int frameBase = FFT_SIZE - SYN_LEN;
+        for (int k = 0; k < SYN_LEN; ++k) {
+            int n = frameBase + k;
+            int idx = (olaStart + k) % ringSz;
+            outputRing_[idx] += fftTimeOut_[n] * synWindow_[n] * olaGain_;
         }
     }
 
@@ -575,6 +624,7 @@ private:
     std::vector<float> displayGR_;
 
     std::vector<float> window_;
+    std::vector<float> synWindow_;   // v2.1: synthesis window (sqrt-Hann tail)
     float olaGain_;
 
     std::vector<float> preGainBins_;
