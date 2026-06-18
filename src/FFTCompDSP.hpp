@@ -103,6 +103,15 @@ public:
         maskDb_.assign(ERBGrouping::NUM_ERB_BANDS, -120.f);
         bandOfBin_.assign(NUM_BINS, 0);
 
+        // v2.5 (C-5): group delay scratch + per-band GD floor (dB).
+        // phaseBuf_ stores unwrapped SC phase per bin (workspace, no cross-frame
+        // state — phase unwrap is per-frame only).
+        // gdBuf_ stores |GD(k)| (normalized, sample units) after diff+clamp.
+        // gdFloorBuf_ stores per-band 75th percentile of log|GD| (dB).
+        phaseBuf_.assign(NUM_BINS, 0.f);
+        gdBuf_.assign(NUM_BINS, 0.f);
+        gdFloorBuf_.assign(ERBGrouping::NUM_ERB_BANDS, -120.f);
+
         // Analysis window: Hann length FFT_SIZE (unchanged)
         window_.assign(FFT_SIZE, 0.f);
         for (int n = 0; n < FFT_SIZE; ++n) {
@@ -180,6 +189,12 @@ public:
     // detection path is bit-for-bit identical to v2.3. Requires useERB_=true
     // (masking operates on ERB-band aggregates), otherwise it is a no-op.
     void setUseMasking(bool m) { useMasking_ = m; }
+
+    // v2.5 (C-5): enable group delay peak picking. Off by default; when off the
+    // detection path is bit-for-bit identical to v2.4. Requires useERB_=true
+    // (GD floor is computed per ERB band), otherwise it is a no-op.
+    void setUseGroupDelay(bool g) { useGroupDelay_ = g; }
+    void setAlphaGd(float a) { alphaGd_ = a; }
 
     void setBandFrequency(int band, float hz) {
         if (band < 0 || band >= NUM_BANDS) return;
@@ -473,6 +488,76 @@ private:
             }
         }
 
+        // v2.5 (C-5): group delay peak picking (optional).
+        // Requires useERB_; only runs when useGroupDelay_ is on. Per-frame,
+        // independent (no cross-frame phase smoothing):
+        //   1. phase[k] = atan2(im, re) on SC complex coeffs (skip DC/Nyquist)
+        //   2. unwrap across k so adjacent diff lies in (-pi, pi]
+        //   3. GD[k] = -(phase_uw[k] - phase_uw[k-1]); clamp |GD| <= FFT_SIZE
+        //   4. per ERB band: 75th percentile of 20*log10|GD| -> gdFloorBuf_[b] (dB)
+        // The per-bin GR loop below then merges gd_prom_db with magnitude prom_dB
+        // via d(k) = max(prom_mag, alphaGd_ * prom_gd).
+        const bool gdActive = (useERB_ && useGroupDelay_);
+        if (gdActive) {
+            // 1. raw phase (DC/Nyquist excluded; stored as 0 placeholder)
+            phaseBuf_[0] = 0.f;
+            phaseBuf_[NUM_BINS - 1] = 0.f;
+            for (int k = 1; k < NUM_BINS - 1; ++k) {
+                float re = fftScFreq_[2 * k];
+                float im = fftScFreq_[2 * k + 1];
+                phaseBuf_[k] = std::atan2(im, re);
+            }
+            // 2. unwrap across bins (per-frame, fresh each call)
+            const float TWO_PI = 2.f * (float)M_PI;
+            for (int k = 2; k < NUM_BINS - 1; ++k) {
+                float d = phaseBuf_[k] - phaseBuf_[k - 1];
+                while (d > (float)M_PI)  { phaseBuf_[k] -= TWO_PI; d -= TWO_PI; }
+                while (d < -(float)M_PI) { phaseBuf_[k] += TWO_PI; d += TWO_PI; }
+            }
+            // 3. GD via backward phase diff (normalized; keep magnitude only)
+            gdBuf_[0] = 0.f;
+            gdBuf_[NUM_BINS - 1] = 0.f;
+            const float GD_CLAMP = (float)FFT_SIZE;
+            for (int k = 1; k < NUM_BINS - 1; ++k) {
+                float gd = -(phaseBuf_[k] - phaseBuf_[k - 1]);
+                if (gd >  GD_CLAMP) gd =  GD_CLAMP;
+                if (gd < -GD_CLAMP) gd = -GD_CLAMP;
+                gdBuf_[k] = std::fabs(gd);
+            }
+            // 4. per ERB band 75th percentile of 20*log10|GD| (dB) into gdFloorBuf_
+            //    Reuses erbScratch_ (sized NUM_BINS) — safe because the v2.3
+            //    magnitude percentile pass has already consumed it for this frame.
+            const int nBands = erb_.numBands();
+            constexpr float GD_MIN = 1e-9f;
+            for (int b = 0; b < nBands; ++b) {
+                int s = erb_.bandStart(b);
+                int e = erb_.bandEnd(b);
+                int n = e - s;
+                if (n <= 0) { gdFloorBuf_[b] = -120.f; continue; }
+                float floor_dB;
+                if (n < 4) {
+                    float sum = 0.f;
+                    for (int k = s; k < e; ++k) {
+                        float v = gdBuf_[k]; if (v < GD_MIN) v = GD_MIN;
+                        sum += 20.f * std::log10(v);
+                    }
+                    floor_dB = sum / (float)n;
+                } else {
+                    for (int k = s; k < e; ++k) {
+                        float v = gdBuf_[k]; if (v < GD_MIN) v = GD_MIN;
+                        erbScratch_[k - s] = 20.f * std::log10(v);
+                    }
+                    int idx = (int)std::floor(0.75f * (float)n);
+                    if (idx < 0) idx = 0;
+                    if (idx >= n) idx = n - 1;
+                    auto first = erbScratch_.begin();
+                    std::nth_element(first, first + idx, first + n);
+                    floor_dB = erbScratch_[idx];
+                }
+                gdFloorBuf_[b] = floor_dB;
+            }
+        }
+
         // per-bin target GR (linear gain), smoothed across frames.
         // Detection: prom = how far this bin sticks out above the local log average.
         // Threshold of 3 dB filters noise; above that, scale by 3x for stronger response.
@@ -486,6 +571,18 @@ private:
             // (dB) from the raw prominence; bins below mask are clamped to 0.
             if (maskingActive) {
                 prom_dB -= maskDb_[bandOfBin_[k]];
+            }
+            // v2.5 (C-5): merge group delay prominence after masking.
+            //   prom_gd_dB(k) = 20*log10|GD(k)| - gdFloorBuf_[band]
+            //   prom_dB <- max(prom_dB, alphaGd_ * prom_gd_dB)
+            // DC/Nyquist (k=0, NUM_BINS-1) carry gdBuf_=0 so prom_gd is heavily
+            // negative and the max() leaves prom_dB unchanged.
+            if (gdActive) {
+                float gdv = gdBuf_[k];
+                if (gdv < 1e-9f) gdv = 1e-9f;
+                float prom_gd_dB = 20.f * std::log10(gdv) - gdFloorBuf_[bandOfBin_[k]];
+                float scaled = alphaGd_ * prom_gd_dB;
+                if (scaled > prom_dB) prom_dB = scaled;
             }
             if (prom_dB < 0.f) prom_dB = 0.f;
             float w = weightBins_[k];
@@ -782,6 +879,15 @@ private:
     std::vector<float> bandEnergyDb_;   // per-band mean log mag (dB)
     std::vector<float> maskDb_;         // per-band masking threshold (dB)
     std::vector<int>   bandOfBin_;      // STFT bin -> ERB band map
+
+    // v2.5 (C-5): group delay peak picking. Default off; only contributes when
+    // useERB_ && useGroupDelay_ both true. alphaGd_ weights gd_prom_dB against
+    // magnitude prom_dB via max(); 0.5 keeps magnitude detection dominant.
+    bool useGroupDelay_ = false;
+    float alphaGd_ = 0.5f;
+    std::vector<float> phaseBuf_;       // per-frame SC unwrapped phase workspace
+    std::vector<float> gdBuf_;          // |GD(k)| (normalized, sample units)
+    std::vector<float> gdFloorBuf_;     // per-ERB-band 75th pct log|GD| floor (dB)
 };
 
 // C++14 ODR definition for static constexpr array
