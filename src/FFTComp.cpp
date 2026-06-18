@@ -332,9 +332,9 @@ struct FFTCompWidget : ModuleWidget {
 
     FFTCompWidget(FFTComp* module) {
         setModule(module);
-        panelThemeHelper.init(this, "14HP", module ? &module->panelContrast : nullptr);
+        panelThemeHelper.init(this, "12HP", module ? &module->panelContrast : nullptr);
 
-        box.size = Vec(14 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
+        box.size = Vec(12 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT);
 
         // White bottom panel (Y>=330)
         FFTCompWhiteBottomPanel* whitePanel = new FFTCompWhiteBottomPanel();
@@ -348,7 +348,8 @@ struct FFTCompWidget : ModuleWidget {
                                       "MADZINE", 10.f, nvgRGB(255, 200, 0), false));
 
         // ===== Knob X positions (4 columns) =====
-        const float colX[4] = {35.f, 82.f, 129.f, 176.f};
+        // 12HP layout: box.size.x = 180, symmetric, gap 38 (37px LargeWhiteKnob: 1px gap, relaxed by 1px)
+        const float colX[4] = {33.f, 71.f, 109.f, 147.f};
         const char* bandLabels[4] = {"LO", "LMID", "HMID", "HI"};
 
         // ===== Section title color (white for readability on red panel) =====
@@ -414,35 +415,36 @@ struct FFTCompWidget : ModuleWidget {
         // ===== I/O row (white area, Y>=330) =====
         NVGcolor pinkColor = nvgRGB(255, 133, 133);
 
-        // Pair labels (Y=355.5 center between row1=343 and row2=368)
-        // IN label: 放最左, 中心 X=7, 視覺範圍 ~4-10, 與 IN port 圓 (X=26, 圓 14-38) 留 gap 4px
-        addChild(new FFTCompTextLabel(Vec(0.f,   351.f), Vec(14.f, 9.f), "IN",    7.f, pinkColor, true));
-        // SC IN: 垂直堆疊, 中心 X=58 (距 SC IN port 22 < 距 IN port 32, 視覺歸屬 SC IN pair)
-        addChild(new FFTCompTextLabel(Vec(51.f, 343.5f), Vec(14.f, 9.f), "SC", 7.f, pinkColor, true));
-        addChild(new FFTCompTextLabel(Vec(51.f, 358.5f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
+        // 12HP white area (box.size.x = 180):
+        // 左組往左 5px, 右組往右 5px, 中間 LP/HP knob 維持
+        // IN label center X=7 (panel 邊緣對齊, 無法再左)
+        addChild(new FFTCompTextLabel(Vec(0.f,    351.f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
+        // SC IN: 垂直堆疊, 中心 X=48 (was 53, 左移 5)
+        addChild(new FFTCompTextLabel(Vec(39.f, 343.5f), Vec(14.f, 9.f), "SC", 7.f, pinkColor, true));
+        addChild(new FFTCompTextLabel(Vec(39.f, 358.5f), Vec(14.f, 9.f), "IN", 7.f, pinkColor, true));
 
-        // SC LPF / HPF knob row labels (LP / HP 中心 X=101, 視覺 98-104, 完全避開 SC IN port X 範圍 68-92)
-        addChild(new FFTCompTextLabel(Vec(94.f, 338.5f), Vec(14.f, 9.f), "LP", 7.f, pinkColor, true));
-        addChild(new FFTCompTextLabel(Vec(94.f, 363.5f), Vec(14.f, 9.f), "HP", 7.f, pinkColor, true));
+        // SC LPF / HPF knob row labels (LP/HP 中心 X=86, 走廊 79-93, 維持原位)
+        addChild(new FFTCompTextLabel(Vec(79.f, 338.5f), Vec(14.f, 9.f), "LP", 7.f, pinkColor, true));
+        addChild(new FFTCompTextLabel(Vec(79.f, 363.5f), Vec(14.f, 9.f), "HP", 7.f, pinkColor, true));
 
-        // Switch labels (above and below)
-        addChild(new FFTCompTextLabel(Vec(151.f, 332.f), Vec(14.f, 9.f), "OUT", 7.f, pinkColor, true));
-        addChild(new FFTCompTextLabel(Vec(151.f, 371.f), Vec(14.f, 9.f), "MON", 7.f, pinkColor, true));
+        // OUT/MON labels around CKSS switch (center X=133, was 128, 右移 5)
+        addChild(new FFTCompTextLabel(Vec(126.f, 332.f), Vec(14.f, 9.f), "OUT", 7.f, pinkColor, true));
+        addChild(new FFTCompTextLabel(Vec(126.f, 371.f), Vec(14.f, 9.f), "MON", 7.f, pinkColor, true));
 
-        // IN L/R (X=26, 圓 14-38)
-        addInput(createInputCentered<PJ301MPort>(Vec(26.f, 343.f), module, FFTComp::IN_L_INPUT));
-        addInput(createInputCentered<PJ301MPort>(Vec(26.f, 368.f), module, FFTComp::IN_R_INPUT));
-        // SC IN L/R (X=80, 圓 68-92)
-        addInput(createInputCentered<PJ301MPort>(Vec(80.f, 343.f), module, FFTComp::SC_IN_L_INPUT));
-        addInput(createInputCentered<PJ301MPort>(Vec(80.f, 368.f), module, FFTComp::SC_IN_R_INPUT));
-        // SC LPF / HPF knobs (X=120, 圓 107-133)
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(120.f, 343.f), module, FFTComp::SC_LPF_PARAM));
-        addParam(createParamCentered<StandardBlackKnob26>(Vec(120.f, 368.f), module, FFTComp::SC_HPF_PARAM));
-        // OUT_SEL switch
-        addParam(createParamCentered<CKSS>(Vec(158.f, 355.5f), module, FFTComp::OUT_SEL_PARAM));
-        // OUT L/R
-        addOutput(createOutputCentered<PJ301MPort>(Vec(190.f, 343.f), module, FFTComp::OUT_L_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(Vec(190.f, 368.f), module, FFTComp::OUT_R_OUTPUT));
+        // IN L/R (X=22, was 27, 左移 5; 視覺圓 ~14.5-29.5)
+        addInput(createInputCentered<PJ301MPort>(Vec(22.f, 343.f), module, FFTComp::IN_L_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(22.f, 368.f), module, FFTComp::IN_R_INPUT));
+        // SC IN L/R (X=62, was 67, 左移 5; 視覺圓 ~54.5-69.5)
+        addInput(createInputCentered<PJ301MPort>(Vec(62.f, 343.f), module, FFTComp::SC_IN_L_INPUT));
+        addInput(createInputCentered<PJ301MPort>(Vec(62.f, 368.f), module, FFTComp::SC_IN_R_INPUT));
+        // SC LPF / HPF knobs (X=106, 維持)
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(106.f, 343.f), module, FFTComp::SC_LPF_PARAM));
+        addParam(createParamCentered<StandardBlackKnob26>(Vec(106.f, 368.f), module, FFTComp::SC_HPF_PARAM));
+        // OUT_SEL switch (X=133, was 128, 右移 5)
+        addParam(createParamCentered<CKSS>(Vec(133.f, 355.5f), module, FFTComp::OUT_SEL_PARAM));
+        // OUT L/R (X=159, was 154, 右移 5; 視覺圓 ~151.5-166.5, 右邊距 13.5px)
+        addOutput(createOutputCentered<PJ301MPort>(Vec(159.f, 343.f), module, FFTComp::OUT_L_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(159.f, 368.f), module, FFTComp::OUT_R_OUTPUT));
     }
 
     void step() override {
