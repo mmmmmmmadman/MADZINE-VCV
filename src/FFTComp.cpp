@@ -131,7 +131,7 @@ struct FFTComp : Module {
         configParam(POST_EQ_HI_PARAM,   -24.f, 24.f, 0.f, "Post EQ HI Gain",   " dB");
 
         // Sidechain filters (log-scale Hz)
-        configParam(SC_LPF_PARAM, std::log2(200.f), std::log2(20000.f), std::log2(20000.f), "SC LPF", " Hz", 2.f);
+        configParam(SC_LPF_PARAM, std::log2(40.f), std::log2(20000.f), std::log2(20000.f), "SC LPF", " Hz", 2.f);
         configParam(SC_HPF_PARAM, std::log2(20.f),  std::log2(2000.f),  std::log2(20.f),    "SC HPF", " Hz", 2.f);
         // Output selector: 0=Monitor (sidechain monitor), 1=Output (processed)
         configSwitch(OUT_SEL_PARAM, 0.f, 1.f, 1.f, "Output", {"Monitor", "Output"});
@@ -439,15 +439,16 @@ struct FFTCompWidget : ModuleWidget {
         addParam(createParamCentered<MediumGrayKnob>(Vec(colX[3], 196), module, FFTComp::AMT_HI_PARAM));
 
         // Row 2: GLOBAL env labels Y=206, knobs Y=238 (LargeWhiteKnob 37px, offset 32)
-        const char* envLabels[4] = {"ATTACK", "RELEASE", "MIX", "GAIN"};
+        // GAIN/MIX 互換位置：訊號鏈為 gain 套到 wet 後再 mix dry/wet，旋鈕由左至右匹配訊號順序。
+        const char* envLabels[4] = {"ATTACK", "RELEASE", "GAIN", "MIX"};
         for (int i = 0; i < 4; ++i) {
             addChild(new FFTCompTextLabel(Vec(colX[i] - 25, 217), Vec(50, 10),
                                           envLabels[i], 8.f, nvgRGB(255, 255, 255), true));
         }
         addParam(createParamCentered<LargeWhiteKnob>(Vec(colX[0], 249), module, FFTComp::ATTACK_PARAM));
         addParam(createParamCentered<LargeWhiteKnob>(Vec(colX[1], 249), module, FFTComp::RELEASE_PARAM));
-        addParam(createParamCentered<LargeWhiteKnob>(Vec(colX[2], 249), module, FFTComp::MIX_PARAM));
-        addParam(createParamCentered<LargeWhiteKnob>(Vec(colX[3], 249), module, FFTComp::GAIN_PARAM));
+        addParam(createParamCentered<LargeWhiteKnob>(Vec(colX[2], 249), module, FFTComp::GAIN_PARAM));
+        addParam(createParamCentered<LargeWhiteKnob>(Vec(colX[3], 249), module, FFTComp::MIX_PARAM));
 
         // ----- Post EQ section : title Y=270, band labels Y=282, knobs Y=308 -----
         addChild(new FFTCompTextLabel(Vec(0, 276), Vec(box.size.x, 10),

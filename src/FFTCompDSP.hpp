@@ -3,10 +3,12 @@
 // Spectral resonance suppression (ANINA-style) for VCV Rack module FFTComp.
 //
 // Notes:
-// - MONO SIMPLIFIED FIRST VERSION:
-//     L+R are averaged into a single FFT pipeline for processing.
-//     The same per-bin gain reduction is applied to both L and R outputs.
-//     Sidechain L+R are also averaged for detection.
+// - STEREO PIPELINE (detection mono, wet stereo):
+//     Detection uses mono complex sum (L_freq + R_freq)/2 derived after L/R FFTs
+//     (FFT linearity makes this equivalent to time-domain average + single FFT).
+//     The same per-bin gain reduction is applied to L and R complex coefficients
+//     and each is IFFT'd into independent L/R OLA rings, preserving stereo image.
+//     Sidechain L+R are averaged (mono) for detection and monitor.
 // - FFT library: rack::dsp::RealFFT (PFFFT wrapper, ships with Rack SDK).
 // - Realtime safe: no malloc / new / lock inside process().
 //   All buffers are allocated in setSampleRate() / constructor.
@@ -65,18 +67,24 @@ public:
         // ring + scratch buffers
         // v2.1.1: output rings = OUT_RING_SIZE (2048). dry delays = SYN_LEN (1024)
         //         so algorithmic latency of wet/SC monitor/dry are all SYN_LEN samples.
-        inputRing_.assign(FFT_SIZE, 0.f);
+        inputRingL_.assign(FFT_SIZE, 0.f);
+        inputRingR_.assign(FFT_SIZE, 0.f);
         scRing_.assign(FFT_SIZE, 0.f);
-        outputRing_.assign(OUT_RING_SIZE, 0.f);
+        outputRingL_.assign(OUT_RING_SIZE, 0.f);
+        outputRingR_.assign(OUT_RING_SIZE, 0.f);
         scMonRing_.assign(OUT_RING_SIZE, 0.f);
         dryDelayL_.assign(SYN_LEN, 0.f);
         dryDelayR_.assign(SYN_LEN, 0.f);
 
-        fftTimeIn_.assign(FFT_SIZE, 0.f);
-        fftFreq_.assign(FFT_SIZE, 0.f);
+        fftTimeInL_.assign(FFT_SIZE, 0.f);
+        fftTimeInR_.assign(FFT_SIZE, 0.f);
+        fftFreqL_.assign(FFT_SIZE, 0.f);
+        fftFreqR_.assign(FFT_SIZE, 0.f);
+        fftFreq_.assign(FFT_SIZE, 0.f);   // mono detection buffer = (L+R)/2
         fftScTimeIn_.assign(FFT_SIZE, 0.f);
         fftScFreq_.assign(FFT_SIZE, 0.f);
-        fftTimeOut_.assign(FFT_SIZE, 0.f);
+        fftTimeOutL_.assign(FFT_SIZE, 0.f);
+        fftTimeOutR_.assign(FFT_SIZE, 0.f);
         fftScTimeOut_.assign(FFT_SIZE, 0.f);
 
         magMain_.assign(NUM_BINS, 0.f);
@@ -266,7 +274,7 @@ public:
     }
 
     void setScLpfFreq(float hz) {
-        if (hz < 200.f) hz = 200.f;
+        if (hz < 40.f) hz = 40.f;
         float maxHz = sampleRate_ * 0.45f;
         if (hz > 20000.f) hz = 20000.f;
         if (hz > maxHz) hz = maxHz;
@@ -291,11 +299,11 @@ public:
         dryDelayL_[dryWritePos_] = inL;
         dryDelayR_[dryWritePos_] = inR;
 
-        // mono mix into FFT input rings
-        float mainMono = 0.5f * (inL + inR);
-        float scMono   = 0.5f * (scL + scR);
-        inputRing_[writePos_] = mainMono;
-        scRing_[writePos_]    = scMono;
+        // stereo wet input rings; SC stays mono (detection + monitor)
+        float scMono = 0.5f * (scL + scR);
+        inputRingL_[writePos_] = inL;
+        inputRingR_[writePos_] = inR;
+        scRing_[writePos_]     = scMono;
 
         writePos_    = (writePos_ + 1) % FFT_SIZE;
         dryWritePos_ = (dryWritePos_ + 1) % SYN_LEN;    // v2.1.1: dry latency = SYN_LEN (1024)
@@ -306,9 +314,11 @@ public:
             processFrame_();
         }
 
-        // consume one OLA sample (main wet + SC monitor share readPos_)
-        float wetMono = outputRing_[readPos_];
-        outputRing_[readPos_] = 0.f;
+        // consume one OLA sample per channel (SC monitor mono)
+        float wetL = outputRingL_[readPos_];
+        float wetR = outputRingR_[readPos_];
+        outputRingL_[readPos_] = 0.f;
+        outputRingR_[readPos_] = 0.f;
         float scMonMono = scMonRing_[readPos_];
         scMonRing_[readPos_] = 0.f;
         readPos_ = (readPos_ + 1) % OUT_RING_SIZE;     // v2.1.1: ring size = OUT_RING_SIZE (2048)
@@ -318,8 +328,9 @@ public:
         float dryL = dryDelayL_[dryWritePos_];
         float dryR = dryDelayR_[dryWritePos_];
 
-        outL = (dryL * (1.f - mix_) + wetMono * mix_) * makeupGain_;
-        outR = (dryR * (1.f - mix_) + wetMono * mix_) * makeupGain_;
+        // v2.6.x: MIX moved after GAIN. Gain acts on wet only; dry stays at unity.
+        outL = (wetL * makeupGain_) * mix_ + dryL * (1.f - mix_);
+        outR = (wetR * makeupGain_) * mix_ + dryR * (1.f - mix_);
 
         // SC monitor: filtered sidechain, mono -> both channels.
         // Naturally SYN_LEN delayed to align with main wet path.
@@ -338,16 +349,25 @@ public:
 
 private:
     void processFrame_() {
-        // assemble windowed frame from ring (oldest first = current writePos_)
+        // assemble windowed frames from rings (oldest first = current writePos_)
         int start = writePos_;
         for (int n = 0; n < FFT_SIZE; ++n) {
             int idx = (start + n) % FFT_SIZE;
-            fftTimeIn_[n]   = inputRing_[idx] * window_[n];
-            fftScTimeIn_[n] = scRing_[idx]    * window_[n];
+            float w = window_[n];
+            fftTimeInL_[n]  = inputRingL_[idx] * w;
+            fftTimeInR_[n]  = inputRingR_[idx] * w;
+            fftScTimeIn_[n] = scRing_[idx]     * w;
         }
 
-        rfft_.rfft(fftTimeIn_.data(),   fftFreq_.data());
+        rfft_.rfft(fftTimeInL_.data(),  fftFreqL_.data());
+        rfft_.rfft(fftTimeInR_.data(),  fftFreqR_.data());
         rfft_.rfft(fftScTimeIn_.data(), fftScFreq_.data());
+
+        // Detection buffer = mono complex sum (L+R)/2 via FFT linearity.
+        // Equivalent to averaging L/R in time-domain then taking a single FFT.
+        for (int i = 0; i < FFT_SIZE; ++i) {
+            fftFreq_[i] = 0.5f * (fftFreqL_[i] + fftFreqR_[i]);
+        }
 
         // ordered RFFT layout:
         //   [0]   = F(0) (DC, real)
@@ -618,37 +638,40 @@ private:
             displayMag_[k] = displayMag_[k] + (magNorm - displayMag_[k]) * dispCoef;
         }
 
-        // apply GR + PostEQ to spectrum.
-        // Note: preGainBins_ already factored into magnitudes for display; the
-        // spectrum bins still carry the *unmodified* phase+amplitude. Multiply
-        // pre*GR*post into the complex coefficients here.
+        // apply GR + PostEQ to L and R complex coefficients independently.
+        // Same per-bin gain (pre*GR*post) applied to both channels to preserve
+        // stereo image while suppressing detected resonances.
         {
             float gDC = preGainBins_[0] * smoothedGR_[0] * postGainBins_[0];
-            fftFreq_[0] *= gDC;
+            fftFreqL_[0] *= gDC;
+            fftFreqR_[0] *= gDC;
             float gNy = preGainBins_[NUM_BINS - 1] * smoothedGR_[NUM_BINS - 1] * postGainBins_[NUM_BINS - 1];
-            fftFreq_[1] *= gNy;
+            fftFreqL_[1] *= gNy;
+            fftFreqR_[1] *= gNy;
             for (int k = 1; k < NUM_BINS - 1; ++k) {
                 float g = preGainBins_[k] * smoothedGR_[k] * postGainBins_[k];
-                fftFreq_[2 * k]     *= g;
-                fftFreq_[2 * k + 1] *= g;
+                fftFreqL_[2 * k]     *= g;
+                fftFreqL_[2 * k + 1] *= g;
+                fftFreqR_[2 * k]     *= g;
+                fftFreqR_[2 * k + 1] *= g;
             }
         }
 
-        rfft_.irfft(fftFreq_.data(), fftTimeOut_.data());
-        rfft_.scale(fftTimeOut_.data());
+        rfft_.irfft(fftFreqL_.data(), fftTimeOutL_.data());
+        rfft_.scale(fftTimeOutL_.data());
+        rfft_.irfft(fftFreqR_.data(), fftTimeOutR_.data());
+        rfft_.scale(fftTimeOutR_.data());
 
-        // v2.1.1: dual-window OLA — 75% overlap.
-        // SYN_LEN/HOP_SIZE = 4 frames contribute to each output sample at synthesis
-        // window positions {0, H, 2H, 3H}. The clear-on-read pattern preserves the
-        // forward-projected tail (past readPos_) of earlier frames so they accumulate
-        // with the current frame. olaGain_ = 1/mean(S(k)) for unity reconstruction.
+        // v2.1.1: dual-window OLA per channel.
         int olaStart = readPos_;
         const int ringSz = OUT_RING_SIZE;
         const int frameBase = FFT_SIZE - SYN_LEN;
         for (int k = 0; k < SYN_LEN; ++k) {
             int n = frameBase + k;
             int idx = (olaStart + k) % ringSz;
-            outputRing_[idx] += fftTimeOut_[n] * synWindow_[n] * olaGain_;
+            float ws = synWindow_[n] * olaGain_;
+            outputRingL_[idx] += fftTimeOutL_[n] * ws;
+            outputRingR_[idx] += fftTimeOutR_[n] * ws;
         }
     }
 
@@ -824,9 +847,11 @@ private:
     float makeupDb_;
     float makeupGain_;
 
-    std::vector<float> inputRing_;
+    std::vector<float> inputRingL_;
+    std::vector<float> inputRingR_;
     std::vector<float> scRing_;
-    std::vector<float> outputRing_;
+    std::vector<float> outputRingL_;
+    std::vector<float> outputRingR_;
     std::vector<float> scMonRing_;
     std::vector<float> dryDelayL_;
     std::vector<float> dryDelayR_;
@@ -835,11 +860,15 @@ private:
     int readPos_;
     int dryWritePos_;
 
-    std::vector<float> fftTimeIn_;
-    std::vector<float> fftFreq_;
+    std::vector<float> fftTimeInL_;
+    std::vector<float> fftTimeInR_;
+    std::vector<float> fftFreqL_;
+    std::vector<float> fftFreqR_;
+    std::vector<float> fftFreq_;          // mono detection buffer = (L+R)/2
     std::vector<float> fftScTimeIn_;
     std::vector<float> fftScFreq_;
-    std::vector<float> fftTimeOut_;
+    std::vector<float> fftTimeOutL_;
+    std::vector<float> fftTimeOutR_;
     std::vector<float> fftScTimeOut_;
 
     std::vector<float> magMain_;
