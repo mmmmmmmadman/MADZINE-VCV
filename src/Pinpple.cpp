@@ -653,7 +653,7 @@ struct PinppleRandomizedKnob : madzine::widgets::BaseCustomKnob {
 
     PinppleRandomizedKnob() : madzine::widgets::BaseCustomKnob() {
         box.size = Vec(30, 30);
-        speed = 0.5f;
+        speed = 1.0f;
         baseColor = nvgRGB(30, 30, 30);
         centerColor = nvgRGB(50, 50, 50);
         borderColor = nvgRGB(100, 100, 100);

@@ -1,0 +1,201 @@
+slug: F
+name: F
+hp: 4
+wide: false
+alt: F
+description:
+  en: Single-stage expander for MAD REPEATER, adds one level/curve/duration segment to the envelope chain
+  zh: MAD REPEATER 的單段 expander，為 Envelope 鏈增加一段 Level/Curve/Duration
+  ja: MAD REPEATER用シングルステージエキスパンダー。エンベロープチェーンにレベル/カーブ/デュレーションを1ステージ追加
+features:
+  en:
+  - Adds one stage to a MAD REPEATER envelope chain
+  - Level, curve and duration per stage
+  - Per-stage clock sync switch
+  - Stage start trigger output and stage envelope output
+  - Curve display showing stage shape and playback position
+  zh:
+  - 為 MAD REPEATER 的 Envelope 鏈增加一段
+  - 每段獨立 Level、Curve 與 Duration
+  - 每段獨立 Clock Sync 開關
+  - 段落起始 Trigger 輸出與段落 Envelope 輸出
+  - 曲線顯示，畫出本段形狀與播放位置
+  ja:
+  - MAD REPEATERのエンベロープチェーンに1ステージ追加
+  - ステージごとのレベル、カーブ、デュレーション
+  - ステージごとのクロックシンクスイッチ
+  - ステージ開始トリガー出力とステージエンベロープ出力
+  - ステージ形状と再生位置を表示するカーブディスプレイ
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Expander for MAD REPEATER. Each F adds one stage to the envelope chain, with its own end level, curve and duration. F performs no envelope calculation of its own: the host MAD REPEATER runs the whole chain and writes both F outputs every sample.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Placement</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>F must sit to the right of a MAD REPEATER. Only other F modules may sit between them.</li>
+    <li>Any other module in between breaks the chain, and this F stops receiving stage data.</li>
+    <li>Stage order follows physical order: the first F to the right of the host runs first.</li>
+    <li>A chain accepts up to 64 F expanders.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Level</b>: End voltage of this stage (0 to 10V, default 5V). The stage starts from the end voltage of the previous stage and moves to this value.</li>
+    <li><b>Curve</b>: J taper curvature (-1 to +1, default 0). 0 is linear; positive values start slow and finish fast; negative values start fast and finish slow.</li>
+    <li><b>Duration</b>: Stage length (1ms to 10s, exponential, default centre). With SYNC on, the knob is read as a clock ratio instead and the tooltip switches to beat values.</li>
+    <li><b>Sync this stage to clock</b>: Off / On. When on, this stage takes its length from the clock period measured by the host at its TRIGGER input, one beat times the DURATION ratio. Ratio steps run from 1/16 to 16 beats, with 1 beat at knob centre.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Outputs</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Stage start trigger</b>: 10V pulse of 1ms at the moment this stage begins. Stays at 0V when the chain is disconnected.</li>
+    <li><b>Stage envelope</b>: Follows the envelope while this stage is running. At all other times it holds this stage's end level, including when no host is connected.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Curve Display</h3>
+    <p style="margin-bottom: 1rem;">The display draws the shape of this stage alone, from the previous stage's end voltage to this stage's level, with the current curvature. While this stage is running, a vertical line and a dot mark the playback position. When the chain is broken, the display falls back to the local level and curve settings.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Level range: 0 to 10V</li>
+    <li>Duration range: 1ms to 10s free-running; synced stages clamped to 1ms to 600s</li>
+    <li>Stage start trigger length: 1ms at 10V</li>
+    <li>All envelope calculation is performed by the host MAD REPEATER</li>
+    <li>Module width: 4HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Right-Click Menu</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark panel appearance</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Credit</h3>
+    <p style="margin-bottom: 1rem;">The idea of splitting an envelope into chained per-stage modules comes from Dale Emery's DHE Modules Stage series. The curve formula is taken from DHE Modules sigmoid.hpp, Copyright 2018-2021 Dale H. Emery, MIT License. See LICENSE-dist.txt.</p>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">MAD REPEATER 的 expander。每接一個 F 就為 Envelope 鏈增加一段，該段有自己的終點電壓、曲率與長度。F 本身不做任何 Envelope 運算：整條鏈由 host MAD REPEATER 執行，F 的兩個輸出也由 host 每個 sample 寫入。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">擺放位置</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>F 必須放在 MAD REPEATER 右側，中間只能夾其他 F。</li>
+    <li>中間夾入其他模組即斷鏈，本 F 不再收到段落資料。</li>
+    <li>段落順序依實體位置：host 右側第一個 F 先跑。</li>
+    <li>一條鏈最多接 64 個 F expander。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Level</b>：本段的終點電壓（0 至 10V，預設 5V）。本段從前一段的終點電壓出發，走到這個值。</li>
+    <li><b>Curve</b>：J taper 曲率（-1 至 +1，預設 0）。0 為線性；正值慢起快收；負值快起慢收。</li>
+    <li><b>Duration</b>：本段長度（1ms 至 10s，指數映射，預設中央）。SYNC 開啟時旋鈕改讀時鐘比例，tooltip 也改為拍值顯示。</li>
+    <li><b>Sync this stage to clock</b>：Off / On。開啟時本段長度改由 host 在 TRIGGER 量測到的時鐘週期決定，長度為一拍乘上 DURATION 比例。比例從 1/16 至 16 拍，旋鈕中央為 1 拍。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">輸出</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Stage start trigger</b>（TRIG）：本段開始瞬間送出 1ms、10V 的 pulse。斷鏈時維持 0V。</li>
+    <li><b>Stage envelope</b>（OUT）：本段運行期間跟著 Envelope；其餘時間維持本段終點電壓，未接 host 時亦然。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">曲線顯示</h3>
+    <p style="margin-bottom: 1rem;">顯示只畫本段的形狀，從前一段的終點電壓到本段 Level，套用當前曲率。本段正在跑時，以垂直線與圓點標示播放位置。斷鏈時顯示改用本機的 Level 與 Curve 設定。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>電壓範圍：0 至 10V</li>
+    <li>段長範圍：自由模式 1ms 至 10s；SYNC 模式 clamp 於 1ms 至 600s</li>
+    <li>段落起始 Trigger：1ms、10V</li>
+    <li>所有 Envelope 運算由 host MAD REPEATER 執行</li>
+    <li>模組寬度：4HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右鍵選單</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>：Light / Dark 面板外觀</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">致謝</h3>
+    <p style="margin-bottom: 1rem;">把 Envelope 拆成一段一段、以模組串接的做法來自 Dale Emery 的 DHE Modules Stage 系列。曲線公式取自 DHE Modules 的 sigmoid.hpp，Copyright 2018-2021 Dale H. Emery，MIT License。詳見 LICENSE-dist.txt。</p>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">MAD REPEATER用エキスパンダー。F 1台につきエンベロープチェーンに1ステージ追加され、そのステージ固有の終了電圧、カーブ、長さを持つ。F自身はエンベロープ演算を行わず、ホストのMAD REPEATERがチェーン全体を実行し、Fの2つの出力もサンプルごとにホストが書き込む。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">配置</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>FはMAD REPEATERの右側に配置する必要がある。間に置けるのは他のFのみ。</li>
+    <li>間に別のモジュールが入るとチェーンが切れ、このFはステージデータを受け取らなくなる。</li>
+    <li>ステージ順は物理配置順。ホストの右隣のFが最初に動作する。</li>
+    <li>1つのチェーンで最大64台のFを接続できる。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Level</b>: 本ステージの終了電圧（0〜10V、デフォルト5V）。前ステージの終了電圧から出発してこの値へ移動する。</li>
+    <li><b>Curve</b>: J taperカーブ量（-1〜+1、デフォルト0）。0はリニア、正の値は緩やかな立ち上がりから急速に終了、負の値はその逆。</li>
+    <li><b>Duration</b>: ステージ長（1ms〜10s、指数マッピング、デフォルト中央）。SYNC ON時はノブがクロック比率として読まれ、ツールチップも拍表示に切り替わる。</li>
+    <li><b>Sync this stage to clock</b>: Off / On。ON時はホストがTRIGGERで計測したクロック周期からステージ長を決定し、長さは1拍×DURATION比率となる。比率は1/16〜16拍、ノブ中央が1拍。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">出力</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Stage start trigger</b>（TRIG）: 本ステージ開始の瞬間に1ms、10Vのパルスを出力。チェーン切断時は0Vを維持。</li>
+    <li><b>Stage envelope</b>（OUT）: 本ステージ動作中はエンベロープに追従。それ以外の時間は本ステージの終了電圧を保持し、ホスト未接続時も同様。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">カーブディスプレイ</h3>
+    <p style="margin-bottom: 1rem;">ディスプレイは本ステージのみの形状を、前ステージの終了電圧から本ステージのLevelまで現在のカーブ量で描画する。本ステージ動作中は縦線とドットで再生位置を示す。チェーンが切れている場合はローカルのLevelとCurve設定で描画する。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>電圧範囲: 0〜10V</li>
+    <li>ステージ長: フリーラン1ms〜10s、SYNC時は1ms〜600sにクランプ</li>
+    <li>ステージ開始トリガー: 1ms、10V</li>
+    <li>エンベロープ演算はすべてホストのMAD REPEATERが実行</li>
+    <li>モジュール幅: 4HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右クリックメニュー</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark パネル外観</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クレジット</h3>
+    <p style="margin-bottom: 1rem;">エンベロープをステージ単位のモジュールに分割して連結する発想はDale EmeryのDHE Modules Stageシリーズに由来する。カーブ式はDHE Modulesのsigmoid.hppより引用、Copyright 2018-2021 Dale H. Emery、MIT License。LICENSE-dist.txtを参照。</p>
+controls:
+- name: Level
+  type: param
+  desc:
+    en: End voltage of this stage (0 to 10V, default 5V). The stage starts from the previous stage's end voltage and moves to this value.
+    zh: 本段的終點電壓（0 至 10V，預設 5V）。本段從前一段的終點電壓出發，走到這個值。
+    ja: 本ステージの終了電圧（0〜10V、デフォルト5V）。前ステージの終了電圧から出発してこの値へ移動する。
+- name: Curve
+  type: param
+  desc:
+    en: J taper curvature (-1 to +1, default 0). 0 is linear, positive values start slow and finish fast, negative values start fast and finish slow.
+    zh: J taper 曲率（-1 至 +1，預設 0）。0 為線性，正值慢起快收，負值快起慢收。
+    ja: J taperカーブ量（-1〜+1、デフォルト0）。0はリニア、正の値は緩やかな立ち上がりから急速に終了、負の値はその逆。
+- name: Duration
+  type: param
+  desc:
+    en: Stage length, 1ms to 10s with exponential scaling. With SYNC on the knob is read as a clock ratio from 1/16 to 16 beats and the tooltip shows beat values.
+    zh: 本段長度，1ms 至 10s 指數映射。SYNC 開啟時旋鈕改讀時鐘比例（1/16 至 16 拍），tooltip 改為拍值顯示。
+    ja: ステージ長、1ms〜10sの指数スケーリング。SYNC ON時はノブが1/16〜16拍のクロック比率として読まれ、ツールチップは拍表示になる。
+- name: Sync this stage to clock
+  type: param
+  desc:
+    en: Off / On. When on, this stage takes its length from the clock period measured by the host MAD REPEATER at its TRIGGER input, one beat times the DURATION ratio.
+    zh: Off / On。開啟時本段長度改由 host MAD REPEATER 在 TRIGGER 量測到的時鐘週期決定，長度為一拍乘上 DURATION 比例。
+    ja: Off / On。ON時はホストMAD REPEATERがTRIGGERで計測したクロック周期からステージ長を決定し、長さは1拍×DURATION比率となる。
+- name: Stage start trigger
+  type: output
+  desc:
+    en: 10V pulse of 1ms at the moment this stage begins. Stays at 0V when the chain is disconnected.
+    zh: 本段開始瞬間送出 1ms、10V 的 pulse。斷鏈時維持 0V。
+    ja: 本ステージ開始の瞬間に1ms、10Vのパルスを出力。チェーン切断時は0Vを維持。
+- name: Stage envelope
+  type: output
+  desc:
+    en: Follows the envelope while this stage is running. At all other times it holds this stage's end level, including when no host is connected.
+    zh: 本段運行期間跟著 Envelope；其餘時間維持本段終點電壓，未接 host 時亦然。
+    ja: 本ステージ動作中はエンベロープに追従。それ以外の時間は本ステージの終了電圧を保持し、ホスト未接続時も同様。

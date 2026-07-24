@@ -868,18 +868,18 @@ struct NIGOQ : Module {
             finalSineDownsampled[i] = 0.0f;
         }
 
-        // Setup lowpass filter with current sample rate
-        lpFilter.setSampleRate(APP->engine->getSampleRate());
+        // Setup lowpass filter at the INTERNAL processing rate.
+        // lpFilter.process() is called once per processSingleSample(), which runs at
+        // sampleRate * oversampleRate. Using the host rate here would make the realized
+        // cutoff oversampleRate times too high (brighter/harsher when 2x is enabled).
+        lpFilter.setSampleRate(APP->engine->getSampleRate() * oversampleRate);
         lpFilter.setCutoff(8000.0f);  // Default cutoff at 8kHz
         lpFilter.reset();
     }
 
     void onSampleRateChange() override {
-        // Update oversampling filters for new sample rate
+        // Update oversampling filters (also refreshes lpFilter internal rate)
         setupOversamplingFilters();
-
-        // Update lowpass filter sample rate
-        lpFilter.setSampleRate(APP->engine->getSampleRate());
     }
 
     void onRandomize(const RandomizeEvent& e) override {

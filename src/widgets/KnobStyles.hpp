@@ -44,13 +44,13 @@ namespace KnobAngles {
 }
 
 // 靈敏度映射 (ParamWidget sensitivity -> app::Knob speed)
-// 全部設為快速反應 (1.0f)
+// 全部設為 2.0f：同樣的滑鼠位移量，參數變化為原本的兩倍
 namespace KnobSensitivity {
-    const float VERY_SLOW = 1.0f;      // 快速
-    const float SLOW = 1.0f;           // 快速 (預設)
-    const float NORMAL = 1.0f;         // 快速
-    const float FAST = 1.0f;           // 快速
-    const float VERY_FAST = 1.0f;      // 快速
+    const float VERY_SLOW = 2.0f;
+    const float SLOW = 2.0f;           // 預設
+    const float NORMAL = 2.0f;
+    const float FAST = 2.0f;
+    const float VERY_FAST = 2.0f;
 }
 
 // Y軸偏移定義 (根據 COMPONENT_Y_OFFSET_REFERENCE.txt)

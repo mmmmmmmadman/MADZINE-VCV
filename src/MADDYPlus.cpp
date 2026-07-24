@@ -710,6 +710,7 @@ struct MADDYPlus : Module {
         float currentDecayTime = 1.0f;
         float lastUsedDecayParam = 0.3f;
         bool justTriggered = false;
+        bool startAtFirstStep = false;
 
         void reset(bool resetShift = true) {
             dividedProgressSeconds = 0.0f;
@@ -717,6 +718,7 @@ struct MADDYPlus : Module {
             shouldStep = false;
             prevMultipliedGate = false;
             currentStep = 0;
+            startAtFirstStep = true;
             if (resetShift) shift = 0;
             pattern.clear();
             gateState = false;
@@ -798,7 +800,12 @@ struct MADDYPlus : Module {
         }
 
         void stepTrack() {
-               currentStep = (currentStep + 1) % length;
+               if (startAtFirstStep) {
+                   currentStep = 0;
+                   startAtFirstStep = false;
+               } else {
+                   currentStep = (currentStep + 1) % length;
+               }
                gateState = !pattern.empty() && pattern[currentStep];
                if (gateState) {
                   trigPulse.trigger(0.001f);

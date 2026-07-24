@@ -474,6 +474,19 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"T3 Shift CV", {"CV input for T3 Shift (±10V, attenuated by T3 Shift CV knob)", "T3 Shift 的 CV 輸入（±10V，經 T3 Shift CV 衰減旋鈕處理）", "T3 ShiftのCV入力（±10V、T3 Shift CVノブでアッテネート）"}});
         data["EuclideanRhythm"] = std::move(m);
     }
+    // F (6 entries)
+    {
+        ModuleHelpData m;
+        m.name = "F";
+        m.description = {"Single-stage expander for MAD REPEATER, adds one level/curve/duration segment to the envelope chain", "MAD REPEATER 的單段 expander，為 Envelope 鏈增加一段 Level/Curve/Duration", "MAD REPEATER用シングルステージエキスパンダー。エンベロープチェーンにレベル/カーブ/デュレーションを1ステージ追加"};
+        m.entries.push_back({"Level", {"End voltage of this stage (0 to 10V, default 5V). The stage starts from the previous stage's end voltage and moves to this value.", "本段的終點電壓（0 至 10V，預設 5V）。本段從前一段的終點電壓出發，走到這個值。", "本ステージの終了電圧（0〜10V、デフォルト5V）。前ステージの終了電圧から出発してこの値へ移動する。"}});
+        m.entries.push_back({"Curve", {"J taper curvature (-1 to +1, default 0). 0 is linear, positive values start slow and finish fast, negative values start fast and finish slow.", "J taper 曲率（-1 至 +1，預設 0）。0 為線性，正值慢起快收，負值快起慢收。", "J taperカーブ量（-1〜+1、デフォルト0）。0はリニア、正の値は緩やかな立ち上がりから急速に終了、負の値はその逆。"}});
+        m.entries.push_back({"Duration", {"Stage length, 1ms to 10s with exponential scaling. With SYNC on the knob is read as a clock ratio from 1/16 to 16 beats and the tooltip shows beat values.", "本段長度，1ms 至 10s 指數映射。SYNC 開啟時旋鈕改讀時鐘比例（1/16 至 16 拍），tooltip 改為拍值顯示。", "ステージ長、1ms〜10sの指数スケーリング。SYNC ON時はノブが1/16〜16拍のクロック比率として読まれ、ツールチップは拍表示になる。"}});
+        m.entries.push_back({"Sync this stage to clock", {"Off / On. When on, this stage takes its length from the clock period measured by the host MAD REPEATER at its TRIGGER input, one beat times the DURATION ratio.", "Off / On。開啟時本段長度改由 host MAD REPEATER 在 TRIGGER 量測到的時鐘週期決定，長度為一拍乘上 DURATION 比例。", "Off / On。ON時はホストMAD REPEATERがTRIGGERで計測したクロック周期からステージ長を決定し、長さは1拍×DURATION比率となる。"}});
+        m.entries.push_back({"Stage start trigger", {"10V pulse of 1ms at the moment this stage begins. Stays at 0V when the chain is disconnected.", "本段開始瞬間送出 1ms、10V 的 pulse。斷鏈時維持 0V。", "本ステージ開始の瞬間に1ms、10Vのパルスを出力。チェーン切断時は0Vを維持。"}});
+        m.entries.push_back({"Stage envelope", {"Follows the envelope while this stage is running. At all other times it holds this stage's end level, including when no host is connected.", "本段運行期間跟著 Envelope；其餘時間維持本段終點電壓，未接 host 時亦然。", "本ステージ動作中はエンベロープに追従。それ以外の時間は本ステージの終了電圧を保持し、ホスト未接続時も同様。"}});
+        data["F"] = std::move(m);
+    }
     // Facehugger (18 entries)
     {
         ModuleHelpData m;
@@ -718,6 +731,22 @@ inline std::map<std::string, ModuleHelpData> initHelpData() {
         m.entries.push_back({"Ch3 CV", {"Ch3 CV sequencer voltage output (-10V to +10V).", "Ch3 CV Sequencer 電壓輸出（-10V 至 +10V）。", "Ch3 CVシーケンサー電圧出力（-10Vから+10V）。"}});
         m.entries.push_back({"Ch3 Trigger", {"Ch3 Trigger output (fires when CV value changes).", "Ch3 Trigger 輸出（CV 值變更時觸發）。", "Ch3トリガー出力（CV値変更時に発火）。"}});
         data["MADDYPlus"] = std::move(m);
+    }
+    // MADREPEATER (9 entries)
+    {
+        ModuleHelpData m;
+        m.name = "MAD REPEATER";
+        m.description = {"Single-stage envelope generator with clock sync, chainable to the right with F expanders for multi-stage envelopes", "單段 Envelope 生成器，具備 Clock Sync，可往右串接 F expander 組成多段 Envelope", "クロックシンク付きシングルステージエンベロープ生成器。右側にFエキスパンダーを連結してマルチステージエンベロープを構成"};
+        m.entries.push_back({"Start level", {"Start voltage of the first stage (0 to 10V, default 0V). The chain returns to this voltage when LOOP restarts it.", "第一段的起點電壓（0 至 10V，預設 0V）。LOOP 繞回時也回到這個電壓。", "最初のステージの開始電圧（0〜10V、デフォルト0V）。LOOPで折り返す際もこの電圧に戻る。"}});
+        m.entries.push_back({"End level", {"End voltage of this stage (0 to 10V, default 5V). With no F expander attached this is the final envelope level.", "本段的終點電壓（0 至 10V，預設 5V）。沒接 F expander 時即為 Envelope 最終電平。", "本ステージの終了電圧（0〜10V、デフォルト5V）。Fエキスパンダー未接続時はエンベロープの最終レベル。"}});
+        m.entries.push_back({"Curve", {"J taper curvature (-1 to +1, default 0). 0 is linear, positive values start slow and finish fast, negative values start fast and finish slow.", "J taper 曲率（-1 至 +1，預設 0）。0 為線性，正值慢起快收，負值快起慢收。", "J taperカーブ量（-1〜+1、デフォルト0）。0はリニア、正の値は緩やかな立ち上がりから急速に終了、負の値はその逆。"}});
+        m.entries.push_back({"Duration", {"Stage length, 1ms to 10s with exponential scaling. With SYNC on the knob is read as a clock ratio from 1/16 to 16 beats and the tooltip shows beat values.", "本段長度，1ms 至 10s 指數映射。SYNC 開啟時旋鈕改讀時鐘比例（1/16 至 16 拍），tooltip 改為拍值顯示。", "ステージ長、1ms〜10sの指数スケーリング。SYNC ON時はノブが1/16〜16拍のクロック比率として読まれ、ツールチップは拍表示になる。"}});
+        m.entries.push_back({"Sync this stage to clock", {"Off / On. When on, this stage takes its length from the clock period measured at TRIGGER instead of the seconds value. Falls back to seconds if no clock is measured.", "Off / On。開啟時本段長度改由 TRIGGER 量測到的時鐘週期決定。量不到時鐘時退回秒數。", "Off / On。ON時は秒数ではなくTRIGGERで計測したクロック周期からステージ長を決定。クロック未計測時は秒数に戻る。"}});
+        m.entries.push_back({"Loop", {"Off / On. When on, the chain restarts from the start level immediately after the last stage ends.", "Off / On。開啟時最後一段結束後立即從 START 電壓重新開始。", "Off / On。ON時は最終ステージ終了直後にSTART電圧から再開する。"}});
+        m.entries.push_back({"Manual trigger", {"Button that starts the chain from stage 0, same as a TRIGGER pulse.", "按鈕，從第 0 段啟動整條鏈，效果與 TRIGGER pulse 相同。", "ステージ0からチェーンを開始するボタン。TRIGGERパルスと同じ動作。"}});
+        m.entries.push_back({"Trigger", {"Starts the chain on a rising edge (Schmitt trigger, 0.1V low, 1.0V high). With SYNC on it also acts as the clock input and does not interrupt a running chain.", "上升沿啟動整條鏈（Schmitt Trigger，低 0.1V，高 1.0V）。SYNC 開啟時兼作時鐘輸入，且不會打斷正在跑的鏈。", "立ち上がりエッジでチェーンを開始（シュミットトリガー、ロー0.1V、ハイ1.0V）。SYNC ON時はクロック入力も兼ね、動作中のチェーンを中断しない。"}});
+        m.entries.push_back({"Envelope", {"Envelope output of the whole chain, 0 to 10V. Holds the last reached level when the chain is stopped.", "整條鏈的 Envelope 輸出（0 至 10V）。鏈停止時維持最後到達的電壓。", "チェーン全体のエンベロープ出力（0〜10V）。停止時は最後に到達した電圧を保持。"}});
+        data["MADREPEATER"] = std::move(m);
     }
     // NIGOQ (36 entries)
     {

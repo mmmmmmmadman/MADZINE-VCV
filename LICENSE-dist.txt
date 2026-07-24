@@ -1,0 +1,55 @@
+MADZINE — third-party code and licenses
+=======================================
+
+The MADZINE plugin itself is licensed GPL-3.0-or-later (see LICENSE.txt).
+The following third-party code is included or adapted, under the licenses
+listed below.
+
+
+-------------------------------------------------------------------------------
+DHE Modules — envelope stage curve (J taper)
+-------------------------------------------------------------------------------
+
+The function stageTaper() in src/widgets/StageCurve.hpp uses the curve formula
+from DHE Modules' sigmoid.hpp (curve()).
+
+  https://github.com/dhemery/DHE-Modules
+
+MIT License
+
+Copyright 2018-2021 Dale H. Emery
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+-------------------------------------------------------------------------------
+sst-filters
+-------------------------------------------------------------------------------
+
+  https://github.com/surge-synthesizer/sst-filters
+
+GPL-3.0. Full license text in sst-filters/LICENSE.md.
+
+
+-------------------------------------------------------------------------------
+sst-basic-blocks
+-------------------------------------------------------------------------------
+
+  https://github.com/surge-synthesizer/sst-basic-blocks
+
+GPL-3.0. Full license text in sst-basic-blocks/LICENSE.md.

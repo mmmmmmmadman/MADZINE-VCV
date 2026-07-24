@@ -1,0 +1,269 @@
+slug: MADREPEATER
+name: MAD REPEATER
+hp: 6
+wide: false
+alt: MAD REPEATER
+description:
+  en: Single-stage envelope generator with clock sync, chainable to the right with F expanders for multi-stage envelopes
+  zh: 單段 Envelope 生成器，具備 Clock Sync，可往右串接 F expander 組成多段 Envelope
+  ja: クロックシンク付きシングルステージエンベロープ生成器。右側にFエキスパンダーを連結してマルチステージエンベロープを構成
+features:
+  en:
+  - Single stage with start level, end level, curve and duration
+  - Chain up to 64 F expanders to the right for multi-stage envelopes
+  - Per-stage clock sync with div/mult ratios from 1/16 to 16 beats
+  - Loop switch and manual trigger button
+  - Curve display showing stage shape and playback position
+  zh:
+  - 單段包含 Start Level、End Level、Curve 與 Duration
+  - 往右可串接最多 64 個 F expander 組成多段 Envelope
+  - 每段獨立 Clock Sync，比例從 1/16 至 16 拍
+  - Loop 開關與手動 Trigger 按鈕
+  ja:
+  - スタートレベル、エンドレベル、カーブ、デュレーションを持つ単一ステージ
+  - 右側に最大64個のFエキスパンダーを連結してマルチステージ化
+  - ステージごとのクロックシンク、1/16〜16拍のdiv/mult比率
+  - Loopスイッチとマニュアルトリガーボタン
+  - ステージ形状と再生位置を表示するカーブディスプレイ
+manual_html_raw:
+  en: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
+    <p style="margin-bottom: 1rem;">Single-stage envelope generator. One stage moves from a start voltage to an end voltage over a set duration, following a curve. Placing F expanders directly to the right extends the envelope with one additional stage per expander, up to 64 stages. MAD REPEATER performs all calculations for the whole chain and writes the outputs of every expander.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Signal Flow</h3>
+    <p style="margin-bottom: 1rem;">Trigger (or manual button) starts the chain at the START voltage. Stage 0 runs on this module, then each F expander to the right runs in order. The end voltage of one stage becomes the start voltage of the next. When the last stage finishes, the chain stops, or restarts from START if LOOP is on. ENVELOPE carries the voltage of whichever stage is currently running.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Controls</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Start level</b>: Start voltage of the first stage (0 to 10V, default 0V). Also the voltage the chain returns to when LOOP restarts it.</li>
+    <li><b>End level</b>: End voltage of this stage (0 to 10V, default 5V). With no expander attached this is the final envelope level.</li>
+    <li><b>Curve</b>: J taper curvature (-1 to +1, default 0). 0 is linear; positive values start slow and finish fast; negative values start fast and finish slow.</li>
+    <li><b>Duration</b>: Stage length (1ms to 10s, exponential, default centre). With SYNC on, the knob is read as a clock ratio instead and the tooltip switches to beat values.</li>
+    <li><b>Sync this stage to clock</b>: Off / On. When on, this stage takes its length from the measured clock period at TRIGGER instead of the seconds value.</li>
+    <li><b>Loop</b>: Off / On. When on, the chain restarts from START immediately after the last stage ends. If START differs from the last end level, a jump occurs at the wrap point.</li>
+    <li><b>Manual trigger</b>: Button that starts the chain from stage 0, same as a TRIGGER pulse.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Clock Sync</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>With SYNC on anywhere in the chain, TRIGGER acts as a clock input. The interval between pulses is measured and used as the clock period.</li>
+    <li>A synced stage takes its length from one beat times the DURATION ratio. Ratio steps are 1/16, 1/12, 1/8, 1/6, 1/4, 1/3, 1/2, 2/3, 1, 3/2, 2, 3, 4, 6, 8, 12, 16 beats, with 1 beat at knob centre.</li>
+    <li>One beat equals the measured clock period times the PPQN setting.</li>
+    <li>While any stage in the chain is synced, clock pulses no longer interrupt a chain that is already running. If the chain is stopped, a pulse starts it.</li>
+    <li>If no clock has been measured, or the clock stops for more than four periods, synced stages fall back to their free-running seconds value.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Curve Display</h3>
+    <p style="margin-bottom: 1rem;">The display draws the shape of this stage alone, from its start voltage to its end voltage with the current curvature. While the stage is running, a vertical line and a dot mark the playback position. When another stage in the chain is running, the curve is drawn dimmed.</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Trigger</b>: Starts the chain on a rising edge. With SYNC on it also serves as the clock input.</li>
+    <li><b>Envelope</b>: Envelope output of the whole chain, 0 to 10V. Holds the last reached level when the chain is stopped.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Expander Chain</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>Only F modules count as chain members, and they must sit directly to the right with no other module in between.</li>
+    <li>Maximum chain length is 64 F expanders.</li>
+    <li>Each F outputs a 1ms trigger when its stage begins, and its OUT follows the envelope while its stage runs.</li>
+    <li>Removing or adding an F is picked up immediately; if the running stage falls outside the new chain length, the chain stops.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>Level range: 0 to 10V</li>
+    <li>Duration range: 1ms to 10s free-running; synced stages clamped to 1ms to 600s</li>
+    <li>Trigger detection: Schmitt trigger, 0.1V low, 1.0V high</li>
+    <li>Stage start trigger length: 1ms</li>
+    <li>Maximum stages: 65 (this module plus 64 F expanders)</li>
+    <li>Module width: 6HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Right-Click Menu</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark panel appearance</li>
+    <li><b>Sync PPQN</b>: Clock pulses per beat: 1, 2, 4, 8, 12, 24 or 48. Default 1.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Credit</h3>
+    <p style="margin-bottom: 1rem;">The idea of splitting an envelope into chained per-stage modules comes from Dale Emery's DHE Modules Stage series. The curve formula is taken from DHE Modules sigmoid.hpp, Copyright 2018-2021 Dale H. Emery, MIT License. See LICENSE-dist.txt.</p>
+  zh: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
+    <p style="margin-bottom: 1rem;">單段 Envelope 生成器。一段就是在設定的時間內，依曲線從起點電壓走到終點電壓。往右直接接上 F expander，每接一個就多一段，最多 64 段。整條鏈的運算全部在 MAD REPEATER 執行，每個 expander 的輸出也由它寫入。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">訊號流程</h3>
+    <p style="margin-bottom: 1rem;">Trigger（或手動按鈕）從 START 電壓啟動整條鏈。第 0 段在本模組上跑，接著依序跑右側每個 F。前一段的終點電壓成為下一段的起點電壓。最後一段跑完後鏈停止；LOOP 開啟時則從 START 重新開始。ENVELOPE 輸出當前正在跑的那一段的電壓。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">控制</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Start level</b>：第一段的起點電壓（0 至 10V，預設 0V）。LOOP 繞回時也回到這個電壓。</li>
+    <li><b>End level</b>：本段的終點電壓（0 至 10V，預設 5V）。沒接 expander 時即為 Envelope 的最終電平。</li>
+    <li><b>Curve</b>：J taper 曲率（-1 至 +1，預設 0）。0 為線性；正值慢起快收；負值快起慢收。</li>
+    <li><b>Duration</b>：本段長度（1ms 至 10s，指數映射，預設中央）。SYNC 開啟時旋鈕改讀時鐘比例，tooltip 也改為拍值顯示。</li>
+    <li><b>Sync this stage to clock</b>：Off / On。開啟時本段長度改由 TRIGGER 量測到的時鐘週期決定，不再使用秒數。</li>
+    <li><b>Loop</b>：Off / On。開啟時最後一段結束後立即從 START 重新開始。START 與尾段終點不同時，繞回處會有跳變。</li>
+    <li><b>Manual trigger</b>：按鈕，從第 0 段啟動整條鏈，效果與 TRIGGER pulse 相同。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Clock Sync</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>鏈中任一段開啟 SYNC 時，TRIGGER 兼作時鐘輸入，以 pulse 間隔量測時鐘週期。</li>
+    <li>開啟 SYNC 的段落長度為一拍乘上 DURATION 比例。比例為 1/16、1/12、1/8、1/6、1/4、1/3、1/2、2/3、1、3/2、2、3、4、6、8、12、16 拍，旋鈕中央為 1 拍。</li>
+    <li>一拍等於量測到的時鐘週期乘上 PPQN 設定值。</li>
+    <li>鏈中任一段開啟 SYNC 時，時鐘 pulse 不會打斷正在跑的鏈；鏈停著時則由 pulse 啟動。</li>
+    <li>尚未量到時鐘、或時鐘停止超過四個週期時，SYNC 段落退回使用自由模式的秒數。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">曲線顯示</h3>
+    <p style="margin-bottom: 1rem;">顯示只畫本段的形狀，從起點電壓到終點電壓，套用當前曲率。本段正在跑時，以垂直線與圓點標示播放位置。鏈中其他段落在跑時，本段曲線以較暗的方式繪製。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Trigger</b>：上升沿啟動整條鏈。SYNC 開啟時同時作為時鐘輸入。</li>
+    <li><b>Envelope</b>：整條鏈的 Envelope 輸出（0 至 10V）。鏈停止時維持最後到達的電壓。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Expander 串鏈</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>只有 F 模組算是鏈的成員，且必須直接接在右側，中間不能夾其他模組。</li>
+    <li>鏈長度上限為 64 個 F expander。</li>
+    <li>每個 F 在自己那段開始的瞬間輸出 1ms trigger，OUT 在該段運行期間跟著 Envelope。</li>
+    <li>新增或移除 F 會立即反映；正在跑的段落落在新鏈長度之外時，鏈會停止。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>電壓範圍：0 至 10V</li>
+    <li>段長範圍：自由模式 1ms 至 10s；SYNC 模式 clamp 於 1ms 至 600s</li>
+    <li>Trigger 偵測：Schmitt Trigger，低 0.1V，高 1.0V</li>
+    <li>段落起始 Trigger 長度：1ms</li>
+    <li>最大段數：65（本模組加 64 個 F expander）</li>
+    <li>模組寬度：6HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右鍵選單</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>：Light / Dark 面板外觀</li>
+    <li><b>Sync PPQN</b>：每拍時鐘 pulse 數：1、2、4、8、12、24 或 48。預設 1。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">致謝</h3>
+    <p style="margin-bottom: 1rem;">把 Envelope 拆成一段一段、以模組串接的做法來自 Dale Emery 的 DHE Modules Stage 系列。曲線公式取自 DHE Modules 的 sigmoid.hpp，Copyright 2018-2021 Dale H. Emery，MIT License。詳見 LICENSE-dist.txt。</p>
+  ja: |-
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
+    <p style="margin-bottom: 1rem;">シングルステージエンベロープ生成器。1つのステージは設定した時間で開始電圧から終了電圧へカーブに沿って移動する。右側にFエキスパンダーを直接接続すると1台につき1ステージ追加され、最大64ステージまで拡張できる。チェーン全体の演算はMAD REPEATERが行い、各エキスパンダーの出力も本モジュールが書き込む。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">信号フロー</h3>
+    <p style="margin-bottom: 1rem;">トリガー（またはマニュアルボタン）がSTART電圧からチェーンを開始する。ステージ0は本モジュールで動作し、続いて右側の各Fが順に動作する。前のステージの終了電圧が次のステージの開始電圧となる。最終ステージ終了でチェーンは停止し、LOOPがONならSTARTから再開する。ENVELOPEは現在動作中のステージの電圧を出力する。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">コントロール</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Start level</b>: 最初のステージの開始電圧（0〜10V、デフォルト0V）。LOOPで折り返す際もこの電圧に戻る。</li>
+    <li><b>End level</b>: 本ステージの終了電圧（0〜10V、デフォルト5V）。エキスパンダー未接続時はエンベロープの最終レベルとなる。</li>
+    <li><b>Curve</b>: J taperカーブ量（-1〜+1、デフォルト0）。0はリニア、正の値は緩やかな立ち上がりから急速に終了、負の値は急速な立ち上がりから緩やかに終了。</li>
+    <li><b>Duration</b>: ステージ長（1ms〜10s、指数マッピング、デフォルト中央）。SYNC ON時はノブがクロック比率として読まれ、ツールチップも拍表示に切り替わる。</li>
+    <li><b>Sync this stage to clock</b>: Off / On。ON時は秒数ではなくTRIGGERで計測したクロック周期からステージ長を決定する。</li>
+    <li><b>Loop</b>: Off / On。ON時は最終ステージ終了直後にSTARTから再開する。STARTと最終ステージの終了電圧が異なる場合、折り返し地点で跳躍が生じる。</li>
+    <li><b>Manual trigger</b>: ステージ0からチェーンを開始するボタン。TRIGGERパルスと同じ動作。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クロックシンク</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>チェーン内のいずれかのステージでSYNCがONの場合、TRIGGERはクロック入力も兼ねる。パルス間隔からクロック周期を計測する。</li>
+    <li>SYNCされたステージの長さは1拍×DURATION比率。比率は1/16、1/12、1/8、1/6、1/4、1/3、1/2、2/3、1、3/2、2、3、4、6、8、12、16拍で、ノブ中央が1拍。</li>
+    <li>1拍は計測したクロック周期×PPQN設定値。</li>
+    <li>チェーン内にSYNCされたステージがある間、クロックパルスは動作中のチェーンを中断しない。停止中はパルスで開始する。</li>
+    <li>クロック未計測、またはクロックが4周期以上停止した場合、SYNCステージはフリーランの秒数値に戻る。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">カーブディスプレイ</h3>
+    <p style="margin-bottom: 1rem;">ディスプレイは本ステージのみの形状を、開始電圧から終了電圧まで現在のカーブ量で描画する。本ステージ動作中は縦線とドットで再生位置を示す。チェーン内の他ステージが動作中は、カーブは暗く描画される。</p>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">I/O</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Trigger</b>: 立ち上がりエッジでチェーンを開始。SYNC ON時はクロック入力も兼ねる。</li>
+    <li><b>Envelope</b>: チェーン全体のエンベロープ出力（0〜10V）。停止時は最後に到達した電圧を保持。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">エキスパンダーチェーン</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li>チェーンのメンバーとなるのはFモジュールのみで、間に他のモジュールを挟まず右隣に配置する必要がある。</li>
+    <li>チェーン長の上限は64台のFエキスパンダー。</li>
+    <li>各Fは自ステージ開始の瞬間に1msトリガーを出力し、OUTは該当ステージ動作中エンベロープに追従する。</li>
+    <li>Fの追加・削除は即座に反映される。動作中のステージが新しいチェーン長の外に出た場合、チェーンは停止する。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li>電圧範囲: 0〜10V</li>
+    <li>ステージ長: フリーラン1ms〜10s、SYNC時は1ms〜600sにクランプ</li>
+    <li>トリガー検出: シュミットトリガー、ロー0.1V、ハイ1.0V</li>
+    <li>ステージ開始トリガー長: 1ms</li>
+    <li>最大ステージ数: 65（本モジュール＋64台のFエキスパンダー）</li>
+    <li>モジュール幅: 6HP</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右クリックメニュー</h3>
+    <ul style="padding-left: 1.5rem;">
+    <li><b>Panel Theme</b>: Light / Dark パネル外観</li>
+    <li><b>Sync PPQN</b>: 1拍あたりのクロックパルス数: 1、2、4、8、12、24、48。デフォルト1。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">クレジット</h3>
+    <p style="margin-bottom: 1rem;">エンベロープをステージ単位のモジュールに分割して連結する発想はDale EmeryのDHE Modules Stageシリーズに由来する。カーブ式はDHE Modulesのsigmoid.hppより引用、Copyright 2018-2021 Dale H. Emery、MIT License。LICENSE-dist.txtを参照。</p>
+controls:
+- name: Start level
+  type: param
+  desc:
+    en: Start voltage of the first stage (0 to 10V, default 0V). The chain returns to this voltage when LOOP restarts it.
+    zh: 第一段的起點電壓（0 至 10V，預設 0V）。LOOP 繞回時也回到這個電壓。
+    ja: 最初のステージの開始電圧（0〜10V、デフォルト0V）。LOOPで折り返す際もこの電圧に戻る。
+- name: End level
+  type: param
+  desc:
+    en: End voltage of this stage (0 to 10V, default 5V). With no F expander attached this is the final envelope level.
+    zh: 本段的終點電壓（0 至 10V，預設 5V）。沒接 F expander 時即為 Envelope 最終電平。
+    ja: 本ステージの終了電圧（0〜10V、デフォルト5V）。Fエキスパンダー未接続時はエンベロープの最終レベル。
+- name: Curve
+  type: param
+  desc:
+    en: J taper curvature (-1 to +1, default 0). 0 is linear, positive values start slow and finish fast, negative values start fast and finish slow.
+    zh: J taper 曲率（-1 至 +1，預設 0）。0 為線性，正值慢起快收，負值快起慢收。
+    ja: J taperカーブ量（-1〜+1、デフォルト0）。0はリニア、正の値は緩やかな立ち上がりから急速に終了、負の値はその逆。
+- name: Duration
+  type: param
+  desc:
+    en: Stage length, 1ms to 10s with exponential scaling. With SYNC on the knob is read as a clock ratio from 1/16 to 16 beats and the tooltip shows beat values.
+    zh: 本段長度，1ms 至 10s 指數映射。SYNC 開啟時旋鈕改讀時鐘比例（1/16 至 16 拍），tooltip 改為拍值顯示。
+    ja: ステージ長、1ms〜10sの指数スケーリング。SYNC ON時はノブが1/16〜16拍のクロック比率として読まれ、ツールチップは拍表示になる。
+- name: Sync this stage to clock
+  type: param
+  desc:
+    en: Off / On. When on, this stage takes its length from the clock period measured at TRIGGER instead of the seconds value. Falls back to seconds if no clock is measured.
+    zh: Off / On。開啟時本段長度改由 TRIGGER 量測到的時鐘週期決定。量不到時鐘時退回秒數。
+    ja: Off / On。ON時は秒数ではなくTRIGGERで計測したクロック周期からステージ長を決定。クロック未計測時は秒数に戻る。
+- name: Loop
+  type: param
+  desc:
+    en: Off / On. When on, the chain restarts from the start level immediately after the last stage ends.
+    zh: Off / On。開啟時最後一段結束後立即從 START 電壓重新開始。
+    ja: Off / On。ON時は最終ステージ終了直後にSTART電圧から再開する。
+- name: Manual trigger
+  type: param
+  desc:
+    en: Button that starts the chain from stage 0, same as a TRIGGER pulse.
+    zh: 按鈕，從第 0 段啟動整條鏈，效果與 TRIGGER pulse 相同。
+    ja: ステージ0からチェーンを開始するボタン。TRIGGERパルスと同じ動作。
+- name: Trigger
+  type: input
+  desc:
+    en: Starts the chain on a rising edge (Schmitt trigger, 0.1V low, 1.0V high). With SYNC on it also acts as the clock input and does not interrupt a running chain.
+    zh: 上升沿啟動整條鏈（Schmitt Trigger，低 0.1V，高 1.0V）。SYNC 開啟時兼作時鐘輸入，且不會打斷正在跑的鏈。
+    ja: 立ち上がりエッジでチェーンを開始（シュミットトリガー、ロー0.1V、ハイ1.0V）。SYNC ON時はクロック入力も兼ね、動作中のチェーンを中断しない。
+- name: Envelope
+  type: output
+  desc:
+    en: Envelope output of the whole chain, 0 to 10V. Holds the last reached level when the chain is stopped.
+    zh: 整條鏈的 Envelope 輸出（0 至 10V）。鏈停止時維持最後到達的電壓。
+    ja: チェーン全体のエンベロープ出力（0〜10V）。停止時は最後に到達した電圧を保持。
