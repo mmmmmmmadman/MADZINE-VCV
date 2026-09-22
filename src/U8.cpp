@@ -231,6 +231,9 @@ struct U8 : Module {
     float vuLevelL = -60.0f;
     float vuLevelR = -60.0f;
 
+    // Sidechain envelope follower 狀態（每個 poly channel 一份，0..1）
+    float duckEnv[MAX_POLY] = {};
+
     // Expander 輸出資料（供右側 U8 模組讀取）
     float expanderOutputL[MAX_POLY] = {0};
     float expanderOutputR[MAX_POLY] = {0};
@@ -267,6 +270,19 @@ struct U8 : Module {
                 delayBuffer[c][i] = 0.0f;
             }
             delayWriteIndex[c] = 0;
+        }
+    }
+
+    void onReset(const ResetEvent& e) override {
+        Module::onReset(e);
+        for (int c = 0; c < MAX_POLY; c++) {
+            duckEnv[c] = 0.0f;
+        }
+    }
+
+    void onSampleRateChange() override {
+        for (int c = 0; c < MAX_POLY; c++) {
+            duckEnv[c] = 0.0f;
         }
     }
 
@@ -385,6 +401,19 @@ struct U8 : Module {
         float levelParam = params[LEVEL_PARAM].getValue();
         float duckAmount = params[DUCK_LEVEL_PARAM].getValue();
 
+        // Sidechain envelope follower：全波整流 + attack/release 單極濾波
+        // 接 audio 時取包絡而非瞬時電壓；接慢速 CV 時幾乎等同直通
+        float duckAttackCoeff = 1.0f - expf(-1.0f / (0.005f * args.sampleRate));
+        float duckReleaseCoeff = 1.0f - expf(-1.0f / (0.1f * args.sampleRate));
+        for (int c = 0; c < duckChannels; c++) {
+            float rect = clamp(std::fabs(inputs[DUCK_INPUT].getVoltage(c)) / 10.0f, 0.0f, 1.0f);
+            float coeff = (rect > duckEnv[c]) ? duckAttackCoeff : duckReleaseCoeff;
+            duckEnv[c] += (rect - duckEnv[c]) * coeff;
+        }
+        for (int c = duckChannels; c < MAX_POLY; c++) {
+            duckEnv[c] = 0.0f;
+        }
+
         // 計算 CV 調變量供 Widget 顯示
         if (inputs[LEVEL_CV_INPUT].isConnected()) {
             // ±5V = 滿範圍，所以除以 5 而非 10
@@ -403,7 +432,7 @@ struct U8 : Module {
             float duckCV = 0.0f;
             if (inputs[DUCK_INPUT].isConnected()) {
                 int duckChan = (c < duckChannels) ? c : 0;
-                duckCV = clamp(inputs[DUCK_INPUT].getPolyVoltage(duckChan) / 10.0f, 0.0f, 1.0f);
+                duckCV = duckEnv[duckChan];
             }
             float sidechainCV = clamp(1.0f - (duckCV * duckAmount * 3.0f), 0.0f, 1.0f);
 
@@ -452,7 +481,7 @@ struct U8 : Module {
             float duckCV = 0.0f;
             if (inputs[DUCK_INPUT].isConnected()) {
                 int duckChan = (c < duckChannels) ? c : 0;
-                duckCV = clamp(inputs[DUCK_INPUT].getPolyVoltage(duckChan) / 10.0f, 0.0f, 1.0f);
+                duckCV = duckEnv[duckChan];
             }
             float sidechainCV = clamp(1.0f - (duckCV * duckAmount * 3.0f), 0.0f, 1.0f);
 

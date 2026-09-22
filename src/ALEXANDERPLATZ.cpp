@@ -242,6 +242,9 @@ struct ALEXANDERPLATZ : Module {
     float vuLevelL[ALEX_TRACKS] = {-60.0f};
     float vuLevelR[ALEX_TRACKS] = {-60.0f};
 
+    // Sidechain envelope follower 狀態（每軌每個 poly channel 一份，0..1）
+    float duckEnv[ALEX_TRACKS][MAX_POLY] = {};
+
     // EQ filters (per poly channel, stereo)
     BiquadPeakEQ eqFiltersL[MAX_POLY][ALEX_EQ_BANDS];
     BiquadPeakEQ eqFiltersR[MAX_POLY][ALEX_EQ_BANDS];
@@ -277,6 +280,23 @@ struct ALEXANDERPLATZ : Module {
         }
     }
 
+    void resetDuckEnvelopes() {
+        for (int t = 0; t < ALEX_TRACKS; t++) {
+            for (int ch = 0; ch < MAX_POLY; ch++) {
+                duckEnv[t][ch] = 0.0f;
+            }
+        }
+    }
+
+    void onReset(const ResetEvent& e) override {
+        Module::onReset(e);
+        resetDuckEnvelopes();
+    }
+
+    void onSampleRateChange() override {
+        resetDuckEnvelopes();
+    }
+
     json_t* dataToJson() override {
         json_t* rootJ = json_object();
         json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
@@ -302,6 +322,23 @@ struct ALEXANDERPLATZ : Module {
 
         outputs[LEFT_OUTPUT].setChannels(maxChannels);
         outputs[RIGHT_OUTPUT].setChannels(maxChannels);
+
+        // Sidechain envelope follower：全波整流 + attack/release 單極濾波
+        // 接 audio 時取包絡而非瞬時電壓；接慢速 CV 時幾乎等同直通
+        // 放在主迴圈外，確保每個 sample 只推進一次，且不受 mute/solo 跳過影響
+        float duckAttackCoeff = 1.0f - expf(-1.0f / (0.005f * args.sampleRate));
+        float duckReleaseCoeff = 1.0f - expf(-1.0f / (0.1f * args.sampleRate));
+        for (int t = 0; t < ALEX_TRACKS; t++) {
+            int duckChannels = inputs[DUCK_INPUT + t].getChannels();
+            for (int ch = 0; ch < duckChannels; ch++) {
+                float rect = clamp(std::fabs(inputs[DUCK_INPUT + t].getVoltage(ch)) / 10.0f, 0.0f, 1.0f);
+                float coeff = (rect > duckEnv[t][ch]) ? duckAttackCoeff : duckReleaseCoeff;
+                duckEnv[t][ch] += (rect - duckEnv[t][ch]) * coeff;
+            }
+            for (int ch = duckChannels; ch < MAX_POLY; ch++) {
+                duckEnv[t][ch] = 0.0f;
+            }
+        }
 
         // 跨模組 Solo 邏輯：檢查整個 chain 是否有任何軌道被 solo
         bool chainHasSolo = false;
@@ -409,7 +446,8 @@ struct ALEXANDERPLATZ : Module {
 
                 float duck = 1.0f;
                 if (inputs[DUCK_INPUT + t].isConnected()) {
-                    float duckCV = clamp(inputs[DUCK_INPUT + t].getPolyVoltage(c) / 10.0f, 0.0f, 1.0f);
+                    int duckChan = (inputs[DUCK_INPUT + t].getChannels() == 1) ? 0 : std::min(c, MAX_POLY - 1);
+                    float duckCV = duckEnv[t][duckChan];
                     float duckAmount = params[DUCK_PARAM + t].getValue();
                     duck = clamp(1.0f - (duckCV * duckAmount * 3.0f), 0.0f, 1.0f);
                 }
