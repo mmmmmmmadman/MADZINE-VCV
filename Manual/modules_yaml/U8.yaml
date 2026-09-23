@@ -71,13 +71,16 @@ manual_html_raw:
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sidechain Ducking</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Duck Input</b>: Expects 0-10V envelope signal (typically from kick or bass)</li>
+    <li><b>Duck Input</b>: Accepts audio or envelope CV. Patch a kick drum audio output straight in, no external envelope generator required.</li>
+    <li><b>Envelope Follower</b>: Built in. The input is full-wave rectified, then smoothed with 5ms attack / 100ms release, and normalized to 0-1 with 10V as full scale.</li>
     <li><b>Duck Amount</b>: 0.0 to 1.0 (controls attenuation depth)</li>
-    <li><b>Ducking Behavior</b>: Duck CV reduces gain proportionally, scaled by duck amount with 3x multiplier</li>
-    <li><b>Maximum Attenuation</b>: At duck=1.0 with 10V input, gain reduces to zero (full silence)</li>
+    <li><b>Ducking Behavior</b>: The detected envelope reduces gain proportionally, scaled by duck amount with 3x multiplier</li>
+    <li><b>Maximum Attenuation</b>: At duck=1.0 with a full-scale (10V) envelope, gain reduces to zero (full silence)</li>
     <li><b>At Duck 0</b>: No attenuation regardless of input</li>
-    <li><b>At Duck 1</b>: Full 10V input causes complete silence</li>
-    <li><b>Typical Use</b>: Feed kick drum envelope to duck pads or bass for cleaner mix</li>
+    <li><b>At Duck 1</b>: A full-scale envelope causes complete silence</li>
+    <li><b>Slow Envelope CV</b>: Still works as before, the follower tracks it closely</li>
+    <li><b>Follower State</b>: Independent per polyphonic channel, cleared on module reset and on sample rate change</li>
+    <li><b>Typical Use</b>: Feed kick drum audio or envelope to duck pads or bass for cleaner mix</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Mute Function</h3>
@@ -126,7 +129,7 @@ manual_html_raw:
     <li><b>LEVEL Knob</b>: Channel gain 0-200%</li>
     <li><b>LEVEL CV</b>: Gain modulation input (\u00b110V)</li>
     <li><b>DUCK Knob</b>: Sidechain ducking depth 0-100%</li>
-    <li><b>DUCK CV</b>: Sidechain control input (expects envelope 0-10V)</li>
+    <li><b>DUCK CV</b>: Sidechain control input (audio or envelope CV, internal envelope follower)</li>
     <li><b>MUTE Button</b>: Toggle channel mute with LED</li>
     <li><b>MUTE TRIG</b>: External mute toggle trigger</li>
     <li><b>SOLO Button</b>: Toggle channel solo with LED. Hold 400ms for exclusive solo.</li>
@@ -161,7 +164,7 @@ manual_html_raw:
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
     <ul style="padding-left: 1.5rem;">
     <li>Audio input/output: ±10V</li>
-    <li>CV input: \u00b110V (level), 0-10V (duck)</li>
+    <li>CV input: \u00b110V (level), audio or 0-10V envelope (duck)</li>
     <li>Trigger threshold: 2.0V rising edge</li>
     <li>Polyphony: Up to 16 channels</li>
     <li>Mono-to-stereo delay: 20ms (882 samples at 44.1kHz)</li>
@@ -180,7 +183,7 @@ manual_html_raw:
     <li><b>Solo</b>: Toggle solo button with green LED. Hold 400ms for exclusive solo.</li>
     <li><b>Left Audio</b>: Left audio input (polyphonic, up to 16 channels).</li>
     <li><b>Right Audio</b>: Right audio input (polyphonic). Mono-to-stereo mode when disconnected.</li>
-    <li><b>Duck Signal</b>: Sidechain control input. Expects 0-10V envelope signal.</li>
+    <li><b>Duck Signal</b>: Sidechain control input. Accepts audio or envelope CV, converted internally by a 5ms / 100ms envelope follower.</li>
     <li><b>Level CV</b>: Level modulation CV input (\u00b110V).</li>
     <li><b>Mute Trigger</b>: External mute toggle trigger input (2.0V threshold).</li>
     <li><b>Solo Trigger</b>: External solo toggle trigger input (2.0V threshold).</li>
@@ -216,13 +219,16 @@ manual_html_raw:
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sidechain Ducking</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Duck 輸入</b>: 預期 0-10V Envelope 訊號（通常來自 Kick 或 Bass）</li>
+    <li><b>Duck 輸入</b>: 可直接接音訊或 Envelope CV。Kick 的音訊輸出可直接接入，不需另外接 Envelope Generator。</li>
+    <li><b>內建 Envelope Follower</b>: 輸入先全波整流，再經 5ms Attack / 100ms Release 平滑，以 10V 為滿刻度正規化為 0-1。</li>
     <li><b>Duck 量</b>: 0.0 至 1.0（控制衰減深度）</li>
-    <li><b>Ducking 行為</b>: Duck CV 按比例降低 Gain，以 Duck Amount 縮放並含 3 倍乘數</li>
-    <li><b>最大衰減</b>: 在 duck=1.0 搭配 10V 輸入時，Gain 降為零（完全靜音）</li>
+    <li><b>Ducking 行為</b>: 偵測到的 Envelope 按比例降低 Gain，以 Duck Amount 縮放並含 3 倍乘數</li>
+    <li><b>最大衰減</b>: 在 duck=1.0 搭配滿刻度（10V）Envelope 時，Gain 降為零（完全靜音）</li>
     <li><b>Duck 為 0</b>: 無論輸入為何都無衰減</li>
-    <li><b>Duck 為 1</b>: 完整 10V 輸入造成完全靜音</li>
-    <li><b>典型用法</b>: 將 Kick Drum Envelope 送入以 Duck Pad 或 Bass，使 Mix 更清晰</li>
+    <li><b>Duck 為 1</b>: 滿刻度 Envelope 造成完全靜音</li>
+    <li><b>慢速 Envelope CV</b>: 行為與先前相同，Follower 會緊跟其變化</li>
+    <li><b>Follower 狀態</b>: 每個 Polyphonic 聲道各自獨立，模組 Reset 與 Sample Rate 變更時清空</li>
+    <li><b>典型用法</b>: 將 Kick Drum 的音訊或 Envelope 送入以 Duck Pad 或 Bass，使 Mix 更清晰</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Mute 功能</h3>
@@ -271,7 +277,7 @@ manual_html_raw:
     <li><b>LEVEL Knob</b>: 通道 Gain 0-200%</li>
     <li><b>LEVEL CV</b>: Gain 調變輸入（\u00b110V）</li>
     <li><b>DUCK Knob</b>: Sidechain Ducking 深度 0-100%</li>
-    <li><b>DUCK CV</b>: Sidechain 控制輸入（預期 Envelope 0-10V）</li>
+    <li><b>DUCK CV</b>: Sidechain 控制輸入（音訊或 Envelope CV，內建 Envelope Follower）</li>
     <li><b>MUTE Button</b>: 切換通道 Mute，含 LED</li>
     <li><b>MUTE TRIG</b>: 外部 Mute 切換 Trigger</li>
     <li><b>SOLO Button</b>: 切換通道 Solo，含 LED。長按 400ms 啟用 Exclusive Solo。</li>
@@ -317,7 +323,7 @@ manual_html_raw:
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
     <ul style="padding-left: 1.5rem;">
     <li>Audio 輸入/輸出: ±10V</li>
-    <li>CV 輸入: \u00b110V（Level）、0-10V（Duck）</li>
+    <li>CV 輸入: \u00b110V（Level）、音訊或 0-10V Envelope（Duck）</li>
     <li>Trigger 閾值: 2.0V 上升邊緣</li>
     <li>Polyphony: 最多 16 聲道</li>
     <li>Mono-to-Stereo Delay: 20ms（44.1kHz 下 882 Samples）</li>
@@ -336,7 +342,7 @@ manual_html_raw:
     <li><b>Solo</b>: Solo 切換按鈕，含綠色 LED。長按 400ms 啟用 Exclusive Solo。</li>
     <li><b>Left Audio</b>: Left Audio 輸入（Polyphonic，最多 16 聲道）。</li>
     <li><b>Right Audio</b>: Right Audio 輸入（Polyphonic）。未連接時啟用 Mono-to-Stereo 模式。</li>
-    <li><b>Duck Signal</b>: Sidechain 控制輸入。預期 0-10V Envelope 訊號。</li>
+    <li><b>Duck Signal</b>: Sidechain 控制輸入。可接音訊或 Envelope CV，內部以 5ms / 100ms Envelope Follower 轉換。</li>
     <li><b>Level CV</b>: Level 調變 CV 輸入（\u00b110V）。</li>
     <li><b>Mute Trigger</b>: 外部 Mute 切換 Trigger 輸入（2.0V 閾值）。</li>
     <li><b>Solo Trigger</b>: 外部 Solo 切換 Trigger 輸入（2.0V 閾值）。</li>
@@ -360,13 +366,14 @@ manual_html_raw:
     <li><b>Default</b>: 1.0（單位增益）</li>
     <li><b>CV Modulation</b>: CV 加至 Knob 值（最終 Gain 限制 0-2.0）</li>
     <li><b>CV Range</b>: +/-10V（加減 Knob 值 +/-100%，最終 Gain 限制 0-2.0）</li>
-    <li><b>Duck Input</b>: 預期 0-10V Envelope 訊號（通常來自 Kick 或 Bass）</li>
+    <li><b>Duck Input</b>: 可直接接音訊或 Envelope CV（通常來自 Kick 或 Bass）</li>
+    <li><b>Envelope Follower</b>: 內建。輸入全波整流後經 5ms Attack / 100ms Release 平滑，以 10V 為滿刻度正規化為 0-1</li>
     <li><b>Duck Amount</b>: 0.0 至 1.0（控制衰減深度）</li>
-    <li><b>Ducking Behavior</b>: Duck CV 按比例減少 Gain，以 Duck 量縮放並套用 3 倍乘數</li>
-    <li><b>Maximum Attenuation</b>: duck=1.0 且 10V 輸入時，Gain 降至零（完全靜音）</li>
+    <li><b>Ducking Behavior</b>: 偵測到的 Envelope 按比例減少 Gain，以 Duck 量縮放並套用 3 倍乘數</li>
+    <li><b>Maximum Attenuation</b>: duck=1.0 且滿刻度（10V）Envelope 時，Gain 降至零（完全靜音）</li>
     <li><b>At Duck 0</b>: 無論輸入為何，不衰減</li>
-    <li><b>At Duck 1</b>: 10V 輸入導致完全靜音</li>
-    <li><b>Typical Use</b>: 將 Kick 鼓 Envelope 送至 Pad 或 Bass 進行 Ducking 以清潔混音</li>
+    <li><b>At Duck 1</b>: 滿刻度 Envelope 導致完全靜音</li>
+    <li><b>Typical Use</b>: 將 Kick 鼓的音訊或 Envelope 送至 Pad 或 Bass 進行 Ducking 以清潔混音</li>
     <li><b>Button</b>: 切換 Mute 開/關，帶 LED 指示</li>
     <li><b>Trigger Input</b>: 上升沿（2.0V 閾值）切換 Mute 狀態</li>
     <li><b>LED Color</b>: Mute 時紅色，Solo 時綠色</li>
@@ -423,12 +430,15 @@ manual_html_raw:
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">サイドチェインダッキング</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Duck入力</b>: 0-10Vエンベロープ信号を想定（通常キックやベースから）</li>
+    <li><b>Duck入力</b>: オーディオでもエンベロープCVでも直接入力可能。キックのオーディオ出力をそのまま繋げられ、外部エンベロープジェネレーターは不要。</li>
+    <li><b>エンベロープフォロワー</b>: 内蔵。入力を全波整流し、5msアタック / 100msリリースで平滑化、10Vをフルスケールとして0-1に正規化。</li>
     <li><b>Duck量</b>: 0.0〜1.0（減衰深度を制御）</li>
-    <li><b>ダッキング動作</b>: Duck CVがゲインを比例的に減少、ダック量でスケーリングし3倍乗数適用</li>
-    <li><b>最大減衰</b>: duck=1.0で10V入力時、ゲインはゼロに減少（完全無音）</li>
+    <li><b>ダッキング動作</b>: 検出したエンベロープがゲインを比例的に減少、ダック量でスケーリングし3倍乗数適用</li>
+    <li><b>最大減衰</b>: duck=1.0でフルスケール（10V）エンベロープ時、ゲインはゼロに減少（完全無音）</li>
     <li><b>Duck 0時</b>: 入力に関わらず減衰なし</li>
-    <li><b>Duck 1時</b>: 10V入力で完全に無音</li>
+    <li><b>Duck 1時</b>: フルスケールのエンベロープで完全に無音</li>
+    <li><b>低速エンベロープCV</b>: 従来通りの動作。フォロワーが忠実に追従</li>
+    <li><b>フォロワー状態</b>: ポリフォニックチャンネルごとに独立し、モジュールリセットとサンプルレート変更時にクリア</li>
     <li><b>典型的な使用</b>: キックドラムのエンベロープをパッドやベースにダックさせてミックスをクリアに</li>
     </ul>
 
@@ -478,7 +488,7 @@ manual_html_raw:
     <li><b>LEVELノブ</b>: チャンネルゲイン 0-200%</li>
     <li><b>LEVEL CV</b>: ゲイン変調入力（\u00b110V）</li>
     <li><b>DUCKノブ</b>: サイドチェインダッキング深度 0-100%</li>
-    <li><b>DUCK CV</b>: サイドチェインコントロール入力（エンベロープ 0-10Vを想定）</li>
+    <li><b>DUCK CV</b>: サイドチェインコントロール入力（オーディオまたはエンベロープCV、エンベロープフォロワー内蔵）</li>
     <li><b>MUTEボタン</b>: LED付きチャンネルミュート切替</li>
     <li><b>MUTE TRIG</b>: 外部ミュート切替トリガー</li>
     <li><b>SOLO Button</b>: LED付きチャンネルソロ切替。400ms長押しでエクスクルーシブソロ。</li>
@@ -524,7 +534,7 @@ manual_html_raw:
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
     <ul style="padding-left: 1.5rem;">
     <li>オーディオ入出力: ±10V</li>
-    <li>CV入力: \u00b110V（レベル）、0-10V（ダック）</li>
+    <li>CV入力: \u00b110V（レベル）、オーディオまたは0-10Vエンベロープ（ダック）</li>
     <li>トリガー閾値: 2.0V立ち上がりエッジ</li>
     <li>ポリフォニー: 最大16チャンネル</li>
     <li>モノ→ステレオディレイ: 20ms（44.1kHzで882サンプル）</li>
@@ -543,7 +553,7 @@ manual_html_raw:
     <li><b>Solo</b>: ソロ切替ボタン、緑LED付き。400ms長押しでエクスクルーシブソロ。</li>
     <li><b>Left Audio</b>: 左オーディオ入力（ポリフォニック、最大16チャンネル）。</li>
     <li><b>Right Audio</b>: 右オーディオ入力（ポリフォニック）。未接続時モノ→ステレオモード起動。</li>
-    <li><b>Duck Signal</b>: サイドチェインコントロール入力。0-10Vエンベロープ信号を想定。</li>
+    <li><b>Duck Signal</b>: サイドチェインコントロール入力。オーディオまたはエンベロープCVを入力でき、内部で5ms / 100msのエンベロープフォロワーが変換。</li>
     <li><b>Level CV</b>: レベル変調CV入力（\u00b110V）。</li>
     <li><b>Mute Trigger</b>: 外部ミュート切替トリガー入力（2.0V閾値）。</li>
     <li><b>Solo Trigger</b>: 外部ソロ切替トリガー入力（2.0V閾値）。</li>
@@ -567,13 +577,14 @@ manual_html_raw:
     <li><b>Default</b>: 1.0（ユニティゲイン）</li>
     <li><b>CV Modulation</b>: CVはノブ値に加算（最終ゲインは0〜2.0にクランプ）</li>
     <li><b>CV Range</b>: +/-10V（ノブ値に+/-100%を加算、最終ゲインは0〜2.0にクランプ）</li>
-    <li><b>Duck Input</b>: 0〜10Vエンベロープ信号を想定（通常キックやベースから）</li>
+    <li><b>Duck Input</b>: オーディオでもエンベロープCVでも直接入力可能（通常キックやベースから）</li>
+    <li><b>Envelope Follower</b>: 内蔵。全波整流後に5msアタック / 100msリリースで平滑化し、10Vをフルスケールとして0-1に正規化</li>
     <li><b>Duck Amount</b>: 0.0〜1.0（減衰深度を制御）</li>
-    <li><b>Ducking Behavior</b>: Duck CVがゲインを比例的に減少、ダック量でスケーリングし3倍乗数適用</li>
-    <li><b>Maximum Attenuation</b>: duck=1.0で10V入力時、ゲインはゼロに減少（完全無音）</li>
+    <li><b>Ducking Behavior</b>: 検出したエンベロープがゲインを比例的に減少、ダック量でスケーリングし3倍乗数適用</li>
+    <li><b>Maximum Attenuation</b>: duck=1.0でフルスケール（10V）エンベロープ時、ゲインはゼロに減少（完全無音）</li>
     <li><b>At Duck 0</b>: 入力に関わらず減衰なし</li>
-    <li><b>At Duck 1</b>: 10V入力で完全に無音</li>
-    <li><b>Typical Use</b>: キックドラムのエンベロープをパッドやベースにダックしてミックスをクリアに</li>
+    <li><b>At Duck 1</b>: フルスケールのエンベロープで完全に無音</li>
+    <li><b>Typical Use</b>: キックドラムのオーディオまたはエンベロープをパッドやベースにダックしてミックスをクリアに</li>
     <li><b>Button</b>: LEDインジケーター付きミュートオン/オフ切り替え</li>
     <li><b>Trigger Input</b>: 立ち上がりエッジ（2.0V閾値）でミュート状態を切り替え</li>
     <li><b>LED Color</b>: ミュート時は赤、ソロ時は緑</li>
@@ -646,9 +657,10 @@ controls:
 - name: Duck Signal
   type: input
   desc:
-    en: Sidechain control input. Expects 0-10V envelope signal.
-    zh: Sidechain 控制輸入。預期 0-10V Envelope 訊號。
-    ja: サイドチェインコントロール入力。0-10Vエンベロープ信号を想定。
+    en: Sidechain control input. Accepts audio or envelope CV, converted by a built-in
+      5ms / 100ms envelope follower.
+    zh: Sidechain 控制輸入。可接音訊或 Envelope CV，內部以 5ms / 100ms Envelope Follower 轉換。
+    ja: サイドチェインコントロール入力。オーディオまたはエンベロープCVを入力でき、内蔵の5ms / 100msエンベロープフォロワーが変換。
 - name: Level CV
   type: input
   desc:

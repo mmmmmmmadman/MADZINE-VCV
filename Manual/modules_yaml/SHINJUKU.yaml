@@ -76,7 +76,7 @@ manual_html_raw:
 
     <li><b>DUCK Knob</b>: Sidechain ducking depth 0-100%</li>
 
-    <li><b>DUCK Input</b>: Sidechain control input (expects envelope 0-10V)</li>
+    <li><b>DUCK Input</b>: Sidechain control input. Accepts audio or envelope CV. A built-in envelope follower (full-wave rectify, 5ms attack / 100ms release, 10V full scale) does the conversion, so a kick audio output can be patched straight in.</li>
 
     <li><b>MUTE Button</b>: Toggle track mute with red LED indicator</li>
 
@@ -134,7 +134,7 @@ manual_html_raw:
 
     <li>Audio input/output: ±10V (clamped)</li>
 
-    <li>CV input: 0-10V</li>
+    <li>CV input: 0-10V (DUCK also accepts audio, converted by the internal envelope follower)</li>
 
     <li>Trigger threshold: 2.0V rising edge</li>
 
@@ -222,7 +222,7 @@ manual_html_raw:
 
     <li><b>DUCK Knob</b>: Sidechain Ducking 深度 0-100%</li>
 
-    <li><b>DUCK Input</b>: Sidechain 控制輸入（預期 Envelope 0-10V）</li>
+    <li><b>DUCK Input</b>: Sidechain 控制輸入。可接音訊或 Envelope CV。內建 Envelope Follower（全波整流，5ms Attack / 100ms Release，10V 滿刻度）自動轉換，Kick 的音訊輸出可直接接入。</li>
 
     <li><b>MUTE Button</b>: 切換軌道 Mute，紅色 LED 指示</li>
 
@@ -280,7 +280,7 @@ manual_html_raw:
 
     <li>Audio 輸入/輸出: ±10V（限幅）</li>
 
-    <li>CV 輸入: 0-10V</li>
+    <li>CV 輸入: 0-10V（DUCK 亦可直接接音訊，由內建 Envelope Follower 轉換）</li>
 
     <li>Trigger 閾值: 2.0V 上升邊緣</li>
 
@@ -398,7 +398,7 @@ manual_html_raw:
 
     <li><b>DUCKノブ</b>: サイドチェインダッキング深度 0-100%</li>
 
-    <li><b>DUCK入力</b>: サイドチェインコントロール入力（エンベロープ 0-10Vを想定）</li>
+    <li><b>DUCK入力</b>: サイドチェインコントロール入力。オーディオまたはエンベロープCVを入力可能。内蔵のエンベロープフォロワー（全波整流、5msアタック / 100msリリース、10Vフルスケール）が変換するため、キックのオーディオ出力をそのまま繋げられる。</li>
 
     <li><b>MUTEボタン</b>: トラックミュート切替、赤LEDインジケーター</li>
 
@@ -456,7 +456,7 @@ manual_html_raw:
 
     <li>オーディオ入出力: ±10V（クランプ）</li>
 
-    <li>CV入力: 0-10V</li>
+    <li>CV入力: 0-10V（DUCKはオーディオも入力可能、内蔵エンベロープフォロワーが変換）</li>
 
     <li>トリガー閾値: 2.0V立ち上がりエッジ</li>
 
@@ -534,7 +534,7 @@ manual_html_raw:
 
     <li><b>DUCK Knob</b>: サイドチェインダッキング深度 0〜100%</li>
 
-    <li><b>DUCK Input</b>: サイドチェインコントロール入力（エンベロープ 0〜10V を想定）</li>
+    <li><b>DUCK Input</b>: サイドチェインコントロール入力。オーディオまたはエンベロープCVを入力可能。内蔵のエンベロープフォロワー（全波整流、5msアタック / 100msリリース、10Vフルスケール）が変換するため、キックのオーディオ出力をそのまま繋げられる。</li>
 
     <li><b>MUTE Button</b>: トラックミュート切替、赤LEDインジケーター</li>
 
@@ -599,51 +599,51 @@ controls:
 - name: Track 1 Duck
   type: param
   desc:
-    zh: Track 1 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 1 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 1 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 1 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 1 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 1 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 2 Duck
   type: param
   desc:
-    zh: Track 2 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 2 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 2 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 2 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 2 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 2 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 3 Duck
   type: param
   desc:
-    zh: Track 3 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 3 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 3 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 3 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 3 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 3 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 4 Duck
   type: param
   desc:
-    zh: Track 4 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 4 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 4 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 4 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 4 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 4 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 5 Duck
   type: param
   desc:
-    zh: Track 5 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 5 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 5 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 5 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 5 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 5 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 6 Duck
   type: param
   desc:
-    zh: Track 6 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 6 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 6 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 6 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 6 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 6 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 7 Duck
   type: param
   desc:
-    zh: Track 7 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 7 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 7 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 7 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 7 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 7 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 8 Duck
   type: param
   desc:
-    zh: Track 8 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入 CV 使用，最大衰減為 3 倍乘數。
-    en: Track 8 sidechain duck depth (0-100%, default 0%), applied with the Duck CV input; maximum attenuation uses a 3x multiplier.
-    ja: Track 8 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck CV 入力と併用、最大減衰は 3 倍乗数。
+    zh: Track 8 Sidechain Ducking 深度（0-100%，預設 0%），搭配 Duck 輸入（音訊或 Envelope CV）使用，最大衰減為 3 倍乘數。
+    en: Track 8 sidechain duck depth (0-100%, default 0%), applied with the Duck input (audio or envelope CV); maximum attenuation uses a 3x multiplier.
+    ja: Track 8 のサイドチェインダッキング深度（0-100%、デフォルト 0%）、Duck 入力（オーディオまたはエンベロープCV）と併用、最大減衰は 3 倍乗数。
 - name: Track 1 Mute
   type: param
   desc:
@@ -887,51 +887,51 @@ controls:
 - name: Track 1 Duck
   type: input
   desc:
-    zh: Track 1 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 1 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 1 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 1 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 1 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 1 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 2 Duck
   type: input
   desc:
-    zh: Track 2 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 2 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 2 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 2 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 2 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 2 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 3 Duck
   type: input
   desc:
-    zh: Track 3 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 3 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 3 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 3 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 3 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 3 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 4 Duck
   type: input
   desc:
-    zh: Track 4 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 4 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 4 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 4 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 4 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 4 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 5 Duck
   type: input
   desc:
-    zh: Track 5 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 5 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 5 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 5 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 5 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 5 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 6 Duck
   type: input
   desc:
-    zh: Track 6 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 6 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 6 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 6 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 6 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 6 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 7 Duck
   type: input
   desc:
-    zh: Track 7 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 7 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 7 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 7 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 7 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 7 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 8 Duck
   type: input
   desc:
-    zh: Track 8 Duck Sidechain CV 輸入（0-10V Envelope，搭配 Duck Knob 進行衰減控制）。
-    en: Track 8 duck sidechain CV input (envelope 0-10V, combined with Duck knob for attenuation).
-    ja: Track 8 のダックサイドチェイン CV 入力（エンベロープ 0-10V、Duck ノブと組み合わせて減衰制御）。
+    zh: Track 8 Duck Sidechain 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，搭配 Duck Knob 進行衰減控制）。
+    en: Track 8 duck sidechain input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower, combined with Duck knob for attenuation).
+    ja: Track 8 のダックサイドチェイン入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、Duck ノブと組み合わせて減衰制御）。
 - name: Track 1 Mute Trigger
   type: input
   desc:

@@ -1,6 +1,6 @@
 # MADZINE Modules for VCV Rack
 
-**Version 2.6.0**
+**Version 2.7.0**
 
 A collection of creative modules for VCV Rack, focusing on rhythm generation, mixing, and experimental sound design.
 
@@ -74,6 +74,13 @@ Available in the [VCV Rack Library](https://library.vcvrack.com/?brand=MADZINE)
 See [https://linktr.ee/madzine](https://linktr.ee/madzine) for the interactive module manual.
 
 ## Changelog
+
+### v2.7.0
+- **U8**, **SHINJUKU**, **ALEXANDERPLATZ**: DUCK sidechain inputs now pass through an envelope follower
+  - The input is full-wave rectified and smoothed (5 ms attack, 100 ms release), so an audio source can be patched straight into DUCK
+  - Patches driving DUCK with a slow envelope CV behave essentially as before
+  - Follower state is per track and per polyphony channel, cleared on reset and on sample rate change
+- Fixed swapped Toilet Paper and Wine panel backgrounds on the 6 HP size (MAD REPEATER)
 
 ### v2.6.0
 - Added **MAD REPEATER** (6 HP) and **F** (4 HP) multi-stage envelope modules

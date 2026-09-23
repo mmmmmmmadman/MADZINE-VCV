@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Forward generator: Manual/modules_yaml/*.yaml -> 3 outputs.
+Forward generator: Manual/modules_yaml/*.yaml -> src/ManualHelpData.hpp
+(VCV tooltip data, binary-compatible with Manual.cpp).
 
-1. src/ManualHelpData.hpp                    (VCV tooltip, binary-compatible with Manual.cpp)
-2. Manual/madzine_modules_compact_v5.0.html  (VCV-side manual, OKLCH palette)
-3. madzine-website/modules.html              (website mirror)
-
-All three outputs are derived from the same YAML source of truth.
+The VCV-side HTML manual is deprecated and madzine-website/modules.html is
+hand-maintained, so neither is generated here; HTML_VCV_OUT and
+HTML_WEBSITE_OUT are kept only as a record of where they live.
 
 Usage: python3 Manual/generate.py
 """
@@ -26,7 +25,7 @@ IMG_DIR = ROOT / "Manual" / "modules"
 
 HPP_OUT = ROOT / "src" / "ManualHelpData.hpp"
 HTML_VCV_OUT = ROOT / "Manual" / "madzine_modules_compact_v5.0.html"
-HTML_WEBSITE_OUT = Path("/Users/madzine/Documents/madzine-website/modules.html")
+HTML_WEBSITE_OUT = Path("/Users/madzine/MADZINE/Documents/madzine-website/modules.html")
 
 # Populated by load_image_cache(); maps img stem -> "data:image/png;base64,..."
 IMG_DATA_URIS = {}

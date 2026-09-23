@@ -57,7 +57,7 @@ manual_html_raw:
     <li><b>LEVEL Knob</b>: Track gain 0-200% (default: 100%)</li>
     <li><b>LEVEL CV</b>: Gain modulation input (\u00b110V adds \u00b1100% to knob value, final gain clamped 0.0-2.0)</li>
     <li><b>DUCK Knob</b>: Sidechain ducking depth 0-100%</li>
-    <li><b>DUCK Input</b>: Sidechain control input (expects envelope 0-10V)</li>
+    <li><b>DUCK Input</b>: Sidechain control input. Accepts audio or envelope CV. A built-in envelope follower (full-wave rectify, 5ms attack / 100ms release, 10V full scale) does the conversion, so a kick audio output can be patched straight in.</li>
     <li><b>MUTE Button</b>: Toggle track mute with red LED indicator</li>
     <li><b>SOLO Button</b>: Toggle track solo with green LED indicator</li>
     <li><b>MUTE/SOLO Triggers</b>: External trigger inputs for mute/solo toggle</li>
@@ -88,7 +88,7 @@ manual_html_raw:
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
     <ul style="padding-left: 1.5rem;">
     <li>Audio input/output: ±10V (clamped)</li>
-    <li>CV input: 0-10V</li>
+    <li>CV input: 0-10V (DUCK also accepts audio, converted by the internal envelope follower)</li>
     <li>Trigger threshold: 2.0V rising edge</li>
     <li>Polyphony: Up to 16 channels</li>
     <li>Level range: 0-200%</li>
@@ -135,7 +135,7 @@ manual_html_raw:
     <li><b>LEVEL Knob</b>: 軌道 Gain 0-200%（預設: 100%）</li>
     <li><b>LEVEL CV</b>: Gain 調變輸入（±10V 加減 Knob 值 ±100%，最終 Gain 限制 0.0-2.0）</li>
     <li><b>DUCK Knob</b>: Sidechain Ducking 深度 0-100%</li>
-    <li><b>DUCK Input</b>: Sidechain 控制輸入（預期 Envelope 0-10V）</li>
+    <li><b>DUCK Input</b>: Sidechain 控制輸入。可接音訊或 Envelope CV。內建 Envelope Follower（全波整流，5ms Attack / 100ms Release，10V 滿刻度）自動轉換，Kick 的音訊輸出可直接接入。</li>
     <li><b>MUTE Button</b>: 切換軌道 Mute，紅色 LED 指示</li>
     <li><b>SOLO Button</b>: 切換軌道 Solo，綠色 LED 指示</li>
     <li><b>MUTE/SOLO Triggers</b>: Mute/Solo 切換的外部 Trigger 輸入</li>
@@ -166,7 +166,7 @@ manual_html_raw:
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
     <ul style="padding-left: 1.5rem;">
     <li>Audio 輸入/輸出: ±10V（限幅）</li>
-    <li>CV 輸入: 0-10V</li>
+    <li>CV 輸入: 0-10V（DUCK 亦可直接接音訊，由內建 Envelope Follower 轉換）</li>
     <li>Trigger 閾值: 2.0V 上升邊緣</li>
     <li>Polyphony: 最多 16 聲道</li>
     <li>Level 範圍: 0-200%</li>
@@ -228,7 +228,7 @@ manual_html_raw:
     <li><b>LEVELノブ</b>: トラックゲイン 0-200%（デフォルト: 100%）</li>
     <li><b>LEVEL CV</b>: ゲイン変調入力（±10Vでノブ値に±100%加算、最終ゲイン0.0-2.0にクランプ）</li>
     <li><b>DUCKノブ</b>: サイドチェインダッキング深度 0-100%</li>
-    <li><b>DUCK入力</b>: サイドチェインコントロール入力（エンベロープ 0-10Vを想定）</li>
+    <li><b>DUCK入力</b>: サイドチェインコントロール入力。オーディオまたはエンベロープCVを入力可能。内蔵のエンベロープフォロワー（全波整流、5msアタック / 100msリリース、10Vフルスケール）が変換するため、キックのオーディオ出力をそのまま繋げられる。</li>
     <li><b>MUTEボタン</b>: トラックミュート切替、赤LEDインジケーター</li>
     <li><b>SOLOボタン</b>: トラックソロ切替、緑LEDインジケーター</li>
     <li><b>MUTE/SOLOトリガー</b>: ミュート/ソロ切替の外部トリガー入力</li>
@@ -259,7 +259,7 @@ manual_html_raw:
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
     <ul style="padding-left: 1.5rem;">
     <li>オーディオ入出力: ±10V（クランプ）</li>
-    <li>CV入力: 0-10V</li>
+    <li>CV入力: 0-10V（DUCKはオーディオも入力可能、内蔵エンベロープフォロワーが変換）</li>
     <li>トリガー閾値: 2.0V立ち上がりエッジ</li>
     <li>ポリフォニー: 最大16チャンネル</li>
     <li>レベル範囲: 0-200%</li>
@@ -298,7 +298,7 @@ manual_html_raw:
     <li><b>Color</b>: 緑から赤のグラデーション、0dB以上は赤ゾーン</li>
     <li><b>LEVEL Knob</b>: トラックゲイン 0〜200%（デフォルト：100%）</li>
     <li><b>DUCK Knob</b>: サイドチェインダッキング深度 0〜100%</li>
-    <li><b>DUCK Input</b>: サイドチェインコントロール入力（エンベロープ 0〜10V を想定）</li>
+    <li><b>DUCK Input</b>: サイドチェインコントロール入力。オーディオまたはエンベロープCVを入力可能。内蔵のエンベロープフォロワー（全波整流、5msアタック / 100msリリース、10Vフルスケール）が変換するため、キックのオーディオ出力をそのまま繋げられる。</li>
     <li><b>MUTE Button</b>: トラックミュート切替、赤LEDインジケーター</li>
     <li><b>SOLO Button</b>: トラックソロ切替、緑LEDインジケーター</li>
     <li><b>MUTE/SOLO Triggers</b>: ミュート/ソロ切替の外部トリガー入力</li>
@@ -477,27 +477,27 @@ controls:
 - name: Track 1 Duck
   type: input
   desc:
-    en: Track 1 sidechain Duck input (expects envelope 0-10V; with 3x multiplier).
-    zh: 第 1 軌 Sidechain Duck 輸入（預期 Envelope 0-10V，3 倍乘數）。
-    ja: トラック 1 のサイドチェイン Duck 入力（エンベロープ 0-10V を想定、3 倍乗数）。
+    en: Track 1 sidechain Duck input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower; with 3x multiplier).
+    zh: 第 1 軌 Sidechain Duck 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，3 倍乘數）。
+    ja: トラック 1 のサイドチェイン Duck 入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、3 倍乗数）。
 - name: Track 2 Duck
   type: input
   desc:
-    en: Track 2 sidechain Duck input (expects envelope 0-10V; with 3x multiplier).
-    zh: 第 2 軌 Sidechain Duck 輸入（預期 Envelope 0-10V，3 倍乘數）。
-    ja: トラック 2 のサイドチェイン Duck 入力（エンベロープ 0-10V を想定、3 倍乗数）。
+    en: Track 2 sidechain Duck input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower; with 3x multiplier).
+    zh: 第 2 軌 Sidechain Duck 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，3 倍乘數）。
+    ja: トラック 2 のサイドチェイン Duck 入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、3 倍乗数）。
 - name: Track 3 Duck
   type: input
   desc:
-    en: Track 3 sidechain Duck input (expects envelope 0-10V; with 3x multiplier).
-    zh: 第 3 軌 Sidechain Duck 輸入（預期 Envelope 0-10V，3 倍乘數）。
-    ja: トラック 3 のサイドチェイン Duck 入力（エンベロープ 0-10V を想定、3 倍乗数）。
+    en: Track 3 sidechain Duck input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower; with 3x multiplier).
+    zh: 第 3 軌 Sidechain Duck 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，3 倍乘數）。
+    ja: トラック 3 のサイドチェイン Duck 入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、3 倍乗数）。
 - name: Track 4 Duck
   type: input
   desc:
-    en: Track 4 sidechain Duck input (expects envelope 0-10V; with 3x multiplier).
-    zh: 第 4 軌 Sidechain Duck 輸入（預期 Envelope 0-10V，3 倍乘數）。
-    ja: トラック 4 のサイドチェイン Duck 入力（エンベロープ 0-10V を想定、3 倍乗数）。
+    en: Track 4 sidechain Duck input (audio or 0-10V envelope, converted by the built-in 5ms / 100ms envelope follower; with 3x multiplier).
+    zh: 第 4 軌 Sidechain Duck 輸入（可接音訊或 0-10V Envelope，內建 Envelope Follower 5ms / 100ms，3 倍乘數）。
+    ja: トラック 4 のサイドチェイン Duck 入力（オーディオまたは 0-10V エンベロープ、内蔵の5ms / 100msエンベロープフォロワーが変換、3 倍乗数）。
 - name: Track 1 Mute Trigger
   type: input
   desc:
