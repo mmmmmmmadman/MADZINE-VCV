@@ -430,7 +430,6 @@ struct RunnerWidget : ModuleWidget {
         addChild(new RunnerTitleLabel(Vec(0, 0), Vec(box.size.x, 30),
             "Runner", "the Delay effect", "MADZINE"));
 
-        float centerX = box.size.x / 2.0f;  // 30
         float leftX = 15.0f;
         float rightX = 45.0f;
 

@@ -623,7 +623,6 @@ struct PortalWidget : ModuleWidget {
         NVGcolor white = nvgRGB(255, 255, 255);
         NVGcolor orange = nvgRGB(255, 200, 0);
         NVGcolor pink = nvgRGB(255, 133, 133);
-        NVGcolor black = nvgRGB(0, 0, 0);
 
         // ===== 標題區域（Y=0-30）=====
         addChild(new PortalTextLabel(Vec(0, 1), Vec(box.size.x, 20), "PORTAL", 14.f, orange, true));

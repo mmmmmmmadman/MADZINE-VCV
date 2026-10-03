@@ -68,12 +68,12 @@ enum class Hand {
 // Extended Note Information
 // ========================================
 struct NoteInfo {
-    float velocity;
-    ArticulationType articulation;
-    VelocityLayer layer;
-    Hand hand;
-    float microOffset;      // Microtiming offset in ms
-    bool hasError;          // Is this a "mistake"
+    float velocity = 0.0f;
+    ArticulationType articulation = ArticulationType::NORMAL;
+    VelocityLayer layer = VelocityLayer::PPPP;
+    Hand hand = Hand::RIGHT;
+    float microOffset = 0.0f;      // Microtiming offset in ms
+    bool hasError = false;          // Is this a "mistake"
 };
 
 // ========================================

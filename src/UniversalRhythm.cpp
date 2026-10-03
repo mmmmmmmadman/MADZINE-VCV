@@ -1424,6 +1424,7 @@ struct UniversalRhythm : Module {
     // Uses ArticulationProfiles to select articulation based on style, role, and amount
     void triggerWithArticulation(int voice, float velocity, bool accent, float sampleRate,
                                   int role = -1, bool isStrongBeat = false) {
+        if (voice < 0 || voice >= 8) return;  // Bounds guard (8 voices)
         // v2.3.7: Use 3-tier Articulation system (only active in tier 3: 66-100%)
         float articulationAmount = getArticulationAmount();
 
@@ -1526,6 +1527,7 @@ struct UniversalRhythm : Module {
 
     // Helper: Schedule ExpandedHit notes as DelayedTriggers
     void scheduleExpandedHit(int voice, const WorldRhythm::ExpandedHit& hit, bool accent, float sampleRate, int role) {
+        if (voice < 0 || voice >= 8) return;  // Bounds guard (8 voices)
         // Pre-calculate decay multiplier for VCA
         int baseParam = role * 5;
         float decayMult = params[TIMELINE_DECAY_PARAM + baseParam].getValue();
@@ -2371,8 +2373,10 @@ void URDynamicRoleTitle::draw(const DrawArgs &args) {
 
     // Draw white outline (1px)
     nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-    for (float dx = -1.0f; dx <= 1.0f; dx += 1.0f) {
-        for (float dy = -1.0f; dy <= 1.0f; dy += 1.0f) {
+    for (int ix = -1; ix <= 1; ix++) {
+        float dx = static_cast<float>(ix);
+        for (int iy = -1; iy <= 1; iy++) {
+            float dy = static_cast<float>(iy);
             if (dx != 0 || dy != 0) {
                 nvgText(args.vg, box.size.x / 2.f + dx, box.size.y / 2.f + dy, text.c_str(), NULL);
             }

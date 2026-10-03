@@ -760,7 +760,6 @@ struct ADGeneratorWidget : ModuleWidget {
 
             addChild(new EnhancedTextLabel(Vec(x - 5, y - 25), Vec(25, 10), "CURV"));
             addParam(createParamCentered<StandardBlackKnob26>(Vec(x + 7, y - 3), module, ADGenerator::TRACK1_CURVE_PARAM + i * 6));
-            x += 27;
 
             x = 10;
             y += 35;

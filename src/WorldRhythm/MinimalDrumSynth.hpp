@@ -273,9 +273,9 @@ public:
  */
 struct StyleSynthPreset {
     struct VoicePreset {
-        SynthMode mode;
-        float freq;
-        float decay;
+        SynthMode mode = SynthMode::SINE;
+        float freq = 100.0f;
+        float decay = 200.0f;
         float sweep = 0.f;
         float bend = 1.f;
     };

@@ -717,7 +717,7 @@ struct TWNC : Module {
         globalLength = clamp(globalLength, 1, 32);
         
         int vcaShift = (int)std::round(params[VCA_SHIFT_PARAM].getValue());
-        bool vcaTriggered = quarterClock.processStep(globalClockTriggered, globalLength, vcaShift);
+        quarterClock.processStep(globalClockTriggered, globalLength, vcaShift);
         float vcaTrigger = quarterClock.getTrigger(args.sampleTime);
         
         for (int i = 0; i < 2; ++i) {

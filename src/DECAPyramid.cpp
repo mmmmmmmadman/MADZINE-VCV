@@ -446,8 +446,11 @@ struct OutlinedTextLabel : TransparentWidget {
 
         // 繪製黑色外框（多次偏移繪製）
         nvgFillColor(args.vg, nvgRGB(0, 0, 0));
-        for (float dx = -outlineWidth; dx <= outlineWidth; dx += 1.f) {
-            for (float dy = -outlineWidth; dy <= outlineWidth; dy += 1.f) {
+        int outlineSteps = (int)std::floor(outlineWidth * 2.f);
+        for (int ix = 0; ix <= outlineSteps; ix++) {
+            float dx = -outlineWidth + (float)ix;
+            for (int iy = 0; iy <= outlineSteps; iy++) {
+                float dy = -outlineWidth + (float)iy;
                 if (dx != 0 || dy != 0) {
                     nvgText(args.vg, cx + dx, cy + dy, text.c_str(), NULL);
                 }
@@ -490,17 +493,17 @@ struct VolumeMeterWidget : Widget {
     }
     
     void draw(const DrawArgs& args) override {
-        if (!module) return;
-        
         nvgBeginPath(args.vg);
         nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
         nvgFillColor(args.vg, nvgRGB(20, 20, 20));
         nvgFill(args.vg);
-        
+
         nvgStrokeWidth(args.vg, 1.0f);
         nvgStrokeColor(args.vg, nvgRGB(100, 100, 100));
         nvgStroke(args.vg);
-        
+
+        if (!module) return;
+
         float level;
         if (preLevel) {
             level = module->vuMeterPre[trackIndex].v;

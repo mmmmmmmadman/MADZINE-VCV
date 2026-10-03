@@ -415,8 +415,6 @@ struct EnvVCA6 : Module {
             float attackParam = params[CH1_ATTACK_PARAM + i * 6].getValue();
             float releaseParam = params[CH1_RELEASE_PARAM + i * 6].getValue();
             float outVolParam = params[CH1_OUT_VOL_PARAM + i * 6].getValue();
-            bool manualGatePressed = params[CH1_GATE_TRIG_PARAM + i * 6].getValue() > 0.5f;
-            bool sumLatchPressed = params[CH1_SUM_LATCH_PARAM + i * 6].getValue() > 0.5f;
             bool ahrMode = params[CH1_ENV_MODE_PARAM + i * 6].getValue() > 0.5f;
 
             // Set envelope mode

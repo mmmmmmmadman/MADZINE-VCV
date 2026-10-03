@@ -412,6 +412,7 @@ struct Launchpad : Module {
 
     // Cell interaction
     void onCellClick(int row, int col) {
+        if (row < 0 || row >= 8 || col < 0 || col >= 8) return;  // Bounds guard (8x8 grid)
         CellData& cell = cells[row][col];
 
         if (cell.state == CELL_EMPTY) {
@@ -491,6 +492,7 @@ struct Launchpad : Module {
 
     void onCellHold(int row, int col) {
         // Clear cell
+        if (row < 0 || row >= 8 || col < 0 || col >= 8) return;  // Bounds guard (8x8 grid)
         cells[row][col].clear();
     }
 

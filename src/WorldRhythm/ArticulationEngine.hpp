@@ -49,7 +49,7 @@ struct ExpandedNote {
 struct ExpandedHit {
     std::vector<ExpandedNote> notes;
     OrnamentType ornament;
-    int originalPosition;
+    int originalPosition = 0;
 };
 
 // ========================================

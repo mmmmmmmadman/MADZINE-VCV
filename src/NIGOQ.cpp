@@ -809,6 +809,14 @@ struct NIGOQ : Module {
         configSwitch(TRIG_PARAM, 0.f, 1.f, 1.f, "Trigger", {"Enabled", "Disabled"});
         configLight(TRIG_LIGHT, "Trigger Light");
 
+        // onRandomize() does its own smooth glide randomization (amount + exclusions).
+        // Disable the SDK's instant per-param randomization so calling the base
+        // Module::onRandomize(e) does not jump params before the glide starts.
+        for (ParamQuantity* pq : paramQuantities) {
+            if (pq)
+                pq->randomizeEnabled = false;
+        }
+
         // Configure inputs
         configInput(TRIG_IN, "Trigger");
         configInput(MOD_WAVE_CV, "Modulation Wave CV");
@@ -936,7 +944,9 @@ struct NIGOQ : Module {
         smoothRandomizeActive = true;
         smoothRandomizeTimer = 0.0f;
 
-        // Don't call Module::onRandomize(e) as we handle everything ourselves
+        // All ParamQuantities have randomizeEnabled = false (see constructor),
+        // so the base call only dispatches the deprecated onRandomize() hook.
+        Module::onRandomize(e);
     }
 
     json_t* dataToJson() override {
@@ -1500,8 +1510,6 @@ struct VisualDisplay : Widget {
     }
 
     void draw(const DrawArgs& args) override {
-        if (!module) return;
-
         // Draw background
         nvgBeginPath(args.vg);
         nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
@@ -1521,6 +1529,8 @@ struct VisualDisplay : Widget {
         nvgStrokeColor(args.vg, nvgRGBA(255, 255, 255, 30));
         nvgStrokeWidth(args.vg, 0.5f);
         nvgStroke(args.vg);
+
+        if (!module) return;
 
         // Draw PRIN trace (top half, pink)
         float trackHeight = box.size.y / 2.0f;

@@ -684,7 +684,6 @@ struct FourProgressBars : LedDisplay {
         // Calculate current position in 4-bar cycle
         int currentStep = module->clockCount % 64;  // 64 steps total (16 per bar)
         int currentBar = currentStep / 16;  // Which bar we're in (0-3)
-        float currentBarProgress = (currentStep % 16) / 16.0f;  // Progress within current bar
 
         // Draw 6 separate progress bars (2 extra on left, 4 main bars on right)
         float barWidth = 20;  // Width of each bar
@@ -731,7 +730,7 @@ struct FourProgressBars : LedDisplay {
 
                 // Calculate which bar we're in and the progress within it
                 int currentBarInCycle = 0;
-                int clocksInCurrentBar = clocksInCycle;
+                int clocksInCurrentBar;
 
                 // Find which bar we're currently in by accumulating clock counts
                 if (clocksInCycle < bar0Clocks) {

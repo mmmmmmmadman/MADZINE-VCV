@@ -1823,14 +1823,13 @@ struct WeiiiDocumenta : Module {
         }
 
         // Read RIFF header
-        char riff[4];
-        uint32_t fileSize;
-        char wave[4];
-        std::fread(riff, 1, 4, file);
-        std::fread(&fileSize, 4, 1, file);
-        std::fread(wave, 1, 4, file);
-
-        if (std::memcmp(riff, "RIFF", 4) != 0 || std::memcmp(wave, "WAVE", 4) != 0) {
+        char riff[4] = {0};
+        uint32_t fileSize = 0;
+        char wave[4] = {0};
+        if (std::fread(riff, 1, 4, file) != 4 ||
+            std::fread(&fileSize, 4, 1, file) != 1 ||
+            std::fread(wave, 1, 4, file) != 4 ||
+            std::memcmp(riff, "RIFF", 4) != 0 || std::memcmp(wave, "WAVE", 4) != 0) {
             std::fclose(file);
             WARN("Invalid WAV file: %s", path.c_str());
             return;
@@ -1842,91 +1841,140 @@ struct WeiiiDocumenta : Module {
         uint16_t bitsPerSample = 0;
         uint32_t dataSize = 0;
         long dataPos = 0;
+        bool headerOk = true;
 
         while (!std::feof(file)) {
-            char chunkId[4];
-            uint32_t chunkSize;
+            char chunkId[4] = {0};
+            uint32_t chunkSize = 0;
 
             if (std::fread(chunkId, 1, 4, file) != 4) break;
             if (std::fread(&chunkSize, 4, 1, file) != 1) break;
 
             if (std::memcmp(chunkId, "fmt ", 4) == 0) {
-                uint16_t audioFormat;
-                std::fread(&audioFormat, 2, 1, file);
-                std::fread(&numChannels, 2, 1, file);
-                std::fread(&sampleRate, 4, 1, file);
-                std::fseek(file, 6, SEEK_CUR); // skip byteRate and blockAlign
-                std::fread(&bitsPerSample, 2, 1, file);
-                std::fseek(file, chunkSize - 16, SEEK_CUR); // skip any extra fmt data
+                uint16_t audioFormat = 0;
+                if (chunkSize < 16 ||
+                    std::fread(&audioFormat, 2, 1, file) != 1 ||
+                    std::fread(&numChannels, 2, 1, file) != 1 ||
+                    std::fread(&sampleRate, 4, 1, file) != 1 ||
+                    std::fseek(file, 6, SEEK_CUR) != 0 || // skip byteRate and blockAlign
+                    std::fread(&bitsPerSample, 2, 1, file) != 1 ||
+                    std::fseek(file, chunkSize - 16, SEEK_CUR) != 0) { // skip any extra fmt data
+                    headerOk = false;
+                    break;
+                }
             } else if (std::memcmp(chunkId, "data", 4) == 0) {
                 dataSize = chunkSize;
                 dataPos = std::ftell(file);
                 break;
             } else {
-                std::fseek(file, chunkSize, SEEK_CUR); // skip unknown chunk
+                if (std::fseek(file, chunkSize, SEEK_CUR) != 0) { // skip unknown chunk
+                    headerOk = false;
+                    break;
+                }
             }
         }
 
-        if (dataSize == 0 || dataPos == 0) {
+        if (!headerOk || dataSize == 0 || dataPos <= 0) {
             std::fclose(file);
             WARN("No audio data found in WAV file: %s", path.c_str());
             return;
         }
 
-        std::fseek(file, dataPos, SEEK_SET);
-
-        // 清除當前錄音層
-        layer.clear();
-
+        // Validate header fields before using them as divisors / sizes
         int bytesPerSample = bitsPerSample / 8;
-        int numFrames = dataSize / (numChannels * bytesPerSample);
+        uint32_t frameBytes = (uint32_t)numChannels * (uint32_t)bytesPerSample;
+        if (numChannels == 0 || bytesPerSample == 0 || sampleRate == 0 || frameBytes == 0) {
+            std::fclose(file);
+            WARN("Invalid WAV format: %s", path.c_str());
+            return;
+        }
+
+        // Clamp the data size to what the file actually contains
+        long fileEnd = -1;
+        if (std::fseek(file, 0, SEEK_END) == 0)
+            fileEnd = std::ftell(file);
+        if (fileEnd < dataPos || std::fseek(file, dataPos, SEEK_SET) != 0) {
+            std::fclose(file);
+            WARN("Could not read WAV data: %s", path.c_str());
+            return;
+        }
+        if ((unsigned long)(fileEnd - dataPos) < (unsigned long)dataSize) {
+            WARN("WAV data is truncated: %s", path.c_str());
+            dataSize = (uint32_t)(fileEnd - dataPos);
+        }
+
+        uint32_t frameCount = dataSize / frameBytes;
+        if (frameCount == 0 || frameCount > 0x7FFFFFFFu) {
+            std::fclose(file);
+            WARN("No audio data found in WAV file: %s", path.c_str());
+            return;
+        }
+        int numFrames = (int)frameCount;
         int framesToCopy = std::min(numFrames, (int)layer.bufferL.size());
 
         INFO("WAV info: bits=%d bytes=%d frames=%d toCopy=%d channels=%d",
              bitsPerSample, bytesPerSample, numFrames, framesToCopy, numChannels);
+
+        // Decode into temp buffers first so a failed read leaves the layer untouched
+        std::vector<float> loadedL(framesToCopy, 0.0f);
+        std::vector<float> loadedR(framesToCopy, 0.0f);
+        bool readOk = true;
 
         for (int i = 0; i < framesToCopy; i++) {
             float sampleL = 0.0f;
             float sampleR = 0.0f;
 
             if (bitsPerSample == 16) {
-                int16_t sample16;
-                std::fread(&sample16, 2, 1, file);
+                int16_t sample16 = 0;
+                if (std::fread(&sample16, 2, 1, file) != 1) { readOk = false; break; }
                 sampleL = (sample16 / 32768.0f) * 10.0f;
 
                 if (numChannels >= 2) {
-                    std::fread(&sample16, 2, 1, file);
+                    if (std::fread(&sample16, 2, 1, file) != 1) { readOk = false; break; }
                     sampleR = (sample16 / 32768.0f) * 10.0f;
-                    std::fseek(file, (numChannels - 2) * 2, SEEK_CUR);
+                    if (numChannels > 2 &&
+                        std::fseek(file, (numChannels - 2) * 2, SEEK_CUR) != 0) { readOk = false; break; }
                 } else {
                     sampleR = sampleL;
                 }
             } else if (bitsPerSample == 24) {
                 // 24-bit samples (3 bytes, little-endian)
-                uint8_t bytes[3];
-                std::fread(bytes, 3, 1, file);
+                uint8_t bytes[3] = {0, 0, 0};
+                if (std::fread(bytes, 3, 1, file) != 1) { readOk = false; break; }
                 int32_t sample24 = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
                 if (sample24 & 0x800000) sample24 |= 0xFF000000;  // sign extend
                 sampleL = (sample24 / 8388608.0f) * 10.0f;
 
                 if (numChannels >= 2) {
-                    std::fread(bytes, 3, 1, file);
+                    if (std::fread(bytes, 3, 1, file) != 1) { readOk = false; break; }
                     sample24 = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
                     if (sample24 & 0x800000) sample24 |= 0xFF000000;
                     sampleR = (sample24 / 8388608.0f) * 10.0f;
-                    std::fseek(file, (numChannels - 2) * 3, SEEK_CUR);
+                    if (numChannels > 2 &&
+                        std::fseek(file, (numChannels - 2) * 3, SEEK_CUR) != 0) { readOk = false; break; }
                 } else {
                     sampleR = sampleL;
                 }
             } else {
-                // Skip unsupported formats
-                std::fseek(file, numChannels * bytesPerSample, SEEK_CUR);
+                // Unsupported bit depth: frame stays silent, nothing to read
                 continue;
             }
 
-            layer.bufferL[i] = sampleL;
-            layer.bufferR[i] = sampleR;
+            loadedL[i] = sampleL;
+            loadedR[i] = sampleR;
         }
+
+        std::fclose(file);
+
+        if (!readOk) {
+            WARN("Could not read WAV data: %s", path.c_str());
+            return;
+        }
+
+        // 清除當前錄音層
+        layer.clear();
+        std::copy(loadedL.begin(), loadedL.end(), layer.bufferL.begin());
+        std::copy(loadedR.begin(), loadedR.end(), layer.bufferR.begin());
 
         layer.recordedLength = framesToCopy;
         layer.playbackPosition = 0;
@@ -1963,7 +2011,6 @@ struct WeiiiDocumenta : Module {
         // 開始播放
         isPlaying = true;
 
-        std::fclose(file);
         INFO("Loaded WAV file: %s (%d frames, %d channels, %d Hz, peak: %.2fV)",
              path.c_str(), framesToCopy, numChannels, sampleRate, slices[0].peakAmplitude);
         INFO("Layer state: active=%d, recordedLength=%d",
@@ -1996,7 +2043,6 @@ struct WaveformDisplay : TransparentWidget {
 
     void drawLayer(const DrawArgs& args, int layer) override {
         if (layer != 1) return;
-        if (!module) return;
 
         float halfHeight = box.size.y * 0.5f;
         float quarterHeight = box.size.y * 0.25f;
@@ -2014,6 +2060,16 @@ struct WaveformDisplay : TransparentWidget {
         nvgStrokeColor(args.vg, nvgRGBA(80, 80, 80, 150));
         nvgStrokeWidth(args.vg, 1.0f);
         nvgStroke(args.vg);
+
+        // 無 module（瀏覽器預覽）時只畫邊框，與函式結尾的邊框相同
+        if (!module) {
+            nvgBeginPath(args.vg);
+            nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+            nvgStrokeColor(args.vg, nvgRGBA(255, 255, 255, 60));
+            nvgStrokeWidth(args.vg, 1.0f);
+            nvgStroke(args.vg);
+            return;
+        }
 
         // 繪製波形
         if (module->layer.recordedLength > 0) {

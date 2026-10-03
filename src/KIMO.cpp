@@ -437,7 +437,7 @@ struct KIMO : Module {
         }
 
         int accentShift = (int)std::round(params[ACCENT_PARAM].getValue());
-        bool accentTriggered = quarterClock.processStep(globalClockTriggered, accentShift);
+        quarterClock.processStep(globalClockTriggered, accentShift);
         float accentTrigger = quarterClock.getTrigger(args.sampleTime);
 
         track.length = GLOBAL_LENGTH;

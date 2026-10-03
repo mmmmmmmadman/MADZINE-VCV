@@ -109,7 +109,7 @@ struct KotekanPair {
     Pattern sangsih;
     Pattern combined;   // What it sounds like together
     KotekanType type;
-    float density;
+    float density = 1.0f;
 };
 
 // ========================================

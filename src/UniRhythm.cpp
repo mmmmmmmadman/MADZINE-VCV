@@ -2576,8 +2576,10 @@ void UniRhythmDynamicRoleTitle::draw(const DrawArgs &args) {
 
     // Draw white outline (1px)
     nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-    for (float dx = -1.0f; dx <= 1.0f; dx += 1.0f) {
-        for (float dy = -1.0f; dy <= 1.0f; dy += 1.0f) {
+    for (int ix = -1; ix <= 1; ix++) {
+        float dx = static_cast<float>(ix);
+        for (int iy = -1; iy <= 1; iy++) {
+            float dy = static_cast<float>(iy);
             if (dx != 0 || dy != 0) {
                 nvgText(args.vg, box.size.x / 2.f + dx, box.size.y / 2.f + dy, text.c_str(), NULL);
             }

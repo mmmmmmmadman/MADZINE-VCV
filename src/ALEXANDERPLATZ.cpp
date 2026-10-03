@@ -25,10 +25,9 @@ struct BiquadPeakEQ {
     }
 
     float process(float in) {
-        float out = b0 * in + b1 * z1 + b2 * z2 - a1 * z1 - a2 * z2;
         // Direct Form II Transposed
         float w = in - a1 * z1 - a2 * z2;
-        out = b0 * w + b1 * z1 + b2 * z2;
+        float out = b0 * w + b1 * z1 + b2 * z2;
         z2 = z1;
         z1 = w;
         return out;

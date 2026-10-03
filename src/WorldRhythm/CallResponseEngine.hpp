@@ -42,10 +42,10 @@ struct CallEvent {
 };
 
 struct ResponseEvent {
-    ResponseType type;
-    int startStep;       // Response start (after call ends)
-    int lengthSteps;     // Response duration
-    float intensityScale; // Relative to call (typically 0.7-0.9)
+    ResponseType type = ResponseType::ECHO;
+    int startStep = 0;       // Response start (after call ends)
+    int lengthSteps = 0;     // Response duration
+    float intensityScale = 1.0f; // Relative to call (typically 0.7-0.9)
     std::vector<float> velocities;  // Response pattern data
     bool crossBar = false;  // true if response wraps to next bar (v0.18)
     int overflowSteps = 0;  // Steps that overflow to next bar (v0.18)

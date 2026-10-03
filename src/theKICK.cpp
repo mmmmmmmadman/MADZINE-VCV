@@ -253,13 +253,12 @@ struct theKICK : Module {
         }
 
         // Read RIFF header
-        char riff[4], wave[4];
-        uint32_t fileSize;
-        std::fread(riff, 1, 4, file);
-        std::fread(&fileSize, 4, 1, file);
-        std::fread(wave, 1, 4, file);
-
-        if (std::memcmp(riff, "RIFF", 4) != 0 || std::memcmp(wave, "WAVE", 4) != 0) {
+        char riff[4] = {0}, wave[4] = {0};
+        uint32_t fileSize = 0;
+        if (std::fread(riff, 1, 4, file) != 4 ||
+            std::fread(&fileSize, 4, 1, file) != 1 ||
+            std::fread(wave, 1, 4, file) != 4 ||
+            std::memcmp(riff, "RIFF", 4) != 0 || std::memcmp(wave, "WAVE", 4) != 0) {
             std::fclose(file);
             WARN("theKICK: Invalid WAV: %s", path.c_str());
             return;
@@ -271,69 +270,107 @@ struct theKICK : Module {
         uint16_t bitsPerSample = 0;
         uint32_t dataSize = 0;
         long dataPos = 0;
+        bool headerOk = true;
 
         while (!std::feof(file)) {
-            char chunkId[4];
-            uint32_t chunkSize;
+            char chunkId[4] = {0};
+            uint32_t chunkSize = 0;
             if (std::fread(chunkId, 1, 4, file) != 4) break;
             if (std::fread(&chunkSize, 4, 1, file) != 1) break;
 
             if (std::memcmp(chunkId, "fmt ", 4) == 0) {
-                uint16_t audioFormat;
-                std::fread(&audioFormat, 2, 1, file);
-                std::fread(&numChannels, 2, 1, file);
-                std::fread(&sampleRate, 4, 1, file);
-                std::fseek(file, 6, SEEK_CUR);
-                std::fread(&bitsPerSample, 2, 1, file);
-                std::fseek(file, chunkSize - 16, SEEK_CUR);
+                uint16_t audioFormat = 0;
+                if (chunkSize < 16 ||
+                    std::fread(&audioFormat, 2, 1, file) != 1 ||
+                    std::fread(&numChannels, 2, 1, file) != 1 ||
+                    std::fread(&sampleRate, 4, 1, file) != 1 ||
+                    std::fseek(file, 6, SEEK_CUR) != 0 ||
+                    std::fread(&bitsPerSample, 2, 1, file) != 1 ||
+                    std::fseek(file, chunkSize - 16, SEEK_CUR) != 0) {
+                    headerOk = false;
+                    break;
+                }
             } else if (std::memcmp(chunkId, "data", 4) == 0) {
                 dataSize = chunkSize;
                 dataPos = std::ftell(file);
                 break;
             } else {
-                std::fseek(file, chunkSize, SEEK_CUR);
+                if (std::fseek(file, chunkSize, SEEK_CUR) != 0) {
+                    headerOk = false;
+                    break;
+                }
             }
         }
 
-        if (dataSize == 0 || dataPos == 0) {
+        if (!headerOk || dataSize == 0 || dataPos <= 0) {
             std::fclose(file);
             WARN("theKICK: No audio data in WAV: %s", path.c_str());
             return;
         }
 
-        std::fseek(file, dataPos, SEEK_SET);
-
+        // Validate header fields before using them as divisors / sizes
         int bytesPerSample = bitsPerSample / 8;
-        int numFrames = dataSize / (numChannels * bytesPerSample);
+        uint32_t frameBytes = (uint32_t)numChannels * (uint32_t)bytesPerSample;
+        if (numChannels == 0 || bytesPerSample == 0 || sampleRate == 0 || frameBytes == 0) {
+            std::fclose(file);
+            WARN("theKICK: Invalid WAV format: %s", path.c_str());
+            return;
+        }
+
+        // Clamp the data size to what the file actually contains
+        long fileEnd = -1;
+        if (std::fseek(file, 0, SEEK_END) == 0)
+            fileEnd = std::ftell(file);
+        if (fileEnd < dataPos || std::fseek(file, dataPos, SEEK_SET) != 0) {
+            std::fclose(file);
+            WARN("theKICK: Could not read WAV data: %s", path.c_str());
+            return;
+        }
+        if ((unsigned long)(fileEnd - dataPos) < (unsigned long)dataSize) {
+            WARN("theKICK: WAV data is truncated: %s", path.c_str());
+            dataSize = (uint32_t)(fileEnd - dataPos);
+        }
+
+        uint32_t frameCount = dataSize / frameBytes;
+        if (frameCount == 0 || frameCount > 0x7FFFFFFFu) {
+            std::fclose(file);
+            WARN("theKICK: No audio data in WAV: %s", path.c_str());
+            return;
+        }
+        int numFrames = (int)frameCount;
 
         // Read all samples into temp buffer (mono, first channel)
         std::vector<float> rawSamples;
         rawSamples.reserve(numFrames);
 
+        bool readOk = true;
         for (int i = 0; i < numFrames; i++) {
             float sample = 0.f;
             if (bitsPerSample == 16) {
-                int16_t s16;
-                std::fread(&s16, 2, 1, file);
+                int16_t s16 = 0;
+                if (std::fread(&s16, 2, 1, file) != 1) { readOk = false; break; }
                 sample = s16 / 32768.f;
-                if (numChannels >= 2)
-                    std::fseek(file, (numChannels - 1) * 2, SEEK_CUR);
+                if (numChannels >= 2 &&
+                    std::fseek(file, (numChannels - 1) * 2, SEEK_CUR) != 0) { readOk = false; break; }
             } else if (bitsPerSample == 24) {
-                uint8_t bytes[3];
-                std::fread(bytes, 1, 3, file);
+                uint8_t bytes[3] = {0, 0, 0};
+                if (std::fread(bytes, 1, 3, file) != 3) { readOk = false; break; }
                 int32_t s24 = (bytes[2] << 24) | (bytes[1] << 16) | (bytes[0] << 8);
                 s24 >>= 8;
                 sample = s24 / 8388608.f;
-                if (numChannels >= 2)
-                    std::fseek(file, (numChannels - 1) * 3, SEEK_CUR);
+                if (numChannels >= 2 &&
+                    std::fseek(file, (numChannels - 1) * 3, SEEK_CUR) != 0) { readOk = false; break; }
             } else {
-                // Unsupported bit depth, skip
-                std::fseek(file, numChannels * bytesPerSample, SEEK_CUR);
+                // Unsupported bit depth: sample stays silent, nothing to read
             }
             rawSamples.push_back(sample);
         }
         std::fclose(file);
 
+        if (!readOk) {
+            WARN("theKICK: Could not read WAV data: %s", path.c_str());
+            return;
+        }
         if (rawSamples.empty()) return;
 
         // Resample to TABLE_SIZE using linear interpolation
