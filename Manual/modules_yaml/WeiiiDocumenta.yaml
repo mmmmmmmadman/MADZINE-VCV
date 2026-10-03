@@ -4,812 +4,861 @@ hp: 12
 wide: false
 alt: weiii documenta panel
 description:
-  en: Recording sampler emulating analog no-input mixer feedback with real-time transient slicing, 3-band EQ, send/return loop, soft limiter, and chaotic parameter morphing
-  zh: 錄音 Sampler，模擬 No-input Mixer 回饋效果，具備即時 Transient 切片、3 段 EQ、Send/Return 迴路、Soft Limiter 與混沌參數變形
-  ja: ノーインプットミキサーのフィードバックを再現する録音サンプラー、リアルタイムトランジェントスライス、3バンドEQ、センド/リターンループ、ソフトリミッター、カオスパラメータモーフィング搭載
+  en: Recording sampler with transient slicing, up to 8 playback voices, no-input-mixer style saturated feedback loop, send/return insert, 3-band EQ, sample and hold, chaotic parameter morphing, and soft limiter
+  zh: 錄音 Sampler，具備 Transient 切片、最多 8 個播放 Voice、No-input Mixer 式飽和 Feedback 迴路、Send/Return 插入點、3 段 EQ、Sample and Hold、混沌參數變形與 Soft Limiter
+  ja: トランジェントスライス、最大8再生ボイス、ノーインプットミキサー式サチュレーションフィードバックループ、センド/リターン挿入ポイント、3バンドEQ、サンプル＆ホールド、カオスパラメータモーフィング、ソフトリミッターを備えた録音サンプラー
 features:
   en:
-  - Stereo recording sampler with 60s buffer
-  - Real-time transient slicing
-  - Chaotic parameter morphing
-  - 3-band EQ processing
-  - Send/Return loop for external effects
-  - Soft limiter at -3dB (7.07V threshold)
-  - Polyphonic playback up to 8 voices
+  - Stereo recording sampler, 2,880,000-sample buffer per channel (60 s at 48 kHz)
+  - Transient slicing during recording, rescan when threshold changes
+  - Play mode (slices in order) and Loop mode (current slice), speed -8x to +8x
+  - Up to 8 playback voices mixed to stereo
+  - Saturated feedback loop with send/return insert and 3-band EQ
+  - Sample and hold sampled from the EQ output
+  - CHAOS parameter morphing
+  - Soft limiter on main output (7.07V threshold)
+  - WAV load and save
   zh:
-  - Stereo 錄音 Sampler，60 秒 Buffer
-  - 即時 Transient 切片
-  - 混沌參數變形
-  - 3 段 EQ 處理
-  - Send/Return 迴路供外部效果器使用
-  - Soft Limiter -3dB（7.07V 閾值）
-  - 最多 8 聲 Polyphonic Playback
+  - Stereo 錄音 Sampler，每聲道 2,880,000 樣本 Buffer（48kHz 時 60 秒）
+  - 錄音時即時 Transient 切片，閾值改變時重新掃描
+  - Play 模式（依序播放切片）與 Loop 模式（重複目前切片），速度 -8x 至 +8x
+  - 最多 8 個播放 Voice，混合為立體聲
+  - 飽和 Feedback 迴路，含 Send/Return 插入點與 3 段 EQ
+  - Sample and Hold 取樣自 EQ 輸出
+  - CHAOS 參數變形
+  - Main 輸出 Soft Limiter（7.07V 閾值）
+  - WAV 載入與儲存
   ja:
-  - ステレオ録音サンプラー、60秒バッファ
-  - リアルタイムトランジェントスライス
-  - カオスパラメータモーフィング
-  - 3バンドEQ処理
-  - 外部エフェクト用センド/リターンループ
-  - ソフトリミッター -3dB（7.07V閾値）
-  - 最大8ボイスポリフォニック再生
+  - ステレオ録音サンプラー、チャンネルあたり2,880,000サンプルのバッファ（48kHzで60秒）
+  - 録音中のトランジェントスライス、閾値変更時に再スキャン
+  - Playモード（スライスを順に再生）とLoopモード（現在のスライスを反復）、速度-8x～+8x
+  - 最大8再生ボイスをステレオにミックス
+  - センド/リターン挿入ポイントと3バンドEQを含むサチュレーションフィードバックループ
+  - EQ出力からサンプリングするサンプル＆ホールド
+  - CHAOSパラメータモーフィング
+  - メイン出力にソフトリミッター（7.07V閾値）
+  - WAVの読み込みと保存
 manual_html_raw:
   en: |-
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Overview</h3>
-    <p style="margin-bottom: 1rem;">Recording sampler with chaotic parameter morphing, feedback matrix, and slice engine. Combines real-time recording with automatic transient detection, polyphonic playback, 3-band EQ, sample and hold modulation, and parameter morphing. Maximum recording time: 60 seconds at 48kHz. Designed for experimental sound design and live performance.</p>
+    <p style="margin-bottom: 1rem;">Stereo recording sampler. The recording is cut into slices at transients and played back by up to 8 voices. The playback signal is summed with a saturated feedback signal, passes a send/return insert point and a 3-band EQ, and the EQ output is fed back into the next sample (no-input-mixer style feedback). A sample and hold follows the EQ output and drives slice selection, voice slice switching, and the direction of the CHAOS morph. The main output passes through a soft limiter. Buffer: 2,880,000 samples per channel (60 seconds at 48kHz).</p>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Recording and Slicing</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>REC</b>: Toggle recording. Clears existing slices on start.</li>
-    <li><b>Transient Detection</b>: Triggers new slice when amplitude crosses threshold from below</li>
-    <li><b>THRESHOLD</b>: Detection threshold (0-10V, default 1V). Adjusting while not recording rescans existing buffer.</li>
-    <li><b>MIN SLICE</b>: Minimum time between slices (0.001-1.0s, default 0.05s)</li>
-    <li><b>Slice Storage</b>: Dynamic std::vector (unlimited slices). Each slice stores startSample, endSample, peakAmplitude.</li>
+    <li><b>REC</b>: Toggles recording (button or Rec Trigger). Starting records from the beginning of the buffer and clears existing slices. Once the buffer is full, further input is not written until recording is stopped and restarted.</li>
+    <li><b>Input</b>: Audio R is normalled to Audio L when unpatched.</li>
+    <li><b>Transient Detection</b>: During recording, a new slice starts when the absolute value of the L+R mono mix rises from below the threshold to at or above it. The previous slice ends one sample earlier. Audio before the first crossing belongs to no slice.</li>
+    <li><b>THRESHOLD</b>: Detection threshold (0-10V, default 1V). When not recording, a change of more than 0.05V rescans the whole buffer.</li>
+    <li><b>MIN SLICE TIME</b>: Trimpot under THRESHOLD (0.001-1.0s, default 0.05s). Applied only when the buffer is rescanned, not during live recording: slices shorter than this are removed (not merged), and their audio is skipped in Play mode. The length is calculated assuming 48kHz regardless of the engine sample rate. A change of more than 0.001s while not recording triggers a rescan.</li>
+    <li><b>No Slices</b>: If no slice exists, the recording loops from start to the Loop End point in both Play and Loop mode.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Playback Modes</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>PLAY/LOOP</b>: From Stop or Play, a press switches to Loop. From Loop, a press switches to Play. Light: green for Play, blue for Loop, off when stopped.</li>
+    <li><b>Play</b>: Plays slices in order. When playback reaches the Loop End point, it returns to the start of the recording. Playback is continuous, not one-shot.</li>
+    <li><b>Loop</b>: Repeats the current slice during forward playback.</li>
+    <li><b>Reverse</b>: At negative speed, in both Play and Loop mode, passing the start of the current slice jumps to the end of the previous slice. From the first slice it jumps to the last slice at the Loop End point.</li>
+    <li><b>STOP</b>: A press stops playback. Holding for 2 seconds clears the buffer and all slices. STOP does not stop recording.</li>
+    <li><b>Loop End Point</b>: Set by dragging the blue line in the waveform display (1-100% by dragging). There is no panel knob for it.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Slice Scan</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Function</b>: Active only when 2 or more slices exist. The scan position (0-100%) selects a slice evenly across all slices. Playback jumps to the start of the selected slice only when the selection changes, then continues according to the playback mode.</li>
+    <li><b>Engaged When</b>: The SCAN knob is above 1%, or Slice Scan CV is patched with the attenuverter above 0.01 in magnitude, or the S&H Gain knob is above 0.01. Otherwise slices follow the normal order.</li>
+    <li><b>Scan CV</b>: CV divided by 10 and multiplied by the attenuverter is added to the scan position.</li>
+    <li><b>S&H Offset</b>: When the S&H Gain knob is above 0.01 (default 2), the S&H output, mapped from -10..+10V to 0..100%, is added to the scan position (skipped when the S&H output is 0V). Set S&H Gain to 0 to use SCAN alone.</li>
+    <li><b>Polyphonic</b>: Only voice 1 follows Scan.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Speed Control</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Non-linear Mapping</b>: Knob 0-1 maps to -8x to +8x with 1x at center</li>
+    <li><b>Non-linear Mapping</b>: Knob 0-100% maps to -8x to +8x. Default at center = 1x.</li>
     <li><b>0-25%</b>: Reverse playback from -8x to 0</li>
     <li><b>25-50%</b>: Forward playback from 0 to 1x</li>
     <li><b>50-100%</b>: Forward playback from 1x to 8x</li>
-    <li><b>Linear Interpolation</b>: Sub-sample accuracy using playbackPhase for smooth playback at all speeds</li>
+    <li><b>Speed CV</b>: Added directly at 1x per volt, no attenuverter. The result is limited to -8x to +8x.</li>
+    <li><b>Linear Interpolation</b>: Sub-sample position with linear interpolation between samples at all speeds.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Polyphonic Voice System</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>POLY</b>: 1-8 voices (integer snap, CV modulatable)</li>
-    <li><b>Voice Structure</b>: Each voice has independent sliceIndex, playbackPosition, playbackPhase, speedMultiplier</li>
-    <li><b>Speed Variation</b>: Voices 1-7 get random speedMultiplier (0.5-2.0x)</li>
-    <li><b>Slice Switching</b>: Voices randomly switch slices based on sliceChangeTimer (0.5-2.0s intervals)</li>
-    <li><b>Mix Output</b>: Multi-voice output divided by numVoices to prevent clipping</li>
+    <li><b>POLY</b>: 1-8 voices (integer snap, default 1). Polyphonic CV: 10V adds 7 voices; the result is rounded and limited to 1-8.</li>
+    <li><b>Voice Start</b>: When the voice count changes and slices exist, voice 1 continues from the current position at 1x. Voices 2-8 start at random slices with a random speed multiplier of 0.5-2.0x, kept until the voice count changes again.</li>
+    <li><b>Slice Switching</b>: Voices 2-8 switch slices repeatedly. The interval is the S&H Rate period multiplied by a random factor of 0.5-2.0, drawn again at each switch. The new slice is the S&H output position in the slice list plus a random offset of -2 to +2 slices, avoiding the current slice.</li>
+    <li><b>Stereo Spread</b>: With 2 or more voices, voices are placed evenly from left (voice 1) to right (last voice). Each side uses an equal-power gain, and the opposite channel is mixed in at 1 minus the opposite gain. A voice at the far left or right sends both of its channels to that side.</li>
+    <li><b>Mix Output</b>: The sum of all voices is divided by the voice count.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Slice Crossfade</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Fade Time</b>: 0.1ms (SLICE_FADE_TIME_MS constant)</li>
-    <li><b>Fade Increment</b>: Calculated from fade time and sample rate</li>
-    <li><b>Pending Slice</b>: New slice stored in pendingSliceIndex during fade-out, applied after envelope reaches 0</li>
-    <li><b>Maximum Oscillator Frequency</b>: ~5kHz (limited by 0.1ms fade envelope)</li>
+    <li><b>Fade Time</b>: 0.1ms linear fade-out, jump, then 0.1ms linear fade-in</li>
+    <li><b>Applies To</b>: Scan jumps, slice boundaries, Loop End wrap with slices, and voice slice switching. Wraps when no slice exists are direct jumps without crossfade.</li>
+    <li><b>Pending Slice</b>: A new slice requested during a fade-out waits until the fade-out finishes. One fade-out plus fade-in takes 0.2ms, which limits slice changes to about 5kHz.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Smoothing</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Exponential Filter</b>: Smoothly interpolates toward target with 0.5% step per sample</li>
-    <li><b>Time Constant</b>: ~5ms at 44.1kHz</li>
-    <li><b>Smoothed Parameters</b>: Scan, Threshold, LoopEnd, FeedbackAmount, FeedbackDelay</li>
+    <li><b>Exponential Filter</b>: Moves 0.5% toward the target per sample (time constant about 4.5ms at 44.1kHz)</li>
+    <li><b>Smoothed Parameters</b>: Scan knob, Threshold (with CV), Loop End, Feedback Amount (with CV)</li>
+    <li><b>Not Smoothed</b>: EQ, Speed, Poly, S&H controls, Min Slice Time</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Feedback System</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>No-Input Feedback</b>: Output feeds back to input with analog-style saturation</li>
-    <li><b>Saturation</b>: Applies tanh soft-clipping scaled for unity gain at low levels</li>
-    <li><b>Mix</b>: Feedback signal added to output scaled by feedback amount</li>
-    </ul>
-
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Morph System</h3>
-    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>States</b>: IDLE, MORPHING, HOLDING, RETURNING</li>
-    <li><b>Curves</b>: Linear, Smooth (S-curve easing), Exponential (fast attack, slow decay), Bezier (cubic)</li>
-    <li><b>Default Targets</b>: EQ, Scan, Feedback, Speed enabled. Threshold, MinSlice, S&H disabled.</li>
-    <li><b>Morph Time</b>: 1-20 seconds (configurable via right-click)</li>
+    <li><b>Source</b>: The previous sample of the EQ output (after Return and EQ, before the limiter). One-sample loop, no delay line.</li>
+    <li><b>Saturation</b>: tanh soft clipping, scaled so small signals pass at unity gain</li>
+    <li><b>Mix</b>: The saturated signal, scaled by Feedback Amount (0-1), is added to the playback signal. The sum is clamped to ±10V.</li>
+    <li><b>Feedback CV</b>: CV divided by 10 and multiplied by the attenuverter is added to Feedback Amount; the result is limited to 0-1.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Send/Return Loop</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Send L/R</b>: Outputs the current audio signal before EQ processing, within the feedback loop</li>
-    <li><b>Return L/R</b>: When connected, replaces the signal with external return. Allows inserting external effects into the feedback chain.</li>
-    <li><b>Signal Chain Position</b>: Send/Return sits after playback+feedback mixing, before EQ. The EQ'd output then feeds back into the next cycle.</li>
-    </ul>
-
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Soft Limiter</h3>
-    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Threshold</b>: -3dB (7.07V for 10V peak system)</li>
-    <li><b>Below Threshold</b>: Signal passes through unchanged (linear)</li>
-    <li><b>Above Threshold</b>: Soft knee compression with saturation amount 0.2</li>
-    <li><b>Position</b>: Applied to main output after EQ, before final output stage</li>
+    <li><b>Send L/R</b>: Outputs playback plus feedback (clamped ±10V), before EQ</li>
+    <li><b>Return L/R</b>: Each input, when patched, replaces its own channel. Left and right are independent.</li>
+    <li><b>Signal Chain Position</b>: After playback and feedback mixing, before EQ. The EQ output feeds the feedback path, the S&H, and the limiter.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">EQ Section</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Low</b>: 80Hz shelf (Allen & Heath reference)</li>
+    <li><b>Low</b>: 80Hz low shelf (Allen and Heath reference frequencies)</li>
     <li><b>Mid</b>: 2.5kHz peak</li>
-    <li><b>High</b>: 12kHz shelf</li>
-    <li><b>Range</b>: ±12dB per band</li>
-    <li><b>Implementation</b>: TBiquadFilter (IIR)</li>
+    <li><b>High</b>: 12kHz high shelf</li>
+    <li><b>Range</b>: ±12dB per band, default 0dB, Q 0.707</li>
+    <li><b>Implementation</b>: Biquad IIR per channel, inside the feedback loop</li>
     </ul>
 
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sample & Hold</h3>
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sample and Hold</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Rate</b>: Logarithmic mapping, range 0.01-100Hz (center = 1Hz)</li>
-    <li><b>Slew</b>: 0-1 second slew time</li>
-    <li><b>Amount</b>: 0-5x gain multiplier</li>
-    <li><b>Output</b>: ±10V CV output</li>
+    <li><b>Source</b>: The EQ output (before the limiter). Uses the larger absolute value of L and R; the value is negative only when both L and R are negative.</li>
+    <li><b>Rate</b>: Logarithmic, 0.01-100Hz, default 1Hz at knob center. Rate CV adds one octave per volt multiplied by the attenuverter, limited to the same range.</li>
+    <li><b>Slew</b>: Exponential slew time constant 0-1s, default 0.3s. Independent of Rate.</li>
+    <li><b>Gain</b>: 0-5x, default 2x, applied after slew. Gain CV: 10V multiplied by the attenuverter adds 5x; the result is limited to 0-5x.</li>
+    <li><b>Output</b>: Clamped to ±10V</li>
+    <li><b>Internal Use</b>: Offsets Slice Scan, sets the slice for voices 2-8, and sets the direction of the CHAOS morph (value before gain).</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">CHAOS Morph</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Trigger</b>: Holding the CHAOS button, or Morph Gate at or above 1V</li>
+    <li><b>Process</b>: On press, the current values of enabled Morph Targets are stored and one random target value is computed for each. The knobs move to the targets over Morph Time and stay there while held. The targets are not re-randomized during a hold. On release, the knobs move back along the same path at the same rate (a full return takes Morph Time), then the stored values are restored exactly. A new press during the return is ignored until the return finishes.</li>
+    <li><b>Target Values</b>: Each target is offset from its current value by the sum of the S&H direction (S&H value before gain, mapped to -1..+1) and an independent random value (-1..+1), multiplied by a per-parameter range and Morph Amount, then limited to the parameter range. Ranges: EQ 12dB, Threshold 5V, Min Slice Time 0.5s, Scan 50%, Feedback 0.5, S&H Slew 0.5s, S&H Gain 2.5x, S&H Rate 6.644 octaves, Speed 50% of knob travel.</li>
+    <li><b>Curve</b>: S-curve (smoothstep), fixed</li>
+    <li><b>Knob Changes</b>: Manual changes to a target knob during a morph are overwritten, and the stored value is restored at the end.</li>
+    <li><b>Default Targets</b>: EQ Low, EQ Mid, EQ High, Scan, Feedback, Speed on. Threshold, Min Slice Time, S&H Slew, S&H Amount, S&H Rate off.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Soft Limiter</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Threshold</b>: 7.07V (-3dB relative to 10V)</li>
+    <li><b>Below Threshold</b>: Signal passes unchanged</li>
+    <li><b>Above Threshold</b>: The excess is compressed progressively (saturation amount 0.2). The output approaches 12.07V but has no hard ceiling.</li>
+    <li><b>Position</b>: Main L/R only. Send, S&H CV, and the feedback path are not limited.</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Context Menu</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Load WAV</b>: Reads 16-bit or 24-bit PCM WAV. Other bit depths load as silence. Mono files are copied to both channels; channels beyond 2 are ignored. No sample rate conversion. Files longer than 2,880,000 frames are truncated. After loading: Loop End 100%, Speed 1x, Feedback 0, Play on, and slices detected with the current Threshold and Min Slice Time. If Loop was active before loading, slice-looping behavior continues while the light shows green.</li>
+    <li><b>Save WAV</b>: Writes the recording as 16-bit stereo PCM. The file header always states 48kHz. ±10V maps to full scale; values beyond are clipped.</li>
+    <li><b>Morph Time</b>: Slider 0-20s. Initial value 1s; slider reset sets 5s. Not saved with the patch (returns to 1s after reload).</li>
+    <li><b>Morph Amount</b>: Slider 0-5x, default 1x. Saved with the patch.</li>
+    <li><b>Morph Targets</b>: On/off for EQ Low, EQ Mid, EQ High, Threshold, Min Slice Time, Scan, Feedback, S&H Slew, S&H Amount, S&H Rate, Speed</li>
+    <li><b>Panel Theme</b>: Panel theme selection</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Slice Scan</b>: Scan position through recorded slices (0-100%). CV modulatable.</li>
-    <li><b>Scan CV Attenuverter</b>: Attenuverter for Slice Scan CV input (-1.0 to +1.0).</li>
-    <li><b>Slice Threshold</b>: Transient detection threshold (0-10V, default 1V). Rescans buffer when adjusted outside recording.</li>
-    <li><b>Min Slice Time</b>: Minimum time between slices (0.001-1.0s, default 0.05s).</li>
-    <li><b>Loop End Point</b>: Loop end position (0-100%, default 100%).</li>
-    <li><b>Morph Random (Hold)</b>: Hold button for chaotic parameter morphing. Randomizes enabled targets while held.</li>
-    <li><b>Feedback Amount</b>: No-input feedback level (0-100%). Adds tanh-saturated output back to input.</li>
-    <li><b>Feedback CV Attenuverter</b>: Attenuverter for Feedback Amount CV input (-1.0 to +1.0).</li>
-    <li><b>Low EQ (80Hz)</b>: Low shelf EQ at 80Hz (±12dB).</li>
-    <li><b>Mid EQ (2.5kHz)</b>: Mid peak EQ at 2.5kHz (±12dB).</li>
-    <li><b>High EQ (12kHz)</b>: High shelf EQ at 12kHz (±12dB).</li>
-    <li><b>Playback Speed</b>: Non-linear speed control. 0-25%: reverse -8x to 0. 25-50%: forward 0 to 1x. 50-100%: forward 1x to 8x.</li>
-    <li><b>Polyphonic Voices</b>: Number of playback voices (1-8, integer snap). CV modulatable.</li>
-    <li><b>S&H Slew Time</b>: Sample & Hold slew time (0-1s). Smooths CV transitions.</li>
-    <li><b>S&H Gain</b>: Sample & Hold gain multiplier (0-5x).</li>
-    <li><b>S&H Gain CV Attenuverter</b>: Attenuverter for S&H Gain CV input (-1.0 to +1.0).</li>
-    <li><b>S&H Sample Rate</b>: Sample & Hold rate (0.01-100Hz, logarithmic). Center = 1Hz.</li>
-    <li><b>S&H Rate CV Attenuverter</b>: Attenuverter for S&H Rate CV input (-1.0 to +1.0).</li>
-    <li><b>Record</b>: Toggle recording. Clears existing slices on start.</li>
-    <li><b>Play/Loop (cycles: Loop → Play)</b>: Toggle playback mode. Cycles between Loop and one-shot Play.</li>
-    <li><b>Stop (hold 2 sec to Clear)</b>: Stop playback. Hold for 2 seconds to clear buffer.</li>
+    <li><b>Slice Scan</b>: Scan position through slices (0-100%, default 0%). CV modulatable.</li>
+    <li><b>Scan CV Attenuverter</b>: Attenuverter for Slice Scan CV input (-1.0 to +1.0, default 0).</li>
+    <li><b>Slice Threshold</b>: Transient detection threshold (0-10V, default 1V). Rescans the buffer when changed while not recording.</li>
+    <li><b>Min Slice Time</b>: Minimum slice length applied at rescan (0.001-1.0s, default 0.05s). Also scales the Threshold CV input.</li>
+    <li><b>Loop End Point</b>: Loop end position (0-100%, default 100%). Set in the waveform display.</li>
+    <li><b>Morph Random (Hold)</b>: CHAOS button. Morphs enabled targets to one set of random values while held, returns on release.</li>
+    <li><b>Feedback Amount</b>: Feedback level (0-1, default 0).</li>
+    <li><b>Feedback CV Attenuverter</b>: Attenuverter for Feedback Amount CV input (-1.0 to +1.0, default 0).</li>
+    <li><b>Low EQ (80Hz)</b>: Low shelf at 80Hz (±12dB, default 0dB).</li>
+    <li><b>Mid EQ (2.5kHz)</b>: Peak at 2.5kHz (±12dB, default 0dB).</li>
+    <li><b>High EQ (12kHz)</b>: High shelf at 12kHz (±12dB, default 0dB).</li>
+    <li><b>Playback Speed</b>: Non-linear speed control, -8x to +8x, default 1x.</li>
+    <li><b>Polyphonic Voices</b>: Number of playback voices (1-8, integer snap, default 1). CV modulatable.</li>
+    <li><b>S&H Slew Time</b>: S&H slew time constant (0-1s, default 0.3s).</li>
+    <li><b>S&H Gain</b>: S&H output gain (0-5x, default 2x).</li>
+    <li><b>S&H Gain CV Attenuverter</b>: Attenuverter for S&H Gain CV input (-1.0 to +1.0, default 0).</li>
+    <li><b>S&H Sample Rate</b>: S&H rate (0.01-100Hz, logarithmic, default 1Hz).</li>
+    <li><b>S&H Rate CV Attenuverter</b>: Attenuverter for S&H Rate CV input (-1.0 to +1.0, default 0).</li>
+    <li><b>Record</b>: Toggles recording. Clears existing slices on start.</li>
+    <li><b>Play/Loop (cycles: Loop → Play)</b>: Switches between Loop and Play. From Stop, goes to Loop.</li>
+    <li><b>Stop (hold 2 sec to Clear)</b>: Stops playback. Hold for 2 seconds to clear the buffer and slices.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
     <li><b>Audio L</b>: Left audio input for recording.</li>
-    <li><b>Audio R</b>: Right audio input for recording.</li>
-    <li><b>Slice Scan CV</b>: CV input for slice scan position modulation.</li>
-    <li><b>Threshold CV</b>: CV input for threshold modulation.</li>
-    <li><b>Feedback Amount CV</b>: CV input for feedback amount modulation.</li>
-    <li><b>Speed CV</b>: CV input for playback speed modulation.</li>
-    <li><b>Polyphonic CV</b>: CV input for voice count modulation.</li>
-    <li><b>S&H Amount CV</b>: CV input for S&H gain modulation.</li>
-    <li><b>S&H Rate CV</b>: CV input for S&H rate modulation.</li>
-    <li><b>Return L</b>: Left return input for external effects loop.</li>
-    <li><b>Return R</b>: Right return input for external effects loop.</li>
-    <li><b>Rec Trigger</b>: Trigger input to toggle recording.</li>
-    <li><b>Play Trigger</b>: Trigger input to toggle playback.</li>
-    <li><b>Clear Trigger</b>: Trigger input to stop/clear.</li>
-    <li><b>Morph Gate</b>: Gate input for parameter morphing. Morphs while gate is high.</li>
+    <li><b>Audio R</b>: Right audio input for recording. Normalled to Audio L when unpatched.</li>
+    <li><b>Slice Scan CV</b>: Added to Slice Scan, scaled by Scan CV Attenuverter.</li>
+    <li><b>Threshold CV</b>: Added to Slice Threshold, multiplied by the Min Slice Time value (default 0.05).</li>
+    <li><b>Feedback Amount CV</b>: Added to Feedback Amount, scaled by Feedback CV Attenuverter.</li>
+    <li><b>Speed CV</b>: Added to playback speed at 1x per volt. No attenuverter.</li>
+    <li><b>Polyphonic CV</b>: 10V adds 7 voices. No attenuverter.</li>
+    <li><b>S&H Amount CV</b>: Added to S&H Gain, scaled by S&H Gain CV Attenuverter.</li>
+    <li><b>S&H Rate CV</b>: One octave per volt added to S&H Rate, scaled by S&H Rate CV Attenuverter.</li>
+    <li><b>Return L</b>: Left return input. Replaces the left channel before EQ when patched.</li>
+    <li><b>Return R</b>: Right return input. Replaces the right channel before EQ when patched.</li>
+    <li><b>Rec Trigger</b>: Toggles recording on a rising edge reaching 1V.</li>
+    <li><b>Play Trigger</b>: Same as the PLAY/LOOP button on a rising edge reaching 1V.</li>
+    <li><b>Clear Trigger</b>: Above 0.5V stops playback. Held high for 2 seconds, clears the buffer and slices.</li>
+    <li><b>Morph Gate</b>: Same as holding CHAOS while the gate is at or above 1V.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Main L</b>: Left main audio output (with EQ and soft limiter applied).</li>
-    <li><b>Main R</b>: Right main audio output (with EQ and soft limiter applied).</li>
-    <li><b>S&H CV</b>: Sample & Hold CV output (±10V).</li>
-    <li><b>Send L</b>: Left send output for external effects loop (pre-EQ).</li>
-    <li><b>Send R</b>: Right send output for external effects loop (pre-EQ).</li>
+    <li><b>Main L</b>: Left main audio output (after EQ and soft limiter).</li>
+    <li><b>Main R</b>: Right main audio output (after EQ and soft limiter).</li>
+    <li><b>S&H CV</b>: Sample and hold CV output (±10V).</li>
+    <li><b>Send L</b>: Left send output, playback plus feedback before EQ.</li>
+    <li><b>Send R</b>: Right send output, playback plus feedback before EQ.</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Technical Specifications</h3>
     <ul style="padding-left: 1.5rem;">
     <li>Module width: 12HP</li>
-    <li>Buffer size: 60 seconds at 48kHz (2,880,000 samples per channel)</li>
-    <li>Internal processing: ±10V hard clamp in sample engine</li>
-    <li>Main output: Soft limiter at -3dB (7.07V threshold), soft knee compression above</li>
+    <li>Buffer size: 2,880,000 samples per channel, fixed (60 seconds at 48kHz, about 65 seconds at 44.1kHz, 30 seconds at 96kHz)</li>
+    <li>Sample engine: playback plus feedback clamped to ±10V</li>
+    <li>Main output: soft limiter above 7.07V</li>
     <li>EQ implementation: Biquad IIR filters</li>
-    <li>Slice storage: Dynamic vector (unlimited)</li>
-    <li>Random engine: std::default_random_engine with time-based seed</li>
-    <li>State persistence: Buffer, slices, all parameters saved to JSON</li>
+    <li>Slice storage: dynamic list, no fixed limit</li>
+    <li>Random sources: voice slice and speed selection uses std::default_random_engine with a time-based seed; CHAOS morph uses the VCV Rack random generator</li>
+    <li>Saved with the patch: recorded audio (32-bit float), slices, playback state, Morph Amount, Morph Targets, panel theme. Morph Time is not saved.</li>
     </ul>
   zh: |-
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概述</h3>
-    <p style="margin-bottom: 1rem;">具備混沌參數變形、Feedback Matrix 與 Slice 引擎的錄音 Sampler。結合即時錄音與自動 Transient 偵測、Polyphonic Playback、3 段 EQ、Sample and Hold Modulation 與參數變形。最長錄音時間：48kHz 時 60 秒。專為實驗性音效設計與現場演出設計。</p>
+    <p style="margin-bottom: 1rem;">Stereo 錄音 Sampler。錄音依 Transient 切成切片，由最多 8 個 Voice 播放。播放訊號與飽和後的 Feedback 訊號相加，經過 Send/Return 插入點與 3 段 EQ，EQ 輸出再回授到下一個樣本（No-input Mixer 式 Feedback）。Sample and Hold 取樣 EQ 輸出，用來帶動切片選擇、Voice 切換切片與 CHAOS 變形方向。Main 輸出經過 Soft Limiter。Buffer：每聲道 2,880,000 樣本（48kHz 時 60 秒）。</p>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">錄音與切片</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>REC</b>: 切換錄音。開始時清除既有 Slice。</li>
-    <li><b>Transient Detection</b>: 當振幅由下往上穿越閾值時觸發新 Slice</li>
-    <li><b>THRESHOLD</b>: 偵測閾值（0-10V，預設 1V）。非錄音時調整會重新掃描既有 Buffer。</li>
-    <li><b>MIN SLICE</b>: Slice 間最小時間（0.001-1.0s，預設 0.05s）</li>
-    <li><b>Slice Storage</b>: 動態 std::vector（無限 Slice）。每個 Slice 儲存 startSample、endSample、peakAmplitude。</li>
+    <li><b>REC</b>: 切換錄音（按鈕或 Rec Trigger）。開始時從 Buffer 起點錄音，並清除既有切片。Buffer 寫滿後不再寫入，直到停止後重新開始錄音。</li>
+    <li><b>輸入</b>: Audio R 未接線時沿用 Audio L。</li>
+    <li><b>Transient 偵測</b>: 錄音中，L+R 單聲道混合的絕對值由閾值以下升到閾值以上（含等於）時開始新切片，前一個切片在前一個樣本結束。第一次穿越之前的音訊不屬於任何切片。</li>
+    <li><b>THRESHOLD</b>: 偵測閾值（0-10V，預設 1V）。非錄音時，變化超過 0.05V 會重新掃描整個 Buffer。</li>
+    <li><b>MIN SLICE TIME</b>: THRESHOLD 下方的 Trimpot（0.001-1.0s，預設 0.05s）。只在重新掃描 Buffer 時套用，錄音當下不套用：短於此長度的切片會被移除（不合併），Play 模式會跳過該段音訊。長度一律以 48kHz 計算，與引擎取樣率無關。非錄音時變化超過 0.001s 會觸發重新掃描。</li>
+    <li><b>沒有切片時</b>: Play 與 Loop 模式都從錄音起點循環到 Loop End 位置。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">播放模式</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>PLAY/LOOP</b>: 在停止或 Play 狀態按下切到 Loop；在 Loop 狀態按下切到 Play。燈號：綠色為 Play，藍色為 Loop，停止時熄滅。</li>
+    <li><b>Play</b>: 依序播放切片。播到 Loop End 位置時回到錄音起點。持續播放，不是單次播放。</li>
+    <li><b>Loop</b>: 正向播放時重複目前的切片。</li>
+    <li><b>反向</b>: 速度為負時，Play 與 Loop 模式都一樣，越過目前切片起點會跳到上一個切片的結尾；在第一個切片時跳到最後一個切片的 Loop End 位置。</li>
+    <li><b>STOP</b>: 按下停止播放。按住 2 秒清除 Buffer 與所有切片。STOP 不會停止錄音。</li>
+    <li><b>Loop End Point</b>: 在波形顯示區拖曳藍線設定（拖曳範圍 1-100%）。面板上沒有對應旋鈕。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">切片掃描</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>功能</b>: 只在有 2 個以上切片時作用。掃描位置（0-100%）平均對應所有切片。只有選中的切片改變時才跳到該切片起點，之後依播放模式繼續播放。</li>
+    <li><b>啟用條件</b>: SCAN 旋鈕大於 1%，或 Slice Scan CV 已接線且 Attenuverter 絕對值大於 0.01，或 S&H Gain 旋鈕大於 0.01。否則切片依正常順序播放。</li>
+    <li><b>Scan CV</b>: CV 除以 10 再乘以 Attenuverter，加到掃描位置。</li>
+    <li><b>S&H 偏移</b>: S&H Gain 旋鈕大於 0.01 時（預設 2），S&H 輸出由 -10..+10V 對應到 0..100% 後加到掃描位置（S&H 輸出為 0V 時不加）。要只用 SCAN，把 S&H Gain 轉到 0。</li>
+    <li><b>多 Voice</b>: 只有 Voice 1 跟隨掃描。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">速度控制</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>非線性映射</b>: Knob 0-1 映射至 -8x 到 +8x，中心為 1x</li>
+    <li><b>非線性映射</b>: 旋鈕 0-100% 對應 -8x 到 +8x，預設中央為 1x。</li>
     <li><b>0-25%</b>: 反向播放 -8x 至 0</li>
     <li><b>25-50%</b>: 正向播放 0 至 1x</li>
     <li><b>50-100%</b>: 正向播放 1x 至 8x</li>
-    <li><b>線性插值</b>: 使用 playbackPhase 進行次樣本精度，在所有速度下流暢播放</li>
+    <li><b>Speed CV</b>: 直接相加，每 1V 為 1x，無 Attenuverter。結果限制在 -8x 至 +8x。</li>
+    <li><b>線性插值</b>: 所有速度下以次樣本位置在相鄰樣本間線性插值。</li>
     </ul>
 
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Polyphonic Voice 系統</h3>
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">多 Voice 系統</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>POLY</b>: 1-8 聲（整數對齊，可 CV 調變）</li>
-    <li><b>Voice 結構</b>: 每個 Voice 擁有獨立的 sliceIndex、playbackPosition、playbackPhase、speedMultiplier</li>
-    <li><b>速度變化</b>: Voice 1-7 獲得隨機 speedMultiplier（0.5-2.0x）</li>
-    <li><b>Slice 切換</b>: Voice 根據 sliceChangeTimer（0.5-2.0s 間隔）隨機切換 Slice</li>
-    <li><b>混合輸出</b>: 多 Voice 輸出除以 numVoices 以防止削波</li>
+    <li><b>POLY</b>: 1-8 個 Voice（整數對齊，預設 1）。Polyphonic CV：10V 增加 7 個 Voice，結果四捨五入並限制在 1-8。</li>
+    <li><b>Voice 起始</b>: Voice 數改變且有切片時，Voice 1 從目前位置以 1x 繼續；Voice 2-8 從隨機切片開始，並取得 0.5-2.0x 的隨機速度倍率，直到 Voice 數再次改變前不變。</li>
+    <li><b>切片切換</b>: Voice 2-8 會反覆切換切片。間隔為 S&H Rate 週期乘以 0.5-2.0 的隨機倍數，每次切換重新抽取。新切片為 S&H 輸出在切片清單中的對應位置，加上 -2 到 +2 個切片的隨機偏移，並避開目前的切片。</li>
+    <li><b>立體聲分布</b>: 2 個以上 Voice 時，由左（Voice 1）到右（最後一個 Voice）平均分布。每一側使用等功率增益，另一聲道以 1 減去另一側增益的量混入。位於最左或最右的 Voice 會把自己的兩個聲道都送到該側。</li>
+    <li><b>混合輸出</b>: 所有 Voice 相加後除以 Voice 數。</li>
     </ul>
 
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Slice Crossfade</h3>
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">切片 Crossfade</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Fade 時間</b>: 0.1ms（SLICE_FADE_TIME_MS 常數）</li>
-    <li><b>Fade 增量</b>: 根據 Fade 時間與 Sample Rate 計算</li>
-    <li><b>待處理 Slice</b>: Fade-out 期間新 Slice 儲存於 pendingSliceIndex，在 Envelope 達 0 後套用</li>
-    <li><b>最大 Oscillator 頻率</b>: 約 5kHz（受 0.1ms Fade Envelope 限制）</li>
+    <li><b>Fade 時間</b>: 0.1ms 線性淡出，跳轉，再 0.1ms 線性淡入</li>
+    <li><b>適用範圍</b>: 掃描跳轉、切片邊界、有切片時的 Loop End 回頭，以及 Voice 切換切片。沒有切片時的循環回頭是直接跳轉，不做 Crossfade。</li>
+    <li><b>待處理切片</b>: 淡出期間要求的新切片等淡出結束後才套用。一次淡出加淡入共 0.2ms，因此切片切換上限約 5kHz。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">參數平滑</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>指數濾波器</b>: 每個 Sample 以 0.5% 步進平滑插值趨向目標值</li>
-    <li><b>時間常數</b>: 44.1kHz 時約 5ms</li>
-    <li><b>平滑參數</b>: Scan、Threshold、LoopEnd、FeedbackAmount、FeedbackDelay</li>
+    <li><b>指數濾波器</b>: 每個樣本向目標值移動 0.5%（44.1kHz 時時間常數約 4.5ms）</li>
+    <li><b>有平滑的參數</b>: Scan 旋鈕、Threshold（含 CV）、Loop End、Feedback Amount（含 CV）</li>
+    <li><b>沒有平滑的參數</b>: EQ、Speed、Poly、S&H 各控制、Min Slice Time</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Feedback 系統</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>No-Input Feedback</b>: 輸出回授至輸入，帶類比風格飽和</li>
-    <li><b>飽和</b>: 套用 tanh 軟削波，低電平時保持單位增益</li>
-    <li><b>混合</b>: Feedback 訊號依 Feedback Amount 縮放後加至輸出</li>
-    </ul>
-
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Morph 系統</h3>
-    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>狀態</b>: IDLE、MORPHING、HOLDING、RETURNING</li>
-    <li><b>曲線</b>: Linear、Smooth（S 曲線緩動）、Exponential（快起慢收）、Bezier（cubic）</li>
-    <li><b>預設目標</b>: EQ、Scan、Feedback、Speed 啟用。Threshold、MinSlice、S&H 停用。</li>
-    <li><b>Morph 時間</b>: 1-20 秒（可透過右鍵選單設定）</li>
+    <li><b>來源</b>: 前一個樣本的 EQ 輸出（Return 與 EQ 之後、Limiter 之前）。一個樣本的迴路，沒有延遲線。</li>
+    <li><b>飽和</b>: tanh 軟削波，縮放為小訊號時維持單位增益</li>
+    <li><b>混合</b>: 飽和後的訊號乘以 Feedback Amount（0-1）加到播放訊號，總和限制在 ±10V。</li>
+    <li><b>Feedback CV</b>: CV 除以 10 再乘以 Attenuverter，加到 Feedback Amount，結果限制在 0-1。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Send/Return 迴路</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Send L/R</b>: 在 EQ 處理前輸出目前音訊訊號，位於 Feedback 迴路內</li>
-    <li><b>Return L/R</b>: 連接時以外部 Return 訊號取代內部訊號。允許將外部效果器插入 Feedback Chain 中進行處理。</li>
-    <li><b>訊號鏈位置</b>: Send/Return 位於播放+Feedback 混合之後、EQ 之前。EQ 後的輸出再回授至下一循環。</li>
-    </ul>
-
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Soft Limiter</h3>
-    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>閾值</b>: -3dB（10V 峰值系統中為 7.07V）</li>
-    <li><b>閾值</b>: -3dB（10V 峰值系統下為 7.07V）</li>
-    <li><b>低於閾值</b>: 訊號直通不變（線性）</li>
-    <li><b>高於閾值</b>: Soft Knee 壓縮，Saturation Amount 0.2</li>
-    <li><b>位置</b>: 套用於 EQ 之後、最終輸出前的 Main Output</li>
+    <li><b>Send L/R</b>: 輸出播放加 Feedback 的訊號（限制在 ±10V），位於 EQ 之前</li>
+    <li><b>Return L/R</b>: 接線時取代各自的聲道，左右獨立。</li>
+    <li><b>訊號鏈位置</b>: 播放與 Feedback 混合之後、EQ 之前。EQ 輸出再送往 Feedback 路徑、S&H 與 Limiter。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">EQ 區段</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Low</b>: 80Hz Shelf（Allen & Heath 參考）</li>
+    <li><b>Low</b>: 80Hz Low Shelf（參考 Allen and Heath 頻率）</li>
     <li><b>Mid</b>: 2.5kHz Peak</li>
-    <li><b>High</b>: 12kHz Shelf</li>
-    <li><b>範圍</b>: 每段 ±12dB</li>
-    <li><b>實作</b>: TBiquadFilter（IIR）</li>
+    <li><b>High</b>: 12kHz High Shelf</li>
+    <li><b>範圍</b>: 每段 ±12dB，預設 0dB，Q 0.707</li>
+    <li><b>實作</b>: 每聲道 Biquad IIR，位於 Feedback 迴路內</li>
     </ul>
 
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sample & Hold</h3>
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Sample and Hold</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Rate</b>: 對數映射，範圍 0.01-100Hz（中心 = 1Hz）</li>
-    <li><b>Slew</b>: 0-1 秒 Slew 時間</li>
-    <li><b>Amount</b>: 0-5x 增益倍數</li>
-    <li><b>輸出</b>: ±10V CV 輸出</li>
+    <li><b>來源</b>: EQ 輸出（Limiter 之前）。取 L 與 R 絕對值較大者；只有 L 與 R 都為負時才取負值。</li>
+    <li><b>Rate</b>: 對數，0.01-100Hz，預設旋鈕中央 1Hz。Rate CV 每 1V 乘以 Attenuverter 增加一個八度，限制在同一範圍。</li>
+    <li><b>Slew</b>: 指數 Slew 時間常數 0-1s，預設 0.3s，與 Rate 無關。</li>
+    <li><b>Gain</b>: 0-5x，預設 2x，在 Slew 之後套用。Gain CV：10V 乘以 Attenuverter 增加 5x，結果限制在 0-5x。</li>
+    <li><b>輸出</b>: 限制在 ±10V</li>
+    <li><b>內部用途</b>: 偏移切片掃描、決定 Voice 2-8 的切片、決定 CHAOS 變形方向（使用 Gain 之前的值）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">CHAOS 變形</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>觸發</b>: 按住 CHAOS 按鈕，或 Morph Gate 在 1V 以上</li>
+    <li><b>過程</b>: 按下時儲存已啟用 Morph Targets 的目前值，並為每個參數算出一個隨機目標值。旋鈕在 Morph Time 內移到目標值，按住期間停在目標值，按住期間不會重新隨機。放開後沿同一路徑以相同速率移回（完整回程需要 Morph Time），最後精確還原儲存的值。回程期間再次按下會被忽略，直到回程結束。</li>
+    <li><b>目標值</b>: 每個參數從目前值偏移，偏移量為 S&H 方向（Gain 之前的 S&H 值，對應到 -1..+1）加上獨立的隨機值（-1..+1），乘以各參數範圍與 Morph Amount，再限制在參數範圍內。各參數範圍：EQ 12dB、Threshold 5V、Min Slice Time 0.5s、Scan 50%、Feedback 0.5、S&H Slew 0.5s、S&H Gain 2.5x、S&H Rate 6.644 個八度、Speed 旋鈕行程 50%。</li>
+    <li><b>曲線</b>: S 曲線（smoothstep），固定不可選</li>
+    <li><b>旋鈕操作</b>: 變形期間手動轉動目標旋鈕會被覆寫，結束時還原為儲存的值。</li>
+    <li><b>預設目標</b>: EQ Low、EQ Mid、EQ High、Scan、Feedback、Speed 開啟。Threshold、Min Slice Time、S&H Slew、S&H Amount、S&H Rate 關閉。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Soft Limiter</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>閾值</b>: 7.07V（相對 10V 為 -3dB）</li>
+    <li><b>低於閾值</b>: 訊號不變</li>
+    <li><b>高於閾值</b>: 超出部分逐漸壓縮（Saturation Amount 0.2）。輸出趨近 12.07V，但沒有硬上限。</li>
+    <li><b>位置</b>: 只作用在 Main L/R。Send、S&H CV 與 Feedback 路徑不經過 Limiter。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右鍵選單</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Load WAV</b>: 讀取 16-bit 或 24-bit PCM WAV，其他位元深度載入為無聲。單聲道檔案複製到兩個聲道，超過 2 聲道的部分忽略。不做取樣率轉換。超過 2,880,000 frame 的部分截掉。載入後：Loop End 100%、Speed 1x、Feedback 0、開啟 Play，並以目前 Threshold 與 Min Slice Time 偵測切片。載入前若處於 Loop，燈號顯示綠色但仍維持重複目前切片的行為。</li>
+    <li><b>Save WAV</b>: 將錄音寫成 16-bit Stereo PCM。檔頭一律標示 48kHz。±10V 對應滿刻度，超出部分削掉。</li>
+    <li><b>Morph Time</b>: 滑桿 0-20s。初始值 1s，滑桿重設為 5s。不隨 Patch 儲存（重新載入後回到 1s）。</li>
+    <li><b>Morph Amount</b>: 滑桿 0-5x，預設 1x，隨 Patch 儲存。</li>
+    <li><b>Morph Targets</b>: 開關 EQ Low、EQ Mid、EQ High、Threshold、Min Slice Time、Scan、Feedback、S&H Slew、S&H Amount、S&H Rate、Speed</li>
+    <li><b>Panel Theme</b>: 面板主題選擇</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Slice Scan</b>: Slice 掃描位置（0-100%）。可 CV 調變。</li>
-    <li><b>Scan CV Attenuverter</b>: Slice Scan CV 輸入的 Attenuverter（-1.0 至 +1.0）。</li>
+    <li><b>Slice Scan</b>: 切片掃描位置（0-100%，預設 0%）。可 CV 調變。</li>
+    <li><b>Scan CV Attenuverter</b>: Slice Scan CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。</li>
     <li><b>Slice Threshold</b>: Transient 偵測閾值（0-10V，預設 1V）。非錄音時調整會重新掃描 Buffer。</li>
-    <li><b>Min Slice Time</b>: Slice 間最小時間（0.001-1.0s，預設 0.05s）。</li>
-    <li><b>Loop End Point</b>: Loop 結束位置（0-100%，預設 100%）。</li>
-    <li><b>Morph Random (Hold)</b>: 按住此按鈕可進行混沌式參數變形（Chaotic Parameter Morphing）。按住期間會持續隨機化所有已啟用的目標參數。</li>
-    <li><b>Feedback Amount</b>: No-input Feedback 量（0-100%）。以 tanh 飽和方式將輸出回授至輸入。</li>
-    <li><b>Feedback CV Attenuverter</b>: Feedback Amount CV 輸入的 Attenuverter（-1.0 至 +1.0）。</li>
-    <li><b>Low EQ (80Hz)</b>: 80Hz Low Shelf EQ（±12dB）。</li>
-    <li><b>Mid EQ (2.5kHz)</b>: 2.5kHz Mid Peak EQ（±12dB）。</li>
-    <li><b>High EQ (12kHz)</b>: 12kHz High Shelf EQ（±12dB）。</li>
-    <li><b>Playback Speed</b>: 非線性速度控制。0-25%: 反向 -8x 至 0。25-50%: 正向 0 至 1x。50-100%: 正向 1x 至 8x。</li>
-    <li><b>Polyphonic Voices</b>: 播放 Voice 數量（1-8，整數對齊）。可 CV 調變。</li>
-    <li><b>S&H Slew Time</b>: Sample & Hold Slew 時間（0-1s）。平滑 CV 過渡。</li>
-    <li><b>S&H Gain</b>: Sample & Hold 增益倍數（0-5x）。</li>
-    <li><b>S&H Gain CV Attenuverter</b>: S&H Gain CV 輸入的 Attenuverter（-1.0 至 +1.0）。</li>
-    <li><b>S&H Sample Rate</b>: Sample & Hold 取樣率（0.01-100Hz，對數映射）。中心 = 1Hz。</li>
-    <li><b>S&H Rate CV Attenuverter</b>: S&H Rate CV 輸入的 Attenuverter（-1.0 至 +1.0）。</li>
-    <li><b>Record</b>: 切換錄音。開始時清除既有 Slice。</li>
-    <li><b>Play/Loop (cycles: Loop → Play)</b>: 切換播放模式。在 Loop 與單次 Play 之間循環。</li>
-    <li><b>Stop (hold 2 sec to Clear)</b>: 停止播放。按住 2 秒清除 Buffer。</li>
+    <li><b>Min Slice Time</b>: 重新掃描時套用的最短切片長度（0.001-1.0s，預設 0.05s）。同時作為 Threshold CV 輸入的縮放量。</li>
+    <li><b>Loop End Point</b>: Loop 結束位置（0-100%，預設 100%）。在波形顯示區設定。</li>
+    <li><b>Morph Random (Hold)</b>: CHAOS 按鈕。按住時把已啟用的目標參數變形到一組隨機值，放開後回到原值。</li>
+    <li><b>Feedback Amount</b>: Feedback 量（0-1，預設 0）。</li>
+    <li><b>Feedback CV Attenuverter</b>: Feedback Amount CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。</li>
+    <li><b>Low EQ (80Hz)</b>: 80Hz Low Shelf（±12dB，預設 0dB）。</li>
+    <li><b>Mid EQ (2.5kHz)</b>: 2.5kHz Peak（±12dB，預設 0dB）。</li>
+    <li><b>High EQ (12kHz)</b>: 12kHz High Shelf（±12dB，預設 0dB）。</li>
+    <li><b>Playback Speed</b>: 非線性速度控制，-8x 至 +8x，預設 1x。</li>
+    <li><b>Polyphonic Voices</b>: 播放 Voice 數量（1-8，整數對齊，預設 1）。可 CV 調變。</li>
+    <li><b>S&H Slew Time</b>: S&H Slew 時間常數（0-1s，預設 0.3s）。</li>
+    <li><b>S&H Gain</b>: S&H 輸出增益（0-5x，預設 2x）。</li>
+    <li><b>S&H Gain CV Attenuverter</b>: S&H Gain CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。</li>
+    <li><b>S&H Sample Rate</b>: S&H 取樣率（0.01-100Hz，對數，預設 1Hz）。</li>
+    <li><b>S&H Rate CV Attenuverter</b>: S&H Rate CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。</li>
+    <li><b>Record</b>: 切換錄音。開始時清除既有切片。</li>
+    <li><b>Play/Loop (cycles: Loop → Play)</b>: 在 Loop 與 Play 之間切換。停止狀態按下進入 Loop。</li>
+    <li><b>Stop (hold 2 sec to Clear)</b>: 停止播放。按住 2 秒清除 Buffer 與切片。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Audio L</b>: 左聲道 Audio 錄音輸入。</li>
-    <li><b>Audio R</b>: 右聲道 Audio 錄音輸入。</li>
-    <li><b>Slice Scan CV</b>: Slice 掃描位置調變 CV 輸入。</li>
-    <li><b>Threshold CV</b>: 閾值調變 CV 輸入。</li>
-    <li><b>Feedback Amount CV</b>: Feedback Amount 調變 CV 輸入。</li>
-    <li><b>Speed CV</b>: 播放速度調變 CV 輸入。</li>
-    <li><b>Polyphonic CV</b>: Voice 數量調變 CV 輸入。</li>
-    <li><b>S&H Amount CV</b>: S&H Gain 調變 CV 輸入。</li>
-    <li><b>S&H Rate CV</b>: S&H Rate 調變 CV 輸入。</li>
-    <li><b>Return L</b>: 左聲道 Return 輸入，用於外部效果器迴路。</li>
-    <li><b>Return R</b>: 右聲道 Return 輸入，用於外部效果器迴路。</li>
-    <li><b>Rec Trigger</b>: 切換錄音的 Trigger 輸入。</li>
-    <li><b>Play Trigger</b>: 切換播放的 Trigger 輸入。</li>
-    <li><b>Clear Trigger</b>: 停止/清除的 Trigger 輸入。</li>
-    <li><b>Morph Gate</b>: 參數變形 Gate 輸入。Gate 為高時進行變形。</li>
+    <li><b>Audio L</b>: 左聲道錄音輸入。</li>
+    <li><b>Audio R</b>: 右聲道錄音輸入。未接線時沿用 Audio L。</li>
+    <li><b>Slice Scan CV</b>: 加到 Slice Scan，由 Scan CV Attenuverter 縮放。</li>
+    <li><b>Threshold CV</b>: 加到 Slice Threshold，乘以 Min Slice Time 的值（預設 0.05）。</li>
+    <li><b>Feedback Amount CV</b>: 加到 Feedback Amount，由 Feedback CV Attenuverter 縮放。</li>
+    <li><b>Speed CV</b>: 加到播放速度，每 1V 為 1x，無 Attenuverter。</li>
+    <li><b>Polyphonic CV</b>: 10V 增加 7 個 Voice，無 Attenuverter。</li>
+    <li><b>S&H Amount CV</b>: 加到 S&H Gain，由 S&H Gain CV Attenuverter 縮放。</li>
+    <li><b>S&H Rate CV</b>: 每 1V 一個八度加到 S&H Rate，由 S&H Rate CV Attenuverter 縮放。</li>
+    <li><b>Return L</b>: 左聲道 Return 輸入。接線時在 EQ 前取代左聲道。</li>
+    <li><b>Return R</b>: 右聲道 Return 輸入。接線時在 EQ 前取代右聲道。</li>
+    <li><b>Rec Trigger</b>: 上升達到 1V 時切換錄音。</li>
+    <li><b>Play Trigger</b>: 上升達到 1V 時等同按下 PLAY/LOOP。</li>
+    <li><b>Clear Trigger</b>: 高於 0.5V 時停止播放；維持高電位 2 秒則清除 Buffer 與切片。</li>
+    <li><b>Morph Gate</b>: Gate 在 1V 以上時等同按住 CHAOS。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Main L</b>: 左聲道 Main Audio 輸出（含 EQ 與 Soft Limiter）。</li>
-    <li><b>Main R</b>: 右聲道 Main Audio 輸出（含 EQ 與 Soft Limiter）。</li>
-    <li><b>S&H CV</b>: Sample & Hold CV 輸出（±10V）。</li>
-    <li><b>Send L</b>: 左聲道 Send 輸出，用於外部效果器迴路（EQ 前）。</li>
-    <li><b>Send R</b>: 右聲道 Send 輸出，用於外部效果器迴路（EQ 前）。</li>
+    <li><b>Main L</b>: 左聲道 Main 音訊輸出（經過 EQ 與 Soft Limiter）。</li>
+    <li><b>Main R</b>: 右聲道 Main 音訊輸出（經過 EQ 與 Soft Limiter）。</li>
+    <li><b>S&H CV</b>: Sample and Hold CV 輸出（±10V）。</li>
+    <li><b>Send L</b>: 左聲道 Send 輸出，EQ 前的播放加 Feedback 訊號。</li>
+    <li><b>Send R</b>: 右聲道 Send 輸出，EQ 前的播放加 Feedback 訊號。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術規格</h3>
     <ul style="padding-left: 1.5rem;">
     <li>模組寬度: 12HP</li>
-    <li>Buffer 大小: 48kHz 時 60 秒（每聲道 2,880,000 樣本）</li>
-    <li>內部處理: Sample Engine 中 ±10V 硬限制</li>
-    <li>Main Output: Soft Limiter -3dB（7.07V 閾值），超過時 Soft Knee 壓縮</li>
+    <li>Buffer 大小: 每聲道固定 2,880,000 樣本（48kHz 時 60 秒，44.1kHz 時約 65 秒，96kHz 時 30 秒）</li>
+    <li>Sample Engine: 播放加 Feedback 限制在 ±10V</li>
+    <li>Main 輸出: 7.07V 以上 Soft Limiter</li>
     <li>EQ 實作: Biquad IIR 濾波器</li>
-    <li>Slice 儲存: 動態 Vector（無限）</li>
-    <li>隨機引擎: std::default_random_engine，時間基準種子</li>
-    <li>狀態持久化: Buffer、Slice、所有參數儲存至 JSON</li>
+    <li>切片儲存: 動態清單，無固定上限</li>
+    <li>隨機來源: Voice 的切片與速度選擇使用 std::default_random_engine，以時間為種子；CHAOS 變形使用 VCV Rack 的亂數產生器</li>
+    <li>隨 Patch 儲存: 錄音資料（32-bit float）、切片、播放狀態、Morph Amount、Morph Targets、面板主題。Morph Time 不儲存。</li>
     </ul>
-    <div style="display:none"><ul>
-    <li><b>Non-linear Mapping</b>: Knob 0-1 映射至 -8x 到 +8x，中心為 1x</li>
-    <li><b>Linear Interpolation</b>: 使用 playbackPhase 的子採樣精度，確保所有速度下平滑播放</li>
-    <li><b>Voice Structure</b>: 每個 Voice 有獨立的 sliceIndex、playbackPosition、playbackPhase、speedMultiplier</li>
-    <li><b>Speed Variation</b>: Voice 1-7 獲得隨機 speedMultiplier（0.5-2.0x）</li>
-    <li><b>Slice Switching</b>: Voice 根據 sliceChangeTimer（0.5-2.0s 間隔）隨機切換 Slice</li>
-    <li><b>Mix Output</b>: 多 Voice 輸出除以 numVoices 以防止削波</li>
-    <li><b>No-Input Feedback</b>: 輸出回授至輸入，帶類比風格 Saturation</li>
-    <li><b>Fade Time</b>: 0.1ms（SLICE_FADE_TIME_MS 常數）</li>
-    <li><b>Fade Increment</b>: 由淡化時間與 Sample Rate 計算</li>
-    <li><b>Pending Slice</b>: 新 Slice 在淡出期間儲存於 pendingSliceIndex，Envelope 歸零後套用</li>
-    <li><b>Maximum Oscillator Frequency</b>: ~5kHz（由 0.1ms 淡化 Envelope 限制）</li>
-    <li><b>Exponential Filter</b>: 以每 Sample 0.5% 步進平滑趨近目標</li>
-    <li><b>Time Constant</b>: 44.1kHz 時約 5ms</li>
-    <li><b>Smoothed Parameters</b>: Scan、Threshold、LoopEnd、FeedbackAmount、FeedbackDelay</li>
-    <li><b>Saturation</b>: 套用 tanh 軟削波，低電平時縮放以保持單位增益</li>
-    <li><b>Mix</b>: Feedback 訊號按 Feedback 量縮放後加至輸出</li>
-    <li><b>States</b>: IDLE、MORPHING、HOLDING、RETURNING</li>
-    <li><b>Curves</b>: 線性、平滑（S 曲線緩動）、指數（快速起音、慢速衰減）、Bezier（可設定控制點）</li>
-    <li><b>Default Targets</b>: EQ、Scan、Feedback、Speed 啟用。Threshold、MinSlice、S and H 停用</li>
-    <li><b>Morph Time</b>: 1-20 秒（可透過右鍵設定）</li>
-    <li><b>Signal Chain Position</b>: Send/Return 位於播放+Feedback 混合後、EQ 前。EQ 處理後的輸出回授至下一個循環。</li>
-    <li><b>Below Threshold</b>: 訊號通過不變（線性）</li>
-    <li><b>Above Threshold</b>: 含軟膝壓縮，飽和量 0.2</li>
-    <li><b>Threshold</b>: -3dB（10V 峰值系統下為 7.07V）</li>
-    <li><b>Position</b>: 套用至 EQ 後、最終輸出前的主輸出</li>
-    <li><b>Range</b>: 每頻段 +/-12dB</li>
-    <li><b>Implementation</b>: TBiquadFilter（IIR）</li>
-    <li><b>Output</b>: +/-10V CV 輸出</li>
-    </ul></div>
   ja: |-
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">概要</h3>
-    <p style="margin-bottom: 1rem;">カオスパラメータモーフィング、フィードバックマトリクス、スライスエンジンを備えた録音サンプラー。リアルタイム録音と自動トランジェント検出、ポリフォニック再生、3バンドEQ、サンプル＆ホールドモジュレーション、パラメータモーフィングを統合。最大録音時間：48kHzで60秒。実験的サウンドデザインとライブパフォーマンス向けに設計。</p>
+    <p style="margin-bottom: 1rem;">ステレオ録音サンプラー。録音はトランジェントでスライスに分割され、最大8ボイスで再生される。再生信号はサチュレーション済みのフィードバック信号と加算され、センド/リターン挿入ポイントと3バンドEQを通り、EQ出力が次のサンプルにフィードバックされる（ノーインプットミキサー式フィードバック）。サンプル＆ホールドはEQ出力をサンプリングし、スライス選択、ボイスのスライス切替、CHAOSモーフの方向を制御する。メイン出力はソフトリミッターを通る。バッファ：チャンネルあたり2,880,000サンプル（48kHzで60秒）。</p>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">録音とスライス</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>REC</b>: 録音切替。開始時に既存スライスをクリア。</li>
-    <li><b>Transient Detection</b>: 振幅が閾値を下から上へ横切ると新しいスライスをトリガー</li>
-    <li><b>THRESHOLD</b>: 検出閾値（0-10V、デフォルト1V）。非録音時の調整は既存バッファを再スキャン。</li>
-    <li><b>MIN SLICE</b>: スライス間の最小時間（0.001-1.0s、デフォルト0.05s）</li>
-    <li><b>Slice Storage</b>: 動的std::vector（無制限スライス）。各スライスはstartSample、endSample、peakAmplitudeを保存。</li>
+    <li><b>REC</b>: 録音切替（ボタンまたはRec Trigger）。開始時はバッファの先頭から録音し、既存スライスをクリア。バッファが満杯になると、停止して再開するまで書き込まれない。</li>
+    <li><b>入力</b>: Audio Rは未接続時Audio Lを使用。</li>
+    <li><b>トランジェント検出</b>: 録音中、L+Rモノミックスの絶対値が閾値未満から閾値以上になると新しいスライスを開始し、前のスライスは1サンプル前で終了。最初の交差より前の音声はどのスライスにも属さない。</li>
+    <li><b>THRESHOLD</b>: 検出閾値（0-10V、デフォルト1V）。非録音時に0.05Vを超えて変化するとバッファ全体を再スキャン。</li>
+    <li><b>MIN SLICE TIME</b>: THRESHOLD下のトリムポット（0.001-1.0s、デフォルト0.05s）。録音中ではなく再スキャン時のみ適用：これより短いスライスは削除され（結合されない）、Playモードではその区間の音声がスキップされる。長さはエンジンのサンプルレートに関係なく48kHzとして計算。非録音時に0.001sを超えて変化すると再スキャン。</li>
+    <li><b>スライスがない場合</b>: PlayとLoopのどちらでも録音の先頭からLoop End位置までループ。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">再生モード</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>PLAY/LOOP</b>: 停止またはPlayから押すとLoopへ、Loopから押すとPlayへ切替。ライト：Playは緑、Loopは青、停止時は消灯。</li>
+    <li><b>Play</b>: スライスを順に再生。Loop End位置に達すると録音の先頭に戻る。連続再生であり、ワンショットではない。</li>
+    <li><b>Loop</b>: 順再生時に現在のスライスを反復。</li>
+    <li><b>逆再生</b>: 速度が負のとき、PlayとLoopのどちらでも、現在のスライスの先頭を越えると前のスライスの末尾へジャンプ。最初のスライスからは最後のスライスのLoop End位置へジャンプ。</li>
+    <li><b>STOP</b>: 押すと再生停止。2秒長押しでバッファと全スライスをクリア。STOPは録音を停止しない。</li>
+    <li><b>Loop End Point</b>: 波形表示の青線をドラッグして設定（ドラッグ範囲1-100%）。パネル上に対応するノブはない。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">スライススキャン</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>機能</b>: スライスが2つ以上あるときのみ動作。スキャン位置（0-100%）が全スライスに均等に対応。選択スライスが変わったときのみそのスライスの先頭へジャンプし、その後は再生モードに従う。</li>
+    <li><b>有効条件</b>: SCANノブが1%を超える、Slice Scan CVが接続されアッテヌバーターの絶対値が0.01を超える、またはS&H Gainノブが0.01を超える場合。それ以外はスライスは通常の順序で再生。</li>
+    <li><b>Scan CV</b>: CVを10で割りアッテヌバーターを掛けた値をスキャン位置に加算。</li>
+    <li><b>S&Hオフセット</b>: S&H Gainノブが0.01を超えるとき（デフォルト2）、S&H出力を-10..+10Vから0..100%に対応させてスキャン位置に加算（S&H出力が0Vのときは加算しない）。SCANのみを使うにはS&H Gainを0にする。</li>
+    <li><b>ポリフォニック</b>: スキャンに従うのはボイス1のみ。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">速度コントロール</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>非線形マッピング</b>: ノブ0-1が-8x～+8xにマップ、中心が1x</li>
+    <li><b>非線形マッピング</b>: ノブ0-100%が-8x～+8xに対応、デフォルトの中央が1x。</li>
     <li><b>0-25%</b>: 逆再生 -8x～0</li>
     <li><b>25-50%</b>: 順再生 0～1x</li>
     <li><b>50-100%</b>: 順再生 1x～8x</li>
-    <li><b>線形補間</b>: playbackPhaseを使用したサブサンプル精度で全速度でスムーズ再生</li>
+    <li><b>Speed CV</b>: 1Vあたり1xで直接加算、アッテヌバーターなし。結果は-8x～+8xに制限。</li>
+    <li><b>線形補間</b>: 全速度でサブサンプル位置を隣接サンプル間で線形補間。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ポリフォニックボイスシステム</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>POLY</b>: 1-8ボイス（整数スナップ、CVモジュレート可能）</li>
-    <li><b>ボイス構造</b>: 各ボイスは独立したsliceIndex、playbackPosition、playbackPhase、speedMultiplierを持つ</li>
-    <li><b>速度変化</b>: ボイス1-7はランダムなspeedMultiplier（0.5-2.0x）を取得</li>
-    <li><b>スライス切替</b>: ボイスはsliceChangeTimer（0.5-2.0s間隔）に基づきランダムにスライス切替</li>
-    <li><b>ミックス出力</b>: マルチボイス出力をnumVoicesで除算してクリッピング防止</li>
+    <li><b>POLY</b>: 1-8ボイス（整数スナップ、デフォルト1）。Polyphonic CV：10Vで7ボイス追加、結果は四捨五入して1-8に制限。</li>
+    <li><b>ボイス開始</b>: ボイス数が変わりスライスがある場合、ボイス1は現在位置から1xで継続。ボイス2-8はランダムなスライスから開始し、0.5-2.0xのランダム速度倍率を取得（ボイス数が再び変わるまで固定）。</li>
+    <li><b>スライス切替</b>: ボイス2-8は繰り返しスライスを切り替える。間隔はS&H Rateの周期に0.5-2.0のランダム倍率を掛けた値で、切替ごとに再抽選。新しいスライスはS&H出力のスライスリスト上の位置に-2～+2スライスのランダムオフセットを加えたもので、現在のスライスは避ける。</li>
+    <li><b>ステレオ配置</b>: 2ボイス以上のとき、左（ボイス1）から右（最後のボイス）へ均等に配置。各側は等パワーゲインを使い、反対チャンネルは1から反対側ゲインを引いた量で混ざる。最も左または右のボイスは自身の両チャンネルをその側に送る。</li>
+    <li><b>ミックス出力</b>: 全ボイスの合計をボイス数で除算。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">スライスクロスフェード</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>フェード時間</b>: 0.1ms（SLICE_FADE_TIME_MS定数）</li>
-    <li><b>フェード増分</b>: フェード時間とサンプルレートから計算</li>
-    <li><b>保留スライス</b>: フェードアウト中に新スライスをpendingSliceIndexに保存、エンベロープが0に達した後適用</li>
-    <li><b>最大オシレーター周波数</b>: 約5kHz（0.1msフェードエンベロープによる制限）</li>
+    <li><b>フェード時間</b>: 0.1msのリニアフェードアウト、ジャンプ、0.1msのリニアフェードイン</li>
+    <li><b>適用範囲</b>: スキャンによるジャンプ、スライス境界、スライスがある場合のLoop Endでの折り返し、ボイスのスライス切替。スライスがない場合の折り返しはクロスフェードなしの直接ジャンプ。</li>
+    <li><b>保留スライス</b>: フェードアウト中に要求された新しいスライスはフェードアウト完了後に適用。フェードアウトとフェードインで計0.2msのため、スライス切替の上限は約5kHz。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">パラメータスムージング</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>指数フィルター</b>: サンプルごとに0.5%ステップでターゲット値に向かってスムーズ補間</li>
-    <li><b>時定数</b>: 44.1kHzで約5ms</li>
-    <li><b>スムーズパラメータ</b>: Scan、Threshold、LoopEnd、FeedbackAmount、FeedbackDelay</li>
+    <li><b>指数フィルター</b>: サンプルごとに目標値へ0.5%移動（44.1kHzで時定数約4.5ms）</li>
+    <li><b>スムージング対象</b>: Scanノブ、Threshold（CV含む）、Loop End、Feedback Amount（CV含む）</li>
+    <li><b>スムージングなし</b>: EQ、Speed、Poly、S&H各コントロール、Min Slice Time</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">フィードバックシステム</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>ノーインプットフィードバック</b>: アナログスタイル飽和で出力が入力にフィードバック</li>
-    <li><b>飽和</b>: tanhソフトクリッピング適用、低レベルでユニティゲインを維持</li>
-    <li><b>ミックス</b>: フィードバック信号をフィードバック量でスケーリングして出力に加算</li>
-    </ul>
-
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">モーフシステム</h3>
-    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>状態</b>: IDLE、MORPHING、HOLDING、RETURNING</li>
-    <li><b>カーブ</b>: Linear、Smooth（Sカーブイージング）、Exponential（速いアタック、遅いディケイ）、Bezier（cubic）</li>
-    <li><b>デフォルトターゲット</b>: EQ、Scan、Feedback、Speed有効。Threshold、MinSlice、S&H無効。</li>
-    <li><b>モーフ時間</b>: 1-20秒（右クリックメニューで設定可能）</li>
+    <li><b>ソース</b>: 1サンプル前のEQ出力（リターンとEQの後、リミッターの前）。1サンプルのループで、ディレイラインはない。</li>
+    <li><b>飽和</b>: tanhソフトクリッピング、小信号でユニティゲインになるようスケーリング</li>
+    <li><b>ミックス</b>: 飽和後の信号にFeedback Amount（0-1）を掛けて再生信号に加算、合計は±10Vに制限。</li>
+    <li><b>Feedback CV</b>: CVを10で割りアッテヌバーターを掛けてFeedback Amountに加算、結果は0-1に制限。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">センド/リターンループ</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Send L/R</b>: EQ処理前の現在のオーディオ信号を出力（フィードバックループ内）</li>
-    <li><b>Return L/R</b>: 接続時、内部信号を外部リターン信号に置換。外部エフェクトをフィードバックチェーンに挿入して処理可能。</li>
-    <li><b>信号チェーン位置</b>: センド/リターンは再生+フィードバックミキシング後、EQ前に配置。EQ後の出力が次のサイクルにフィードバック。</li>
-    </ul>
-
-    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ソフトリミッター</h3>
-    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>閾値</b>: -3dB（10Vピークシステムで7.07V）</li>
-    <li><b>閾値</b>: -3dB（10Vピークシステムで7.07V）</li>
-    <li><b>閾値以下</b>: 信号はそのまま通過（リニア）</li>
-    <li><b>閾値以上</b>: ソフトニーコンプレッション、サチュレーション量0.2</li>
-    <li><b>位置</b>: EQ後、最終出力前のメイン出力に適用</li>
+    <li><b>Send L/R</b>: 再生とフィードバックの合計（±10Vに制限）をEQ前で出力</li>
+    <li><b>Return L/R</b>: 接続時、それぞれのチャンネルを置換。左右は独立。</li>
+    <li><b>信号チェーン位置</b>: 再生とフィードバックのミックス後、EQ前。EQ出力はフィードバック経路、S&H、リミッターへ送られる。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">EQセクション</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Low</b>: 80Hz Shelf（Allen & Heath参照）</li>
-    <li><b>Mid</b>: 2.5kHz Peak</li>
-    <li><b>High</b>: 12kHz Shelf</li>
-    <li><b>範囲</b>: 各バンド±12dB</li>
-    <li><b>実装</b>: TBiquadFilter（IIR）</li>
+    <li><b>Low</b>: 80Hz ローシェルフ（Allen and Heathの周波数を参照）</li>
+    <li><b>Mid</b>: 2.5kHz ピーク</li>
+    <li><b>High</b>: 12kHz ハイシェルフ</li>
+    <li><b>範囲</b>: 各バンド±12dB、デフォルト0dB、Q 0.707</li>
+    <li><b>実装</b>: チャンネルごとのBiquad IIR、フィードバックループ内</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">サンプル＆ホールド</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Rate</b>: 対数マッピング、範囲0.01-100Hz（中心=1Hz）</li>
-    <li><b>Slew</b>: 0-1秒スルー時間</li>
-    <li><b>Amount</b>: 0-5xゲイン倍率</li>
-    <li><b>出力</b>: ±10V CV出力</li>
+    <li><b>ソース</b>: EQ出力（リミッター前）。LとRの絶対値の大きい方を使用し、LとRが両方負のときのみ負の値になる。</li>
+    <li><b>Rate</b>: 対数、0.01-100Hz、デフォルトはノブ中央で1Hz。Rate CVは1Vあたりアッテヌバーターを掛けて1オクターブ加算、同じ範囲に制限。</li>
+    <li><b>Slew</b>: 指数スルー時定数0-1s、デフォルト0.3s。Rateとは独立。</li>
+    <li><b>Gain</b>: 0-5x、デフォルト2x、スルーの後に適用。Gain CV：10Vにアッテヌバーターを掛けて5x加算、結果は0-5xに制限。</li>
+    <li><b>出力</b>: ±10Vに制限</li>
+    <li><b>内部用途</b>: スライススキャンのオフセット、ボイス2-8のスライス決定、CHAOSモーフの方向決定（ゲイン前の値を使用）。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">CHAOSモーフ</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>トリガー</b>: CHAOSボタンを押し続ける、またはMorph Gateが1V以上</li>
+    <li><b>動作</b>: 押した時点で有効なMorph Targetsの現在値を保存し、各パラメータにランダムな目標値を1つ計算。ノブはMorph Timeをかけて目標値へ移動し、押している間はそこに留まる。押している間に再ランダム化はされない。離すと同じ経路を同じ速度で戻り（完全な復帰にはMorph Timeかかる）、最後に保存値が正確に復元される。復帰中の再押下は復帰が終わるまで無視される。</li>
+    <li><b>目標値</b>: 各パラメータは現在値から、S&H方向（ゲイン前のS&H値を-1..+1に対応）と独立したランダム値（-1..+1）の和に、パラメータごとの範囲とMorph Amountを掛けた量だけオフセットされ、パラメータ範囲内に制限される。範囲：EQ 12dB、Threshold 5V、Min Slice Time 0.5s、Scan 50%、Feedback 0.5、S&H Slew 0.5s、S&H Gain 2.5x、S&H Rate 6.644オクターブ、Speed ノブ可動域の50%。</li>
+    <li><b>カーブ</b>: Sカーブ（smoothstep）、固定で選択不可</li>
+    <li><b>ノブ操作</b>: モーフ中にターゲットのノブを手動で動かしても上書きされ、終了時に保存値へ復元される。</li>
+    <li><b>デフォルトターゲット</b>: EQ Low、EQ Mid、EQ High、Scan、Feedback、Speedが有効。Threshold、Min Slice Time、S&H Slew、S&H Amount、S&H Rateは無効。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">ソフトリミッター</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>閾値</b>: 7.07V（10Vに対して-3dB）</li>
+    <li><b>閾値以下</b>: 信号はそのまま通過</li>
+    <li><b>閾値以上</b>: 超過分を徐々に圧縮（サチュレーション量0.2）。出力は12.07Vに近づくが、ハードな上限はない。</li>
+    <li><b>位置</b>: Main L/Rのみ。Send、S&H CV、フィードバック経路はリミッターを通らない。</li>
+    </ul>
+
+    <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">右クリックメニュー</h3>
+    <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+    <li><b>Load WAV</b>: 16-bitまたは24-bit PCM WAVを読み込む。その他のビット深度は無音として読み込まれる。モノファイルは両チャンネルにコピーし、3チャンネル目以降は無視。サンプルレート変換なし。2,880,000フレームを超える部分は切り捨て。読み込み後：Loop End 100%、Speed 1x、Feedback 0、Playオン、現在のThresholdとMin Slice Timeでスライスを検出。読み込み前にLoopだった場合、ライトは緑になるが現在のスライスを反復する動作が続く。</li>
+    <li><b>Save WAV</b>: 録音を16-bitステレオPCMで書き出す。ファイルヘッダーは常に48kHz。±10Vがフルスケールに対応し、超過分はクリップ。</li>
+    <li><b>Morph Time</b>: スライダー0-20s。初期値1s、スライダーのリセットで5s。パッチに保存されない（再読み込み後は1sに戻る）。</li>
+    <li><b>Morph Amount</b>: スライダー0-5x、デフォルト1x。パッチに保存される。</li>
+    <li><b>Morph Targets</b>: EQ Low、EQ Mid、EQ High、Threshold、Min Slice Time、Scan、Feedback、S&H Slew、S&H Amount、S&H Rate、Speedのオン/オフ</li>
+    <li><b>Panel Theme</b>: パネルテーマ選択</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Parameter Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Slice Scan</b>: スライススキャン位置（0-100%）。CVモジュレート可能。</li>
-    <li><b>Scan CV Attenuverter</b>: Slice Scan CV入力用アッテヌバーター（-1.0～+1.0）。</li>
+    <li><b>Slice Scan</b>: スライススキャン位置（0-100%、デフォルト0%）。CVモジュレート可能。</li>
+    <li><b>Scan CV Attenuverter</b>: Slice Scan CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。</li>
     <li><b>Slice Threshold</b>: トランジェント検出閾値（0-10V、デフォルト1V）。非録音時の調整でバッファを再スキャン。</li>
-    <li><b>Min Slice Time</b>: スライス間の最小時間（0.001-1.0s、デフォルト0.05s）。</li>
-    <li><b>Loop End Point</b>: ループ終了位置（0-100%、デフォルト100%）。</li>
-    <li><b>Morph Random (Hold)</b>: カオスパラメータモーフィング用のホールドボタン。押し続けている間、有効化されたターゲットパラメータをランダム化し続ける。</li>
-    <li><b>Feedback Amount</b>: ノーインプットフィードバック量（0-100%）。tanh飽和で出力を入力にフィードバック。</li>
-    <li><b>Feedback CV Attenuverter</b>: Feedback Amount CV入力用アッテヌバーター（-1.0～+1.0）。</li>
-    <li><b>Low EQ (80Hz)</b>: 80Hz ローシェルフEQ（±12dB）。</li>
-    <li><b>Mid EQ (2.5kHz)</b>: 2.5kHz ミッドピークEQ（±12dB）。</li>
-    <li><b>High EQ (12kHz)</b>: 12kHz ハイシェルフEQ（±12dB）。</li>
-    <li><b>Playback Speed</b>: 非線形速度コントロール。0-25%: 逆再生-8x～0。25-50%: 順再生0～1x。50-100%: 順再生1x～8x。</li>
-    <li><b>Polyphonic Voices</b>: 再生ボイス数（1-8、整数スナップ）。CVモジュレート可能。</li>
-    <li><b>S&H Slew Time</b>: サンプル＆ホールドスルー時間（0-1s）。CVトランジションをスムーズ化。</li>
-    <li><b>S&H Gain</b>: サンプル＆ホールドゲイン倍率（0-5x）。</li>
-    <li><b>S&H Gain CV Attenuverter</b>: S&H Gain CV入力用アッテヌバーター（-1.0～+1.0）。</li>
-    <li><b>S&H Sample Rate</b>: サンプル＆ホールドレート（0.01-100Hz、対数）。中心=1Hz。</li>
-    <li><b>S&H Rate CV Attenuverter</b>: S&H Rate CV入力用アッテヌバーター（-1.0～+1.0）。</li>
+    <li><b>Min Slice Time</b>: 再スキャン時に適用する最短スライス長（0.001-1.0s、デフォルト0.05s）。Threshold CV入力のスケーリングにも使われる。</li>
+    <li><b>Loop End Point</b>: ループ終了位置（0-100%、デフォルト100%）。波形表示で設定。</li>
+    <li><b>Morph Random (Hold)</b>: CHAOSボタン。押している間、有効なターゲットを1組のランダム値へモーフし、離すと元に戻る。</li>
+    <li><b>Feedback Amount</b>: フィードバック量（0-1、デフォルト0）。</li>
+    <li><b>Feedback CV Attenuverter</b>: Feedback Amount CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。</li>
+    <li><b>Low EQ (80Hz)</b>: 80Hz ローシェルフ（±12dB、デフォルト0dB）。</li>
+    <li><b>Mid EQ (2.5kHz)</b>: 2.5kHz ピーク（±12dB、デフォルト0dB）。</li>
+    <li><b>High EQ (12kHz)</b>: 12kHz ハイシェルフ（±12dB、デフォルト0dB）。</li>
+    <li><b>Playback Speed</b>: 非線形速度コントロール、-8x～+8x、デフォルト1x。</li>
+    <li><b>Polyphonic Voices</b>: 再生ボイス数（1-8、整数スナップ、デフォルト1）。CVモジュレート可能。</li>
+    <li><b>S&H Slew Time</b>: S&Hスルー時定数（0-1s、デフォルト0.3s）。</li>
+    <li><b>S&H Gain</b>: S&H出力ゲイン（0-5x、デフォルト2x）。</li>
+    <li><b>S&H Gain CV Attenuverter</b>: S&H Gain CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。</li>
+    <li><b>S&H Sample Rate</b>: S&Hレート（0.01-100Hz、対数、デフォルト1Hz）。</li>
+    <li><b>S&H Rate CV Attenuverter</b>: S&H Rate CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。</li>
     <li><b>Record</b>: 録音切替。開始時に既存スライスをクリア。</li>
-    <li><b>Play/Loop (cycles: Loop → Play)</b>: 再生モード切替。ループとワンショット再生を切り替え。</li>
-    <li><b>Stop (hold 2 sec to Clear)</b>: 再生停止。2秒長押しでバッファクリア。</li>
+    <li><b>Play/Loop (cycles: Loop → Play)</b>: LoopとPlayを切替。停止状態から押すとLoop。</li>
+    <li><b>Stop (hold 2 sec to Clear)</b>: 再生停止。2秒長押しでバッファとスライスをクリア。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Input Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Audio L</b>: 左チャンネルオーディオ録音入力。</li>
-    <li><b>Audio R</b>: 右チャンネルオーディオ録音入力。</li>
-    <li><b>Slice Scan CV</b>: スライススキャン位置変調CV入力。</li>
-    <li><b>Threshold CV</b>: 閾値変調CV入力。</li>
-    <li><b>Feedback Amount CV</b>: フィードバック量変調CV入力。</li>
-    <li><b>Speed CV</b>: 再生速度変調CV入力。</li>
-    <li><b>Polyphonic CV</b>: ボイス数変調CV入力。</li>
-    <li><b>S&H Amount CV</b>: S&Hゲイン変調CV入力。</li>
-    <li><b>S&H Rate CV</b>: S&Hレート変調CV入力。</li>
-    <li><b>Return L</b>: 左チャンネルリターン入力（外部エフェクトループ用）。</li>
-    <li><b>Return R</b>: 右チャンネルリターン入力（外部エフェクトループ用）。</li>
-    <li><b>Rec Trigger</b>: 録音切替トリガー入力。</li>
-    <li><b>Play Trigger</b>: 再生切替トリガー入力。</li>
-    <li><b>Clear Trigger</b>: 停止/クリアトリガー入力。</li>
-    <li><b>Morph Gate</b>: パラメータモーフィングゲート入力。ゲートがハイの間モーフィング実行。</li>
+    <li><b>Audio L</b>: 左チャンネル録音入力。</li>
+    <li><b>Audio R</b>: 右チャンネル録音入力。未接続時はAudio Lを使用。</li>
+    <li><b>Slice Scan CV</b>: Slice Scanに加算、Scan CV Attenuverterでスケーリング。</li>
+    <li><b>Threshold CV</b>: Slice Thresholdに加算、Min Slice Timeの値（デフォルト0.05）を掛ける。</li>
+    <li><b>Feedback Amount CV</b>: Feedback Amountに加算、Feedback CV Attenuverterでスケーリング。</li>
+    <li><b>Speed CV</b>: 1Vあたり1xで再生速度に加算。アッテヌバーターなし。</li>
+    <li><b>Polyphonic CV</b>: 10Vで7ボイス追加。アッテヌバーターなし。</li>
+    <li><b>S&H Amount CV</b>: S&H Gainに加算、S&H Gain CV Attenuverterでスケーリング。</li>
+    <li><b>S&H Rate CV</b>: 1Vあたり1オクターブをS&H Rateに加算、S&H Rate CV Attenuverterでスケーリング。</li>
+    <li><b>Return L</b>: 左リターン入力。接続時、EQ前で左チャンネルを置換。</li>
+    <li><b>Return R</b>: 右リターン入力。接続時、EQ前で右チャンネルを置換。</li>
+    <li><b>Rec Trigger</b>: 1Vに達する立ち上がりで録音切替。</li>
+    <li><b>Play Trigger</b>: 1Vに達する立ち上がりでPLAY/LOOPボタンと同じ動作。</li>
+    <li><b>Clear Trigger</b>: 0.5Vを超えると再生停止。2秒間ハイを保つとバッファとスライスをクリア。</li>
+    <li><b>Morph Gate</b>: ゲートが1V以上の間、CHAOSを押し続けるのと同じ。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">Output Reference</h3>
     <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
-    <li><b>Main L</b>: 左チャンネルメインオーディオ出力（EQ・ソフトリミッター適用済み）。</li>
-    <li><b>Main R</b>: 右チャンネルメインオーディオ出力（EQ・ソフトリミッター適用済み）。</li>
+    <li><b>Main L</b>: 左チャンネルメインオーディオ出力（EQとソフトリミッター適用後）。</li>
+    <li><b>Main R</b>: 右チャンネルメインオーディオ出力（EQとソフトリミッター適用後）。</li>
     <li><b>S&H CV</b>: サンプル＆ホールドCV出力（±10V）。</li>
-    <li><b>Send L</b>: 左チャンネルセンド出力（外部エフェクトループ用、EQ前）。</li>
-    <li><b>Send R</b>: 右チャンネルセンド出力（外部エフェクトループ用、EQ前）。</li>
+    <li><b>Send L</b>: 左センド出力、EQ前の再生とフィードバックの合計。</li>
+    <li><b>Send R</b>: 右センド出力、EQ前の再生とフィードバックの合計。</li>
     </ul>
 
     <h3 style="color: oklch(0.65 0.06 295); margin-bottom: 0.8rem; border-bottom: 2px solid oklch(0.30 0.008 265); padding-bottom: 0.5rem;">技術仕様</h3>
     <ul style="padding-left: 1.5rem;">
     <li>モジュール幅: 12HP</li>
-    <li>バッファサイズ: 48kHzで60秒（チャンネルあたり2,880,000サンプル）</li>
-    <li>内部処理: サンプルエンジン内 ±10Vハードクランプ</li>
-    <li>メイン出力: ソフトリミッター -3dB（7.07V閾値）、超過時ソフトニーコンプレッション</li>
+    <li>バッファサイズ: チャンネルあたり固定2,880,000サンプル（48kHzで60秒、44.1kHzで約65秒、96kHzで30秒）</li>
+    <li>サンプルエンジン: 再生とフィードバックの合計を±10Vに制限</li>
+    <li>メイン出力: 7.07V以上でソフトリミッター</li>
     <li>EQ実装: Biquad IIRフィルター</li>
-    <li>スライス保存: 動的ベクター（無制限）</li>
-    <li>乱数エンジン: std::default_random_engine、時間ベースシード</li>
-    <li>状態永続化: バッファ、スライス、全パラメータをJSONに保存</li>
+    <li>スライス保存: 動的リスト、固定上限なし</li>
+    <li>乱数ソース: ボイスのスライスと速度の選択はstd::default_random_engine（時間ベースシード）、CHAOSモーフはVCV Rackの乱数生成器を使用</li>
+    <li>パッチに保存: 録音データ（32-bit float）、スライス、再生状態、Morph Amount、Morph Targets、パネルテーマ。Morph Timeは保存されない。</li>
     </ul>
-    <div style="display:none"><ul>
-    <li><b>Non-linear Mapping</b>: ノブ0〜1が-8xから+8xにマッピング、中心で1x</li>
-    <li><b>Linear Interpolation</b>: playbackPhaseを使用したサブサンプル精度で全速度でスムーズな再生</li>
-    <li><b>Voice Structure</b>: 各ボイスが独立したsliceIndex、playbackPosition、playbackPhase、speedMultiplierを持つ</li>
-    <li><b>Speed Variation</b>: ボイス1〜7がランダムなspeedMultiplier（0.5〜2.0x）を取得</li>
-    <li><b>Slice Switching</b>: ボイスがsliceChangeTimer（0.5〜2.0s間隔）に基づいてランダムにスライスを切り替え</li>
-    <li><b>Mix Output</b>: クリッピング防止のため多ボイス出力をnumVoicesで除算</li>
-    <li><b>Fade Time</b>: 0.1ms（SLICE_FADE_TIME_MS定数）</li>
-    <li><b>Fade Increment</b>: フェードタイムとサンプルレートから計算</li>
-    <li><b>Pending Slice</b>: 新しいスライスはフェードアウト中にpendingSliceIndexに格納、エンベロープがゼロになってから適用</li>
-    <li><b>Maximum Oscillator Frequency</b>: 約5kHz（0.1msフェードエンベロープによる制限）</li>
-    <li><b>Exponential Filter</b>: サンプルあたり0.5%ステップで目標に向けてスムーズに補間</li>
-    <li><b>Time Constant</b>: 44.1kHzで約5ms</li>
-    <li><b>Smoothed Parameters</b>: Scan、Threshold、LoopEnd、FeedbackAmount、FeedbackDelay</li>
-    <li><b>Saturation</b>: 低レベルでユニティゲインを維持するようスケーリングされたtanhソフトクリッピング</li>
-    <li><b>Mix</b>: フィードバック信号をフィードバック量でスケーリングして出力に加算</li>
-    <li><b>States</b>: IDLE、MORPHING、HOLDING、RETURNING</li>
-    <li><b>Curves</b>: 線形、スムーズ（Sカーブイージング）、指数（素早いアタック・遅いディケイ）、ベジェ（制御点設定可能）</li>
-    <li><b>Default Targets</b>: EQ、Scan、Feedback、Speed有効。Threshold、MinSlice、S and H無効</li>
-    <li><b>Morph Time</b>: 1〜20秒（右クリックで設定可能）</li>
-    <li><b>Signal Chain Position</b>: センド/リターンは再生+フィードバックミックス後、EQ前に位置。EQ処理後の出力は次のサイクルにフィードバック。</li>
-    <li><b>Below Threshold</b>: 信号は変化なしで通過（線形）</li>
-    <li><b>Above Threshold</b>: 飽和量0.2のソフトニーコンプレッション</li>
-    <li><b>Threshold</b>: -3dB（10Vピークシステムで7.07V）</li>
-    <li><b>Position</b>: EQ後、最終出力前のメイン出力に適用</li>
-    <li><b>Range</b>: 各バンド+/-12dB</li>
-    <li><b>Implementation</b>: TBiquadFilter（IIR）</li>
-    <li><b>Output</b>: +/-10V CV出力</li>
-    <li><b>No-Input Feedback</b>: 出力がアナログスタイルサチュレーション付きで入力にフィードバック</li>
-    </ul></div>
 controls:
 - name: Slice Scan
   type: param
   desc:
-    en: Scan position through recorded slices (0-100%). CV modulatable.
-    zh: Slice 掃描位置（0-100%）。可 CV 調變。
-    ja: スライススキャン位置（0-100%）。CVモジュレート可能。
+    en: Selects a slice by position across all slices (0-100%, default 0%). Active with 2 or more slices. When S&H Gain is above 0.01, the S&H output is added to the position.
+    zh: 依位置在所有切片中選擇切片（0-100%，預設 0%）。有 2 個以上切片時作用。S&H Gain 大於 0.01 時，S&H 輸出會加到掃描位置。
+    ja: 位置で全スライスからスライスを選択（0-100%、デフォルト0%）。スライスが2つ以上のとき動作。S&H Gainが0.01を超えるとS&H出力が位置に加算される。
 - name: Scan CV Attenuverter
   type: param
   desc:
-    en: Attenuverter for Slice Scan CV input (-1.0 to +1.0).
-    zh: Slice Scan CV 輸入的 Attenuverter（-1.0 至 +1.0）。
-    ja: Slice Scan CV入力用アッテヌバーター（-1.0～+1.0）。
+    en: Attenuverter for Slice Scan CV input (-1.0 to +1.0, default 0). At 1, 10V covers the full scan range.
+    zh: Slice Scan CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。設為 1 時，10V 涵蓋整個掃描範圍。
+    ja: Slice Scan CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。1のとき10Vでスキャン範囲全体をカバー。
 - name: Slice Threshold
   type: param
   desc:
-    en: Transient detection threshold (0-10V, default 1V). Rescans buffer when adjusted outside recording.
-    zh: Transient 偵測閾值（0-10V，預設 1V）。非錄音時調整會重新掃描 Buffer。
-    ja: トランジェント検出閾値（0-10V、デフォルト1V）。非録音時の調整でバッファを再スキャン。
+    en: Transient detection threshold for the L+R mix (0-10V, default 1V). Rescans the buffer when changed while not recording.
+    zh: L+R 混合訊號的 Transient 偵測閾值（0-10V，預設 1V）。非錄音時調整會重新掃描 Buffer。
+    ja: L+Rミックスのトランジェント検出閾値（0-10V、デフォルト1V）。非録音時の調整でバッファを再スキャン。
 - name: Min Slice Time
   type: param
   desc:
-    en: Minimum time between slices (0.001-1.0s, default 0.05s).
-    zh: Slice 間最小時間（0.001-1.0s，預設 0.05s）。
-    ja: スライス間の最小時間（0.001-1.0s、デフォルト0.05s）。
+    en: Minimum slice length (0.001-1.0s, default 0.05s), applied when slices are rescanned; shorter slices are removed. Also multiplies the Threshold CV input.
+    zh: 最短切片長度（0.001-1.0s，預設 0.05s），在重新掃描切片時套用，較短的切片會被移除。同時乘在 Threshold CV 輸入上。
+    ja: 最短スライス長（0.001-1.0s、デフォルト0.05s）。スライス再スキャン時に適用され、短いスライスは削除される。Threshold CV入力にも掛けられる。
 - name: Loop End Point
   type: param
   desc:
-    en: Loop end position (0-100%, default 100%).
-    zh: Loop 結束位置（0-100%，預設 100%）。
-    ja: ループ終了位置（0-100%、デフォルト100%）。
+    en: Loop end position (0-100%, default 100%). Set by dragging the blue line in the waveform display.
+    zh: Loop 結束位置（0-100%，預設 100%）。在波形顯示區拖曳藍線設定。
+    ja: ループ終了位置（0-100%、デフォルト100%）。波形表示の青線をドラッグして設定。
 - name: Morph Random (Hold)
   type: param
   desc:
-    en: Hold button for chaotic parameter morphing. Randomizes enabled targets while held.
-    zh: 按住此按鈕可進行混沌式參數變形（Chaotic Parameter Morphing）。按住期間會持續隨機化所有已啟用的目標參數。
-    ja: カオスパラメータモーフィング用のホールドボタン。押し続けている間、有効化されたターゲットパラメータをランダム化し続ける。
+    en: CHAOS button. While held, moves enabled Morph Targets to one set of random values over Morph Time and holds them; on release, returns to the original values.
+    zh: CHAOS 按鈕。按住時在 Morph Time 內把已啟用的 Morph Targets 移到一組隨機值並停留；放開後回到原值。
+    ja: CHAOSボタン。押している間、有効なMorph TargetsをMorph Timeをかけて1組のランダム値へ移動して保持し、離すと元の値に戻る。
 - name: Feedback Amount
   type: param
   desc:
-    en: No-input feedback level (0-100%). Adds tanh-saturated output back to input.
-    zh: No-input Feedback 量（0-100%）。以 tanh 飽和方式將輸出回授至輸入。
-    ja: ノーインプットフィードバック量（0-100%）。tanh飽和で出力を入力にフィードバック。
+    en: Level of the saturated post-EQ output added back to the playback signal (0-1, default 0).
+    zh: 飽和後的 EQ 輸出回加到播放訊號的量（0-1，預設 0）。
+    ja: サチュレーション後のEQ出力を再生信号に戻す量（0-1、デフォルト0）。
 - name: Feedback CV Attenuverter
   type: param
   desc:
-    en: Attenuverter for Feedback Amount CV input (-1.0 to +1.0).
-    zh: Feedback Amount CV 輸入的 Attenuverter（-1.0 至 +1.0）。
-    ja: Feedback Amount CV入力用アッテヌバーター（-1.0～+1.0）。
+    en: Attenuverter for Feedback Amount CV input (-1.0 to +1.0, default 0). At 1, 10V covers the full range.
+    zh: Feedback Amount CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。設為 1 時，10V 涵蓋整個範圍。
+    ja: Feedback Amount CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。1のとき10Vで全範囲をカバー。
 - name: Low EQ (80Hz)
   type: param
   desc:
-    en: Low shelf EQ at 80Hz (±12dB).
-    zh: 80Hz Low Shelf EQ（±12dB）。
-    ja: 80Hz ローシェルフEQ（±12dB）。
+    en: Low shelf at 80Hz (±12dB, default 0dB). Inside the feedback loop.
+    zh: 80Hz Low Shelf（±12dB，預設 0dB）。位於 Feedback 迴路內。
+    ja: 80Hz ローシェルフ（±12dB、デフォルト0dB）。フィードバックループ内。
 - name: Mid EQ (2.5kHz)
   type: param
   desc:
-    en: Mid peak EQ at 2.5kHz (±12dB).
-    zh: 2.5kHz Mid Peak EQ（±12dB）。
-    ja: 2.5kHz ミッドピークEQ（±12dB）。
+    en: Peak at 2.5kHz (±12dB, default 0dB). Inside the feedback loop.
+    zh: 2.5kHz Peak（±12dB，預設 0dB）。位於 Feedback 迴路內。
+    ja: 2.5kHz ピーク（±12dB、デフォルト0dB）。フィードバックループ内。
 - name: High EQ (12kHz)
   type: param
   desc:
-    en: High shelf EQ at 12kHz (±12dB).
-    zh: 12kHz High Shelf EQ（±12dB）。
-    ja: 12kHz ハイシェルフEQ（±12dB）。
+    en: High shelf at 12kHz (±12dB, default 0dB). Inside the feedback loop.
+    zh: 12kHz High Shelf（±12dB，預設 0dB）。位於 Feedback 迴路內。
+    ja: 12kHz ハイシェルフ（±12dB、デフォルト0dB）。フィードバックループ内。
 - name: Playback Speed
   type: param
   desc:
-    en: 'Non-linear speed control. 0-25%: reverse -8x to 0. 25-50%: forward 0 to 1x. 50-100%: forward 1x to 8x.'
-    zh: '非線性速度控制。0-25%: 反向 -8x 至 0。25-50%: 正向 0 至 1x。50-100%: 正向 1x 至 8x。'
-    ja: '非線形速度コントロール。0-25%: 逆再生-8x～0。25-50%: 順再生0～1x。50-100%: 順再生1x～8x。'
+    en: 'Non-linear speed control, default 1x at center. 0-25%: reverse -8x to 0. 25-50%: forward 0 to 1x. 50-100%: forward 1x to 8x.'
+    zh: '非線性速度控制，預設中央 1x。0-25%: 反向 -8x 至 0。25-50%: 正向 0 至 1x。50-100%: 正向 1x 至 8x。'
+    ja: '非線形速度コントロール、デフォルトは中央で1x。0-25%: 逆再生-8x～0。25-50%: 順再生0～1x。50-100%: 順再生1x～8x。'
 - name: Polyphonic Voices
   type: param
   desc:
-    en: Number of playback voices (1-8, integer snap). CV modulatable.
-    zh: 播放 Voice 數量（1-8，整數對齊）。可 CV 調變。
-    ja: 再生ボイス数（1-8、整数スナップ）。CVモジュレート可能。
+    en: Number of playback voices (1-8, integer snap, default 1). Voices are mixed and spread across the stereo output.
+    zh: 播放 Voice 數量（1-8，整數對齊，預設 1）。各 Voice 混合後分布在立體聲輸出。
+    ja: 再生ボイス数（1-8、整数スナップ、デフォルト1）。ボイスはミックスされステレオ出力に配置される。
 - name: S&H Slew Time
   type: param
   desc:
-    en: Sample & Hold slew time (0-1s). Smooths CV transitions.
-    zh: Sample & Hold Slew 時間（0-1s）。平滑 CV 過渡。
-    ja: サンプル＆ホールドスルー時間（0-1s）。CVトランジションをスムーズ化。
+    en: Exponential slew time constant for the S&H output (0-1s, default 0.3s). Independent of S&H Rate.
+    zh: S&H 輸出的指數 Slew 時間常數（0-1s，預設 0.3s），與 S&H Rate 無關。
+    ja: S&H出力の指数スルー時定数（0-1s、デフォルト0.3s）。S&H Rateとは独立。
 - name: S&H Gain
   type: param
   desc:
-    en: Sample & Hold gain multiplier (0-5x).
-    zh: Sample & Hold 增益倍數（0-5x）。
-    ja: サンプル＆ホールドゲイン倍率（0-5x）。
+    en: S&H output gain (0-5x, default 2x). Above 0.01, the S&H output also offsets Slice Scan.
+    zh: S&H 輸出增益（0-5x，預設 2x）。大於 0.01 時，S&H 輸出也會偏移 Slice Scan。
+    ja: S&H出力ゲイン（0-5x、デフォルト2x）。0.01を超えるとS&H出力がSlice Scanもオフセットする。
 - name: S&H Gain CV Attenuverter
   type: param
   desc:
-    en: Attenuverter for S&H Gain CV input (-1.0 to +1.0).
-    zh: S&H Gain CV 輸入的 Attenuverter（-1.0 至 +1.0）。
-    ja: S&H Gain CV入力用アッテヌバーター（-1.0～+1.0）。
+    en: Attenuverter for S&H Gain CV input (-1.0 to +1.0, default 0). At 1, 10V adds 5x.
+    zh: S&H Gain CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。設為 1 時，10V 增加 5x。
+    ja: S&H Gain CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。1のとき10Vで5x加算。
 - name: S&H Sample Rate
   type: param
   desc:
-    en: Sample & Hold rate (0.01-100Hz, logarithmic). Center = 1Hz.
-    zh: Sample & Hold 取樣率（0.01-100Hz，對數映射）。中心 = 1Hz。
-    ja: サンプル＆ホールドレート（0.01-100Hz、対数）。中心=1Hz。
+    en: S&H rate (0.01-100Hz, logarithmic, default 1Hz at center). Also sets the slice switching interval of voices 2-8.
+    zh: S&H 取樣率（0.01-100Hz，對數，預設中央 1Hz）。同時決定 Voice 2-8 的切片切換間隔。
+    ja: S&Hレート（0.01-100Hz、対数、デフォルトは中央で1Hz）。ボイス2-8のスライス切替間隔も決める。
 - name: S&H Rate CV Attenuverter
   type: param
   desc:
-    en: Attenuverter for S&H Rate CV input (-1.0 to +1.0).
-    zh: S&H Rate CV 輸入的 Attenuverter（-1.0 至 +1.0）。
-    ja: S&H Rate CV入力用アッテヌバーター（-1.0～+1.0）。
+    en: Attenuverter for S&H Rate CV input (-1.0 to +1.0, default 0). At 1, 1V shifts the rate by one octave.
+    zh: S&H Rate CV 輸入的 Attenuverter（-1.0 至 +1.0，預設 0）。設為 1 時，每 1V 移動一個八度。
+    ja: S&H Rate CV入力用アッテヌバーター（-1.0～+1.0、デフォルト0）。1のとき1Vで1オクターブ変化。
 - name: Record
   type: param
   desc:
-    en: Toggle recording. Clears existing slices on start.
-    zh: 切換錄音。開始時清除既有 Slice。
-    ja: 録音切替。開始時に既存スライスをクリア。
+    en: Toggles recording. Starting records from the buffer start and clears existing slices.
+    zh: 切換錄音。開始時從 Buffer 起點錄音並清除既有切片。
+    ja: 録音切替。開始時はバッファの先頭から録音し、既存スライスをクリア。
 - name: 'Play/Loop (cycles: Loop → Play)'
   type: param
   desc:
-    en: Toggle playback mode. Cycles between Loop and one-shot Play.
-    zh: 切換播放模式。在 Loop 與單次 Play 之間循環。
-    ja: 再生モード切替。ループとワンショット再生を切り替え。
+    en: From Stop or Play, switches to Loop (repeat current slice). From Loop, switches to Play (slices in order, wrap at Loop End). Light green for Play, blue for Loop.
+    zh: 在停止或 Play 狀態切到 Loop（重複目前切片）；在 Loop 狀態切到 Play（依序播放切片，到 Loop End 回頭）。燈號綠色為 Play，藍色為 Loop。
+    ja: 停止またはPlayからLoop（現在のスライスを反復）へ、LoopからPlay（スライスを順に再生、Loop Endで折り返し）へ切替。ライトはPlayが緑、Loopが青。
 - name: Stop (hold 2 sec to Clear)
   type: param
   desc:
-    en: Stop playback. Hold for 2 seconds to clear buffer.
-    zh: 停止播放。按住 2 秒清除 Buffer。
-    ja: 再生停止。2秒長押しでバッファクリア。
+    en: Stops playback. Hold for 2 seconds to clear the buffer and slices. Does not stop recording.
+    zh: 停止播放。按住 2 秒清除 Buffer 與切片。不會停止錄音。
+    ja: 再生停止。2秒長押しでバッファとスライスをクリア。録音は停止しない。
 - name: Audio L
   type: input
   desc:
     en: Left audio input for recording.
-    zh: 左聲道 Audio 錄音輸入。
-    ja: 左チャンネルオーディオ録音入力。
+    zh: 左聲道錄音輸入。
+    ja: 左チャンネル録音入力。
 - name: Audio R
   type: input
   desc:
-    en: Right audio input for recording.
-    zh: 右聲道 Audio 錄音輸入。
-    ja: 右チャンネルオーディオ録音入力。
+    en: Right audio input for recording. Normalled to Audio L when unpatched.
+    zh: 右聲道錄音輸入。未接線時沿用 Audio L。
+    ja: 右チャンネル録音入力。未接続時はAudio Lを使用。
 - name: Slice Scan CV
   type: input
   desc:
-    en: CV input for slice scan position modulation.
-    zh: Slice 掃描位置調變 CV 輸入。
-    ja: スライススキャン位置変調CV入力。
+    en: Added to Slice Scan, scaled by Scan CV Attenuverter.
+    zh: 加到 Slice Scan，由 Scan CV Attenuverter 縮放。
+    ja: Slice Scanに加算、Scan CV Attenuverterでスケーリング。
 - name: Threshold CV
   type: input
   desc:
-    en: CV input for threshold modulation.
-    zh: 閾值調變 CV 輸入。
-    ja: 閾値変調CV入力。
+    en: Added to Slice Threshold, multiplied by the Min Slice Time value (default 0.05). Result limited to 0-10V.
+    zh: 加到 Slice Threshold，乘以 Min Slice Time 的值（預設 0.05）。結果限制在 0-10V。
+    ja: Slice Thresholdに加算、Min Slice Timeの値（デフォルト0.05）を掛ける。結果は0-10Vに制限。
 - name: Feedback Amount CV
   type: input
   desc:
-    en: CV input for feedback amount modulation.
-    zh: Feedback Amount 調變 CV 輸入。
-    ja: フィードバック量変調CV入力。
+    en: Added to Feedback Amount, scaled by Feedback CV Attenuverter. Result limited to 0-1.
+    zh: 加到 Feedback Amount，由 Feedback CV Attenuverter 縮放。結果限制在 0-1。
+    ja: Feedback Amountに加算、Feedback CV Attenuverterでスケーリング。結果は0-1に制限。
 - name: Speed CV
   type: input
   desc:
-    en: CV input for playback speed modulation.
-    zh: 播放速度調變 CV 輸入。
-    ja: 再生速度変調CV入力。
+    en: Added to playback speed at 1x per volt, no attenuverter. Result limited to -8x to +8x.
+    zh: 加到播放速度，每 1V 為 1x，無 Attenuverter。結果限制在 -8x 至 +8x。
+    ja: 1Vあたり1xで再生速度に加算、アッテヌバーターなし。結果は-8x～+8xに制限。
 - name: Polyphonic CV
   type: input
   desc:
-    en: CV input for voice count modulation.
-    zh: Voice 數量調變 CV 輸入。
-    ja: ボイス数変調CV入力。
+    en: 10V adds 7 voices, no attenuverter. Result rounded and limited to 1-8.
+    zh: 10V 增加 7 個 Voice，無 Attenuverter。結果四捨五入並限制在 1-8。
+    ja: 10Vで7ボイス追加、アッテヌバーターなし。結果は四捨五入して1-8に制限。
 - name: S&H Amount CV
   type: input
   desc:
-    en: CV input for S&H gain modulation.
-    zh: S&H Gain 調變 CV 輸入。
-    ja: S&Hゲイン変調CV入力。
+    en: Added to S&H Gain, scaled by S&H Gain CV Attenuverter. Result limited to 0-5x.
+    zh: 加到 S&H Gain，由 S&H Gain CV Attenuverter 縮放。結果限制在 0-5x。
+    ja: S&H Gainに加算、S&H Gain CV Attenuverterでスケーリング。結果は0-5xに制限。
 - name: S&H Rate CV
   type: input
   desc:
-    en: CV input for S&H rate modulation.
-    zh: S&H Rate 調變 CV 輸入。
-    ja: S&Hレート変調CV入力。
+    en: One octave per volt added to S&H Rate, scaled by S&H Rate CV Attenuverter.
+    zh: 每 1V 一個八度加到 S&H Rate，由 S&H Rate CV Attenuverter 縮放。
+    ja: 1Vあたり1オクターブをS&H Rateに加算、S&H Rate CV Attenuverterでスケーリング。
 - name: Return L
   type: input
   desc:
-    en: Left return input for external effects loop.
-    zh: 左聲道 Return 輸入，用於外部效果器迴路。
-    ja: 左チャンネルリターン入力（外部エフェクトループ用）。
+    en: Left return input. When patched, replaces the left channel before EQ.
+    zh: 左聲道 Return 輸入。接線時在 EQ 前取代左聲道。
+    ja: 左リターン入力。接続時、EQ前で左チャンネルを置換。
 - name: Return R
   type: input
   desc:
-    en: Right return input for external effects loop.
-    zh: 右聲道 Return 輸入，用於外部效果器迴路。
-    ja: 右チャンネルリターン入力（外部エフェクトループ用）。
+    en: Right return input. When patched, replaces the right channel before EQ.
+    zh: 右聲道 Return 輸入。接線時在 EQ 前取代右聲道。
+    ja: 右リターン入力。接続時、EQ前で右チャンネルを置換。
 - name: Rec Trigger
   type: input
   desc:
-    en: Trigger input to toggle recording.
-    zh: 切換錄音的 Trigger 輸入。
-    ja: 録音切替トリガー入力。
+    en: Toggles recording on a rising edge reaching 1V.
+    zh: 上升達到 1V 時切換錄音。
+    ja: 1Vに達する立ち上がりで録音切替。
 - name: Play Trigger
   type: input
   desc:
-    en: Trigger input to toggle playback.
-    zh: 切換播放的 Trigger 輸入。
-    ja: 再生切替トリガー入力。
+    en: Same as the PLAY/LOOP button on a rising edge reaching 1V.
+    zh: 上升達到 1V 時等同按下 PLAY/LOOP。
+    ja: 1Vに達する立ち上がりでPLAY/LOOPボタンと同じ動作。
 - name: Clear Trigger
   type: input
   desc:
-    en: Trigger input to stop/clear.
-    zh: 停止/清除的 Trigger 輸入。
-    ja: 停止/クリアトリガー入力。
+    en: Above 0.5V stops playback. Held high for 2 seconds, clears the buffer and slices.
+    zh: 高於 0.5V 時停止播放；維持高電位 2 秒則清除 Buffer 與切片。
+    ja: 0.5Vを超えると再生停止。2秒間ハイを保つとバッファとスライスをクリア。
 - name: Morph Gate
   type: input
   desc:
-    en: Gate input for parameter morphing. Morphs while gate is high.
-    zh: 參數變形 Gate 輸入。Gate 為高時進行變形。
-    ja: パラメータモーフィングゲート入力。ゲートがハイの間モーフィング実行。
+    en: Same as holding CHAOS while the gate is at or above 1V.
+    zh: Gate 在 1V 以上時等同按住 CHAOS。
+    ja: ゲートが1V以上の間、CHAOSを押し続けるのと同じ。
 - name: Main L
   type: output
   desc:
-    en: Left main audio output (with EQ and soft limiter applied).
-    zh: 左聲道 Main Audio 輸出（含 EQ 與 Soft Limiter）。
-    ja: 左チャンネルメインオーディオ出力（EQ・ソフトリミッター適用済み）。
+    en: Left main audio output (after EQ and soft limiter, threshold 7.07V).
+    zh: 左聲道 Main 音訊輸出（經過 EQ 與 Soft Limiter，閾值 7.07V）。
+    ja: 左チャンネルメインオーディオ出力（EQとソフトリミッター適用後、閾値7.07V）。
 - name: Main R
   type: output
   desc:
-    en: Right main audio output (with EQ and soft limiter applied).
-    zh: 右聲道 Main Audio 輸出（含 EQ 與 Soft Limiter）。
-    ja: 右チャンネルメインオーディオ出力（EQ・ソフトリミッター適用済み）。
+    en: Right main audio output (after EQ and soft limiter, threshold 7.07V).
+    zh: 右聲道 Main 音訊輸出（經過 EQ 與 Soft Limiter，閾值 7.07V）。
+    ja: 右チャンネルメインオーディオ出力（EQとソフトリミッター適用後、閾値7.07V）。
 - name: S&H CV
   type: output
   desc:
-    en: Sample & Hold CV output (±10V).
-    zh: Sample & Hold CV 輸出（±10V）。
-    ja: サンプル＆ホールドCV出力（±10V）。
+    en: Sample and hold CV output (±10V), sampled from the EQ output.
+    zh: Sample and Hold CV 輸出（±10V），取樣自 EQ 輸出。
+    ja: サンプル＆ホールドCV出力（±10V）、EQ出力からサンプリング。
 - name: Send L
   type: output
   desc:
-    en: Left send output for external effects loop (pre-EQ).
-    zh: 左聲道 Send 輸出，用於外部效果器迴路（EQ 前）。
-    ja: 左チャンネルセンド出力（外部エフェクトループ用、EQ前）。
+    en: Left send output, playback plus feedback before EQ (limited to ±10V).
+    zh: 左聲道 Send 輸出，EQ 前的播放加 Feedback 訊號（限制在 ±10V）。
+    ja: 左センド出力、EQ前の再生とフィードバックの合計（±10Vに制限）。
 - name: Send R
   type: output
   desc:
-    en: Right send output for external effects loop (pre-EQ).
-    zh: 右聲道 Send 輸出，用於外部效果器迴路（EQ 前）。
-    ja: 右チャンネルセンド出力（外部エフェクトループ用、EQ前）。
+    en: Right send output, playback plus feedback before EQ (limited to ±10V).
+    zh: 右聲道 Send 輸出，EQ 前的播放加 Feedback 訊號（限制在 ±10V）。
+    ja: 右センド出力、EQ前の再生とフィードバックの合計（±10Vに制限）。
